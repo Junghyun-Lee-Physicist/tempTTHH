@@ -1,0 +1,12 @@
+
+# <filelist file name> <output-dir name> <weight> <year> <MC or Data> <Sample name>
+# e.g.) filelist_JetHT_B.txt JetHT_B 1.0 2017 Data JetHT_B
+
+# This is for the Analyzer Configuration of ttHH Hadronic Trigger Study
+
+filelist_ttJets.txt ttJets 3.441071667 2017 MC ttJets
+filelist_SingleMuon_B.txt SingleMuon_B 1.0 2017 Data SingleMuon_B
+filelist_SingleMuon_C.txt SingleMuon_C 1.0 2017 Data SingleMuon_C
+filelist_SingleMuon_D.txt SingleMuon_D 1.0 2017 Data SingleMuon_D
+filelist_SingleMuon_E.txt SingleMuon_E 1.0 2017 Data SingleMuon_E
+filelist_SingleMuon_F.txt SingleMuon_F 1.0 2017 Data SingleMuon_F

@@ -1,0 +1,1 @@
+root://xrootd-cms.infn.it///store/mc/RunIISummer20UL17NanoAODv9/TTZToBB_TuneCP5_13TeV-amcatnlo-pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v2/2560000/0FB7AB6D-0581-8240-9842-55DF5300BDCE.root

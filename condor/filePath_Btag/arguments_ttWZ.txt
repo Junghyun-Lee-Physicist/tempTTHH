@@ -1,0 +1,2 @@
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttWZ_20250602-220256/filelist_ttWZ_0.txt ttWZ_0.root 0.0002901229714 2017 MC ttWZ A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttWZ_20250602-220256/filelist_ttWZ_1.txt ttWZ_1.root 0.0002901229714 2017 MC ttWZ A

@@ -1,0 +1,1 @@
+root://xrootd-cms.infn.it///store/data/Run2017F/BTagCSV/NANOAOD/UL2017_MiniAODv2_NanoAODv9-v1/130000/046305E4-E5AF-6045-836B-6E2D4CC3B5F0.root

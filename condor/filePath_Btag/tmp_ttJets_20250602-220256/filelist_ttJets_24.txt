@@ -1,0 +1,1 @@
+root://xrootd-cms.infn.it///store/mc/RunIISummer20UL17NanoAODv9/TTJets_TuneCP5_13TeV-madgraphMLM-pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/40000/432F8DB2-38E0-5349-B3EE-228A5C2BE860.root

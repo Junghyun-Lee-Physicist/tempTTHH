@@ -1,0 +1,18 @@
+
+
+START---------------
+WORKDIR  /pool/condor/dir_2235241
+WORKDIR  /afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8
+TNM_PATH=/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8
+
+--------- Check arugments ---------------------------------------
+
+  - [ output file name ] --> root://eosuser.cern.ch//eos/user/j/junghyun/ttHH/Btag_el9/QCD_HT500to700/QCD_HT500to700_58.root
+  - [ runYear ] --> 2017
+  - [ isData ] --> MC
+  - [ sampleName ] --> QCD_HT500to700
+  - [ eraName ] --> A
+
+--------- Check arugments ---------------------------------------
+
+** Error ** itreestream::ctor - Unable to GetListOfBranches for Events

@@ -1,0 +1,12 @@
+x509userproxy           = /afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/proxy.cert
+getenv                  = True
+executable              = /afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/run_tt4b.sh
+arguments               = $(args)
+output                  = /afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_tt4b_20250602-220256/job_tt4b.$(ClusterId).$(ProcId).out
+MY.WantOS               = "el9"
+MY.XRDCP_CREATE_DIR     = True
+error                   = /afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_tt4b_20250602-220256/error_tt4b.$(ClusterId).$(ProcId).err
+log                     = /afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/log_tt4b.$(ClusterId).log
+request_memory          = 10 GB
++JobFlavour             = "tomorrow"
+queue args from /afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/arguments_tt4b.txt

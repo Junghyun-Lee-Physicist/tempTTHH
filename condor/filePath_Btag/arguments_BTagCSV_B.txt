@@ -1,0 +1,3 @@
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_BTagCSV_B_20250602-220256/filelist_BTagCSV_B_0.txt BTagCSV_B_0.root 1.0 2017 Data BTagCSV_B B
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_BTagCSV_B_20250602-220256/filelist_BTagCSV_B_1.txt BTagCSV_B_1.root 1.0 2017 Data BTagCSV_B B
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_BTagCSV_B_20250602-220256/filelist_BTagCSV_B_2.txt BTagCSV_B_2.root 1.0 2017 Data BTagCSV_B B

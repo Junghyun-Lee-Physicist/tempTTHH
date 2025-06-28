@@ -1,0 +1,367 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+CondorInspectValidateResubmit.py
+
+이미 존재하는 Condor 작업 환경에서, 지정된 샘플들에 대해
+세 가지 기준으로 실패한 잡을 찾아 출력하고, 실패 잡 재제출 인자 파일 내용을 준비합니다.
+
+1) .err 로그에 특정 에러 키워드가 포함된 경우 → Failed
+2) EOS 출력 디렉터리에 해당 샘플/<샘플>_<proc>.root 파일이 없는 경우 → Failed
+3) (Deep 검사) 출력 ROOT 파일의 'cutflow' 히스토그램 'noCut' bin의 이벤트 개수가
+   입력 파일 리스트의 총 이벤트 개수와 일치하지 않는 경우 → Failed
+
+스크립트 상단에서 검사할 샘플 목록과 에러 키워드를 수정할 수 있습니다.
+`--no-deep` 옵션을 주면 Deep 검사를 생략합니다.
+
+사용 예:
+    chmod +x CondorInspectValidateResubmit.py
+    ./CondorInspectValidateResubmit.py       # Deep 검사 포함
+    ./CondorInspectValidateResubmit.py --no-deep  # Deep 검사를 생략
+
+Requirements:
+    - (Deep 검사 시) PyROOT 설치 필요
+    - EOS 커맨드 라인 클라이언트(eos) 접근 가능
+    - condor 파일 구조:
+        condor/filePath_Btag/
+            arguments_<sample>.txt
+            <sample>_condor.sub
+            tmp_<sample>_<timestamp>/
+                error_<sample>.<cluster>.<proc>.err
+                filelist_<sample>_<proc>.txt
+                ...
+    - EOS 출력 구조:
+        /eos/user/j/junghyun/ttHH/Btag_el9/<sample>/
+            <sample>_<proc>.root
+"""
+
+import os
+import sys
+import glob
+import subprocess
+
+# ─── 0. 설정 (상단) ─────────────────────────────────────────────────────
+# 검사할 샘플 이름 목록
+SAMPLES = [
+    "QCD_HT1000to1500",
+    "QCD_HT1500to2000",
+    "QCD_HT2000toInf",
+    "QCD_HT200to300",
+    "QCD_HT300to500",
+    "QCD_HT500to700",
+    "QCD_HT700to1000",
+    "SingleMuon_B",
+    "SingleMuon_C",
+    "SingleMuon_D",
+    "SingleMuon_E",
+    "SingleMuon_F",
+    "tt4b",
+    "ttbb",
+    "ttHH",
+    "ttHtobb",
+    "ttJets",
+    "ttTohadronic",
+    "tttt",
+    "tttW",
+    "ttWH",
+    "ttWW",
+    "ttWZ",
+    "ttZHto4b",
+    "ttZtobb",
+    "ttZZto4b",
+]
+
+# error 로그 안에서 “이 문구”가 포함되면 실패로 간주할 키워드 리스트
+ERROR_KEYWORDS = [
+#    "<TNetXNGFile::Open>: [ERROR] Server responded with an error",
+#    "Error in <TCling::LoadPCM>",
+    "ERROR"
+    # 필요하면 더 추가
+]
+
+# EOS 출력 POSIX 베이스 경로 (root:// 없이 실제 파일 시스템 경로)
+EOS_BASE_POSIX = "/eos/user/j/junghyun/ttHH/Btag_el9"
+
+# Condor 파일 최상위 디렉터리 (tmp_ 폴더, arguments 파일, JDL 파일이 이곳에 있음)
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+CONDOR_FILES_PATH = os.path.join(SCRIPT_DIR, "condor", "filePath_Btag")
+
+# _no-deep_ 옵션이 없으면 Deep 검사 수행 (cutflow 비교)
+####DEEP_MODE = "--no-deep" not in sys.argv
+DEEP_MODE = False
+
+if DEEP_MODE:
+    try:
+        import ROOT
+    except ImportError:
+        print("[ERROR] Deep 모드를 실행하려면 PyROOT이 필요합니다.")
+        sys.exit(1)
+
+
+# ─── 1. 유틸리티 함수 ───────────────────────────────────────────────────
+def find_tmp_dirs_for_sample(sample):
+    """
+    CONDOR_FILES_PATH 내에서 sample에 대응하는 tmp_<sample>_<timestamp> 디렉터리 리스트 반환.
+    """
+    pattern = os.path.join(CONDOR_FILES_PATH, f"tmp_{sample}_*")
+    return [d for d in glob.glob(pattern) if os.path.isdir(d)]
+
+
+def parse_sample_timestamp(tmp_dir_basename):
+    """
+    'tmp_<sample>_<timestamp>' 형식에서 sample, timestamp 분리.
+    """
+    if not tmp_dir_basename.startswith("tmp_"):
+        return None, None
+    base = tmp_dir_basename[len("tmp_"):]
+    if "_" not in base:
+        return None, None
+    sample, timestamp = base.split("_", 1)
+    return sample, timestamp
+
+
+def list_error_files(tmp_folder, sample):
+    """
+    tmp_folder 내 error_<sample>.<cluster>.<proc>.err 파일 리스트 반환.
+    """
+    pattern = os.path.join(tmp_folder, f"error_{sample}.*.err")
+    return sorted(glob.glob(pattern))
+
+
+def read_error_content(err_path):
+    """
+    .err 파일 내용을 반환. 읽기 실패 시 빈 문자열 반환.
+    """
+    try:
+        with open(err_path, "r") as f:
+            return f.read()
+    except Exception:
+        return ""
+
+
+def eos_file_exists(posix_path):
+    """
+    POSIX 경로를 받아서 'eos root://eosuser.cern.ch ls <posix_path>' 로 파일 존재 여부 확인
+    """
+    cmd = ["eos", "root://eosuser.cern.ch", "ls", posix_path]
+    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    return result.returncode == 0
+
+
+def get_input_filelist_path(tmp_folder, sample, proc_id):
+    """
+    tmp_folder 내 'filelist_<sample>_<proc_id>.txt' 경로 반환.
+    """
+    fname = f"filelist_{sample}_{proc_id}.txt"
+    path = os.path.join(tmp_folder, fname)
+    return path if os.path.isfile(path) else None
+
+
+def count_events_in_input(filelist_path):
+    """
+    filelist_path 파일에 적힌 모든 input root 파일들의 이벤트 수 합산.
+    - 한 줄당 하나의 ROOT 파일 경로
+    - ROOT.TFile.Open, TTree 'Events' GetEntries 사용
+    """
+    total = 0
+    try:
+        with open(filelist_path, "r") as f:
+            lines = [ln.strip() for ln in f if ln.strip()]
+    except Exception:
+        return None
+
+    for root_path in lines:
+        froot = ROOT.TFile.Open(root_path)
+        if not froot or froot.IsZombie():
+            return None
+        tree = froot.Get("Events")
+        if not tree:
+            froot.Close()
+            return None
+        total += tree.GetEntries()
+        froot.Close()
+    return total
+
+
+def get_cutflow_noCut(eos_posix_path):
+    """
+    EOS 상의 ROOT 파일(POSIX 경로)를 열어 'cutflow' 히스토그램에서 'noCut' bin 값 반환.
+    - 파일 열기: ROOT.TFile.Open("root://eosuser.cern.ch" + eos_posix_path)
+    - 히스토그램: f.Get("cutflow") or f.Get("Tree").Get("cutflow")
+    - 'noCut' 라벨의 bin content 반환. 없으면 None.
+    """
+    # Deep 검사 시, 실제로는 "root://eosuser.cern.ch" + eos_posix_path 를 사용
+    root_url = "root://eosuser.cern.ch" + eos_posix_path
+    f = ROOT.TFile.Open(root_url)
+    if not f or f.IsZombie():
+        return None
+    hist = f.Get("cutflow")
+    if not hist:
+        tree_dir = f.Get("Tree")
+        if tree_dir:
+            hist = tree_dir.Get("cutflow")
+    if not hist:
+        f.Close()
+        return None
+
+    xaxis = hist.GetXaxis()
+    n_bins = xaxis.GetNbins()
+    noCut_bin = None
+    for i in range(1, n_bins + 1):
+        if xaxis.GetBinLabel(i) == "noCut":
+            noCut_bin = i
+            break
+    if not noCut_bin:
+        f.Close()
+        return None
+    count = hist.GetBinContent(noCut_bin)
+    f.Close()
+    return count
+
+
+def read_argument_lines(sample):
+    """
+    'arguments_<sample>.txt' 에서 모든 라인을 리스트로 반환.
+    """
+    path = os.path.join(CONDOR_FILES_PATH, f"arguments_{sample}.txt")
+    if not os.path.isfile(path):
+        return []
+    with open(path, "r") as f:
+        return [ln.rstrip("\n") for ln in f]
+
+
+# ─── 2. 메인 검사 로직 ───────────────────────────────────────────────────
+def inspect_sample(sample):
+    """
+    지정된 sample에 대해:
+      1) tmp_<sample>_* 디렉터리별로 검사 수행
+      2) error 로그, EOS 파일 존재, (Deep 모드 시) cutflow 비교로 패스/실패 판정
+      3) 재제출 인자 파일 내용 출력
+    """
+    tmp_dirs = find_tmp_dirs_for_sample(sample)
+    if not tmp_dirs:
+        print(f"[WARN] 샘플 '{sample}' 에 해당하는 tmp_ 디렉터리가 없습니다.\n")
+        return
+
+    for tmp in tmp_dirs:
+        basename = os.path.basename(tmp)
+        _, timestamp = parse_sample_timestamp(basename)
+        print(f"---\n[Inspect Sample: {sample} | Timestamp: {timestamp}]\n")
+
+        # 1) error 파일 리스트 및 proc_ids
+        err_files = list_error_files(tmp, sample)
+        all_proc_ids = []
+        failed_err = []
+
+        for ef in err_files:
+            fname = os.path.basename(ef)
+            parts = fname.split(".")
+            if len(parts) < 4:
+                continue
+            proc_id = parts[-2]
+            all_proc_ids.append(proc_id)
+            content = read_error_content(ef)
+            for kw in ERROR_KEYWORDS:
+                if kw in content:
+                    failed_err.append(proc_id)
+                    break
+
+        all_proc_ids = sorted(set(all_proc_ids), key=int)
+        failed_err = sorted(set(failed_err), key=int)
+
+        print(f"  • Detected proc IDs            : {', '.join(all_proc_ids) or 'None'}")
+        print(f"  • Failed by error log (keywords): {', '.join(failed_err) or 'None'}")
+
+        # 2) EOS 파일 존재 여부 검사 (POSIX 경로로 검사)
+        missing_on_eos = []
+        exists_on_eos = []
+        for pid in all_proc_ids:
+            root_fname = f"{sample}_{pid}.root"
+            eos_posix = f"{EOS_BASE_POSIX}/{sample}/{root_fname}"
+            if eos_file_exists(eos_posix):
+                exists_on_eos.append(pid)
+            else:
+                missing_on_eos.append(pid)
+
+        print(f"  • Missing on EOS               : {', '.join(missing_on_eos) or 'None'}")
+
+        # 3) Simple 모드에서의 최종 실패/성공 판정
+        failed_set = set(failed_err) | set(missing_on_eos)
+        succeeded_set = set(all_proc_ids) - failed_set
+
+        # 4) Deep 모드: cutflow / input 이벤트 수 비교
+        if DEEP_MODE and succeeded_set:
+            print("  → Performing Deep Validation (cutflow vs input events) …")
+            failed_deep = []
+            for pid in sorted(succeeded_set, key=int):
+                # (a) input filelist 경로
+                filelist_path = get_input_filelist_path(tmp, sample, pid)
+                if not filelist_path:
+                    failed_deep.append(pid)
+                    continue
+                input_count = count_events_in_input(filelist_path)
+                if input_count is None:
+                    failed_deep.append(pid)
+                    continue
+
+                # (b) output root / cutflow 검사
+                root_fname = f"{sample}_{pid}.root"
+                eos_posix = f"{EOS_BASE_POSIX}/{sample}/{root_fname}"
+                noCut_count = get_cutflow_noCut(eos_posix)
+                if noCut_count is None or noCut_count != input_count:
+                    failed_deep.append(pid)
+
+            if failed_deep:
+                print(f"    • Deep 검사 실패(proc IDs): {', '.join(sorted(failed_deep, key=int))}")
+                failed_set |= set(failed_deep)
+                succeeded_set -= set(failed_deep)
+            else:
+                print("    • All passed Deep Validation.")
+
+        # 최종 결과 출력
+        print(f"  • Final Failed proc IDs        : {', '.join(sorted(failed_set, key=int)) or 'None'}")
+        print(f"  • Final Succeeded proc IDs     : {', '.join(sorted(succeeded_set, key=int)) or 'None'}\n")
+
+        # 5) Failed proc_id 재제출용 인자 준비 (dry-run)
+        if failed_set:
+            print("  → Preparing resubmit arguments for failed procs …")
+            args_lines = read_argument_lines(sample)
+            if not args_lines:
+                print(f"    [WARN] arguments_{sample}.txt 파일을 찾을 수 없거나 비어 있습니다.\n")
+            else:
+                resubmit_fname = f"arguments_failed_{sample}_{timestamp}.txt"
+                resubmit_fpath = os.path.join(CONDOR_FILES_PATH, resubmit_fname)
+                print(f"\n  • Resubmit argument file (would be): {resubmit_fpath}")
+                print("    [Contents:]")
+                for pid in sorted(failed_set, key=int):
+                    idx = int(pid)
+                    if 0 <= idx < len(args_lines):
+                        print(f"      [proc {pid}] {args_lines[idx]}")
+                    else:
+                        print(f"      [WARN] proc_id {pid} 인덱스가 범위를 벗어났습니다.")
+                print()
+        else:
+            print("  [INFO] 실패한 잡이 없습니다. 재제출 불필요.\n")
+
+        # 6) 원본 Condor JDL 파일 위치 출력
+        jdl_name = f"{sample}_condor.sub"
+        jdl_path = os.path.join(CONDOR_FILES_PATH, jdl_name)
+        print(f"  • Original Condor JDL (for reference): {jdl_path}\n")
+
+    print("====== End of Inspection & Validation ======\n")
+
+
+def main():
+    if not os.path.isdir(CONDOR_FILES_PATH):
+        print(f"[FATAL] Condor files path not found: {CONDOR_FILES_PATH}")
+        sys.exit(1)
+
+    print(f"[INFO] 검사 대상 샘플: {', '.join(SAMPLES)}\n")
+
+    for sample in SAMPLES:
+        inspect_sample(sample)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,11 @@
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttWH_20250602-220256/filelist_ttWH_0.txt ttWH_0.root 0.000131699 2017 MC ttWH A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttWH_20250602-220256/filelist_ttWH_1.txt ttWH_1.root 0.000131699 2017 MC ttWH A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttWH_20250602-220256/filelist_ttWH_2.txt ttWH_2.root 0.000131699 2017 MC ttWH A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttWH_20250602-220256/filelist_ttWH_3.txt ttWH_3.root 0.000131699 2017 MC ttWH A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttWH_20250602-220256/filelist_ttWH_4.txt ttWH_4.root 0.000131699 2017 MC ttWH A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttWH_20250602-220256/filelist_ttWH_5.txt ttWH_5.root 0.000131699 2017 MC ttWH A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttWH_20250602-220256/filelist_ttWH_6.txt ttWH_6.root 0.000131699 2017 MC ttWH A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttWH_20250602-220256/filelist_ttWH_7.txt ttWH_7.root 0.000131699 2017 MC ttWH A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttWH_20250602-220256/filelist_ttWH_8.txt ttWH_8.root 0.000131699 2017 MC ttWH A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttWH_20250602-220256/filelist_ttWH_9.txt ttWH_9.root 0.000131699 2017 MC ttWH A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttWH_20250602-220256/filelist_ttWH_10.txt ttWH_10.root 0.000131699 2017 MC ttWH A

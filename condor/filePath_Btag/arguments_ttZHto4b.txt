@@ -1,0 +1,13 @@
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttZHto4b_20250602-220256/filelist_ttZHto4b_0.txt ttZHto4b_0.root 0.0000005563481144 2017 MC ttZHto4b A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttZHto4b_20250602-220256/filelist_ttZHto4b_1.txt ttZHto4b_1.root 0.0000005563481144 2017 MC ttZHto4b A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttZHto4b_20250602-220256/filelist_ttZHto4b_2.txt ttZHto4b_2.root 0.0000005563481144 2017 MC ttZHto4b A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttZHto4b_20250602-220256/filelist_ttZHto4b_3.txt ttZHto4b_3.root 0.0000005563481144 2017 MC ttZHto4b A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttZHto4b_20250602-220256/filelist_ttZHto4b_4.txt ttZHto4b_4.root 0.0000005563481144 2017 MC ttZHto4b A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttZHto4b_20250602-220256/filelist_ttZHto4b_5.txt ttZHto4b_5.root 0.0000005563481144 2017 MC ttZHto4b A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttZHto4b_20250602-220256/filelist_ttZHto4b_6.txt ttZHto4b_6.root 0.0000005563481144 2017 MC ttZHto4b A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttZHto4b_20250602-220256/filelist_ttZHto4b_7.txt ttZHto4b_7.root 0.0000005563481144 2017 MC ttZHto4b A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttZHto4b_20250602-220256/filelist_ttZHto4b_8.txt ttZHto4b_8.root 0.0000005563481144 2017 MC ttZHto4b A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttZHto4b_20250602-220256/filelist_ttZHto4b_9.txt ttZHto4b_9.root 0.0000005563481144 2017 MC ttZHto4b A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttZHto4b_20250602-220256/filelist_ttZHto4b_10.txt ttZHto4b_10.root 0.0000005563481144 2017 MC ttZHto4b A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttZHto4b_20250602-220256/filelist_ttZHto4b_11.txt ttZHto4b_11.root 0.0000005563481144 2017 MC ttZHto4b A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttZHto4b_20250602-220256/filelist_ttZHto4b_12.txt ttZHto4b_12.root 0.0000005563481144 2017 MC ttZHto4b A

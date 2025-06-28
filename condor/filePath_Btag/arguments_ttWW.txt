@@ -1,0 +1,9 @@
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttWW_20250602-220256/filelist_ttWW_0.txt ttWW_0.root 0.0004155131232 2017 MC ttWW A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttWW_20250602-220256/filelist_ttWW_1.txt ttWW_1.root 0.0004155131232 2017 MC ttWW A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttWW_20250602-220256/filelist_ttWW_2.txt ttWW_2.root 0.0004155131232 2017 MC ttWW A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttWW_20250602-220256/filelist_ttWW_3.txt ttWW_3.root 0.0004155131232 2017 MC ttWW A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttWW_20250602-220256/filelist_ttWW_4.txt ttWW_4.root 0.0004155131232 2017 MC ttWW A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttWW_20250602-220256/filelist_ttWW_5.txt ttWW_5.root 0.0004155131232 2017 MC ttWW A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttWW_20250602-220256/filelist_ttWW_6.txt ttWW_6.root 0.0004155131232 2017 MC ttWW A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttWW_20250602-220256/filelist_ttWW_7.txt ttWW_7.root 0.0004155131232 2017 MC ttWW A
+/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_ttWW_20250602-220256/filelist_ttWW_8.txt ttWW_8.root 0.0004155131232 2017 MC ttWW A

@@ -1,0 +1,16 @@
+./ttHHanalyzer_trigger filelistTest/file_ttJets_0.txt output_ttJets.root 3.441071667 2017 MC ttJets
+
+./ttHHanalyzer_bTagSF filelistTest/file_ttJets_test.txt output_ttJets.root 3.441071667 2017 MC ttJets
+
+./ttHHanalyzer_bTagSF filelistTest/file_ttJets_test.txt output_ttJets.root 1.0 2017 MC ttJets
+
+./ttHHanalyzer_bTagSF filelistTest/file_JetHT_C_test.txt output_JetHT_C.root 1.0 2017 Data JetHT C
+
+
+./ttHHanalyzer_bTagSF filelistTest/file_ttJets_eos.txt output_ttJets.root 3.44 2017 MC ttJets
+
+./ttHHanalyzer_bTagSF filelistTest/file_JetHT_C_eos.txt output_JetHT_C.root 1.0 2017 Data JetHT C
+
+no warning make
+--> 
+make 2>&1 | grep -i "error:"

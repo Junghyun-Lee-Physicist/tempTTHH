@@ -1,0 +1,142 @@
+# -----------------------------------------------------------------------------
+# Build Process Description:
+# 1. Generate ROOT dictionary source (dictionary.cc) from headers:
+#      include/tnm.h and include/linkdef.h
+# 2. Compile all library sources in src/ and the dictionary into object files.
+# 3. Link these objects with ROOT libraries to create
+#      shared library lib$(LIB_NAME)$(SHARED_LIB_EXT).
+# 4. Compile application sources at the project root
+#      and link them against ROOT and lib$(LIB_NAME).
+#
+# Usage:
+#   make                # builds everything quietly
+#   make VERBOSE=1      # prints detailed info messages
+# -----------------------------------------------------------------------------
+
+ifndef ROOTSYS
+  $(error *** Please set up ROOTSYS (e.g. source /path/to/thisroot.sh))
+endif
+
+# ----------------------
+#   Verbosity Control
+# ----------------------
+ifdef VERBOSE
+  INFO := @echo
+  $(info [Log Verbosity] : Verbose log output enabled)
+else
+  INFO := @:
+  $(info [Log Verbosity] : Verbose log output disabled)
+endif
+HIDE := @
+
+# Detect platform for runtime‐loader handling
+OS_Name := $(shell uname -s)
+
+# -----------------------------------------------------------------------------
+#  correctionlib environment setup
+# -----------------------------------------------------------------------------
+CORRECTION_CXXFLAGS := $(shell correction config --cflags)
+CORRECTION_LDFLAGS  := $(shell correction config --ldflags --rpath)
+CORRECTION_INCLUDE_DIR := $(shell echo "$(CORRECTION_CXXFLAGS)" | sed -n 's/.*-I\([^ ]*\).*/\1/p')
+CORRECTION_LIB_DIR     := $(shell echo "$(CORRECTION_LDFLAGS)"  | sed -n 's/.*-L\([^ ]*\).*/\1/p')
+
+ifeq ($(OS_Name),Darwin)
+  export DYLD_LIBRARY_PATH := $(CORRECTION_LIB_DIR):$(DYLD_LIBRARY_PATH)
+else
+  export LD_LIBRARY_PATH := $(CORRECTION_LIB_DIR):$(LD_LIBRARY_PATH)
+endif
+
+$(info == correctionlib environment ==)
+$(info   CXXFLAGS        = $(CORRECTION_CXXFLAGS))
+$(info   LDFLAGS         = $(CORRECTION_LDFLAGS))
+$(info   INCLUDE_DIR     = $(CORRECTION_INCLUDE_DIR))
+$(info   LIB_DIR         = $(CORRECTION_LIB_DIR))
+$(info   Runtime loader  = $(if $(DYLD_LIBRARY_PATH),$(DYLD_LIBRARY_PATH),$(LD_LIBRARY_PATH)))
+
+# ----------------------
+#   Configuration
+# ----------------------
+CXX            := g++
+ROOT_CFLAGS    := $(shell root-config --cflags)
+ROOT_LDFLAGS   := $(shell root-config --libs --glibs)
+
+SRC_DIR        := src
+OBJ_DIR        := tmp
+LIB_DIR        := lib
+INC_DIR        := include
+LIB_NAME       := ToolsForAnalysis
+
+INCLUDE_FLAGS  := -I. -I$(INC_DIR) -I$(SRC_DIR) $(ROOT_CFLAGS) $(CORRECTION_CXXFLAGS)
+COMPILE_FLAGS  := -c -g -O0 -Wall -fPIC -fsanitize=address -fno-omit-frame-pointer
+
+GENERAL_LINK   := $(ROOT_LDFLAGS) $(CORRECTION_LDFLAGS) -L$(LIB_DIR) 
+
+ifeq ($(OS_Name),Darwin)
+  SHARED_LINK_CMD := $(CXX) -dynamiclib
+  SHARED_LIB_EXT  := .dylib
+  LDFLAGS         := -fsanitize=address
+else
+  SHARED_LINK_CMD := $(CXX) -shared
+  SHARED_LIB_EXT  := .so
+  LDFLAGS         := -rdynamic -fsanitize=address
+endif
+
+SHARED_LIB     := $(LIB_DIR)/lib$(LIB_NAME)$(SHARED_LIB_EXT)
+
+# Embed RPATH into the application so it finds libToolsForAnalysis.so in ./lib
+APP_RPATH      := -Wl,-rpath,'$$ORIGIN/$(LIB_DIR)'
+
+# Source and target lists
+DICT_HEADER    := $(INC_DIR)/tnm.h
+DICT_LINKDEF   := $(INC_DIR)/linkdef.h
+DICT_SOURCE    := $(SRC_DIR)/dictionaryForROOT.cc
+
+APP_SOURCES    := $(wildcard *.cc)
+APPLICATIONS   := $(APP_SOURCES:.cc=)
+
+LIB_SOURCES    := $(filter-out $(DICT_SOURCE), $(wildcard $(SRC_DIR)/*.cc))
+LIB_OBJECTS    := $(patsubst $(SRC_DIR)/%.cc,$(OBJ_DIR)/%.o,$(LIB_SOURCES) $(DICT_SOURCE))
+
+all: prepare_dirs $(SHARED_LIB) $(APPLICATIONS)
+	$(INFO) "[Done] Built shared lib=$(SHARED_LIB) and apps=$(APPLICATIONS)"
+
+.PHONY: all clean prepare_dirs
+
+prepare_dirs:
+	$(HIDE) mkdir -p $(OBJ_DIR) $(LIB_DIR)
+
+# ----------------------
+#   Dictionary Generation
+# ----------------------
+$(DICT_SOURCE): $(DICT_HEADER) $(DICT_LINKDEF)
+	$(INFO) "[Dict] Generating ROOT dictionary source"
+	$(HIDE) rootcling -f $(DICT_SOURCE) \
+             -I$(INC_DIR) -I$(ROOTSYS)/include \
+             $(DICT_HEADER) $(DICT_LINKDEF)
+
+# ----------------------
+#   Library Compilation
+# ----------------------
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cc | prepare_dirs
+	$(INFO) "[Lib] Compiling $< -> $@"
+	$(HIDE) $(CXX) $(COMPILE_FLAGS) $(INCLUDE_FLAGS) $< -o $@
+
+$(SHARED_LIB): $(LIB_OBJECTS) | prepare_dirs
+	$(INFO) "[Lib] Linking shared library $@"
+	$(HIDE) $(SHARED_LINK_CMD) -fPIC $(LIB_OBJECTS) \
+           $(LDFLAGS) $(GENERAL_LINK) -o $@
+
+# ----------------------
+#   Application Build
+# ----------------------
+$(OBJ_DIR)/%.o: %.cc | prepare_dirs
+	$(INFO) "[App] Compiling application $< -> $@"
+	$(HIDE) $(CXX) $(COMPILE_FLAGS) $(INCLUDE_FLAGS) $< -o $@
+
+$(APPLICATIONS): % : $(OBJ_DIR)/%.o $(SHARED_LIB)
+	$(INFO) "[App] Linking application $@"
+	$(HIDE) $(CXX) -fPIC $(OBJ_DIR)/$@.o -o $@ \
+                  $(LDFLAGS) $(GENERAL_LINK) -l$(LIB_NAME) $(APP_RPATH)
+
+clean:
+	$(HIDE) rm -rf $(OBJ_DIR) $(LIB_DIR) $(SRC_DIR)/dictionaryForROOT.cc $(APPLICATIONS)

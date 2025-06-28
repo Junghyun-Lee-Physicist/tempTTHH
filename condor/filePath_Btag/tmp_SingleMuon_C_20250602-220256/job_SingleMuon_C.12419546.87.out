@@ -1,0 +1,18 @@
+
+
+START---------------
+WORKDIR  /pool/condor/dir_1512817
+WORKDIR  /afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8
+TNM_PATH=/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8
+
+--------- Check arugments ---------------------------------------
+
+  - [ output file name ] --> root://eosuser.cern.ch//eos/user/j/junghyun/ttHH/Btag_el9/SingleMuon_C/SingleMuon_C_87.root
+  - [ runYear ] --> 2017
+  - [ isData ] --> Data
+  - [ sampleName ] --> SingleMuon_C
+  - [ eraName ] --> C
+
+--------- Check arugments ---------------------------------------
+
+** Error ** itreestream - unable to open file root://xrootd-cms.infn.it///store/data/Run2017C/SingleMuon/NANOAOD/UL2017_MiniAODv2_NanoAODv9-v1/70000/C9AB9AD1-8F70-BF45-B0EF-9E95163A50D2.root

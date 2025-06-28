@@ -1,0 +1,225 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+CondorInspectValidateResubmit.py
+
+Condor 환경에서 failed job을 모아 확인하고, 옵션에 따라 재제출까지 수행합니다.
+
+Usage:
+    ./CondorInspectValidateResubmit.py [--resubmit]
+
+Options:
+    --resubmit   : 실제로 실패 잡을 재제출합니다. 지정하지 않으면 dry-run 모드입니다.
+
+아래 변수 `RESUB_LOG_BASE` 와 `RESUB_EOS_OUTPUT_BASE`를 수정하여,
+
+  - Condor 로그/스크립트 복사 위치: `RESUB_LOG_BASE/<sample>/<timestamp>/`
+  - EOS 출력 경로             : `RESUB_EOS_OUTPUT_BASE/<sample>/<timestamp>/`
+
+두 경로를 절대 경로로 지정할 수 있습니다.
+"""
+import os
+import sys
+import glob
+import subprocess
+import argparse
+import logging
+
+# ─── 설정 및 파싱 ─────────────────────────────────────────────────────
+parser = argparse.ArgumentParser(description="Inspect and optionally resubmit failed Condor jobs.")
+parser.add_argument('--resubmit', action='store_true', help='Actually resubmit failed jobs')
+args = parser.parse_args()
+RESUBMIT_MODE = args.resubmit
+
+# 재제출 시 Condor 로그/파일을 복사할 절대 경로 (로그용)
+RESUB_LOG_BASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'condor', 'filePath_Btag', 'ResubmittedJobV2')
+# EOS 기본 출력 경로 (원본 분석 시 사용)
+EOS_BASE_POSIX = "/eos/user/j/junghyun/ttHH/Btag_el9"
+# 재제출 시 EOS에 출력될 절대 경로 (출력용)
+RESUB_EOS_OUTPUT_BASE = f"{EOS_BASE_POSIX}/ResubOutput"  # <-- 원하는 절대 경로로 수정
+
+# Condor 파일 최상위 경로
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+CONDOR_FILES_PATH = os.path.join(SCRIPT_DIR, "condor", "filePath_Btag")
+
+# 재제출 검증 키워드
+ERROR_KEYWORDS = ["ERROR"]
+
+# 검사할 샘플 이름 목록
+SAMPLES = [
+    "QCD_HT1000to1500", "QCD_HT1500to2000", "QCD_HT2000toInf",
+    "QCD_HT200to300", "QCD_HT300to500", "QCD_HT500to700", "QCD_HT700to1000",
+    "SingleMuon_B", "SingleMuon_C", "SingleMuon_D", "SingleMuon_E", "SingleMuon_F",
+    "BTagCSV_B", "BTagCSV_C", "BTagCSV_D", "BTagCSV_E", "BTagCSV_F",
+    "JetHT_B", "JetHT_C", "JetHT_D", "JetHT_E", "JetHT_F",
+    "tt4b", "ttbb", "ttHH", "ttHtobb", "ttJets", "ttTohadronic",
+    "tttt", "tttW", "ttWH", "ttWW", "ttWZ", "ttZHto4b", "ttZtobb", "ttZZto4b",
+]
+
+# 로깅 설정
+logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
+
+# ─── 설정 확인 함수 ───────────────────────────────────────────────────
+def confirm_setup():
+    print("========== Setup Confirmation ==========")
+    print(f"RESUBMIT_MODE: {'ON' if RESUBMIT_MODE else 'OFF'}")
+    print(f"RESUB_LOG_BASE: {RESUB_LOG_BASE}")
+    print(f"RESUB_EOS_OUTPUT_BASE: {RESUB_EOS_OUTPUT_BASE}")
+    print(f"EOS_BASE_POSIX: {EOS_BASE_POSIX}")
+    print(f"CONDOR_FILES_PATH: {CONDOR_FILES_PATH}")
+    print("Samples:", ", ".join(SAMPLES))
+    choice = input("이 설정으로 진행하려면 'y'를 입력하세요: ")
+    if choice.lower() != 'y':
+        print("설정 확인되지 않음. 프로그램을 종료합니다.")
+        sys.exit(0)
+    print("설정 확인됨. 작업을 시작합니다.")
+    print("========================================")
+
+# ─── 유틸리티 함수 ─────────────────────────────────────────────────────
+
+def find_tmp_dirs_for_sample(sample):
+    pattern = os.path.join(CONDOR_FILES_PATH, f"tmp_{sample}_*")
+    return [d for d in glob.glob(pattern) if os.path.isdir(d)]
+
+
+def parse_sample_timestamp(tmp_dir_basename):
+    if not tmp_dir_basename.startswith("tmp_"):
+        return None, None
+    base = tmp_dir_basename[len("tmp_"):]
+    if "_" not in base:
+        return None, None
+    sample, timestamp = base.split("_", 1)
+    return sample, timestamp
+
+
+def list_error_files(tmp_folder, sample):
+    pattern = os.path.join(tmp_folder, f"error_{sample}.*.err")
+    return sorted(glob.glob(pattern))
+
+
+def read_error_content(err_path):
+    try:
+        with open(err_path, "r") as f:
+            return f.read()
+    except Exception:
+        return ""
+
+
+def eos_file_exists(posix_path):
+    cmd = ["eos", "root://eosuser.cern.ch", "ls", posix_path]
+    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    return result.returncode == 0
+
+# ─── Resubmit 처리 ─────────────────────────────────────────────────────
+
+def prepare_and_submit_resubmit(sample, timestamp, failed_set):
+    """Failed proc에 대해 재제출용 파일 생성 및 Condor 제출"""
+    condor_resub_dir = os.path.join(RESUB_LOG_BASE, sample, timestamp)
+    os.makedirs(condor_resub_dir, exist_ok=True)
+
+    eos_resub_dir = os.path.join(RESUB_EOS_OUTPUT_BASE, sample, timestamp)
+    subprocess.run(['eos', 'root://eosuser.cern.ch', 'mkdir', '-p', eos_resub_dir])
+
+    orig_args_path = os.path.join(CONDOR_FILES_PATH, f"arguments_{sample}.txt")
+    orig_args = []
+    if os.path.isfile(orig_args_path):
+        with open(orig_args_path, 'r') as f:
+            orig_args = [ln.strip() for ln in f if ln.strip()]
+
+    resubmit_args = []
+    for pid in sorted(failed_set, key=int):
+        idx = int(pid)
+        if 0 <= idx < len(orig_args):
+            fields = orig_args[idx].split()
+            out_name = os.path.basename(fields[1])
+            fields[1] = f"{eos_resub_dir}/{out_name}"
+            resubmit_args.append(" ".join(fields))
+        else:
+            logging.warning(f"proc_id {pid} 인덱스가 범위를 벗어났습니다.")
+    args_file = os.path.join(condor_resub_dir, f"arguments_failed_{sample}_{timestamp}.txt")
+    with open(args_file, 'w') as fout:
+        fout.write("\n".join(resubmit_args) + "\n")
+    logging.info(f"Resubmit arguments written: {args_file}")
+
+    orig_jdl = os.path.join(CONDOR_FILES_PATH, f"{sample}_condor.sub")
+    if not os.path.isfile(orig_jdl):
+        logging.error(f"Original JDL not found: {orig_jdl}")
+        return
+    new_jdl = os.path.join(condor_resub_dir, f"{sample}_resubmit_{timestamp}.sub")
+    with open(orig_jdl, 'r') as fin, open(new_jdl, 'w') as fout:
+        for line in fin:
+            if line.strip().startswith('queue args from'):
+                fout.write(f"queue args from {args_file}\n")
+            else:
+                fout.write(line)
+    logging.info(f"Resubmit JDL written: {new_jdl}")
+
+    if RESUBMIT_MODE:
+        ret = subprocess.run(['condor_submit', new_jdl])
+        if ret.returncode == 0:
+            logging.info(f"Submitted resubmission for {sample} at {timestamp}")
+        else:
+            logging.error(f"condor_submit failed for {new_jdl}")
+    else:
+        logging.info("Dry-run mode: use --resubmit to actually submit jobs.")
+
+# ─── 검사 및 재제출 로직 ─────────────────────────────────────────────────
+
+def inspect_sample(sample):
+    tmp_dirs = find_tmp_dirs_for_sample(sample)
+    if not tmp_dirs:
+        logging.warning(f"샘플 '{sample}' 관련 tmp_ 디렉터리가 없습니다.")
+        return
+    for tmp in tmp_dirs:
+        basename = os.path.basename(tmp)
+        _, timestamp = parse_sample_timestamp(basename)
+        logging.info(f"Inspecting sample={sample}, timestamp={timestamp}")
+
+        err_files = list_error_files(tmp, sample)
+        all_ids, failed_err = [], []
+        for ef in err_files:
+            parts = os.path.basename(ef).split('.')
+            if len(parts) < 4:
+                continue
+            pid = parts[-2]
+            all_ids.append(pid)
+            content = read_error_content(ef)
+            if any(kw in content for kw in ERROR_KEYWORDS):
+                failed_err.append(pid)
+        all_ids = sorted(set(all_ids), key=int)
+        failed_err = sorted(set(failed_err), key=int)
+        logging.info(f"Detected proc IDs: {all_ids or ['None']}")
+        logging.info(f"Failed by error log: {failed_err or ['None']}")
+
+        missing = []
+        for pid in all_ids:
+            eos_path = f"{EOS_BASE_POSIX}/{sample}/{sample}_{pid}.root"
+            if not eos_file_exists(eos_path):
+                missing.append(pid)
+        logging.info(f"Missing on EOS: {missing or ['None']}")
+
+        failed = set(failed_err) | set(missing)
+        succeeded = set(all_ids) - failed
+        logging.info(f"Final failed IDs: {sorted(failed) or ['None']}")
+        logging.info(f"Final succeeded IDs: {sorted(succeeded) or ['None']}")
+
+        if failed:
+            prepare_and_submit_resubmit(sample, timestamp, failed)
+        else:
+            logging.info("Failed jobs 없음. 재제출 불필요.")
+
+# ─── 메인 ─────────────────────────────────────────────────────────────
+
+def main():
+    confirm_setup()
+    if not os.path.isdir(CONDOR_FILES_PATH):
+        logging.error(f"Condor files path not found: {CONDOR_FILES_PATH}")
+        sys.exit(1)
+    logging.info(f"Starting inspection for samples: {', '.join(SAMPLES)}")
+    for sample in SAMPLES:
+        inspect_sample(sample)
+    logging.info("====== Inspection & Resubmit Complete ======")
+
+if __name__ == '__main__':
+    main()
+
