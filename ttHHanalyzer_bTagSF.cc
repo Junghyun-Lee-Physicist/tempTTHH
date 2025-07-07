@@ -1323,7 +1323,12 @@ void ttHHanalyzer::writeHistos(){
 }
 void ttHHanalyzer::fillTree(event * thisEvent){
 
-////////////////////////////////////////////////////////////////////////////////////////
+    jetPt.clear();
+    jetEta.clear();
+    bTagScore.clear();
+    hadFlavs.clear();
+    partonFlavs.clear();
+
     // For Trigger Path
     passTrigger_HLT_IsoMu27 = _ev->HLT_IsoMu27; // Reference Muon Trigger
     passTrigger_HLT_PFHT1050 = _ev->HLT_PFHT1050;
@@ -1343,26 +1348,20 @@ void ttHHanalyzer::fillTree(event * thisEvent){
     nbJets = thisEvent->getnbJet();
     HT = thisEvent->getSumSelJetScalarpT();
 
+
     // Fill the jet information [ It will fill the nJets && maximum 30th jets ]
-    for (int i = 0; i < nJets && i < 30; ++i) {
-        jetPt[i] = thisEvent->getSelJets()->at(i)->getp4()->Pt();
-        jetEta[i] = thisEvent->getSelJets()->at(i)->getp4()->Eta();
-        bTagScore[i] = thisEvent->getSelJets()->at(i)->bTagCSV;
-        hadFlavs[i] = thisEvent->getSelJets()->at(i)->hadFlav;
-        partonFlavs[i] = thisEvent->getSelJets()->at(i)->partonFlav;
+    for (int i = 0; i < nJets; ++i) {
+
+        jetPt.push_back(thisEvent->getSelJets()->at(i)->getp4()->Pt());
+        jetEta.push_back(thisEvent->getSelJets()->at(i)->getp4()->Eta());
+        bTagScore.push_back(thisEvent->getSelJets()->at(i)->bTagCSV);
+        hadFlavs.push_back(thisEvent->getSelJets()->at(i)->hadFlav);
+        partonFlavs.push_back(thisEvent->getSelJets()->at(i)->partonFlav);
         // In the Event Buffer, you can find the struct jet_s which accesses to defined branch variables in NanoAODv9
         // And then in the .hh files, you also can check variables like  bTagCSV or hadFlav as objectJet class's  member variable
         // Then you can get the info at NanoAODv9 from jet_s structure and put them into the .hh's objectJet class member variable in the iteration of jets
         // Finally here, you can store variables in the objectJet class's member variables into tree
-
     } 
-    for (int i = nJets; i < 30; ++i) {
-        jetPt[i] = -999;
-        jetEta[i] = -999;
-        bTagScore[i] = -999;
-        hadFlavs[i] = -999;
-        partonFlavs[i] = -999;
-    }
 
     eventNumber = _ev->event;
     runNumber = _ev->run;

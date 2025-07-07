@@ -1391,13 +1391,14 @@ class ttHHanalyzer {
     int nJets;                                                                          
     int nbJets;                                                                         
     float HT;                                                                           
-    float jetPt[30];                                                                    
-    float jetEta[30];                                                                   
-    float bTagScore[30];     
+
+    std::vector<float> jetPt;
+    std::vector<float> jetEta;
+    std::vector<float> bTagScore;
 
     // Variables for B tag correction
-    int hadFlavs[30];
-    int partonFlavs[30];
+    std::vector<int> hadFlavs;
+    std::vector<int> partonFlavs;
 
     unsigned int eventNumber;
     unsigned int runNumber;
@@ -1660,13 +1661,13 @@ class ttHHanalyzer {
         _inputTree->Branch("nJets", &nJets, "nJets/I");
         //_inputTree->Branch("nbJets", &nbJets, "nbJets/I");
         _inputTree->Branch("HT", &HT, "HT/F");
-        _inputTree->Branch("jetPt", jetPt, "jetPt[nJets]/F");
-        _inputTree->Branch("jetEta", jetEta, "jetEta[nJets]/F");
-        _inputTree->Branch("bTagScore", bTagScore, "bTagScore[nJets]/F");
+        _inputTree->Branch("jetPt", &jetPt);
+        _inputTree->Branch("jetEta", &jetEta);
+        _inputTree->Branch("bTagScore", &bTagScore);
 
         // Branch for B tagging correction
-        _inputTree->Branch("hadFlavs", hadFlavs, "hadFlavs[nJets]/I");
-        //_inputTree->Branch("partonFlavs", partonFlavs, "partonFlavs[nJets]/I");
+        _inputTree->Branch("hadFlavs", &hadFlavs);
+	_inputTree->Branch("partonFlavs", &partonFlavs);
 
 	_inputTree->Branch("eventNumber", &eventNumber, "eventNumber/i");
         _inputTree->Branch("runNumber", &runNumber, "runNumber/i");
