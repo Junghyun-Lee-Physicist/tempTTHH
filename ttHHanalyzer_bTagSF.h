@@ -64,9 +64,9 @@ std::map<std::string, float> cut {
     , {"jetID", 6}   // pass tight and tightLepVeto ID
     , {"jetPUid", 4}   // pass loose cut fail tight and medium
     , {"bTagDisc", 0.80}
-    , {"trigger", 1} // trigger
-    , {"filter",  1} // noise filter
-    , {"pv", 0}}; // primary vertex  
+    , {"trigger", 1.0} // trigger
+    , {"filter",  1.0} // noise filter
+    , {"pv", 1}}; // primary vertex  
 
 class objectPhysics {
  public:
@@ -952,8 +952,8 @@ class ttHHanalyzer {
     ////tthHypothesisCombinatorics * HypoComb; 
 
 //    fifo_map<std::string,int> cutflow{{"noCut", 0}, {"MuonTrigger", 0}, {"njets>=6", 0}, {"nbjets>=3", 0}, {"6thJetsPT>40", 0}, {"nlepton==0", 0}, {"HT>500", 0}, {"nljets>=2", 0}, {"30<ljetsM<250", 0}, {"HadTrigger", 0}};
-    fifo_map<std::string,int> cutflow{{"noCut", 0}, {"noiseFilter", 0}, {"njets>=6", 0}, {"6thJetsPT>40", 0}, {"HT>500", 0}};
-    fifo_map<std::string,int> cutflow_w{{"noCut", 0}, {"noiseFilter", 0}, {"njets>=6", 0}, {"6thJetsPT>40", 0}, {"HT>500", 0}};
+    fifo_map<std::string,int> cutflow{{"noCut", 0}, {"noiseFilter", 0}, {"pv>=1", 0}, {"njets>=6", 0}, {"6thJetsPT>40", 0}, {"HT>500", 0}};
+    fifo_map<std::string,int> cutflow_w{{"noCut", 0}, {"noiseFilter", 0}, {"pv>=1", 0}, {"njets>=6", 0}, {"6thJetsPT>40", 0}, {"HT>500", 0}};
     //fifo_map<std::string,int> cutflow_w{{"noCut", 0}, {"MuonTrigger", 0}, {"nJets>=6", 0}, {"nbJets>=4", 0}, {"6thJetsPT>40", 0}, {"nlepton==0", 0}, {"HT>500", 0}, {"nljets>=2", 0}, {"30<ljetsM<250", 0}, {"HadTrigger", 0}};
     //    fifo_map<std::string,int> cutflow{{"noCut", 0}, {"njets>3", 0}, {"nbjets>2", 0}, {"nlepton==2", 0}, {"nOpositeChargedLep", 0}, {"nMassCut", 0}, {"nTotal", 0}};
 
@@ -965,6 +965,7 @@ class ttHHanalyzer {
     float _SampleWeight;
     float _PUWeight;
     float _L1PrefiringWeight;
+    float _genWeight;
     bool  _failGoldenJson;
     bool  _passMETFilters;
     std::string _DataOrMC, _runYear, _sampleName, _era; 
@@ -1406,6 +1407,7 @@ class ttHHanalyzer {
     float SampleWeight;
     float PUWeight;
     float L1PrefiringWeight;
+    float genWeight;
     bool  failGoldenJson;
     bool  passMETFilters;
 
@@ -1675,6 +1677,7 @@ class ttHHanalyzer {
 	_inputTree->Branch("SampleWeight", &SampleWeight, "SampleWeight/F");
 	_inputTree->Branch("PUWeight", &PUWeight, "PUWeight/F");
 	_inputTree->Branch("L1PrefiringWeight", &L1PrefiringWeight, "L1PrefiringWeight/F");
+	_inputTree->Branch("genWeight", &genWeight, "genWeight/F");
 	_inputTree->Branch("failGoldenJson", &failGoldenJson, "failGoldenJson/O");
 	_inputTree->Branch("passMETFilters", &passMETFilters, "passMETFilters/O");
 

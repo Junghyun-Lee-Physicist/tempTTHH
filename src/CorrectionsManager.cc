@@ -14,8 +14,10 @@ CorrectionsManager::CorrectionsManager(const std::string& runYear,
   , dataEra_(dataEra)
   , isData_(isData)
 {
-    jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration";
-    goldenJsonPath = "/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/GoldenJson";
+////    jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration";
+////    goldenJsonPath = "/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/GoldenJson";
+    jsonPath = "/Users/jhlee/correctionLib/corrections/jsonpog-integration";
+    goldenJsonPath = "/Users/jhlee/tempTTHH/GoldenJson";
     std::cout<<"[CorrectionsManager] json library path : "<<jsonPath<<std::endl;
 
     loadJME_();          // always load MC JEC/JER; Data only if isData_
@@ -135,11 +137,18 @@ void CorrectionsManager::loadGoldenJSON_() {
     if (!isData_) return;
 
     // build path
-    std::string suffix =
-          (runYear_ == "2017_UL")          ? "UL2017_Collisions17"
-        : (runYear_ == "2018_UL")          ? "UL2018_Collisions18"
-        : (runYear_ == "2016PreVFP_UL")    ? "UL2016preVFP_Collisions16"
-        : /*runYear_=="2016PostVFP_UL"*/     "UL2016postVFP_Collisions16";
+    std::map<std::string, std::string> suffixMap = {
+        {"2017_UL",        "UL2017_Collisions17"},
+        {"2018_UL",        "UL2018_Collisions18"},
+        {"2016PreVFP_UL",  "UL2016preVFP_Collisions16"},
+        {"2016PostVFP_UL", "UL2016postVFP_Collisions16"}
+    };
+    auto it = suffixMap.find(runYear_);
+    if (it == suffixMap.end()) {
+        std::cerr << "[loadGoldenJSON] Unknown runYear_: " << runYear_ << std::endl;
+        return;
+    }
+    std::string suffix = it->second;
     std::string txt = goldenJsonPath + "/"
                     + runYear_ + "/Cert_294927-306462_13TeV_"
                     + suffix + "_GoldenJSON.txt";

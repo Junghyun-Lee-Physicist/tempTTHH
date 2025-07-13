@@ -220,34 +220,34 @@ void ttHHanalyzer::createObjects(event * thisEvent, sysName sysType, bool up){
     std::vector<eventBuffer::Jet_s> jet = _ev->Jet;
     std::vector<eventBuffer::Muon_s> muonT = _ev->Muon;
     std::vector<eventBuffer::Electron_s> ele = _ev->Electron;
-    std::vector<eventBuffer::FatJet_s> boostedJet = _ev->FatJet;
+////    std::vector<eventBuffer::FatJet_s> boostedJet = _ev->FatJet;
     objectGenPart * currentGenPart; 
     objectBoostedJet * currentBoostedJet;
     objectJet * currentJet;
     objectLep * currentMuon;
     objectLep * currentEle;
     int nVetoMuons = 0, nVetoEle = 0;
-    objectMET * MET = new objectMET(_ev->PuppiMET_pt, 0, _ev->PuppiMET_phi, 0);
+////    objectMET * MET = new objectMET(_ev->PuppiMET_pt, 0, _ev->PuppiMET_phi, 0);
     float e = 1., es  = 1., pe = 1., pes = 1.;
     float me = 1., mes = 1., pme = 1.,  pmes = 1.;   
-    thisEvent->setMET(MET);
+////    thisEvent->setMET(MET);
 
 
-    for(int i=0; i < boostedJet.size(); i++){
-       	currentBoostedJet = new objectBoostedJet(boostedJet[i].pt, boostedJet[i].eta, boostedJet[i].phi, boostedJet[i].mass);
-	currentBoostedJet->softDropMass = boostedJet[i].msoftdrop;
-	
-	if(currentBoostedJet->getp4()->Pt() > cut["boostedJetPt"] && fabs(currentBoostedJet->getp4()->Eta()) < fabs(cut["boostedJetEta"])){
-	    //	    if((boostedJet[i].jetId & 4) == true){  	     
-	    thisEvent->selectBoostedJet(currentBoostedJet);	
-	    if(currentBoostedJet->getp4()->Pt() > cut["hadHiggsPt"]){
-		if(boostedJet[i].particleNet_HbbvsQCD > cut["bTagDisc"]){
-		    thisEvent->selectHadronicHiggs(currentBoostedJet);
-		}
-		//	}
-	    }
-	}
-    }
+////    for(int i=0; i < boostedJet.size(); i++){
+////       	currentBoostedJet = new objectBoostedJet(boostedJet[i].pt, boostedJet[i].eta, boostedJet[i].phi, boostedJet[i].mass);
+////	currentBoostedJet->softDropMass = boostedJet[i].msoftdrop;
+////	
+////	if(currentBoostedJet->getp4()->Pt() > cut["boostedJetPt"] && fabs(currentBoostedJet->getp4()->Eta()) < fabs(cut["boostedJetEta"])){
+////	    //	    if((boostedJet[i].jetId & 4) == true){  	     
+////	    thisEvent->selectBoostedJet(currentBoostedJet);	
+////	    if(currentBoostedJet->getp4()->Pt() > cut["hadHiggsPt"]){
+////		if(boostedJet[i].particleNet_HbbvsQCD > cut["bTagDisc"]){
+////		    thisEvent->selectHadronicHiggs(currentBoostedJet);
+////		}
+////		//	}
+////	    }
+////	}
+////    }
     
 
     bool thereIsALeadLepton = false;
@@ -305,6 +305,7 @@ void ttHHanalyzer::createObjects(event * thisEvent, sysName sysType, bool up){
 
     float dR = 0., deltaEta = 0., deltaPhi = 0.;
     for (int i = 0; i < (int)jet.size(); ++i) {
+
         const auto& jetRaw = jet[i];
     
         // 1) build the ORIGINAL jet (nanoAOD JEC already applied)
@@ -319,7 +320,24 @@ void ttHHanalyzer::createObjects(event * thisEvent, sysName sysType, bool up){
         origJet->jetPUid    = jetRaw.puId;
         origJet->hadFlav    = jetRaw.hadronFlavour;
         origJet->partonFlav = jetRaw.partonFlavour;
-    
+ 
+
+
+
+        if(fabs(origJet->getp4()->M() - jetRaw.mass) > 0.001) {
+	    std::cout<< "orig = "<<origJet->getp4()->M()<<", "<<"jetRaw = "<<jetRaw.mass<<std::endl;
+            std::cout<< "origJet->getpt()->M() and jetRaw.mass are diff"<<std::endl;
+        }
+        if(fabs(origJet->getp4()->Pt() - jetRaw.pt) > 0.0001) {
+
+	    std::cout<< "orig = "<<origJet->getp4()->Pt()<<", "<<"jetRaw = "<<jetRaw.pt<<std::endl;
+            std::cout<< "origJet->getpt()->Pt() and jetRaw.pt are diff"<<std::endl;
+        }
+
+        if( !(jetRaw.pt > cut["jetPt"] && fabs(jetRaw.eta) < cut["jetEta"] && jetRaw.jetId >= cut["jetID"]) ) continue;
+        if( jetRaw.pt < 50.0 && jetRaw.puId < cut["jetPUid"] ) continue;
+
+
         // === A) Recover RAW pT / mass ===
         float ntuplePt  = origJet->getp4()->Pt();      // pt_nom
         float rawFactor = jetRaw.rawFactor;            // nanoAOD‐provideds
@@ -329,6 +347,7 @@ void ttHHanalyzer::createObjects(event * thisEvent, sysName sysType, bool up){
 	////std::cout<<"!!!!! diff = "<<rawPt - oldraw<<std::endl; //이런 로직이면 차이 0
         ////float rawMass   = origJet->getp4()->M() * rawFactor;
         float rawMass   = origJet->getp4()->M() * (1.0 - rawFactor);
+
 
         // store for validation (make sure objectJet has these members!)
         origJet->origPt   = ntuplePt;
@@ -499,10 +518,18 @@ bool ttHHanalyzer::selectObjects(event *thisEvent){
     hCutFlow->Fill("noiseFilter",1);
     hCutFlow_w->Fill("noiseFilter",_weight);
 
-    ////if(cut["pv"] < 0 && thisEvent->getPVvalue() == false){
-    ////    return false;
-    ////}
-	
+
+///    if(cut["pv"] < 0 && thisEvent->getPVvalue() == false){
+///        return false;
+///    }
+    if(cut["pv"] > 0 && thisEvent->getPVvalue() == false){
+        return false;
+    }
+    cutflow["pv>=1"]+=1;
+    hCutFlow->Fill("pv>=1",1);
+    hCutFlow_w->Fill("pv>=1",_weight);	
+
+
     if(!(thisEvent->getnSelJet() >= cut["nJets"] )){
 	return false;
     }
@@ -852,7 +879,7 @@ void ttHHanalyzer::process(event* thisEvent, sysName sysType, bool up){
                 std::cout << "[GoldenJSON] Skipping event: run=" 
                           << run << " lumi=" << lumi << std::endl;
             }
-            //return;
+            return;
 	    _failGoldenJson = true;
         }
         if (debugCorrections) {
@@ -884,13 +911,29 @@ void ttHHanalyzer::process(event* thisEvent, sysName sysType, bool up){
 	}
     }
 
-    // 4) Build physics objects in thisEvent from the raw buffer
+
+    // 4) gen weight
+    _genWeight = 1.0;
+    if (_DataOrMC != "Data") {
+	float genWgt = _ev->genWeight;
+	_genWeight *= genWgt;
+	if (debugCorrections) {
+            std::cout << "[genWeight] weight=" << _genWeight <<std::endl;
+        }
+    }
+
+    // 5) Build physics objects in thisEvent from the raw buffer
     createObjects(thisEvent, sysType, up);
 
-////    if(!selectObjects(thisEvent))  return;
-    selectObjects(thisEvent);
+    if(!selectObjects(thisEvent))  return;
+////    selectObjects(thisEvent);
     _passMETFilters = false;
     _passMETFilters = thisEvent->getMETFilter();
+
+    if(_passMETFilters != true){
+        std::cout<<"ERROR : filter is diff!!"<<std::endl;
+        exit(555);
+    }
 
     bool metFilters = _ev->Flag_goodVertices &&
                          _ev->Flag_globalSuperTightHalo2016Filter &&
@@ -1369,6 +1412,7 @@ void ttHHanalyzer::fillTree(event * thisEvent){
     SampleWeight = _SampleWeight;
     PUWeight = _PUWeight;
     L1PrefiringWeight = _L1PrefiringWeight;
+    genWeight = _genWeight;
     failGoldenJson = _failGoldenJson;
     passMETFilters = _passMETFilters;
 
