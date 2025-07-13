@@ -1,1 +1,0 @@
-root://xrootd-cms.infn.it///store/data/Run2017C/SingleMuon/NANOAOD/UL2017_MiniAODv2_NanoAODv9-v1/120000/B2111DB7-C4AD-E745-8EEE-C03FC8FC3B98.root

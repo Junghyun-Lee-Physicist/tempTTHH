@@ -1,5 +1,0 @@
-/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_tttW_20250602-220256/filelist_tttW_0.txt tttW_0.root 0.00008453854444 2017 MC tttW A
-/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_tttW_20250602-220256/filelist_tttW_1.txt tttW_1.root 0.00008453854444 2017 MC tttW A
-/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_tttW_20250602-220256/filelist_tttW_2.txt tttW_2.root 0.00008453854444 2017 MC tttW A
-/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_tttW_20250602-220256/filelist_tttW_3.txt tttW_3.root 0.00008453854444 2017 MC tttW A
-/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_tttW_20250602-220256/filelist_tttW_4.txt tttW_4.root 0.00008453854444 2017 MC tttW A

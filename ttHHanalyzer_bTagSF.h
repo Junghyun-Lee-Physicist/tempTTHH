@@ -145,6 +145,8 @@ class objectJet:public objectPhysics {
     float  ptJER        = 0.;   // after applying JER
     float  genMatchedPt = -1.;  // matched gen-jet pT, or -1
 
+    bool   passPuId = false;
+
 };
 
 class objectMET:public objectPhysics {
@@ -1396,6 +1398,7 @@ class ttHHanalyzer {
     std::vector<float> jetPt;
     std::vector<float> jetEta;
     std::vector<float> bTagScore;
+    std::vector<int> jetPUids;
 
     // Variables for B tag correction
     std::vector<int> hadFlavs;
@@ -1666,6 +1669,7 @@ class ttHHanalyzer {
         _inputTree->Branch("jetPt", &jetPt);
         _inputTree->Branch("jetEta", &jetEta);
         _inputTree->Branch("bTagScore", &bTagScore);
+        _inputTree->Branch("jetPUids", &jetPUids);
 
         // Branch for B tagging correction
         _inputTree->Branch("hadFlavs", &hadFlavs);

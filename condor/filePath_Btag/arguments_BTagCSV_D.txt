@@ -1,8 +1,0 @@
-/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_BTagCSV_D_20250602-220256/filelist_BTagCSV_D_0.txt BTagCSV_D_0.root 1.0 2017 Data BTagCSV_D D
-/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_BTagCSV_D_20250602-220256/filelist_BTagCSV_D_1.txt BTagCSV_D_1.root 1.0 2017 Data BTagCSV_D D
-/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_BTagCSV_D_20250602-220256/filelist_BTagCSV_D_2.txt BTagCSV_D_2.root 1.0 2017 Data BTagCSV_D D
-/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_BTagCSV_D_20250602-220256/filelist_BTagCSV_D_3.txt BTagCSV_D_3.root 1.0 2017 Data BTagCSV_D D
-/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_BTagCSV_D_20250602-220256/filelist_BTagCSV_D_4.txt BTagCSV_D_4.root 1.0 2017 Data BTagCSV_D D
-/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_BTagCSV_D_20250602-220256/filelist_BTagCSV_D_5.txt BTagCSV_D_5.root 1.0 2017 Data BTagCSV_D D
-/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_BTagCSV_D_20250602-220256/filelist_BTagCSV_D_6.txt BTagCSV_D_6.root 1.0 2017 Data BTagCSV_D D
-/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_BTagCSV_D_20250602-220256/filelist_BTagCSV_D_7.txt BTagCSV_D_7.root 1.0 2017 Data BTagCSV_D D

@@ -1,8 +1,0 @@
-/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_JetHT_F_20250602-220256/filelist_JetHT_F_4.txt JetHT_F_4.root 1.0 2017 Data JetHT_F F
-/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_JetHT_F_20250602-220256/filelist_JetHT_F_20.txt JetHT_F_20.root 1.0 2017 Data JetHT_F F
-/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_JetHT_F_20250602-220256/filelist_JetHT_F_35.txt JetHT_F_35.root 1.0 2017 Data JetHT_F F
-/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_JetHT_F_20250602-220256/filelist_JetHT_F_40.txt JetHT_F_40.root 1.0 2017 Data JetHT_F F
-/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_JetHT_F_20250602-220256/filelist_JetHT_F_41.txt JetHT_F_41.root 1.0 2017 Data JetHT_F F
-/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_JetHT_F_20250602-220256/filelist_JetHT_F_52.txt JetHT_F_52.root 1.0 2017 Data JetHT_F F
-/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_JetHT_F_20250602-220256/filelist_JetHT_F_53.txt JetHT_F_53.root 1.0 2017 Data JetHT_F F
-/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/condor/filePath_Btag/tmp_JetHT_F_20250602-220256/filelist_JetHT_F_63.txt JetHT_F_63.root 1.0 2017 Data JetHT_F F

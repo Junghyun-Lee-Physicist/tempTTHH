@@ -304,6 +304,7 @@ void ttHHanalyzer::createObjects(event * thisEvent, sysName sysType, bool up){
 
 
     float dR = 0., deltaEta = 0., deltaPhi = 0.;
+    bool passPuId = false;
     for (int i = 0; i < (int)jet.size(); ++i) {
 
         const auto& jetRaw = jet[i];
@@ -320,11 +321,10 @@ void ttHHanalyzer::createObjects(event * thisEvent, sysName sysType, bool up){
         origJet->jetPUid    = jetRaw.puId;
         origJet->hadFlav    = jetRaw.hadronFlavour;
         origJet->partonFlav = jetRaw.partonFlavour;
- 
 
 
 
-        if(fabs(origJet->getp4()->M() - jetRaw.mass) > 0.001) {
+        if(fabs(origJet->getp4()->M() - jetRaw.mass) > 0.0001) {
 	    std::cout<< "orig = "<<origJet->getp4()->M()<<", "<<"jetRaw = "<<jetRaw.mass<<std::endl;
             std::cout<< "origJet->getpt()->M() and jetRaw.mass are diff"<<std::endl;
         }
@@ -336,7 +336,7 @@ void ttHHanalyzer::createObjects(event * thisEvent, sysName sysType, bool up){
 
         if( !(jetRaw.pt > cut["jetPt"] && fabs(jetRaw.eta) < cut["jetEta"] && jetRaw.jetId >= cut["jetID"]) ) continue;
         if( jetRaw.pt < 50.0 && jetRaw.puId < cut["jetPUid"] ) continue;
-
+        passPuId = true;
 
         // === A) Recover RAW pT / mass ===
         float ntuplePt  = origJet->getp4()->Pt();      // pt_nom
@@ -424,6 +424,7 @@ void ttHHanalyzer::createObjects(event * thisEvent, sysName sysType, bool up){
         newJet->jerSF      = jerSF;
 	newJet->ptJER      = smearedPt;
         newJet->jetPUid    = jetRaw.puId;
+	newJet->passPuId   = passPuId;
         newJet->bTagCSV    = jetRaw.btagDeepFlavB;
         newJet->hadFlav    = jetRaw.hadronFlavour;
         newJet->partonFlav = jetRaw.partonFlavour;
@@ -1371,6 +1372,7 @@ void ttHHanalyzer::fillTree(event * thisEvent){
     bTagScore.clear();
     hadFlavs.clear();
     partonFlavs.clear();
+    jetPUids.clear();
 
     // For Trigger Path
     passTrigger_HLT_IsoMu27 = _ev->HLT_IsoMu27; // Reference Muon Trigger
@@ -1400,6 +1402,8 @@ void ttHHanalyzer::fillTree(event * thisEvent){
         bTagScore.push_back(thisEvent->getSelJets()->at(i)->bTagCSV);
         hadFlavs.push_back(thisEvent->getSelJets()->at(i)->hadFlav);
         partonFlavs.push_back(thisEvent->getSelJets()->at(i)->partonFlav);
+        jetPUids.push_back(thisEvent->getSelJets()->at(i)->jetPUid);
+        
         // In the Event Buffer, you can find the struct jet_s which accesses to defined branch variables in NanoAODv9
         // And then in the .hh files, you also can check variables like  bTagCSV or hadFlav as objectJet class's  member variable
         // Then you can get the info at NanoAODv9 from jet_s structure and put them into the .hh's objectJet class member variable in the iteration of jets
