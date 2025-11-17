@@ -1,0 +1,380 @@
+#define EventLooper_cxx
+#include "EventLooper.hh"
+#include <TH2.h>
+#include <TStyle.h>
+#include <iostream>
+
+#include "BinConfig.hh"
+
+void EventLooper::Loop()
+{
+    if (fChain == 0) return;
+
+    // 입력 파일 이름으로부터 샘플 이름과 데이터 여부를 결정
+    TString sampleName = getInputName();
+    Ssiz_t rootPos = sampleName.Index(".root");
+    if (rootPos != kNPOS) {
+        sampleName.Remove(rootPos);
+    }
+    std::cout << "Sample Name: " << sampleName << std::endl;
+
+    isData = true;
+////    if (sampleName == "ttJets") {
+////        isData = false;
+////        std::cout << "Current Sample: MC ttJets" << std::endl;
+////    } else {
+////        std::cout << "Current Sample: Data" << std::endl;
+////    }
+    TString channel = "";
+    if (sampleName == "TTTo2L2Nu"){
+        isData = false;
+	channel = "diLep";
+        std::cout << "Current Sample: MC TTTo2L2Nu" << std::endl;
+    }
+    else if(sampleName == "ttTohadronic"){
+        isData = false;
+	channel = "had";
+        std::cout << "Current Sample: MC ttTohadronic" << std::endl;
+    }
+    else if(sampleName == "TTToSemiLeptonic"){
+	isData = false;
+	channel = "semiLep";
+        std::cout << "Current Sample: MC TTToSemiLeptonic" << std::endl;
+    } else {
+        std::cout << "Current Sample: Data" << std::endl;
+    }
+
+    TString dataSet = "default";
+    TString era     = "default";
+    Ssiz_t underscorePos = sampleName.Index("_");
+    if( isData ){
+        if (underscorePos != kNPOS) {  // kNPOS는 찾지 못했을 때의 값
+            dataSet = sampleName(0, underscorePos);
+            era = sampleName(underscorePos + 1, sampleName.Length() - underscorePos - 1);
+            std::cout<< "  [ EventLooper::Loop() ] : Current Sample --> Data "<< dataSet << ", Era : " << era << std::endl;
+        } else {
+            std::cout << "  [ EventLooper::Loop() ] : No underscore found in the string!" << std::endl;
+            return;
+        }
+    }
+
+    // Eta 분할을 사용할지 여부 설정 (true: 사용, false: 사용하지 않음)
+    useEtaBinning = false; // 필요한 경우 이 값을 false로 설정하여 Eta 분할을 끌 수 있습니다.
+
+    // 변수 구간 설정
+    // HT bins
+    const auto& HT_bins_vec = BinConfig::getHTBins();
+    nBinsHT = BinConfig::HTBinCount;
+    for (int i = 0; i <= nBinsHT; ++i) {
+        HT_bins[i] = HT_bins_vec[i];
+    }
+
+    // pT bins
+    const auto& pT_bins_vec = BinConfig::getPTBins();
+    nBinspT = BinConfig::PTBinCount;
+    for (int i = 0; i <= nBinspT; ++i) {
+        pT_bins[i] = pT_bins_vec[i];
+    }
+
+    //// Eta bin 찾기
+    //int etaBin = 0; // Eta 분할을 사용하지 않을 경우 0으로 설정
+    //if (useEtaBinning) {
+    //    etaBin = -1;
+    //    for (int iEta = 0; iEta < nEtaBins; ++iEta) {
+    //        if (Jet6Eta >= eta_bins[iEta] && Jet6Eta < eta_bins[iEta+1]) {
+    //            etaBin = iEta;
+    //            break;
+    //        }
+    //    }
+    //    //if (etaBin == -1) continue; // 해당 Eta bin이 없으면 다음 이벤트로
+    //}
+    int etaBin = 0;
+
+    // b-제트 수 bin 찾기 (범위로 설정)
+    //int bjetBin = -1;
+    //for (int iBjet = 0; iBjet < nBjetBins; ++iBjet) {
+    //    if (nbJets >= nBjets_bins[iBjet] && nbJets < nBjets_bins[iBjet+1]) {
+    //        bjetBin = iBjet;
+    //        break;
+    //    }
+    //}
+    int bjetBin = 0;
+    //if (bjetBin == -1) continue; // 해당 b-제트 bin이 없으면 다음 이벤트로
+
+
+    // 히스토그램 초기화
+    for (int iEta = 0; iEta < 1; ++iEta) {
+        for (int iBjet = 0; iBjet < 1; ++iBjet) {
+            TString histName_Total, histTitle_Total;
+            TString histName_Pass, histTitle_Pass;
+
+            if (useEtaBinning) {
+                histName_Total = Form("h_Total_Eta%d_Bjet%d", iEta, iBjet);
+                histTitle_Total = Form("Total Events (Eta bin %d, b-jet bin %d);HT [GeV];6th Jet p_{T} [GeV]", iEta, iBjet);
+
+                histName_Pass = Form("h_Pass_Eta%d_Bjet%d", iEta, iBjet);
+                histTitle_Pass = Form("Passed Events (Eta bin %d, b-jet bin %d);HT [GeV];6th Jet p_{T} [GeV]", iEta, iBjet);
+            } else {
+                histName_Total = Form("h_Total_Bjet%d", iBjet);
+                histTitle_Total = Form("Total Events (b-jet bin %d);HT [GeV];6th Jet p_{T} [GeV]", iBjet);
+
+                histName_Pass = Form("h_Pass_Bjet%d", iBjet);
+                histTitle_Pass = Form("Passed Events (b-jet bin %d);HT [GeV];6th Jet p_{T} [GeV]", iBjet);
+            }
+
+            h_Total[iEta][iBjet] = new TH2D(histName_Total, histTitle_Total, nBinsHT, HT_bins, nBinspT, pT_bins);
+            h_Pass[iEta][iBjet] = new TH2D(histName_Pass, histTitle_Pass, nBinsHT, HT_bins, nBinspT, pT_bins);
+        }
+    }
+
+    // 이벤트 루프
+    Long64_t nentries = fChain->GetEntriesFast();
+    Bool_t passHadTrig = false;
+    double Jet6PT = -999.0;
+    double Jet6Eta = -999.0;
+    double weight = 1.0;
+
+    for (Long64_t jentry=0; jentry<nentries; jentry++) {
+
+        passHadTrig = false;
+	Jet6PT      = -999.0;
+	Jet6Eta     = -999.0;
+	weight      = 1.0;
+
+        Long64_t ientry = LoadTree(jentry);
+        if (ientry < 0) break;
+        fChain->GetEntry(jentry);
+ 
+        if(jetPt->size() != nJets) {
+	    std::cout<<"[ ERROR ] : jet vector size != number of jets"<<std::endl;
+	    exit(55);
+	}
+
+       // 이벤트 선택
+        if (!(nMuons == 1 && nElecs == 0)) continue;
+        //if (nMuons != 1) continue;
+////        if (nJets < 6) continue; // 6번째 제트가 존재하는지 확인
+////
+
+////        if(!passMETFilters) continue;
+////
+////        ////Jet6PT = jetPt[5];
+////	Jet6PT = jetPt->at(5);
+////        if (Jet6PT < 40.0) continue;
+////        //Jet6Eta = jetEta[5];
+////
+////        if (HT < 500.0 ) continue;
+
+        // 이벤트 선택
+        if (nJets < 6) {
+            std::cerr << "[ERROR] nJets (" << nJets << ") are smaller than 6.."<< std::endl;
+            exit(2);
+        }
+
+        if (!passMETFilters) {
+            std::cerr << "[ERROR] It did not pass the noise filters.."<< std::endl;
+            exit(3);
+        }
+
+        Jet6PT = jetPt->at(5);
+        if (Jet6PT <= 40.0) {
+            std::cerr << "[ERROR] Jet6th pT (" << Jet6PT << ") are <= 40.0 GeV.."<< std::endl;
+            exit(4);
+        }
+
+
+        if (HT < 500.0) {
+            std::cerr << "[ERROR] HT (" << HT << ") are < 500.0 GeV.."<< std::endl;
+            exit(5);
+        }
+
+
+        // 가중치 설정
+////        if (!isData) {
+////            weight = 3.4410 * L1PrefiringWeight * PUWeight; // ttJets의 가중치 (실제 값으로 수정 필요)
+////        } else {
+////            weight = 1.0;
+////            ////if(failGoldenJson) continue;
+////            if(failGoldenJson) {
+////                std::cerr << "[ERROR] It did not pass the golden json.."<< std::endl;
+////                exit(6);
+////            }
+////        }
+        if (!isData) {
+	    if (channel == "diLep"){   
+                weight = 0.1419595905 * L1PrefiringWeight * PUWeight;
+	    }
+	    else if (channel == "had"){
+                weight = 0.06745986328 * L1PrefiringWeight * PUWeight;
+	    }
+	    else if (channel == "semiLep"){
+                weight = 0.01049544017 * L1PrefiringWeight * PUWeight;
+	    }
+        } else {
+            weight = 1.0;
+            ////if(failGoldenJson) continue;
+            if(failGoldenJson) {
+                std::cerr << "[ERROR] It did not pass the golden json.."<< std::endl;
+                exit(6);
+            }
+        }
+
+
+////        bool trigJetHT_B = passTrigger_HLT_PFHT1050 || passTrigger_6J1T_B || passTrigger_6J2T_B;
+////        bool trigBTagCSV_B = passTrigger_4J3T_B;
+////        bool trigJetHT = passTrigger_HLT_PFHT1050 || passTrigger_6J1T_CDEF || passTrigger_6J2T_CDEF;
+////        bool trigBTagCSV = passTrigger_4J3T_CDEF;
+
+////        // 트리거 조건 설정
+////        if (!isData) {
+////                passHadTrig = trigJetHT || trigBTagCSV;
+////	        //passHadTrig = trigJetHT;
+////
+////        } else {
+////                if(era == "B"){
+////		    passHadTrig = trigJetHT_B || trigBTagCSV_B;
+////		    //passHadTrig = trigJetHT_B;
+////                    std::cout<<"  [ EventLooper::Loop() ]  : Trigger for SingleMuon B is setted" << std::endl;
+////		} else {
+////		    passHadTrig = trigJetHT || trigBTagCSV;
+////                    //passHadTrig = trigJetHT;
+////                    std::cout<<"  [ EventLooper::Loop() ]  : Trigger for SingleMuon CDEF is setted" << std::endl;
+////		}
+////        }
+
+        //////////////////////////////////////////////////////////////////
+        // Trigger path logic for SF in SingleMuon data-set
+        
+        // 1) Tag: SingleMuon 트리거를 분모/분자 공통 조건으로 강제
+        if (!passTrigger_HLT_IsoMu27) {
+            continue; // Tag 실패 → 분모/분자 모두에서 제외
+        }
+        
+        // 2) hadronic OR 정의 (AN과 동일; era에 따라 이름만 B vs CDEF로 매핑)
+        //    - Data & era==B -> *_B 브랜치 사용
+        //    - 그 외(MC 포함)     -> *_CDEF 브랜치 사용
+        const bool fired6J1T = (isData && era=="B") ? passTrigger_6J1T_B   : passTrigger_6J1T_CDEF;
+        const bool fired6J2T = (isData && era=="B") ? passTrigger_6J2T_B   : passTrigger_6J2T_CDEF;
+        const bool fired4J3T = (isData && era=="B") ? passTrigger_4J3T_B   : passTrigger_4J3T_CDEF;
+        const bool firedHT   =                          passTrigger_HLT_PFHT1050;
+        
+        const bool passHadTrig = (fired4J3T || fired6J1T || fired6J2T || firedHT);
+        //////////////////////////////////////////////////////////////////
+
+
+        // 총 이벤트 히스토그램에 채우기
+        h_Total[etaBin][bjetBin]->Fill(HT, Jet6PT, weight);
+        //std::cout<<"Currnet HT, Jet6PT, weight : "<<HT<<", "<<Jet6PT<<", "<<weight<<std::endl;
+
+        if (passHadTrig) {
+            // 트리거 통과한 이벤트 히스토그램에 채우기
+            h_Pass[etaBin][bjetBin]->Fill(HT, Jet6PT, weight);
+        }
+    }
+
+    std::cout << "Event loop completed." << std::endl;
+
+    // 히스토그램 저장을 위한 출력 파일
+    TFile* outputFile = new TFile(getOutputName(), "RECREATE");
+
+    // 히스토그램 저장
+    for (int iEta = 0; iEta < 1; ++iEta) {
+        for (int iBjet = 0; iBjet < 1; ++iBjet) {
+            outputFile->cd();
+            h_Total[iEta][iBjet]->Write();
+            h_Pass[iEta][iBjet]->Write();
+        }
+    }
+
+    outputFile->Close();
+}
+
+void EventLooper::Init()
+{
+   // TTree 초기화 및 브랜치 설정
+   TString ntupleDir  = "/Users/jhlee/ttHH/ntuple/skimmed/";
+   //TString ntupleDir  = "/eos/user/j/junghyun/ttHH/Btag_el9/merged/";
+   TString ntupleName = getInputName();
+   TString ntuplePath = ntupleDir + ntupleName;
+
+   std::cout<<"ntuple path : "<<ntuplePath<<std::endl;
+////   TTree* tree = nullptr;
+////   
+////   if (tree == 0) {
+////      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject( ntuplePath );
+////      if (!f || !f->IsOpen()) {
+////         f = new TFile( ntuplePath );
+////      }
+////      TDirectory * dir = (TDirectory*)f->Get("Tree");
+////      
+////      dir->GetObject("Tree",tree);
+////   }
+
+  // 1) 파일 열기
+  TFile* f = TFile::Open(ntuplePath);
+  if (!f || f->IsZombie()) {
+    std::cerr<<"[Error] Cannot open "<<ntuplePath<<std::endl;
+    return;
+  }
+
+  // 2) 트리 가져오기
+  TTree* tree = nullptr;
+  f->GetObject("Tree/Tree", tree);
+  if (!tree) {
+    std::cerr<<"[Error] No TTree 'Tree' in file"<<std::endl;
+    f->Close();
+    return;
+  }
+
+   std::cout<<"TFile is opend!!"<<std::endl;
+
+   // 브랜치 주소 설정
+   if (!tree) return;
+   fChain = tree;
+   fCurrent = -1;
+   fChain->SetMakeClass(1);
+
+   fChain->SetBranchAddress("passTrigger_HLT_IsoMu27", &passTrigger_HLT_IsoMu27, &b_passTrigger_HLT_IsoMu27);
+   fChain->SetBranchAddress("passTrigger_HLT_PFHT1050", &passTrigger_HLT_PFHT1050, &b_passTrigger_HLT_PFHT1050);
+   fChain->SetBranchAddress("passTrigger_6J1T_B", &passTrigger_6J1T_B, &b_passTrigger_6J1T_B);
+   fChain->SetBranchAddress("passTrigger_6J1T_CDEF", &passTrigger_6J1T_CDEF, &b_passTrigger_6J1T_CDEF);
+   fChain->SetBranchAddress("passTrigger_6J2T_B", &passTrigger_6J2T_B, &b_passTrigger_6J2T_B);
+   fChain->SetBranchAddress("passTrigger_6J2T_CDEF", &passTrigger_6J2T_CDEF, &b_passTrigger_6J2T_CDEF);
+   fChain->SetBranchAddress("passTrigger_4J3T_B", &passTrigger_4J3T_B, &b_passTrigger_4J3T_B);
+   fChain->SetBranchAddress("passTrigger_4J3T_CDEF", &passTrigger_4J3T_CDEF, &b_passTrigger_4J3T_CDEF);
+   fChain->SetBranchAddress("nMuons", &nMuons, &b_nMuons);
+   fChain->SetBranchAddress("nElecs", &nElecs, &b_nElecs);
+   fChain->SetBranchAddress("nJets", &nJets, &b_nJets);
+   //fChain->SetBranchAddress("nbJets", &nbJets, &b_nbJets);
+   fChain->SetBranchAddress("HT", &HT, &b_HT);
+   ////fChain->SetBranchAddress("jetPt", jetPt, &b_jetPt);
+   fChain->SetBranchAddress("jetPt", &jetPt, &b_jetPt);
+
+   //fChain->SetBranchAddress("jetEta", jetEta, &b_jetEta);
+   //fChain->SetBranchAddress("bTagScore", bTagScore, &b_bTagScore);
+   //fChain->SetBranchAddress("eventNumber", &eventNumber, &b_eventNumber);
+   //fChain->SetBranchAddress("runNumber", &runNumber, &b_runNumber);   
+   fChain->SetBranchAddress("PUWeight", &PUWeight, &b_PUWeight);
+   fChain->SetBranchAddress("L1PrefiringWeight", &L1PrefiringWeight, &b_L1PrefiringWeight);
+   fChain->SetBranchAddress("failGoldenJson", &failGoldenJson, &b_failGoldenJson);
+   fChain->SetBranchAddress("passMETFilters", &passMETFilters, &b_passMETFilters);
+
+   Notify();
+}
+
+bool EventLooper::Notify()
+{
+   return true;
+}
+
+void EventLooper::Show(Long64_t entry)
+{
+   if (!fChain) return;
+   fChain->Show(entry);
+}
+
+Int_t EventLooper::Cut(Long64_t entry)
+{
+   return 1;
+}
+

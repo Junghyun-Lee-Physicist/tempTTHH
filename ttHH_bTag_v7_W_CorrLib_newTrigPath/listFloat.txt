@@ -1,0 +1,410 @@
+  [ Log ] You set the debug mode! and # of event : 200
+Sample Name: ttJets
+Data or MC : MC
+Weight : 3.44107
+what is the debug status = 1
+
+-----------------------------------------------------------
+  [ debug ] current entry --> 0
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 1
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 2
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 3
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 4
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 5
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 6
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 7
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 8
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 9
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 10
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 11
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 12
+  [ debug ]     # of jets = 9
+  [ debug ] current entry --> 13
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 14
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 15
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 16
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 17
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 18
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 19
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 20
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 21
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 22
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 23
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 24
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 25
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 26
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 27
+  [ debug ]     # of jets = 10
+  [ debug ] current entry --> 28
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 29
+  [ debug ]     # of jets = 9
+  [ debug ] current entry --> 30
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 31
+  [ debug ]     # of jets = 9
+  [ debug ] current entry --> 32
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 33
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 34
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 35
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 36
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 37
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 38
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 39
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 40
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 41
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 42
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 43
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 44
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 45
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 46
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 47
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 48
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 49
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 50
+  [ debug ]     # of jets = 10
+  [ debug ] current entry --> 51
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 52
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 53
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 54
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 55
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 56
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 57
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 58
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 59
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 60
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 61
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 62
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 63
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 64
+  [ debug ]     # of jets = 10
+  [ debug ] current entry --> 65
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 66
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 67
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 68
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 69
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 70
+  [ debug ]     # of jets = 10
+  [ debug ] current entry --> 71
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 72
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 73
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 74
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 75
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 76
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 77
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 78
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 79
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 80
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 81
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 82
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 83
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 84
+  [ debug ]     # of jets = 9
+  [ debug ] current entry --> 85
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 86
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 87
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 88
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 89
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 90
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 91
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 92
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 93
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 94
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 95
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 96
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 97
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 98
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 99
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 100
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 101
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 102
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 103
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 104
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 105
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 106
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 107
+  [ debug ]     # of jets = 10
+  [ debug ] current entry --> 108
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 109
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 110
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 111
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 112
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 113
+  [ debug ]     # of jets = 10
+  [ debug ] current entry --> 114
+  [ debug ]     # of jets = 9
+  [ debug ] current entry --> 115
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 116
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 117
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 118
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 119
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 120
+  [ debug ]     # of jets = 10
+  [ debug ] current entry --> 121
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 122
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 123
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 124
+  [ debug ]     # of jets = 11
+  [ debug ] current entry --> 125
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 126
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 127
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 128
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 129
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 130
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 131
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 132
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 133
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 134
+  [ debug ]     # of jets = 9
+  [ debug ] current entry --> 135
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 136
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 137
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 138
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 139
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 140
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 141
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 142
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 143
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 144
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 145
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 146
+  [ debug ]     # of jets = 10
+  [ debug ] current entry --> 147
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 148
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 149
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 150
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 151
+  [ debug ]     # of jets = 9
+  [ debug ] current entry --> 152
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 153
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 154
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 155
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 156
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 157
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 158
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 159
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 160
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 161
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 162
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 163
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 164
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 165
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 166
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 167
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 168
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 169
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 170
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 171
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 172
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 173
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 174
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 175
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 176
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 177
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 178
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 179
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 180
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 181
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 182
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 183
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 184
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 185
+  [ debug ]     # of jets = 9
+  [ debug ] current entry --> 186
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 187
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 188
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 189
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 190
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 191
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 192
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 193
+  [ debug ]     # of jets = 8
+  [ debug ] current entry --> 194
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 195
+  [ debug ]     # of jets = 6
+  [ debug ] current entry --> 196
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 197
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 198
+  [ debug ]     # of jets = 7
+  [ debug ] current entry --> 199
+  [ debug ]     # of jets = 6
+-----------------------------------------------------------
+
+Event loop completed.

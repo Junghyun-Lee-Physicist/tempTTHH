@@ -1,0 +1,655 @@
+[2025-09-15 21:27:04] ======== RUN START ========
+[2025-09-15 21:27:04] [INFO] Loaded 40 samples: ['QCD_Pt_15to30', 'QCD_Pt_30to50', 'QCD_Pt_50to80', 'QCD_Pt_80to120', 'QCD_Pt_120to170', 'QCD_Pt_170to300', 'QCD_Pt_300to470', 'QCD_Pt_470to600', 'QCD_Pt_600to800', 'QCD_Pt_800to1000', 'QCD_Pt_1000to1400', 'QCD_Pt_1400to1800', 'QCD_Pt_1800to2400', 'QCD_Pt_2400to3200', 'QCD_Pt_3200toInf', 'tt4b', 'ttbb', 'ttHH', 'ttHtobb', 'ttTohadronic', 'TTTo2L2Nu', 'TTToSemiLeptonic', 'tttt', 'tttW', 'ttWH', 'ttWW', 'ttWZ', 'ttZHto4b', 'ttZtobb', 'ttZZto4b', 'JetHT_B', 'JetHT_C', 'JetHT_D', 'JetHT_E', 'JetHT_F', 'BTagCSV_B', 'BTagCSV_C', 'BTagCSV_D', 'BTagCSV_E', 'BTagCSV_F']
+[2025-09-15 21:27:04] LAUNCH [QCD_Pt_15to30]: bash -lc './exe_bTagStudy QCD_Pt_15to30'
+[2025-09-15 21:27:04] STARTED [QCD_Pt_15to30] pid=44346
+[2025-09-15 21:27:04] HEARTBEAT: queue=39 running=1 mem_avail=26638MB | running_list=[QCD_Pt_15to30(pid=44346)]
+[2025-09-15 21:27:04] LAUNCH [QCD_Pt_30to50]: bash -lc './exe_bTagStudy QCD_Pt_30to50'
+[2025-09-15 21:27:04] STARTED [QCD_Pt_30to50] pid=44354
+[2025-09-15 21:27:04] HEARTBEAT: queue=38 running=2 mem_avail=26632MB | running_list=[QCD_Pt_15to30(pid=44346), QCD_Pt_30to50(pid=44354)]
+[2025-09-15 21:27:04] LAUNCH [QCD_Pt_50to80]: bash -lc './exe_bTagStudy QCD_Pt_50to80'
+[2025-09-15 21:27:04] STARTED [QCD_Pt_50to80] pid=44369
+[2025-09-15 21:27:04] HEARTBEAT: queue=37 running=3 mem_avail=26624MB | running_list=[QCD_Pt_15to30(pid=44346), QCD_Pt_30to50(pid=44354), QCD_Pt_50to80(pid=44369)]
+[2025-09-15 21:27:04] LAUNCH [QCD_Pt_80to120]: bash -lc './exe_bTagStudy QCD_Pt_80to120'
+[2025-09-15 21:27:04] STARTED [QCD_Pt_80to120] pid=44385
+[2025-09-15 21:27:04] HEARTBEAT: queue=36 running=4 mem_avail=26618MB | running_list=[QCD_Pt_15to30(pid=44346), QCD_Pt_30to50(pid=44354), QCD_Pt_50to80(pid=44369), QCD_Pt_80to120(pid=44385)]
+[2025-09-15 21:27:04] [WAIT] Max concurrency reached (4/4). (queue size=36)
+[2025-09-15 21:27:04] HEARTBEAT: queue=36 running=4 mem_avail=26599MB | running_list=[QCD_Pt_15to30(pid=44346), QCD_Pt_30to50(pid=44354), QCD_Pt_50to80(pid=44369), QCD_Pt_80to120(pid=44385)]
+[2025-09-15 21:27:07] [WAIT] Max concurrency reached (4/4). (queue size=36)
+[2025-09-15 21:27:07] HEARTBEAT: queue=36 running=4 mem_avail=25650MB | running_list=[QCD_Pt_15to30(pid=44346), QCD_Pt_30to50(pid=44354), QCD_Pt_50to80(pid=44369), QCD_Pt_80to120(pid=44385)]
+[2025-09-15 21:27:10] [WAIT] Max concurrency reached (4/4). (queue size=36)
+[2025-09-15 21:27:10] HEARTBEAT: queue=36 running=4 mem_avail=25109MB | running_list=[QCD_Pt_15to30(pid=44346), QCD_Pt_30to50(pid=44354), QCD_Pt_50to80(pid=44369), QCD_Pt_80to120(pid=44385)]
+[2025-09-15 21:27:13] [WAIT] Max concurrency reached (4/4). (queue size=36)
+[2025-09-15 21:27:13] HEARTBEAT: queue=36 running=4 mem_avail=24561MB | running_list=[QCD_Pt_15to30(pid=44346), QCD_Pt_30to50(pid=44354), QCD_Pt_50to80(pid=44369), QCD_Pt_80to120(pid=44385)]
+[2025-09-15 21:27:16] [WAIT] Max concurrency reached (4/4). (queue size=36)
+[2025-09-15 21:27:16] HEARTBEAT: queue=36 running=4 mem_avail=24074MB | running_list=[QCD_Pt_15to30(pid=44346), QCD_Pt_30to50(pid=44354), QCD_Pt_50to80(pid=44369), QCD_Pt_80to120(pid=44385)]
+[2025-09-15 21:27:19] [WAIT] Max concurrency reached (4/4). (queue size=36)
+[2025-09-15 21:27:19] HEARTBEAT: queue=36 running=4 mem_avail=23522MB | running_list=[QCD_Pt_15to30(pid=44346), QCD_Pt_30to50(pid=44354), QCD_Pt_50to80(pid=44369), QCD_Pt_80to120(pid=44385)]
+[2025-09-15 21:27:22] [WAIT] Max concurrency reached (4/4). (queue size=36)
+[2025-09-15 21:27:22] HEARTBEAT: queue=36 running=4 mem_avail=22953MB | running_list=[QCD_Pt_15to30(pid=44346), QCD_Pt_30to50(pid=44354), QCD_Pt_50to80(pid=44369), QCD_Pt_80to120(pid=44385)]
+[2025-09-15 21:27:25] [WAIT] Max concurrency reached (4/4). (queue size=36)
+[2025-09-15 21:27:25] HEARTBEAT: queue=36 running=4 mem_avail=22386MB | running_list=[QCD_Pt_15to30(pid=44346), QCD_Pt_30to50(pid=44354), QCD_Pt_50to80(pid=44369), QCD_Pt_80to120(pid=44385)]
+[2025-09-15 21:27:28] [WAIT] Max concurrency reached (4/4). (queue size=36)
+[2025-09-15 21:27:28] [DONE] QCD_Pt_15to30 rc=0
+[2025-09-15 21:27:28] [DONE] QCD_Pt_30to50 rc=0
+[2025-09-15 21:27:28] [DONE] QCD_Pt_50to80 rc=0
+[2025-09-15 21:27:28] [DONE] QCD_Pt_80to120 rc=0
+[2025-09-15 21:27:28] HEARTBEAT: queue=36 running=0 mem_avail=26369MB | running_list=[-]
+[2025-09-15 21:27:28] LAUNCH [QCD_Pt_120to170]: bash -lc './exe_bTagStudy QCD_Pt_120to170'
+[2025-09-15 21:27:28] STARTED [QCD_Pt_120to170] pid=44785
+[2025-09-15 21:27:28] HEARTBEAT: queue=35 running=1 mem_avail=26372MB | running_list=[QCD_Pt_120to170(pid=44785)]
+[2025-09-15 21:27:28] LAUNCH [QCD_Pt_170to300]: bash -lc './exe_bTagStudy QCD_Pt_170to300'
+[2025-09-15 21:27:28] STARTED [QCD_Pt_170to300] pid=44796
+[2025-09-15 21:27:28] HEARTBEAT: queue=34 running=2 mem_avail=26368MB | running_list=[QCD_Pt_120to170(pid=44785), QCD_Pt_170to300(pid=44796)]
+[2025-09-15 21:27:28] LAUNCH [QCD_Pt_300to470]: bash -lc './exe_bTagStudy QCD_Pt_300to470'
+[2025-09-15 21:27:28] STARTED [QCD_Pt_300to470] pid=44808
+[2025-09-15 21:27:28] HEARTBEAT: queue=33 running=3 mem_avail=26382MB | running_list=[QCD_Pt_120to170(pid=44785), QCD_Pt_170to300(pid=44796), QCD_Pt_300to470(pid=44808)]
+[2025-09-15 21:27:28] LAUNCH [QCD_Pt_470to600]: bash -lc './exe_bTagStudy QCD_Pt_470to600'
+[2025-09-15 21:27:28] STARTED [QCD_Pt_470to600] pid=44830
+[2025-09-15 21:27:28] HEARTBEAT: queue=32 running=4 mem_avail=26369MB | running_list=[QCD_Pt_120to170(pid=44785), QCD_Pt_170to300(pid=44796), QCD_Pt_300to470(pid=44808), QCD_Pt_470to600(pid=44830)]
+[2025-09-15 21:27:28] [WAIT] Max concurrency reached (4/4). (queue size=32)
+[2025-09-15 21:27:28] HEARTBEAT: queue=32 running=4 mem_avail=26373MB | running_list=[QCD_Pt_120to170(pid=44785), QCD_Pt_170to300(pid=44796), QCD_Pt_300to470(pid=44808), QCD_Pt_470to600(pid=44830)]
+[2025-09-15 21:27:31] [WAIT] Max concurrency reached (4/4). (queue size=32)
+[2025-09-15 21:27:31] HEARTBEAT: queue=32 running=4 mem_avail=25540MB | running_list=[QCD_Pt_120to170(pid=44785), QCD_Pt_170to300(pid=44796), QCD_Pt_300to470(pid=44808), QCD_Pt_470to600(pid=44830)]
+[2025-09-15 21:27:34] [WAIT] Max concurrency reached (4/4). (queue size=32)
+[2025-09-15 21:27:34] HEARTBEAT: queue=32 running=4 mem_avail=24940MB | running_list=[QCD_Pt_120to170(pid=44785), QCD_Pt_170to300(pid=44796), QCD_Pt_300to470(pid=44808), QCD_Pt_470to600(pid=44830)]
+[2025-09-15 21:27:37] [WAIT] Max concurrency reached (4/4). (queue size=32)
+[2025-09-15 21:27:37] HEARTBEAT: queue=32 running=4 mem_avail=24407MB | running_list=[QCD_Pt_120to170(pid=44785), QCD_Pt_170to300(pid=44796), QCD_Pt_300to470(pid=44808), QCD_Pt_470to600(pid=44830)]
+[2025-09-15 21:27:40] [WAIT] Max concurrency reached (4/4). (queue size=32)
+[2025-09-15 21:27:40] HEARTBEAT: queue=32 running=4 mem_avail=23861MB | running_list=[QCD_Pt_120to170(pid=44785), QCD_Pt_170to300(pid=44796), QCD_Pt_300to470(pid=44808), QCD_Pt_470to600(pid=44830)]
+[2025-09-15 21:27:43] [WAIT] Max concurrency reached (4/4). (queue size=32)
+[2025-09-15 21:27:43] HEARTBEAT: queue=32 running=4 mem_avail=23369MB | running_list=[QCD_Pt_120to170(pid=44785), QCD_Pt_170to300(pid=44796), QCD_Pt_300to470(pid=44808), QCD_Pt_470to600(pid=44830)]
+[2025-09-15 21:27:46] [WAIT] Max concurrency reached (4/4). (queue size=32)
+[2025-09-15 21:27:46] HEARTBEAT: queue=32 running=4 mem_avail=22779MB | running_list=[QCD_Pt_120to170(pid=44785), QCD_Pt_170to300(pid=44796), QCD_Pt_300to470(pid=44808), QCD_Pt_470to600(pid=44830)]
+[2025-09-15 21:27:49] [WAIT] Max concurrency reached (4/4). (queue size=32)
+[2025-09-15 21:27:49] HEARTBEAT: queue=32 running=4 mem_avail=22233MB | running_list=[QCD_Pt_120to170(pid=44785), QCD_Pt_170to300(pid=44796), QCD_Pt_300to470(pid=44808), QCD_Pt_470to600(pid=44830)]
+[2025-09-15 21:27:52] [WAIT] Max concurrency reached (4/4). (queue size=32)
+[2025-09-15 21:27:52] HEARTBEAT: queue=32 running=4 mem_avail=21835MB | running_list=[QCD_Pt_120to170(pid=44785), QCD_Pt_170to300(pid=44796), QCD_Pt_300to470(pid=44808), QCD_Pt_470to600(pid=44830)]
+[2025-09-15 21:27:55] [WAIT] Max concurrency reached (4/4). (queue size=32)
+[2025-09-15 21:27:55] [DONE] QCD_Pt_120to170 rc=0
+[2025-09-15 21:27:55] [FAIL] QCD_Pt_170to300 rc=139
+[2025-09-15 21:27:55] [RETRY] Re-queue QCD_Pt_170to300 (attempt 1/1)
+[2025-09-15 21:27:55] HEARTBEAT: queue=33 running=2 mem_avail=23763MB | running_list=[QCD_Pt_300to470(pid=44808), QCD_Pt_470to600(pid=44830)]
+[2025-09-15 21:27:55] LAUNCH [QCD_Pt_600to800]: bash -lc './exe_bTagStudy QCD_Pt_600to800'
+[2025-09-15 21:27:55] STARTED [QCD_Pt_600to800] pid=45220
+[2025-09-15 21:27:55] HEARTBEAT: queue=32 running=3 mem_avail=23760MB | running_list=[QCD_Pt_300to470(pid=44808), QCD_Pt_470to600(pid=44830), QCD_Pt_600to800(pid=45220)]
+[2025-09-15 21:27:55] LAUNCH [QCD_Pt_800to1000]: bash -lc './exe_bTagStudy QCD_Pt_800to1000'
+[2025-09-15 21:27:55] STARTED [QCD_Pt_800to1000] pid=45231
+[2025-09-15 21:27:55] HEARTBEAT: queue=31 running=4 mem_avail=23715MB | running_list=[QCD_Pt_300to470(pid=44808), QCD_Pt_470to600(pid=44830), QCD_Pt_600to800(pid=45220), QCD_Pt_800to1000(pid=45231)]
+[2025-09-15 21:27:55] [WAIT] Max concurrency reached (4/4). (queue size=31)
+[2025-09-15 21:27:55] HEARTBEAT: queue=31 running=4 mem_avail=23707MB | running_list=[QCD_Pt_300to470(pid=44808), QCD_Pt_470to600(pid=44830), QCD_Pt_600to800(pid=45220), QCD_Pt_800to1000(pid=45231)]
+[2025-09-15 21:27:58] [WAIT] Max concurrency reached (4/4). (queue size=31)
+[2025-09-15 21:27:58] [DONE] QCD_Pt_300to470 rc=0
+[2025-09-15 21:27:58] HEARTBEAT: queue=31 running=3 mem_avail=24439MB | running_list=[QCD_Pt_470to600(pid=44830), QCD_Pt_600to800(pid=45220), QCD_Pt_800to1000(pid=45231)]
+[2025-09-15 21:27:58] LAUNCH [QCD_Pt_1000to1400]: bash -lc './exe_bTagStudy QCD_Pt_1000to1400'
+[2025-09-15 21:27:58] STARTED [QCD_Pt_1000to1400] pid=45421
+[2025-09-15 21:27:58] HEARTBEAT: queue=30 running=4 mem_avail=24436MB | running_list=[QCD_Pt_470to600(pid=44830), QCD_Pt_600to800(pid=45220), QCD_Pt_800to1000(pid=45231), QCD_Pt_1000to1400(pid=45421)]
+[2025-09-15 21:27:58] [WAIT] Max concurrency reached (4/4). (queue size=30)
+[2025-09-15 21:27:58] HEARTBEAT: queue=30 running=4 mem_avail=24432MB | running_list=[QCD_Pt_470to600(pid=44830), QCD_Pt_600to800(pid=45220), QCD_Pt_800to1000(pid=45231), QCD_Pt_1000to1400(pid=45421)]
+[2025-09-15 21:28:01] [WAIT] Max concurrency reached (4/4). (queue size=30)
+[2025-09-15 21:28:01] [DONE] QCD_Pt_470to600 rc=0
+[2025-09-15 21:28:01] HEARTBEAT: queue=30 running=3 mem_avail=25225MB | running_list=[QCD_Pt_600to800(pid=45220), QCD_Pt_800to1000(pid=45231), QCD_Pt_1000to1400(pid=45421)]
+[2025-09-15 21:28:01] LAUNCH [QCD_Pt_1400to1800]: bash -lc './exe_bTagStudy QCD_Pt_1400to1800'
+[2025-09-15 21:28:01] STARTED [QCD_Pt_1400to1800] pid=45525
+[2025-09-15 21:28:01] HEARTBEAT: queue=29 running=4 mem_avail=25215MB | running_list=[QCD_Pt_600to800(pid=45220), QCD_Pt_800to1000(pid=45231), QCD_Pt_1000to1400(pid=45421), QCD_Pt_1400to1800(pid=45525)]
+[2025-09-15 21:28:01] [WAIT] Max concurrency reached (4/4). (queue size=29)
+[2025-09-15 21:28:01] HEARTBEAT: queue=29 running=4 mem_avail=25215MB | running_list=[QCD_Pt_600to800(pid=45220), QCD_Pt_800to1000(pid=45231), QCD_Pt_1000to1400(pid=45421), QCD_Pt_1400to1800(pid=45525)]
+[2025-09-15 21:28:04] [WAIT] Max concurrency reached (4/4). (queue size=29)
+[2025-09-15 21:28:04] HEARTBEAT: queue=29 running=4 mem_avail=24691MB | running_list=[QCD_Pt_600to800(pid=45220), QCD_Pt_800to1000(pid=45231), QCD_Pt_1000to1400(pid=45421), QCD_Pt_1400to1800(pid=45525)]
+[2025-09-15 21:28:07] [WAIT] Max concurrency reached (4/4). (queue size=29)
+[2025-09-15 21:28:07] HEARTBEAT: queue=29 running=4 mem_avail=24044MB | running_list=[QCD_Pt_600to800(pid=45220), QCD_Pt_800to1000(pid=45231), QCD_Pt_1000to1400(pid=45421), QCD_Pt_1400to1800(pid=45525)]
+[2025-09-15 21:28:10] [WAIT] Max concurrency reached (4/4). (queue size=29)
+[2025-09-15 21:28:10] HEARTBEAT: queue=29 running=4 mem_avail=23529MB | running_list=[QCD_Pt_600to800(pid=45220), QCD_Pt_800to1000(pid=45231), QCD_Pt_1000to1400(pid=45421), QCD_Pt_1400to1800(pid=45525)]
+[2025-09-15 21:28:13] [WAIT] Max concurrency reached (4/4). (queue size=29)
+[2025-09-15 21:28:13] HEARTBEAT: queue=29 running=4 mem_avail=23004MB | running_list=[QCD_Pt_600to800(pid=45220), QCD_Pt_800to1000(pid=45231), QCD_Pt_1000to1400(pid=45421), QCD_Pt_1400to1800(pid=45525)]
+[2025-09-15 21:28:16] [WAIT] Max concurrency reached (4/4). (queue size=29)
+[2025-09-15 21:28:16] HEARTBEAT: queue=29 running=4 mem_avail=22518MB | running_list=[QCD_Pt_600to800(pid=45220), QCD_Pt_800to1000(pid=45231), QCD_Pt_1000to1400(pid=45421), QCD_Pt_1400to1800(pid=45525)]
+[2025-09-15 21:28:19] [WAIT] Max concurrency reached (4/4). (queue size=29)
+[2025-09-15 21:28:19] HEARTBEAT: queue=29 running=4 mem_avail=22092MB | running_list=[QCD_Pt_600to800(pid=45220), QCD_Pt_800to1000(pid=45231), QCD_Pt_1000to1400(pid=45421), QCD_Pt_1400to1800(pid=45525)]
+[2025-09-15 21:28:22] [WAIT] Max concurrency reached (4/4). (queue size=29)
+[2025-09-15 21:28:22] HEARTBEAT: queue=29 running=4 mem_avail=21780MB | running_list=[QCD_Pt_600to800(pid=45220), QCD_Pt_800to1000(pid=45231), QCD_Pt_1000to1400(pid=45421), QCD_Pt_1400to1800(pid=45525)]
+[2025-09-15 21:28:25] [WAIT] Max concurrency reached (4/4). (queue size=29)
+[2025-09-15 21:28:25] [DONE] QCD_Pt_800to1000 rc=0
+[2025-09-15 21:28:25] [DONE] QCD_Pt_1400to1800 rc=0
+[2025-09-15 21:28:25] HEARTBEAT: queue=29 running=2 mem_avail=23909MB | running_list=[QCD_Pt_600to800(pid=45220), QCD_Pt_1000to1400(pid=45421)]
+[2025-09-15 21:28:25] LAUNCH [QCD_Pt_1800to2400]: bash -lc './exe_bTagStudy QCD_Pt_1800to2400'
+[2025-09-15 21:28:25] STARTED [QCD_Pt_1800to2400] pid=45665
+[2025-09-15 21:28:25] HEARTBEAT: queue=28 running=3 mem_avail=23906MB | running_list=[QCD_Pt_600to800(pid=45220), QCD_Pt_1000to1400(pid=45421), QCD_Pt_1800to2400(pid=45665)]
+[2025-09-15 21:28:25] LAUNCH [QCD_Pt_2400to3200]: bash -lc './exe_bTagStudy QCD_Pt_2400to3200'
+[2025-09-15 21:28:25] STARTED [QCD_Pt_2400to3200] pid=45676
+[2025-09-15 21:28:25] HEARTBEAT: queue=27 running=4 mem_avail=23899MB | running_list=[QCD_Pt_600to800(pid=45220), QCD_Pt_1000to1400(pid=45421), QCD_Pt_1800to2400(pid=45665), QCD_Pt_2400to3200(pid=45676)]
+[2025-09-15 21:28:25] [WAIT] Max concurrency reached (4/4). (queue size=27)
+[2025-09-15 21:28:25] HEARTBEAT: queue=27 running=4 mem_avail=23897MB | running_list=[QCD_Pt_600to800(pid=45220), QCD_Pt_1000to1400(pid=45421), QCD_Pt_1800to2400(pid=45665), QCD_Pt_2400to3200(pid=45676)]
+[2025-09-15 21:28:28] [WAIT] Max concurrency reached (4/4). (queue size=27)
+[2025-09-15 21:28:28] [DONE] QCD_Pt_1000to1400 rc=0
+[2025-09-15 21:28:28] HEARTBEAT: queue=27 running=3 mem_avail=24641MB | running_list=[QCD_Pt_600to800(pid=45220), QCD_Pt_1800to2400(pid=45665), QCD_Pt_2400to3200(pid=45676)]
+[2025-09-15 21:28:28] LAUNCH [QCD_Pt_3200toInf]: bash -lc './exe_bTagStudy QCD_Pt_3200toInf'
+[2025-09-15 21:28:28] STARTED [QCD_Pt_3200toInf] pid=45866
+[2025-09-15 21:28:28] HEARTBEAT: queue=26 running=4 mem_avail=24643MB | running_list=[QCD_Pt_600to800(pid=45220), QCD_Pt_1800to2400(pid=45665), QCD_Pt_2400to3200(pid=45676), QCD_Pt_3200toInf(pid=45866)]
+[2025-09-15 21:28:28] [WAIT] Max concurrency reached (4/4). (queue size=26)
+[2025-09-15 21:28:28] HEARTBEAT: queue=26 running=4 mem_avail=24634MB | running_list=[QCD_Pt_600to800(pid=45220), QCD_Pt_1800to2400(pid=45665), QCD_Pt_2400to3200(pid=45676), QCD_Pt_3200toInf(pid=45866)]
+[2025-09-15 21:28:31] [WAIT] Max concurrency reached (4/4). (queue size=26)
+[2025-09-15 21:28:31] [DONE] QCD_Pt_600to800 rc=0
+[2025-09-15 21:28:31] HEARTBEAT: queue=26 running=3 mem_avail=25332MB | running_list=[QCD_Pt_1800to2400(pid=45665), QCD_Pt_2400to3200(pid=45676), QCD_Pt_3200toInf(pid=45866)]
+[2025-09-15 21:28:31] LAUNCH [tt4b]: bash -lc './exe_bTagStudy tt4b'
+[2025-09-15 21:28:31] STARTED [tt4b] pid=45971
+[2025-09-15 21:28:31] HEARTBEAT: queue=25 running=4 mem_avail=25327MB | running_list=[QCD_Pt_1800to2400(pid=45665), QCD_Pt_2400to3200(pid=45676), QCD_Pt_3200toInf(pid=45866), tt4b(pid=45971)]
+[2025-09-15 21:28:31] [WAIT] Max concurrency reached (4/4). (queue size=25)
+[2025-09-15 21:28:31] HEARTBEAT: queue=25 running=4 mem_avail=25339MB | running_list=[QCD_Pt_1800to2400(pid=45665), QCD_Pt_2400to3200(pid=45676), QCD_Pt_3200toInf(pid=45866), tt4b(pid=45971)]
+[2025-09-15 21:28:34] [WAIT] Max concurrency reached (4/4). (queue size=25)
+[2025-09-15 21:28:34] HEARTBEAT: queue=25 running=4 mem_avail=24783MB | running_list=[QCD_Pt_1800to2400(pid=45665), QCD_Pt_2400to3200(pid=45676), QCD_Pt_3200toInf(pid=45866), tt4b(pid=45971)]
+[2025-09-15 21:28:37] [WAIT] Max concurrency reached (4/4). (queue size=25)
+[2025-09-15 21:28:37] HEARTBEAT: queue=25 running=4 mem_avail=24262MB | running_list=[QCD_Pt_1800to2400(pid=45665), QCD_Pt_2400to3200(pid=45676), QCD_Pt_3200toInf(pid=45866), tt4b(pid=45971)]
+[2025-09-15 21:28:40] [WAIT] Max concurrency reached (4/4). (queue size=25)
+[2025-09-15 21:28:41] HEARTBEAT: queue=25 running=4 mem_avail=23501MB | running_list=[QCD_Pt_1800to2400(pid=45665), QCD_Pt_2400to3200(pid=45676), QCD_Pt_3200toInf(pid=45866), tt4b(pid=45971)]
+[2025-09-15 21:28:44] [WAIT] Max concurrency reached (4/4). (queue size=25)
+[2025-09-15 21:28:44] HEARTBEAT: queue=25 running=4 mem_avail=22981MB | running_list=[QCD_Pt_1800to2400(pid=45665), QCD_Pt_2400to3200(pid=45676), QCD_Pt_3200toInf(pid=45866), tt4b(pid=45971)]
+[2025-09-15 21:28:47] [WAIT] Max concurrency reached (4/4). (queue size=25)
+[2025-09-15 21:28:47] HEARTBEAT: queue=25 running=4 mem_avail=22129MB | running_list=[QCD_Pt_1800to2400(pid=45665), QCD_Pt_2400to3200(pid=45676), QCD_Pt_3200toInf(pid=45866), tt4b(pid=45971)]
+[2025-09-15 21:28:50] [WAIT] Max concurrency reached (4/4). (queue size=25)
+[2025-09-15 21:28:50] HEARTBEAT: queue=25 running=4 mem_avail=21516MB | running_list=[QCD_Pt_1800to2400(pid=45665), QCD_Pt_2400to3200(pid=45676), QCD_Pt_3200toInf(pid=45866), tt4b(pid=45971)]
+[2025-09-15 21:28:53] [WAIT] Max concurrency reached (4/4). (queue size=25)
+[2025-09-15 21:28:53] [DONE] QCD_Pt_1800to2400 rc=0
+[2025-09-15 21:28:53] [DONE] QCD_Pt_2400to3200 rc=0
+[2025-09-15 21:28:53] HEARTBEAT: queue=25 running=2 mem_avail=23514MB | running_list=[QCD_Pt_3200toInf(pid=45866), tt4b(pid=45971)]
+[2025-09-15 21:28:53] LAUNCH [ttbb]: bash -lc './exe_bTagStudy ttbb'
+[2025-09-15 21:28:53] STARTED [ttbb] pid=46109
+[2025-09-15 21:28:53] HEARTBEAT: queue=24 running=3 mem_avail=23519MB | running_list=[QCD_Pt_3200toInf(pid=45866), tt4b(pid=45971), ttbb(pid=46109)]
+[2025-09-15 21:28:53] LAUNCH [ttHH]: bash -lc './exe_bTagStudy ttHH'
+[2025-09-15 21:28:53] STARTED [ttHH] pid=46120
+[2025-09-15 21:28:53] HEARTBEAT: queue=23 running=4 mem_avail=23511MB | running_list=[QCD_Pt_3200toInf(pid=45866), tt4b(pid=45971), ttbb(pid=46109), ttHH(pid=46120)]
+[2025-09-15 21:28:53] [WAIT] Max concurrency reached (4/4). (queue size=23)
+[2025-09-15 21:28:53] HEARTBEAT: queue=23 running=4 mem_avail=23499MB | running_list=[QCD_Pt_3200toInf(pid=45866), tt4b(pid=45971), ttbb(pid=46109), ttHH(pid=46120)]
+[2025-09-15 21:28:56] [WAIT] Max concurrency reached (4/4). (queue size=23)
+[2025-09-15 21:28:56] [DONE] QCD_Pt_3200toInf rc=0
+[2025-09-15 21:28:56] HEARTBEAT: queue=23 running=3 mem_avail=23982MB | running_list=[tt4b(pid=45971), ttbb(pid=46109), ttHH(pid=46120)]
+[2025-09-15 21:28:56] LAUNCH [ttHtobb]: bash -lc './exe_bTagStudy ttHtobb'
+[2025-09-15 21:28:56] STARTED [ttHtobb] pid=46312
+[2025-09-15 21:28:56] HEARTBEAT: queue=22 running=4 mem_avail=23976MB | running_list=[tt4b(pid=45971), ttbb(pid=46109), ttHH(pid=46120), ttHtobb(pid=46312)]
+[2025-09-15 21:28:56] [WAIT] Max concurrency reached (4/4). (queue size=22)
+[2025-09-15 21:28:56] HEARTBEAT: queue=22 running=4 mem_avail=23968MB | running_list=[tt4b(pid=45971), ttbb(pid=46109), ttHH(pid=46120), ttHtobb(pid=46312)]
+[2025-09-15 21:28:59] [WAIT] Max concurrency reached (4/4). (queue size=22)
+[2025-09-15 21:28:59] HEARTBEAT: queue=22 running=4 mem_avail=23440MB | running_list=[tt4b(pid=45971), ttbb(pid=46109), ttHH(pid=46120), ttHtobb(pid=46312)]
+[2025-09-15 21:29:02] [WAIT] Max concurrency reached (4/4). (queue size=22)
+[2025-09-15 21:29:02] HEARTBEAT: queue=22 running=4 mem_avail=23013MB | running_list=[tt4b(pid=45971), ttbb(pid=46109), ttHH(pid=46120), ttHtobb(pid=46312)]
+[2025-09-15 21:29:05] [WAIT] Max concurrency reached (4/4). (queue size=22)
+[2025-09-15 21:29:05] HEARTBEAT: queue=22 running=4 mem_avail=22600MB | running_list=[tt4b(pid=45971), ttbb(pid=46109), ttHH(pid=46120), ttHtobb(pid=46312)]
+[2025-09-15 21:29:08] [WAIT] Max concurrency reached (4/4). (queue size=22)
+[2025-09-15 21:29:08] [DONE] tt4b rc=0
+[2025-09-15 21:29:08] HEARTBEAT: queue=22 running=3 mem_avail=23307MB | running_list=[ttbb(pid=46109), ttHH(pid=46120), ttHtobb(pid=46312)]
+[2025-09-15 21:29:08] LAUNCH [ttTohadronic]: bash -lc './exe_bTagStudy ttTohadronic'
+[2025-09-15 21:29:08] STARTED [ttTohadronic] pid=46433
+[2025-09-15 21:29:08] HEARTBEAT: queue=21 running=4 mem_avail=23302MB | running_list=[ttbb(pid=46109), ttHH(pid=46120), ttHtobb(pid=46312), ttTohadronic(pid=46433)]
+[2025-09-15 21:29:08] [WAIT] Max concurrency reached (4/4). (queue size=21)
+[2025-09-15 21:29:08] HEARTBEAT: queue=21 running=4 mem_avail=23298MB | running_list=[ttbb(pid=46109), ttHH(pid=46120), ttHtobb(pid=46312), ttTohadronic(pid=46433)]
+[2025-09-15 21:29:11] [WAIT] Max concurrency reached (4/4). (queue size=21)
+[2025-09-15 21:29:11] HEARTBEAT: queue=21 running=4 mem_avail=22474MB | running_list=[ttbb(pid=46109), ttHH(pid=46120), ttHtobb(pid=46312), ttTohadronic(pid=46433)]
+[2025-09-15 21:29:14] [WAIT] Max concurrency reached (4/4). (queue size=21)
+[2025-09-15 21:29:14] HEARTBEAT: queue=21 running=4 mem_avail=21857MB | running_list=[ttbb(pid=46109), ttHH(pid=46120), ttHtobb(pid=46312), ttTohadronic(pid=46433)]
+[2025-09-15 21:29:17] [WAIT] Max concurrency reached (4/4). (queue size=21)
+[2025-09-15 21:29:17] HEARTBEAT: queue=21 running=4 mem_avail=21441MB | running_list=[ttbb(pid=46109), ttHH(pid=46120), ttHtobb(pid=46312), ttTohadronic(pid=46433)]
+[2025-09-15 21:29:20] [WAIT] Max concurrency reached (4/4). (queue size=21)
+[2025-09-15 21:29:20] [DONE] ttbb rc=0
+[2025-09-15 21:29:20] HEARTBEAT: queue=21 running=3 mem_avail=22321MB | running_list=[ttHH(pid=46120), ttHtobb(pid=46312), ttTohadronic(pid=46433)]
+[2025-09-15 21:29:20] LAUNCH [TTTo2L2Nu]: bash -lc './exe_bTagStudy TTTo2L2Nu'
+[2025-09-15 21:29:20] STARTED [TTTo2L2Nu] pid=46556
+[2025-09-15 21:29:20] HEARTBEAT: queue=20 running=4 mem_avail=22318MB | running_list=[ttHH(pid=46120), ttHtobb(pid=46312), ttTohadronic(pid=46433), TTTo2L2Nu(pid=46556)]
+[2025-09-15 21:29:20] [WAIT] Max concurrency reached (4/4). (queue size=20)
+[2025-09-15 21:29:20] HEARTBEAT: queue=20 running=4 mem_avail=22322MB | running_list=[ttHH(pid=46120), ttHtobb(pid=46312), ttTohadronic(pid=46433), TTTo2L2Nu(pid=46556)]
+[2025-09-15 21:29:23] [WAIT] Max concurrency reached (4/4). (queue size=20)
+[2025-09-15 21:29:23] HEARTBEAT: queue=20 running=4 mem_avail=21830MB | running_list=[ttHH(pid=46120), ttHtobb(pid=46312), ttTohadronic(pid=46433), TTTo2L2Nu(pid=46556)]
+[2025-09-15 21:29:26] [WAIT] Max concurrency reached (4/4). (queue size=20)
+[2025-09-15 21:29:26] [DONE] ttHtobb rc=0
+[2025-09-15 21:29:26] HEARTBEAT: queue=20 running=3 mem_avail=22674MB | running_list=[ttHH(pid=46120), ttTohadronic(pid=46433), TTTo2L2Nu(pid=46556)]
+[2025-09-15 21:29:26] LAUNCH [TTToSemiLeptonic]: bash -lc './exe_bTagStudy TTToSemiLeptonic'
+[2025-09-15 21:29:26] STARTED [TTToSemiLeptonic] pid=46665
+[2025-09-15 21:29:26] HEARTBEAT: queue=19 running=4 mem_avail=22671MB | running_list=[ttHH(pid=46120), ttTohadronic(pid=46433), TTTo2L2Nu(pid=46556), TTToSemiLeptonic(pid=46665)]
+[2025-09-15 21:29:26] [WAIT] Max concurrency reached (4/4). (queue size=19)
+[2025-09-15 21:29:26] HEARTBEAT: queue=19 running=4 mem_avail=22671MB | running_list=[ttHH(pid=46120), ttTohadronic(pid=46433), TTTo2L2Nu(pid=46556), TTToSemiLeptonic(pid=46665)]
+[2025-09-15 21:29:29] [WAIT] Max concurrency reached (4/4). (queue size=19)
+[2025-09-15 21:29:29] HEARTBEAT: queue=19 running=4 mem_avail=22030MB | running_list=[ttHH(pid=46120), ttTohadronic(pid=46433), TTTo2L2Nu(pid=46556), TTToSemiLeptonic(pid=46665)]
+[2025-09-15 21:29:32] [WAIT] Max concurrency reached (4/4). (queue size=19)
+[2025-09-15 21:29:32] HEARTBEAT: queue=19 running=4 mem_avail=21678MB | running_list=[ttHH(pid=46120), ttTohadronic(pid=46433), TTTo2L2Nu(pid=46556), TTToSemiLeptonic(pid=46665)]
+[2025-09-15 21:29:35] [WAIT] Max concurrency reached (4/4). (queue size=19)
+[2025-09-15 21:29:35] HEARTBEAT: queue=19 running=4 mem_avail=21702MB | running_list=[ttHH(pid=46120), ttTohadronic(pid=46433), TTTo2L2Nu(pid=46556), TTToSemiLeptonic(pid=46665)]
+[2025-09-15 21:29:38] [WAIT] Max concurrency reached (4/4). (queue size=19)
+[2025-09-15 21:29:38] HEARTBEAT: queue=19 running=4 mem_avail=21414MB | running_list=[ttHH(pid=46120), ttTohadronic(pid=46433), TTTo2L2Nu(pid=46556), TTToSemiLeptonic(pid=46665)]
+[2025-09-15 21:29:41] [WAIT] Max concurrency reached (4/4). (queue size=19)
+[2025-09-15 21:29:41] [DONE] ttHH rc=0
+[2025-09-15 21:29:41] HEARTBEAT: queue=19 running=3 mem_avail=22423MB | running_list=[ttTohadronic(pid=46433), TTTo2L2Nu(pid=46556), TTToSemiLeptonic(pid=46665)]
+[2025-09-15 21:29:41] LAUNCH [tttt]: bash -lc './exe_bTagStudy tttt'
+[2025-09-15 21:29:41] STARTED [tttt] pid=46789
+[2025-09-15 21:29:41] HEARTBEAT: queue=18 running=4 mem_avail=22417MB | running_list=[ttTohadronic(pid=46433), TTTo2L2Nu(pid=46556), TTToSemiLeptonic(pid=46665), tttt(pid=46789)]
+[2025-09-15 21:29:41] [WAIT] Max concurrency reached (4/4). (queue size=18)
+[2025-09-15 21:29:41] HEARTBEAT: queue=18 running=4 mem_avail=22412MB | running_list=[ttTohadronic(pid=46433), TTTo2L2Nu(pid=46556), TTToSemiLeptonic(pid=46665), tttt(pid=46789)]
+[2025-09-15 21:29:44] [WAIT] Max concurrency reached (4/4). (queue size=18)
+[2025-09-15 21:29:44] [DONE] TTTo2L2Nu rc=0
+[2025-09-15 21:29:44] HEARTBEAT: queue=18 running=3 mem_avail=23154MB | running_list=[ttTohadronic(pid=46433), TTToSemiLeptonic(pid=46665), tttt(pid=46789)]
+[2025-09-15 21:29:44] LAUNCH [tttW]: bash -lc './exe_bTagStudy tttW'
+[2025-09-15 21:29:44] STARTED [tttW] pid=46893
+[2025-09-15 21:29:44] HEARTBEAT: queue=17 running=4 mem_avail=23148MB | running_list=[ttTohadronic(pid=46433), TTToSemiLeptonic(pid=46665), tttt(pid=46789), tttW(pid=46893)]
+[2025-09-15 21:29:44] [WAIT] Max concurrency reached (4/4). (queue size=17)
+[2025-09-15 21:29:44] HEARTBEAT: queue=17 running=4 mem_avail=23148MB | running_list=[ttTohadronic(pid=46433), TTToSemiLeptonic(pid=46665), tttt(pid=46789), tttW(pid=46893)]
+[2025-09-15 21:29:47] [WAIT] Max concurrency reached (4/4). (queue size=17)
+[2025-09-15 21:29:47] HEARTBEAT: queue=17 running=4 mem_avail=22703MB | running_list=[ttTohadronic(pid=46433), TTToSemiLeptonic(pid=46665), tttt(pid=46789), tttW(pid=46893)]
+[2025-09-15 21:29:50] [WAIT] Max concurrency reached (4/4). (queue size=17)
+[2025-09-15 21:29:50] HEARTBEAT: queue=17 running=4 mem_avail=22643MB | running_list=[ttTohadronic(pid=46433), TTToSemiLeptonic(pid=46665), tttt(pid=46789), tttW(pid=46893)]
+[2025-09-15 21:29:53] [WAIT] Max concurrency reached (4/4). (queue size=17)
+[2025-09-15 21:29:53] HEARTBEAT: queue=17 running=4 mem_avail=22342MB | running_list=[ttTohadronic(pid=46433), TTToSemiLeptonic(pid=46665), tttt(pid=46789), tttW(pid=46893)]
+[2025-09-15 21:29:56] [WAIT] Max concurrency reached (4/4). (queue size=17)
+[2025-09-15 21:29:56] HEARTBEAT: queue=17 running=4 mem_avail=22126MB | running_list=[ttTohadronic(pid=46433), TTToSemiLeptonic(pid=46665), tttt(pid=46789), tttW(pid=46893)]
+[2025-09-15 21:29:59] [WAIT] Max concurrency reached (4/4). (queue size=17)
+[2025-09-15 21:29:59] HEARTBEAT: queue=17 running=4 mem_avail=21769MB | running_list=[ttTohadronic(pid=46433), TTToSemiLeptonic(pid=46665), tttt(pid=46789), tttW(pid=46893)]
+[2025-09-15 21:30:02] [WAIT] Max concurrency reached (4/4). (queue size=17)
+[2025-09-15 21:30:02] HEARTBEAT: queue=17 running=4 mem_avail=21441MB | running_list=[ttTohadronic(pid=46433), TTToSemiLeptonic(pid=46665), tttt(pid=46789), tttW(pid=46893)]
+[2025-09-15 21:30:05] [WAIT] Max concurrency reached (4/4). (queue size=17)
+[2025-09-15 21:30:05] HEARTBEAT: queue=17 running=4 mem_avail=21120MB | running_list=[ttTohadronic(pid=46433), TTToSemiLeptonic(pid=46665), tttt(pid=46789), tttW(pid=46893)]
+[2025-09-15 21:30:08] [WAIT] Max concurrency reached (4/4). (queue size=17)
+[2025-09-15 21:30:08] [DONE] tttW rc=0
+[2025-09-15 21:30:08] HEARTBEAT: queue=17 running=3 mem_avail=22226MB | running_list=[ttTohadronic(pid=46433), TTToSemiLeptonic(pid=46665), tttt(pid=46789)]
+[2025-09-15 21:30:08] LAUNCH [ttWH]: bash -lc './exe_bTagStudy ttWH'
+[2025-09-15 21:30:08] STARTED [ttWH] pid=47033
+[2025-09-15 21:30:08] HEARTBEAT: queue=16 running=4 mem_avail=22224MB | running_list=[ttTohadronic(pid=46433), TTToSemiLeptonic(pid=46665), tttt(pid=46789), ttWH(pid=47033)]
+[2025-09-15 21:30:08] [WAIT] Max concurrency reached (4/4). (queue size=16)
+[2025-09-15 21:30:08] HEARTBEAT: queue=16 running=4 mem_avail=22222MB | running_list=[ttTohadronic(pid=46433), TTToSemiLeptonic(pid=46665), tttt(pid=46789), ttWH(pid=47033)]
+[2025-09-15 21:30:11] [WAIT] Max concurrency reached (4/4). (queue size=16)
+[2025-09-15 21:30:11] HEARTBEAT: queue=16 running=4 mem_avail=21985MB | running_list=[ttTohadronic(pid=46433), TTToSemiLeptonic(pid=46665), tttt(pid=46789), ttWH(pid=47033)]
+[2025-09-15 21:30:14] [WAIT] Max concurrency reached (4/4). (queue size=16)
+[2025-09-15 21:30:14] HEARTBEAT: queue=16 running=4 mem_avail=21798MB | running_list=[ttTohadronic(pid=46433), TTToSemiLeptonic(pid=46665), tttt(pid=46789), ttWH(pid=47033)]
+[2025-09-15 21:30:17] [WAIT] Max concurrency reached (4/4). (queue size=16)
+[2025-09-15 21:30:17] HEARTBEAT: queue=16 running=4 mem_avail=21610MB | running_list=[ttTohadronic(pid=46433), TTToSemiLeptonic(pid=46665), tttt(pid=46789), ttWH(pid=47033)]
+[2025-09-15 21:30:20] [WAIT] Max concurrency reached (4/4). (queue size=16)
+[2025-09-15 21:30:20] [DONE] TTToSemiLeptonic rc=0
+[2025-09-15 21:30:20] HEARTBEAT: queue=16 running=3 mem_avail=22682MB | running_list=[ttTohadronic(pid=46433), tttt(pid=46789), ttWH(pid=47033)]
+[2025-09-15 21:30:20] LAUNCH [ttWW]: bash -lc './exe_bTagStudy ttWW'
+[2025-09-15 21:30:20] STARTED [ttWW] pid=47152
+[2025-09-15 21:30:20] HEARTBEAT: queue=15 running=4 mem_avail=22679MB | running_list=[ttTohadronic(pid=46433), tttt(pid=46789), ttWH(pid=47033), ttWW(pid=47152)]
+[2025-09-15 21:30:20] [WAIT] Max concurrency reached (4/4). (queue size=15)
+[2025-09-15 21:30:20] HEARTBEAT: queue=15 running=4 mem_avail=22666MB | running_list=[ttTohadronic(pid=46433), tttt(pid=46789), ttWH(pid=47033), ttWW(pid=47152)]
+[2025-09-15 21:30:23] [WAIT] Max concurrency reached (4/4). (queue size=15)
+[2025-09-15 21:30:23] HEARTBEAT: queue=15 running=4 mem_avail=22250MB | running_list=[ttTohadronic(pid=46433), tttt(pid=46789), ttWH(pid=47033), ttWW(pid=47152)]
+[2025-09-15 21:30:26] [WAIT] Max concurrency reached (4/4). (queue size=15)
+[2025-09-15 21:30:26] HEARTBEAT: queue=15 running=4 mem_avail=21902MB | running_list=[ttTohadronic(pid=46433), tttt(pid=46789), ttWH(pid=47033), ttWW(pid=47152)]
+[2025-09-15 21:30:29] [WAIT] Max concurrency reached (4/4). (queue size=15)
+[2025-09-15 21:30:29] [DONE] ttWH rc=0
+[2025-09-15 21:30:29] HEARTBEAT: queue=15 running=3 mem_avail=22754MB | running_list=[ttTohadronic(pid=46433), tttt(pid=46789), ttWW(pid=47152)]
+[2025-09-15 21:30:29] LAUNCH [ttWZ]: bash -lc './exe_bTagStudy ttWZ'
+[2025-09-15 21:30:29] STARTED [ttWZ] pid=47266
+[2025-09-15 21:30:29] HEARTBEAT: queue=14 running=4 mem_avail=22751MB | running_list=[ttTohadronic(pid=46433), tttt(pid=46789), ttWW(pid=47152), ttWZ(pid=47266)]
+[2025-09-15 21:30:29] [WAIT] Max concurrency reached (4/4). (queue size=14)
+[2025-09-15 21:30:29] HEARTBEAT: queue=14 running=4 mem_avail=22747MB | running_list=[ttTohadronic(pid=46433), tttt(pid=46789), ttWW(pid=47152), ttWZ(pid=47266)]
+[2025-09-15 21:30:32] [WAIT] Max concurrency reached (4/4). (queue size=14)
+[2025-09-15 21:30:32] HEARTBEAT: queue=14 running=4 mem_avail=22335MB | running_list=[ttTohadronic(pid=46433), tttt(pid=46789), ttWW(pid=47152), ttWZ(pid=47266)]
+[2025-09-15 21:30:35] [WAIT] Max concurrency reached (4/4). (queue size=14)
+[2025-09-15 21:30:35] [DONE] ttTohadronic rc=0
+[2025-09-15 21:30:35] HEARTBEAT: queue=14 running=3 mem_avail=23213MB | running_list=[tttt(pid=46789), ttWW(pid=47152), ttWZ(pid=47266)]
+[2025-09-15 21:30:35] LAUNCH [ttZHto4b]: bash -lc './exe_bTagStudy ttZHto4b'
+[2025-09-15 21:30:35] STARTED [ttZHto4b] pid=47378
+[2025-09-15 21:30:35] HEARTBEAT: queue=13 running=4 mem_avail=23206MB | running_list=[tttt(pid=46789), ttWW(pid=47152), ttWZ(pid=47266), ttZHto4b(pid=47378)]
+[2025-09-15 21:30:35] [WAIT] Max concurrency reached (4/4). (queue size=13)
+[2025-09-15 21:30:35] HEARTBEAT: queue=13 running=4 mem_avail=23206MB | running_list=[tttt(pid=46789), ttWW(pid=47152), ttWZ(pid=47266), ttZHto4b(pid=47378)]
+[2025-09-15 21:30:38] [WAIT] Max concurrency reached (4/4). (queue size=13)
+[2025-09-15 21:30:38] HEARTBEAT: queue=13 running=4 mem_avail=22618MB | running_list=[tttt(pid=46789), ttWW(pid=47152), ttWZ(pid=47266), ttZHto4b(pid=47378)]
+[2025-09-15 21:30:41] [WAIT] Max concurrency reached (4/4). (queue size=13)
+[2025-09-15 21:30:41] [DONE] tttt rc=0
+[2025-09-15 21:30:41] [DONE] ttWW rc=0
+[2025-09-15 21:30:41] HEARTBEAT: queue=13 running=2 mem_avail=24928MB | running_list=[ttWZ(pid=47266), ttZHto4b(pid=47378)]
+[2025-09-15 21:30:41] LAUNCH [ttZtobb]: bash -lc './exe_bTagStudy ttZtobb'
+[2025-09-15 21:30:41] STARTED [ttZtobb] pid=47487
+[2025-09-15 21:30:41] HEARTBEAT: queue=12 running=3 mem_avail=24921MB | running_list=[ttWZ(pid=47266), ttZHto4b(pid=47378), ttZtobb(pid=47487)]
+[2025-09-15 21:30:41] LAUNCH [ttZZto4b]: bash -lc './exe_bTagStudy ttZZto4b'
+[2025-09-15 21:30:41] STARTED [ttZZto4b] pid=47498
+[2025-09-15 21:30:41] HEARTBEAT: queue=11 running=4 mem_avail=24918MB | running_list=[ttWZ(pid=47266), ttZHto4b(pid=47378), ttZtobb(pid=47487), ttZZto4b(pid=47498)]
+[2025-09-15 21:30:41] [WAIT] Max concurrency reached (4/4). (queue size=11)
+[2025-09-15 21:30:41] HEARTBEAT: queue=11 running=4 mem_avail=24917MB | running_list=[ttWZ(pid=47266), ttZHto4b(pid=47378), ttZtobb(pid=47487), ttZZto4b(pid=47498)]
+[2025-09-15 21:30:44] [WAIT] Max concurrency reached (4/4). (queue size=11)
+[2025-09-15 21:30:44] HEARTBEAT: queue=11 running=4 mem_avail=24107MB | running_list=[ttWZ(pid=47266), ttZHto4b(pid=47378), ttZtobb(pid=47487), ttZZto4b(pid=47498)]
+[2025-09-15 21:30:47] [WAIT] Max concurrency reached (4/4). (queue size=11)
+[2025-09-15 21:30:47] HEARTBEAT: queue=11 running=4 mem_avail=23492MB | running_list=[ttWZ(pid=47266), ttZHto4b(pid=47378), ttZtobb(pid=47487), ttZZto4b(pid=47498)]
+[2025-09-15 21:30:50] [WAIT] Max concurrency reached (4/4). (queue size=11)
+[2025-09-15 21:30:50] [DONE] ttWZ rc=0
+[2025-09-15 21:30:50] HEARTBEAT: queue=11 running=3 mem_avail=24028MB | running_list=[ttZHto4b(pid=47378), ttZtobb(pid=47487), ttZZto4b(pid=47498)]
+[2025-09-15 21:30:50] LAUNCH [JetHT_B]: bash -lc './exe_bTagStudy JetHT_B'
+[2025-09-15 21:30:50] STARTED [JetHT_B] pid=47699
+[2025-09-15 21:30:50] HEARTBEAT: queue=10 running=4 mem_avail=24021MB | running_list=[ttZHto4b(pid=47378), ttZtobb(pid=47487), ttZZto4b(pid=47498), JetHT_B(pid=47699)]
+[2025-09-15 21:30:50] [WAIT] Max concurrency reached (4/4). (queue size=10)
+[2025-09-15 21:30:50] HEARTBEAT: queue=10 running=4 mem_avail=24025MB | running_list=[ttZHto4b(pid=47378), ttZtobb(pid=47487), ttZZto4b(pid=47498), JetHT_B(pid=47699)]
+[2025-09-15 21:30:53] [WAIT] Max concurrency reached (4/4). (queue size=10)
+[2025-09-15 21:30:53] HEARTBEAT: queue=10 running=4 mem_avail=23310MB | running_list=[ttZHto4b(pid=47378), ttZtobb(pid=47487), ttZZto4b(pid=47498), JetHT_B(pid=47699)]
+[2025-09-15 21:30:56] [WAIT] Max concurrency reached (4/4). (queue size=10)
+[2025-09-15 21:30:56] HEARTBEAT: queue=10 running=4 mem_avail=22719MB | running_list=[ttZHto4b(pid=47378), ttZtobb(pid=47487), ttZZto4b(pid=47498), JetHT_B(pid=47699)]
+[2025-09-15 21:30:59] [WAIT] Max concurrency reached (4/4). (queue size=10)
+[2025-09-15 21:30:59] HEARTBEAT: queue=10 running=4 mem_avail=22075MB | running_list=[ttZHto4b(pid=47378), ttZtobb(pid=47487), ttZZto4b(pid=47498), JetHT_B(pid=47699)]
+[2025-09-15 21:31:02] [WAIT] Max concurrency reached (4/4). (queue size=10)
+[2025-09-15 21:31:02] HEARTBEAT: queue=10 running=4 mem_avail=21730MB | running_list=[ttZHto4b(pid=47378), ttZtobb(pid=47487), ttZZto4b(pid=47498), JetHT_B(pid=47699)]
+[2025-09-15 21:31:05] [WAIT] Max concurrency reached (4/4). (queue size=10)
+[2025-09-15 21:31:05] HEARTBEAT: queue=10 running=4 mem_avail=21354MB | running_list=[ttZHto4b(pid=47378), ttZtobb(pid=47487), ttZZto4b(pid=47498), JetHT_B(pid=47699)]
+[2025-09-15 21:31:08] [WAIT] Max concurrency reached (4/4). (queue size=10)
+[2025-09-15 21:31:08] [DONE] ttZtobb rc=0
+[2025-09-15 21:31:08] HEARTBEAT: queue=10 running=3 mem_avail=22293MB | running_list=[ttZHto4b(pid=47378), ttZZto4b(pid=47498), JetHT_B(pid=47699)]
+[2025-09-15 21:31:08] LAUNCH [JetHT_C]: bash -lc './exe_bTagStudy JetHT_C'
+[2025-09-15 21:31:08] STARTED [JetHT_C] pid=47828
+[2025-09-15 21:31:08] HEARTBEAT: queue=9 running=4 mem_avail=22288MB | running_list=[ttZHto4b(pid=47378), ttZZto4b(pid=47498), JetHT_B(pid=47699), JetHT_C(pid=47828)]
+[2025-09-15 21:31:08] [WAIT] Max concurrency reached (4/4). (queue size=9)
+[2025-09-15 21:31:08] HEARTBEAT: queue=9 running=4 mem_avail=22287MB | running_list=[ttZHto4b(pid=47378), ttZZto4b(pid=47498), JetHT_B(pid=47699), JetHT_C(pid=47828)]
+[2025-09-15 21:31:11] [WAIT] Max concurrency reached (4/4). (queue size=9)
+[2025-09-15 21:31:11] HEARTBEAT: queue=9 running=4 mem_avail=21871MB | running_list=[ttZHto4b(pid=47378), ttZZto4b(pid=47498), JetHT_B(pid=47699), JetHT_C(pid=47828)]
+[2025-09-15 21:31:14] [WAIT] Max concurrency reached (4/4). (queue size=9)
+[2025-09-15 21:31:14] [DONE] JetHT_B rc=0
+[2025-09-15 21:31:14] HEARTBEAT: queue=9 running=3 mem_avail=22856MB | running_list=[ttZHto4b(pid=47378), ttZZto4b(pid=47498), JetHT_C(pid=47828)]
+[2025-09-15 21:31:14] LAUNCH [JetHT_D]: bash -lc './exe_bTagStudy JetHT_D'
+[2025-09-15 21:31:14] STARTED [JetHT_D] pid=47937
+[2025-09-15 21:31:14] HEARTBEAT: queue=8 running=4 mem_avail=22858MB | running_list=[ttZHto4b(pid=47378), ttZZto4b(pid=47498), JetHT_C(pid=47828), JetHT_D(pid=47937)]
+[2025-09-15 21:31:14] [WAIT] Max concurrency reached (4/4). (queue size=8)
+[2025-09-15 21:31:14] HEARTBEAT: queue=8 running=4 mem_avail=22854MB | running_list=[ttZHto4b(pid=47378), ttZZto4b(pid=47498), JetHT_C(pid=47828), JetHT_D(pid=47937)]
+[2025-09-15 21:31:17] [WAIT] Max concurrency reached (4/4). (queue size=8)
+[2025-09-15 21:31:17] HEARTBEAT: queue=8 running=4 mem_avail=22445MB | running_list=[ttZHto4b(pid=47378), ttZZto4b(pid=47498), JetHT_C(pid=47828), JetHT_D(pid=47937)]
+[2025-09-15 21:31:20] [WAIT] Max concurrency reached (4/4). (queue size=8)
+[2025-09-15 21:31:20] [DONE] ttZHto4b rc=0
+[2025-09-15 21:31:20] HEARTBEAT: queue=8 running=3 mem_avail=23560MB | running_list=[ttZZto4b(pid=47498), JetHT_C(pid=47828), JetHT_D(pid=47937)]
+[2025-09-15 21:31:20] LAUNCH [JetHT_E]: bash -lc './exe_bTagStudy JetHT_E'
+[2025-09-15 21:31:20] STARTED [JetHT_E] pid=48046
+[2025-09-15 21:31:20] HEARTBEAT: queue=7 running=4 mem_avail=23558MB | running_list=[ttZZto4b(pid=47498), JetHT_C(pid=47828), JetHT_D(pid=47937), JetHT_E(pid=48046)]
+[2025-09-15 21:31:20] [WAIT] Max concurrency reached (4/4). (queue size=7)
+[2025-09-15 21:31:20] HEARTBEAT: queue=7 running=4 mem_avail=23555MB | running_list=[ttZZto4b(pid=47498), JetHT_C(pid=47828), JetHT_D(pid=47937), JetHT_E(pid=48046)]
+[2025-09-15 21:31:23] [WAIT] Max concurrency reached (4/4). (queue size=7)
+[2025-09-15 21:31:23] [DONE] ttZZto4b rc=0
+[2025-09-15 21:31:23] HEARTBEAT: queue=7 running=3 mem_avail=24456MB | running_list=[JetHT_C(pid=47828), JetHT_D(pid=47937), JetHT_E(pid=48046)]
+[2025-09-15 21:31:23] LAUNCH [JetHT_F]: bash -lc './exe_bTagStudy JetHT_F'
+[2025-09-15 21:31:23] STARTED [JetHT_F] pid=48150
+[2025-09-15 21:31:23] HEARTBEAT: queue=6 running=4 mem_avail=24457MB | running_list=[JetHT_C(pid=47828), JetHT_D(pid=47937), JetHT_E(pid=48046), JetHT_F(pid=48150)]
+[2025-09-15 21:31:23] [WAIT] Max concurrency reached (4/4). (queue size=6)
+[2025-09-15 21:31:23] HEARTBEAT: queue=6 running=4 mem_avail=24450MB | running_list=[JetHT_C(pid=47828), JetHT_D(pid=47937), JetHT_E(pid=48046), JetHT_F(pid=48150)]
+[2025-09-15 21:31:26] [WAIT] Max concurrency reached (4/4). (queue size=6)
+[2025-09-15 21:31:26] HEARTBEAT: queue=6 running=4 mem_avail=23821MB | running_list=[JetHT_C(pid=47828), JetHT_D(pid=47937), JetHT_E(pid=48046), JetHT_F(pid=48150)]
+[2025-09-15 21:31:29] [WAIT] Max concurrency reached (4/4). (queue size=6)
+[2025-09-15 21:31:29] HEARTBEAT: queue=6 running=4 mem_avail=23365MB | running_list=[JetHT_C(pid=47828), JetHT_D(pid=47937), JetHT_E(pid=48046), JetHT_F(pid=48150)]
+[2025-09-15 21:31:32] [WAIT] Max concurrency reached (4/4). (queue size=6)
+[2025-09-15 21:31:32] HEARTBEAT: queue=6 running=4 mem_avail=22966MB | running_list=[JetHT_C(pid=47828), JetHT_D(pid=47937), JetHT_E(pid=48046), JetHT_F(pid=48150)]
+[2025-09-15 21:31:35] [WAIT] Max concurrency reached (4/4). (queue size=6)
+[2025-09-15 21:31:35] HEARTBEAT: queue=6 running=4 mem_avail=22456MB | running_list=[JetHT_C(pid=47828), JetHT_D(pid=47937), JetHT_E(pid=48046), JetHT_F(pid=48150)]
+[2025-09-15 21:31:38] [WAIT] Max concurrency reached (4/4). (queue size=6)
+[2025-09-15 21:31:38] HEARTBEAT: queue=6 running=4 mem_avail=21995MB | running_list=[JetHT_C(pid=47828), JetHT_D(pid=47937), JetHT_E(pid=48046), JetHT_F(pid=48150)]
+[2025-09-15 21:31:41] [WAIT] Max concurrency reached (4/4). (queue size=6)
+[2025-09-15 21:31:41] [DONE] JetHT_C rc=0
+[2025-09-15 21:31:41] HEARTBEAT: queue=6 running=3 mem_avail=22813MB | running_list=[JetHT_D(pid=47937), JetHT_E(pid=48046), JetHT_F(pid=48150)]
+[2025-09-15 21:31:41] LAUNCH [BTagCSV_B]: bash -lc './exe_bTagStudy BTagCSV_B'
+[2025-09-15 21:31:41] STARTED [BTagCSV_B] pid=48279
+[2025-09-15 21:31:41] HEARTBEAT: queue=5 running=4 mem_avail=22811MB | running_list=[JetHT_D(pid=47937), JetHT_E(pid=48046), JetHT_F(pid=48150), BTagCSV_B(pid=48279)]
+[2025-09-15 21:31:41] [WAIT] Max concurrency reached (4/4). (queue size=5)
+[2025-09-15 21:31:41] HEARTBEAT: queue=5 running=4 mem_avail=22811MB | running_list=[JetHT_D(pid=47937), JetHT_E(pid=48046), JetHT_F(pid=48150), BTagCSV_B(pid=48279)]
+[2025-09-15 21:31:44] [WAIT] Max concurrency reached (4/4). (queue size=5)
+[2025-09-15 21:31:44] [DONE] JetHT_D rc=0
+[2025-09-15 21:31:44] HEARTBEAT: queue=5 running=3 mem_avail=23470MB | running_list=[JetHT_E(pid=48046), JetHT_F(pid=48150), BTagCSV_B(pid=48279)]
+[2025-09-15 21:31:44] LAUNCH [BTagCSV_C]: bash -lc './exe_bTagStudy BTagCSV_C'
+[2025-09-15 21:31:44] STARTED [BTagCSV_C] pid=48383
+[2025-09-15 21:31:44] HEARTBEAT: queue=4 running=4 mem_avail=23467MB | running_list=[JetHT_E(pid=48046), JetHT_F(pid=48150), BTagCSV_B(pid=48279), BTagCSV_C(pid=48383)]
+[2025-09-15 21:31:44] [WAIT] Max concurrency reached (4/4). (queue size=4)
+[2025-09-15 21:31:44] HEARTBEAT: queue=4 running=4 mem_avail=23463MB | running_list=[JetHT_E(pid=48046), JetHT_F(pid=48150), BTagCSV_B(pid=48279), BTagCSV_C(pid=48383)]
+[2025-09-15 21:31:47] [WAIT] Max concurrency reached (4/4). (queue size=4)
+[2025-09-15 21:31:47] HEARTBEAT: queue=4 running=4 mem_avail=22931MB | running_list=[JetHT_E(pid=48046), JetHT_F(pid=48150), BTagCSV_B(pid=48279), BTagCSV_C(pid=48383)]
+[2025-09-15 21:31:50] [WAIT] Max concurrency reached (4/4). (queue size=4)
+[2025-09-15 21:31:50] [DONE] JetHT_E rc=0
+[2025-09-15 21:31:50] HEARTBEAT: queue=4 running=3 mem_avail=23718MB | running_list=[JetHT_F(pid=48150), BTagCSV_B(pid=48279), BTagCSV_C(pid=48383)]
+[2025-09-15 21:31:50] LAUNCH [BTagCSV_D]: bash -lc './exe_bTagStudy BTagCSV_D'
+[2025-09-15 21:31:50] STARTED [BTagCSV_D] pid=48492
+[2025-09-15 21:31:50] HEARTBEAT: queue=3 running=4 mem_avail=23716MB | running_list=[JetHT_F(pid=48150), BTagCSV_B(pid=48279), BTagCSV_C(pid=48383), BTagCSV_D(pid=48492)]
+[2025-09-15 21:31:50] [WAIT] Max concurrency reached (4/4). (queue size=3)
+[2025-09-15 21:31:50] HEARTBEAT: queue=3 running=4 mem_avail=23719MB | running_list=[JetHT_F(pid=48150), BTagCSV_B(pid=48279), BTagCSV_C(pid=48383), BTagCSV_D(pid=48492)]
+[2025-09-15 21:31:53] [WAIT] Max concurrency reached (4/4). (queue size=3)
+[2025-09-15 21:31:54] HEARTBEAT: queue=3 running=4 mem_avail=23188MB | running_list=[JetHT_F(pid=48150), BTagCSV_B(pid=48279), BTagCSV_C(pid=48383), BTagCSV_D(pid=48492)]
+[2025-09-15 21:31:57] [WAIT] Max concurrency reached (4/4). (queue size=3)
+[2025-09-15 21:31:57] [DONE] JetHT_F rc=0
+[2025-09-15 21:31:57] HEARTBEAT: queue=3 running=3 mem_avail=23968MB | running_list=[BTagCSV_B(pid=48279), BTagCSV_C(pid=48383), BTagCSV_D(pid=48492)]
+[2025-09-15 21:31:57] LAUNCH [BTagCSV_E]: bash -lc './exe_bTagStudy BTagCSV_E'
+[2025-09-15 21:31:57] STARTED [BTagCSV_E] pid=48601
+[2025-09-15 21:31:57] HEARTBEAT: queue=2 running=4 mem_avail=23961MB | running_list=[BTagCSV_B(pid=48279), BTagCSV_C(pid=48383), BTagCSV_D(pid=48492), BTagCSV_E(pid=48601)]
+[2025-09-15 21:31:57] [WAIT] Max concurrency reached (4/4). (queue size=2)
+[2025-09-15 21:31:57] HEARTBEAT: queue=2 running=4 mem_avail=23960MB | running_list=[BTagCSV_B(pid=48279), BTagCSV_C(pid=48383), BTagCSV_D(pid=48492), BTagCSV_E(pid=48601)]
+[2025-09-15 21:32:00] [WAIT] Max concurrency reached (4/4). (queue size=2)
+[2025-09-15 21:32:00] HEARTBEAT: queue=2 running=4 mem_avail=23262MB | running_list=[BTagCSV_B(pid=48279), BTagCSV_C(pid=48383), BTagCSV_D(pid=48492), BTagCSV_E(pid=48601)]
+[2025-09-15 21:32:03] [WAIT] Max concurrency reached (4/4). (queue size=2)
+[2025-09-15 21:32:03] [DONE] BTagCSV_B rc=0
+[2025-09-15 21:32:03] HEARTBEAT: queue=2 running=3 mem_avail=23830MB | running_list=[BTagCSV_C(pid=48383), BTagCSV_D(pid=48492), BTagCSV_E(pid=48601)]
+[2025-09-15 21:32:03] LAUNCH [BTagCSV_F]: bash -lc './exe_bTagStudy BTagCSV_F'
+[2025-09-15 21:32:03] STARTED [BTagCSV_F] pid=48710
+[2025-09-15 21:32:03] HEARTBEAT: queue=1 running=4 mem_avail=23828MB | running_list=[BTagCSV_C(pid=48383), BTagCSV_D(pid=48492), BTagCSV_E(pid=48601), BTagCSV_F(pid=48710)]
+[2025-09-15 21:32:03] [WAIT] Max concurrency reached (4/4). (queue size=1)
+[2025-09-15 21:32:03] HEARTBEAT: queue=1 running=4 mem_avail=23829MB | running_list=[BTagCSV_C(pid=48383), BTagCSV_D(pid=48492), BTagCSV_E(pid=48601), BTagCSV_F(pid=48710)]
+[2025-09-15 21:32:06] [WAIT] Max concurrency reached (4/4). (queue size=1)
+[2025-09-15 21:32:06] [DONE] BTagCSV_C rc=0
+[2025-09-15 21:32:06] HEARTBEAT: queue=1 running=3 mem_avail=24281MB | running_list=[BTagCSV_D(pid=48492), BTagCSV_E(pid=48601), BTagCSV_F(pid=48710)]
+[2025-09-15 21:32:06] LAUNCH [QCD_Pt_170to300]: bash -lc './exe_bTagStudy QCD_Pt_170to300'
+[2025-09-15 21:32:06] STARTED [QCD_Pt_170to300] pid=48814
+[2025-09-15 21:32:06] HEARTBEAT: queue=0 running=4 mem_avail=24259MB | running_list=[BTagCSV_D(pid=48492), BTagCSV_E(pid=48601), BTagCSV_F(pid=48710), QCD_Pt_170to300(pid=48814)]
+[2025-09-15 21:32:09] HEARTBEAT: queue=0 running=4 mem_avail=23583MB | running_list=[BTagCSV_D(pid=48492), BTagCSV_E(pid=48601), BTagCSV_F(pid=48710), QCD_Pt_170to300(pid=48814)]
+[2025-09-15 21:32:12] [DONE] BTagCSV_D rc=0
+[2025-09-15 21:32:12] HEARTBEAT: queue=0 running=3 mem_avail=24126MB | running_list=[BTagCSV_E(pid=48601), BTagCSV_F(pid=48710), QCD_Pt_170to300(pid=48814)]
+[2025-09-15 21:32:12] HEARTBEAT: queue=0 running=3 mem_avail=24110MB | running_list=[BTagCSV_E(pid=48601), BTagCSV_F(pid=48710), QCD_Pt_170to300(pid=48814)]
+[2025-09-15 21:32:15] HEARTBEAT: queue=0 running=3 mem_avail=23622MB | running_list=[BTagCSV_E(pid=48601), BTagCSV_F(pid=48710), QCD_Pt_170to300(pid=48814)]
+[2025-09-15 21:32:18] [DONE] BTagCSV_E rc=0
+[2025-09-15 21:32:18] HEARTBEAT: queue=0 running=2 mem_avail=24307MB | running_list=[BTagCSV_F(pid=48710), QCD_Pt_170to300(pid=48814)]
+[2025-09-15 21:32:18] HEARTBEAT: queue=0 running=2 mem_avail=24315MB | running_list=[BTagCSV_F(pid=48710), QCD_Pt_170to300(pid=48814)]
+[2025-09-15 21:32:21] HEARTBEAT: queue=0 running=2 mem_avail=23950MB | running_list=[BTagCSV_F(pid=48710), QCD_Pt_170to300(pid=48814)]
+[2025-09-15 21:32:24] HEARTBEAT: queue=0 running=2 mem_avail=23622MB | running_list=[BTagCSV_F(pid=48710), QCD_Pt_170to300(pid=48814)]
+[2025-09-15 21:32:27] [DONE] BTagCSV_F rc=0
+[2025-09-15 21:32:27] [DONE] QCD_Pt_170to300 rc=0
+[2025-09-15 21:32:27] HEARTBEAT: queue=0 running=0 mem_avail=25852MB | running_list=[-]
+[2025-09-15 21:32:27] ======== RUN END ========
+[2025-09-15 21:32:27] ====== SUMMARY ======
+[2025-09-15 21:32:27] Success: 40
+[2025-09-15 21:32:27]   QCD_Pt_15to30, QCD_Pt_30to50, QCD_Pt_50to80, QCD_Pt_80to120, QCD_Pt_120to170, QCD_Pt_300to470, QCD_Pt_470to600, QCD_Pt_800to1000, QCD_Pt_1400to1800, QCD_Pt_1000to1400, QCD_Pt_600to800, QCD_Pt_1800to2400, QCD_Pt_2400to3200, QCD_Pt_3200toInf, tt4b, ttbb, ttHtobb, ttHH, TTTo2L2Nu, tttW, TTToSemiLeptonic, ttWH, ttTohadronic, tttt, ttWW, ttWZ, ttZtobb, JetHT_B, ttZHto4b, ttZZto4b, JetHT_C, JetHT_D, JetHT_E, JetHT_F, BTagCSV_B, BTagCSV_C, BTagCSV_D, BTagCSV_E, BTagCSV_F, QCD_Pt_170to300
+[2025-09-15 21:32:27] Failed: 0
+[2025-09-15 21:32:27] =====================
+[2025-09-15 21:41:19] ======== RUN START ========
+[2025-09-15 21:41:19] [INFO] Loaded 40 samples: ['QCD_Pt_15to30', 'QCD_Pt_30to50', 'QCD_Pt_50to80', 'QCD_Pt_80to120', 'QCD_Pt_120to170', 'QCD_Pt_170to300', 'QCD_Pt_300to470', 'QCD_Pt_470to600', 'QCD_Pt_600to800', 'QCD_Pt_800to1000', 'QCD_Pt_1000to1400', 'QCD_Pt_1400to1800', 'QCD_Pt_1800to2400', 'QCD_Pt_2400to3200', 'QCD_Pt_3200toInf', 'tt4b', 'ttbb', 'ttHH', 'ttHtobb', 'ttTohadronic', 'TTTo2L2Nu', 'TTToSemiLeptonic', 'tttt', 'tttW', 'ttWH', 'ttWW', 'ttWZ', 'ttZHto4b', 'ttZtobb', 'ttZZto4b', 'JetHT_B', 'JetHT_C', 'JetHT_D', 'JetHT_E', 'JetHT_F', 'BTagCSV_B', 'BTagCSV_C', 'BTagCSV_D', 'BTagCSV_E', 'BTagCSV_F']
+[2025-09-15 21:41:19] LAUNCH [QCD_Pt_15to30]: bash -lc './exe_bTagStudy QCD_Pt_15to30'
+[2025-09-15 21:41:19] STARTED [QCD_Pt_15to30] pid=50470
+[2025-09-15 21:41:19] HEARTBEAT: queue=39 running=1 mem_avail=24123MB | running_list=[QCD_Pt_15to30(pid=50470)]
+[2025-09-15 21:41:19] LAUNCH [QCD_Pt_30to50]: bash -lc './exe_bTagStudy QCD_Pt_30to50'
+[2025-09-15 21:41:19] STARTED [QCD_Pt_30to50] pid=50480
+[2025-09-15 21:41:19] HEARTBEAT: queue=38 running=2 mem_avail=24116MB | running_list=[QCD_Pt_15to30(pid=50470), QCD_Pt_30to50(pid=50480)]
+[2025-09-15 21:41:19] LAUNCH [QCD_Pt_50to80]: bash -lc './exe_bTagStudy QCD_Pt_50to80'
+[2025-09-15 21:41:19] STARTED [QCD_Pt_50to80] pid=50493
+[2025-09-15 21:41:19] HEARTBEAT: queue=37 running=3 mem_avail=24115MB | running_list=[QCD_Pt_15to30(pid=50470), QCD_Pt_30to50(pid=50480), QCD_Pt_50to80(pid=50493)]
+[2025-09-15 21:41:19] LAUNCH [QCD_Pt_80to120]: bash -lc './exe_bTagStudy QCD_Pt_80to120'
+[2025-09-15 21:41:19] STARTED [QCD_Pt_80to120] pid=50510
+[2025-09-15 21:41:19] HEARTBEAT: queue=36 running=4 mem_avail=24111MB | running_list=[QCD_Pt_15to30(pid=50470), QCD_Pt_30to50(pid=50480), QCD_Pt_50to80(pid=50493), QCD_Pt_80to120(pid=50510)]
+[2025-09-15 21:41:19] [WAIT] Max concurrency reached (4/4). (queue size=36)
+[2025-09-15 21:41:19] HEARTBEAT: queue=36 running=4 mem_avail=24109MB | running_list=[QCD_Pt_15to30(pid=50470), QCD_Pt_30to50(pid=50480), QCD_Pt_50to80(pid=50493), QCD_Pt_80to120(pid=50510)]
+[2025-09-15 21:41:22] [WAIT] Max concurrency reached (4/4). (queue size=36)
+[2025-09-15 21:41:22] [DONE] QCD_Pt_15to30 rc=0
+[2025-09-15 21:41:22] [DONE] QCD_Pt_30to50 rc=0
+[2025-09-15 21:41:22] [DONE] QCD_Pt_50to80 rc=0
+[2025-09-15 21:41:22] [DONE] QCD_Pt_80to120 rc=0
+[2025-09-15 21:41:22] HEARTBEAT: queue=36 running=0 mem_avail=24002MB | running_list=[-]
+[2025-09-15 21:41:22] LAUNCH [QCD_Pt_120to170]: bash -lc './exe_bTagStudy QCD_Pt_120to170'
+[2025-09-15 21:41:22] STARTED [QCD_Pt_120to170] pid=50871
+[2025-09-15 21:41:22] HEARTBEAT: queue=35 running=1 mem_avail=24005MB | running_list=[QCD_Pt_120to170(pid=50871)]
+[2025-09-15 21:41:22] LAUNCH [QCD_Pt_170to300]: bash -lc './exe_bTagStudy QCD_Pt_170to300'
+[2025-09-15 21:41:22] STARTED [QCD_Pt_170to300] pid=50882
+[2025-09-15 21:41:22] HEARTBEAT: queue=34 running=2 mem_avail=23999MB | running_list=[QCD_Pt_120to170(pid=50871), QCD_Pt_170to300(pid=50882)]
+[2025-09-15 21:41:22] LAUNCH [QCD_Pt_300to470]: bash -lc './exe_bTagStudy QCD_Pt_300to470'
+[2025-09-15 21:41:22] STARTED [QCD_Pt_300to470] pid=50894
+[2025-09-15 21:41:22] HEARTBEAT: queue=33 running=3 mem_avail=23998MB | running_list=[QCD_Pt_120to170(pid=50871), QCD_Pt_170to300(pid=50882), QCD_Pt_300to470(pid=50894)]
+[2025-09-15 21:41:22] LAUNCH [QCD_Pt_470to600]: bash -lc './exe_bTagStudy QCD_Pt_470to600'
+[2025-09-15 21:41:22] STARTED [QCD_Pt_470to600] pid=50913
+[2025-09-15 21:41:22] HEARTBEAT: queue=32 running=4 mem_avail=23996MB | running_list=[QCD_Pt_120to170(pid=50871), QCD_Pt_170to300(pid=50882), QCD_Pt_300to470(pid=50894), QCD_Pt_470to600(pid=50913)]
+[2025-09-15 21:41:22] [WAIT] Max concurrency reached (4/4). (queue size=32)
+[2025-09-15 21:41:22] HEARTBEAT: queue=32 running=4 mem_avail=23994MB | running_list=[QCD_Pt_120to170(pid=50871), QCD_Pt_170to300(pid=50882), QCD_Pt_300to470(pid=50894), QCD_Pt_470to600(pid=50913)]
+[2025-09-15 21:41:25] [WAIT] Max concurrency reached (4/4). (queue size=32)
+[2025-09-15 21:41:25] [DONE] QCD_Pt_120to170 rc=0
+[2025-09-15 21:41:25] [DONE] QCD_Pt_170to300 rc=0
+[2025-09-15 21:41:25] [DONE] QCD_Pt_300to470 rc=0
+[2025-09-15 21:41:25] [DONE] QCD_Pt_470to600 rc=0
+[2025-09-15 21:41:25] HEARTBEAT: queue=32 running=0 mem_avail=23892MB | running_list=[-]
+[2025-09-15 21:41:25] LAUNCH [QCD_Pt_600to800]: bash -lc './exe_bTagStudy QCD_Pt_600to800'
+[2025-09-15 21:41:25] STARTED [QCD_Pt_600to800] pid=51266
+[2025-09-15 21:41:25] HEARTBEAT: queue=31 running=1 mem_avail=23878MB | running_list=[QCD_Pt_600to800(pid=51266)]
+[2025-09-15 21:41:25] LAUNCH [QCD_Pt_800to1000]: bash -lc './exe_bTagStudy QCD_Pt_800to1000'
+[2025-09-15 21:41:25] STARTED [QCD_Pt_800to1000] pid=51277
+[2025-09-15 21:41:25] HEARTBEAT: queue=30 running=2 mem_avail=23881MB | running_list=[QCD_Pt_600to800(pid=51266), QCD_Pt_800to1000(pid=51277)]
+[2025-09-15 21:41:25] LAUNCH [QCD_Pt_1000to1400]: bash -lc './exe_bTagStudy QCD_Pt_1000to1400'
+[2025-09-15 21:41:25] STARTED [QCD_Pt_1000to1400] pid=51289
+[2025-09-15 21:41:25] HEARTBEAT: queue=29 running=3 mem_avail=23871MB | running_list=[QCD_Pt_600to800(pid=51266), QCD_Pt_800to1000(pid=51277), QCD_Pt_1000to1400(pid=51289)]
+[2025-09-15 21:41:25] LAUNCH [QCD_Pt_1400to1800]: bash -lc './exe_bTagStudy QCD_Pt_1400to1800'
+[2025-09-15 21:41:25] STARTED [QCD_Pt_1400to1800] pid=51310
+[2025-09-15 21:41:25] HEARTBEAT: queue=28 running=4 mem_avail=23877MB | running_list=[QCD_Pt_600to800(pid=51266), QCD_Pt_800to1000(pid=51277), QCD_Pt_1000to1400(pid=51289), QCD_Pt_1400to1800(pid=51310)]
+[2025-09-15 21:41:25] [WAIT] Max concurrency reached (4/4). (queue size=28)
+[2025-09-15 21:41:25] HEARTBEAT: queue=28 running=4 mem_avail=23867MB | running_list=[QCD_Pt_600to800(pid=51266), QCD_Pt_800to1000(pid=51277), QCD_Pt_1000to1400(pid=51289), QCD_Pt_1400to1800(pid=51310)]
+[2025-09-15 21:41:28] [WAIT] Max concurrency reached (4/4). (queue size=28)
+[2025-09-15 21:41:28] [DONE] QCD_Pt_600to800 rc=0
+[2025-09-15 21:41:28] [DONE] QCD_Pt_800to1000 rc=0
+[2025-09-15 21:41:28] [DONE] QCD_Pt_1000to1400 rc=0
+[2025-09-15 21:41:28] [DONE] QCD_Pt_1400to1800 rc=0
+[2025-09-15 21:41:28] HEARTBEAT: queue=28 running=0 mem_avail=23870MB | running_list=[-]
+[2025-09-15 21:41:28] LAUNCH [QCD_Pt_1800to2400]: bash -lc './exe_bTagStudy QCD_Pt_1800to2400'
+[2025-09-15 21:41:28] STARTED [QCD_Pt_1800to2400] pid=51661
+[2025-09-15 21:41:28] HEARTBEAT: queue=27 running=1 mem_avail=23867MB | running_list=[QCD_Pt_1800to2400(pid=51661)]
+[2025-09-15 21:41:28] LAUNCH [QCD_Pt_2400to3200]: bash -lc './exe_bTagStudy QCD_Pt_2400to3200'
+[2025-09-15 21:41:28] STARTED [QCD_Pt_2400to3200] pid=51672
+[2025-09-15 21:41:28] HEARTBEAT: queue=26 running=2 mem_avail=23857MB | running_list=[QCD_Pt_1800to2400(pid=51661), QCD_Pt_2400to3200(pid=51672)]
+[2025-09-15 21:41:28] LAUNCH [QCD_Pt_3200toInf]: bash -lc './exe_bTagStudy QCD_Pt_3200toInf'
+[2025-09-15 21:41:28] STARTED [QCD_Pt_3200toInf] pid=51684
+[2025-09-15 21:41:28] HEARTBEAT: queue=25 running=3 mem_avail=23854MB | running_list=[QCD_Pt_1800to2400(pid=51661), QCD_Pt_2400to3200(pid=51672), QCD_Pt_3200toInf(pid=51684)]
+[2025-09-15 21:41:28] LAUNCH [tt4b]: bash -lc './exe_bTagStudy tt4b'
+[2025-09-15 21:41:28] STARTED [tt4b] pid=51703
+[2025-09-15 21:41:28] HEARTBEAT: queue=24 running=4 mem_avail=23846MB | running_list=[QCD_Pt_1800to2400(pid=51661), QCD_Pt_2400to3200(pid=51672), QCD_Pt_3200toInf(pid=51684), tt4b(pid=51703)]
+[2025-09-15 21:41:28] [WAIT] Max concurrency reached (4/4). (queue size=24)
+[2025-09-15 21:41:28] HEARTBEAT: queue=24 running=4 mem_avail=23849MB | running_list=[QCD_Pt_1800to2400(pid=51661), QCD_Pt_2400to3200(pid=51672), QCD_Pt_3200toInf(pid=51684), tt4b(pid=51703)]
+[2025-09-15 21:41:31] [WAIT] Max concurrency reached (4/4). (queue size=24)
+[2025-09-15 21:41:31] [DONE] QCD_Pt_1800to2400 rc=0
+[2025-09-15 21:41:31] [DONE] QCD_Pt_2400to3200 rc=0
+[2025-09-15 21:41:31] [DONE] QCD_Pt_3200toInf rc=0
+[2025-09-15 21:41:31] [DONE] tt4b rc=0
+[2025-09-15 21:41:31] HEARTBEAT: queue=24 running=0 mem_avail=23854MB | running_list=[-]
+[2025-09-15 21:41:31] LAUNCH [ttbb]: bash -lc './exe_bTagStudy ttbb'
+[2025-09-15 21:41:31] STARTED [ttbb] pid=52056
+[2025-09-15 21:41:31] HEARTBEAT: queue=23 running=1 mem_avail=23855MB | running_list=[ttbb(pid=52056)]
+[2025-09-15 21:41:31] LAUNCH [ttHH]: bash -lc './exe_bTagStudy ttHH'
+[2025-09-15 21:41:31] STARTED [ttHH] pid=52067
+[2025-09-15 21:41:31] HEARTBEAT: queue=22 running=2 mem_avail=23854MB | running_list=[ttbb(pid=52056), ttHH(pid=52067)]
+[2025-09-15 21:41:31] LAUNCH [ttHtobb]: bash -lc './exe_bTagStudy ttHtobb'
+[2025-09-15 21:41:31] STARTED [ttHtobb] pid=52079
+[2025-09-15 21:41:31] HEARTBEAT: queue=21 running=3 mem_avail=23847MB | running_list=[ttbb(pid=52056), ttHH(pid=52067), ttHtobb(pid=52079)]
+[2025-09-15 21:41:31] LAUNCH [ttTohadronic]: bash -lc './exe_bTagStudy ttTohadronic'
+[2025-09-15 21:41:31] STARTED [ttTohadronic] pid=52098
+[2025-09-15 21:41:31] HEARTBEAT: queue=20 running=4 mem_avail=23837MB | running_list=[ttbb(pid=52056), ttHH(pid=52067), ttHtobb(pid=52079), ttTohadronic(pid=52098)]
+[2025-09-15 21:41:31] [WAIT] Max concurrency reached (4/4). (queue size=20)
+[2025-09-15 21:41:31] HEARTBEAT: queue=20 running=4 mem_avail=23831MB | running_list=[ttbb(pid=52056), ttHH(pid=52067), ttHtobb(pid=52079), ttTohadronic(pid=52098)]
+[2025-09-15 21:41:34] [WAIT] Max concurrency reached (4/4). (queue size=20)
+[2025-09-15 21:41:34] [DONE] ttbb rc=0
+[2025-09-15 21:41:34] [DONE] ttHH rc=0
+[2025-09-15 21:41:34] [DONE] ttHtobb rc=0
+[2025-09-15 21:41:34] [DONE] ttTohadronic rc=0
+[2025-09-15 21:41:34] HEARTBEAT: queue=20 running=0 mem_avail=23740MB | running_list=[-]
+[2025-09-15 21:41:34] LAUNCH [TTTo2L2Nu]: bash -lc './exe_bTagStudy TTTo2L2Nu'
+[2025-09-15 21:41:34] STARTED [TTTo2L2Nu] pid=52451
+[2025-09-15 21:41:34] HEARTBEAT: queue=19 running=1 mem_avail=23742MB | running_list=[TTTo2L2Nu(pid=52451)]
+[2025-09-15 21:41:34] LAUNCH [TTToSemiLeptonic]: bash -lc './exe_bTagStudy TTToSemiLeptonic'
+[2025-09-15 21:41:34] STARTED [TTToSemiLeptonic] pid=52462
+[2025-09-15 21:41:34] HEARTBEAT: queue=18 running=2 mem_avail=23734MB | running_list=[TTTo2L2Nu(pid=52451), TTToSemiLeptonic(pid=52462)]
+[2025-09-15 21:41:34] LAUNCH [tttt]: bash -lc './exe_bTagStudy tttt'
+[2025-09-15 21:41:34] STARTED [tttt] pid=52474
+[2025-09-15 21:41:34] HEARTBEAT: queue=17 running=3 mem_avail=23731MB | running_list=[TTTo2L2Nu(pid=52451), TTToSemiLeptonic(pid=52462), tttt(pid=52474)]
+[2025-09-15 21:41:34] LAUNCH [tttW]: bash -lc './exe_bTagStudy tttW'
+[2025-09-15 21:41:34] STARTED [tttW] pid=52495
+[2025-09-15 21:41:34] HEARTBEAT: queue=16 running=4 mem_avail=23720MB | running_list=[TTTo2L2Nu(pid=52451), TTToSemiLeptonic(pid=52462), tttt(pid=52474), tttW(pid=52495)]
+[2025-09-15 21:41:34] [WAIT] Max concurrency reached (4/4). (queue size=16)
+[2025-09-15 21:41:34] HEARTBEAT: queue=16 running=4 mem_avail=23723MB | running_list=[TTTo2L2Nu(pid=52451), TTToSemiLeptonic(pid=52462), tttt(pid=52474), tttW(pid=52495)]
+[2025-09-15 21:41:37] [WAIT] Max concurrency reached (4/4). (queue size=16)
+[2025-09-15 21:41:37] [DONE] TTTo2L2Nu rc=0
+[2025-09-15 21:41:37] [DONE] TTToSemiLeptonic rc=0
+[2025-09-15 21:41:37] [DONE] tttt rc=0
+[2025-09-15 21:41:37] [DONE] tttW rc=0
+[2025-09-15 21:41:37] HEARTBEAT: queue=16 running=0 mem_avail=23826MB | running_list=[-]
+[2025-09-15 21:41:37] LAUNCH [ttWH]: bash -lc './exe_bTagStudy ttWH'
+[2025-09-15 21:41:37] STARTED [ttWH] pid=52846
+[2025-09-15 21:41:37] HEARTBEAT: queue=15 running=1 mem_avail=23825MB | running_list=[ttWH(pid=52846)]
+[2025-09-15 21:41:37] LAUNCH [ttWW]: bash -lc './exe_bTagStudy ttWW'
+[2025-09-15 21:41:37] STARTED [ttWW] pid=52857
+[2025-09-15 21:41:37] HEARTBEAT: queue=14 running=2 mem_avail=23822MB | running_list=[ttWH(pid=52846), ttWW(pid=52857)]
+[2025-09-15 21:41:37] LAUNCH [ttWZ]: bash -lc './exe_bTagStudy ttWZ'
+[2025-09-15 21:41:37] STARTED [ttWZ] pid=52869
+[2025-09-15 21:41:37] HEARTBEAT: queue=13 running=3 mem_avail=23821MB | running_list=[ttWH(pid=52846), ttWW(pid=52857), ttWZ(pid=52869)]
+[2025-09-15 21:41:37] LAUNCH [ttZHto4b]: bash -lc './exe_bTagStudy ttZHto4b'
+[2025-09-15 21:41:37] STARTED [ttZHto4b] pid=52889
+[2025-09-15 21:41:37] HEARTBEAT: queue=12 running=4 mem_avail=23819MB | running_list=[ttWH(pid=52846), ttWW(pid=52857), ttWZ(pid=52869), ttZHto4b(pid=52889)]
+[2025-09-15 21:41:37] [WAIT] Max concurrency reached (4/4). (queue size=12)
+[2025-09-15 21:41:37] HEARTBEAT: queue=12 running=4 mem_avail=23807MB | running_list=[ttWH(pid=52846), ttWW(pid=52857), ttWZ(pid=52869), ttZHto4b(pid=52889)]
+[2025-09-15 21:41:40] [WAIT] Max concurrency reached (4/4). (queue size=12)
+[2025-09-15 21:41:40] [DONE] ttWH rc=0
+[2025-09-15 21:41:40] [DONE] ttWW rc=0
+[2025-09-15 21:41:40] [DONE] ttWZ rc=0
+[2025-09-15 21:41:40] [DONE] ttZHto4b rc=0
+[2025-09-15 21:41:40] HEARTBEAT: queue=12 running=0 mem_avail=23832MB | running_list=[-]
+[2025-09-15 21:41:40] LAUNCH [ttZtobb]: bash -lc './exe_bTagStudy ttZtobb'
+[2025-09-15 21:41:40] STARTED [ttZtobb] pid=53241
+[2025-09-15 21:41:40] HEARTBEAT: queue=11 running=1 mem_avail=23832MB | running_list=[ttZtobb(pid=53241)]
+[2025-09-15 21:41:40] LAUNCH [ttZZto4b]: bash -lc './exe_bTagStudy ttZZto4b'
+[2025-09-15 21:41:40] STARTED [ttZZto4b] pid=53252
+[2025-09-15 21:41:40] HEARTBEAT: queue=10 running=2 mem_avail=23826MB | running_list=[ttZtobb(pid=53241), ttZZto4b(pid=53252)]
+[2025-09-15 21:41:40] LAUNCH [JetHT_B]: bash -lc './exe_bTagStudy JetHT_B'
+[2025-09-15 21:41:40] STARTED [JetHT_B] pid=53264
+[2025-09-15 21:41:40] HEARTBEAT: queue=9 running=3 mem_avail=23832MB | running_list=[ttZtobb(pid=53241), ttZZto4b(pid=53252), JetHT_B(pid=53264)]
+[2025-09-15 21:41:40] LAUNCH [JetHT_C]: bash -lc './exe_bTagStudy JetHT_C'
+[2025-09-15 21:41:40] STARTED [JetHT_C] pid=53283
+[2025-09-15 21:41:40] HEARTBEAT: queue=8 running=4 mem_avail=23820MB | running_list=[ttZtobb(pid=53241), ttZZto4b(pid=53252), JetHT_B(pid=53264), JetHT_C(pid=53283)]
+[2025-09-15 21:41:40] [WAIT] Max concurrency reached (4/4). (queue size=8)
+[2025-09-15 21:41:40] HEARTBEAT: queue=8 running=4 mem_avail=23820MB | running_list=[ttZtobb(pid=53241), ttZZto4b(pid=53252), JetHT_B(pid=53264), JetHT_C(pid=53283)]
+[2025-09-15 21:41:43] [WAIT] Max concurrency reached (4/4). (queue size=8)
+[2025-09-15 21:41:43] [DONE] ttZtobb rc=0
+[2025-09-15 21:41:43] [DONE] ttZZto4b rc=0
+[2025-09-15 21:41:43] [DONE] JetHT_B rc=0
+[2025-09-15 21:41:43] [DONE] JetHT_C rc=0
+[2025-09-15 21:41:43] HEARTBEAT: queue=8 running=0 mem_avail=23712MB | running_list=[-]
+[2025-09-15 21:41:43] LAUNCH [JetHT_D]: bash -lc './exe_bTagStudy JetHT_D'
+[2025-09-15 21:41:43] STARTED [JetHT_D] pid=53636
+[2025-09-15 21:41:43] HEARTBEAT: queue=7 running=1 mem_avail=23703MB | running_list=[JetHT_D(pid=53636)]
+[2025-09-15 21:41:43] LAUNCH [JetHT_E]: bash -lc './exe_bTagStudy JetHT_E'
+[2025-09-15 21:41:43] STARTED [JetHT_E] pid=53647
+[2025-09-15 21:41:43] HEARTBEAT: queue=6 running=2 mem_avail=23705MB | running_list=[JetHT_D(pid=53636), JetHT_E(pid=53647)]
+[2025-09-15 21:41:43] LAUNCH [JetHT_F]: bash -lc './exe_bTagStudy JetHT_F'
+[2025-09-15 21:41:43] STARTED [JetHT_F] pid=53659
+[2025-09-15 21:41:43] HEARTBEAT: queue=5 running=3 mem_avail=23706MB | running_list=[JetHT_D(pid=53636), JetHT_E(pid=53647), JetHT_F(pid=53659)]
+[2025-09-15 21:41:43] LAUNCH [BTagCSV_B]: bash -lc './exe_bTagStudy BTagCSV_B'
+[2025-09-15 21:41:43] STARTED [BTagCSV_B] pid=53679
+[2025-09-15 21:41:43] HEARTBEAT: queue=4 running=4 mem_avail=23696MB | running_list=[JetHT_D(pid=53636), JetHT_E(pid=53647), JetHT_F(pid=53659), BTagCSV_B(pid=53679)]
+[2025-09-15 21:41:43] [WAIT] Max concurrency reached (4/4). (queue size=4)
+[2025-09-15 21:41:43] HEARTBEAT: queue=4 running=4 mem_avail=23700MB | running_list=[JetHT_D(pid=53636), JetHT_E(pid=53647), JetHT_F(pid=53659), BTagCSV_B(pid=53679)]
+[2025-09-15 21:41:46] [WAIT] Max concurrency reached (4/4). (queue size=4)
+[2025-09-15 21:41:46] [DONE] JetHT_D rc=0
+[2025-09-15 21:41:46] [DONE] JetHT_E rc=0
+[2025-09-15 21:41:46] [DONE] JetHT_F rc=0
+[2025-09-15 21:41:46] [DONE] BTagCSV_B rc=0
+[2025-09-15 21:41:46] HEARTBEAT: queue=4 running=0 mem_avail=23649MB | running_list=[-]
+[2025-09-15 21:41:46] LAUNCH [BTagCSV_C]: bash -lc './exe_bTagStudy BTagCSV_C'
+[2025-09-15 21:41:46] STARTED [BTagCSV_C] pid=54031
+[2025-09-15 21:41:46] HEARTBEAT: queue=3 running=1 mem_avail=23647MB | running_list=[BTagCSV_C(pid=54031)]
+[2025-09-15 21:41:46] LAUNCH [BTagCSV_D]: bash -lc './exe_bTagStudy BTagCSV_D'
+[2025-09-15 21:41:46] STARTED [BTagCSV_D] pid=54042
+[2025-09-15 21:41:46] HEARTBEAT: queue=2 running=2 mem_avail=23642MB | running_list=[BTagCSV_C(pid=54031), BTagCSV_D(pid=54042)]
+[2025-09-15 21:41:46] LAUNCH [BTagCSV_E]: bash -lc './exe_bTagStudy BTagCSV_E'
+[2025-09-15 21:41:46] STARTED [BTagCSV_E] pid=54054
+[2025-09-15 21:41:46] HEARTBEAT: queue=1 running=3 mem_avail=23646MB | running_list=[BTagCSV_C(pid=54031), BTagCSV_D(pid=54042), BTagCSV_E(pid=54054)]
+[2025-09-15 21:41:46] LAUNCH [BTagCSV_F]: bash -lc './exe_bTagStudy BTagCSV_F'
+[2025-09-15 21:41:46] STARTED [BTagCSV_F] pid=54077
+[2025-09-15 21:41:46] HEARTBEAT: queue=0 running=4 mem_avail=23632MB | running_list=[BTagCSV_C(pid=54031), BTagCSV_D(pid=54042), BTagCSV_E(pid=54054), BTagCSV_F(pid=54077)]
+[2025-09-15 21:41:49] [DONE] BTagCSV_C rc=0
+[2025-09-15 21:41:49] [DONE] BTagCSV_D rc=0
+[2025-09-15 21:41:49] [DONE] BTagCSV_E rc=0
+[2025-09-15 21:41:49] HEARTBEAT: queue=0 running=1 mem_avail=23409MB | running_list=[BTagCSV_F(pid=54077)]
+[2025-09-15 21:41:49] HEARTBEAT: queue=0 running=1 mem_avail=23408MB | running_list=[BTagCSV_F(pid=54077)]
+[2025-09-15 21:41:52] HEARTBEAT: queue=0 running=1 mem_avail=23148MB | running_list=[BTagCSV_F(pid=54077)]
+[2025-09-15 21:41:55] HEARTBEAT: queue=0 running=1 mem_avail=22892MB | running_list=[BTagCSV_F(pid=54077)]
+[2025-09-15 21:41:58] HEARTBEAT: queue=0 running=1 mem_avail=22888MB | running_list=[BTagCSV_F(pid=54077)]
+[2025-09-15 21:42:01] HEARTBEAT: queue=0 running=1 mem_avail=22728MB | running_list=[BTagCSV_F(pid=54077)]
+[2025-09-15 21:42:04] HEARTBEAT: queue=0 running=1 mem_avail=22459MB | running_list=[BTagCSV_F(pid=54077)]
+[2025-09-15 21:42:07] HEARTBEAT: queue=0 running=1 mem_avail=22309MB | running_list=[BTagCSV_F(pid=54077)]
+[2025-09-15 21:42:11] [DONE] BTagCSV_F rc=0
+[2025-09-15 21:42:11] HEARTBEAT: queue=0 running=0 mem_avail=23553MB | running_list=[-]
+[2025-09-15 21:42:11] ======== RUN END ========
+[2025-09-15 21:42:11] ====== SUMMARY ======
+[2025-09-15 21:42:11] Success: 40
+[2025-09-15 21:42:11]   QCD_Pt_15to30, QCD_Pt_30to50, QCD_Pt_50to80, QCD_Pt_80to120, QCD_Pt_120to170, QCD_Pt_170to300, QCD_Pt_300to470, QCD_Pt_470to600, QCD_Pt_600to800, QCD_Pt_800to1000, QCD_Pt_1000to1400, QCD_Pt_1400to1800, QCD_Pt_1800to2400, QCD_Pt_2400to3200, QCD_Pt_3200toInf, tt4b, ttbb, ttHH, ttHtobb, ttTohadronic, TTTo2L2Nu, TTToSemiLeptonic, tttt, tttW, ttWH, ttWW, ttWZ, ttZHto4b, ttZtobb, ttZZto4b, JetHT_B, JetHT_C, JetHT_D, JetHT_E, JetHT_F, BTagCSV_B, BTagCSV_C, BTagCSV_D, BTagCSV_E, BTagCSV_F
+[2025-09-15 21:42:11] Failed: 0
+[2025-09-15 21:42:11] =====================
