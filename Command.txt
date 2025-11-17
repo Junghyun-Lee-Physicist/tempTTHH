@@ -2,6 +2,8 @@
 
 ./ttHHanalyzer_bTagSF filelistTest/file_ttJets_test.txt output_ttJets.root 3.441071667 2017 MC ttJets
 
+./ttHHanalyzer_bTagSF filelistTest/file_ttHH_test.txt output_ttHH.root 0.00000109763773 2017 MC ttHH
+
 ./ttHHanalyzer_bTagSF filelistTest/file_ttJets_test.txt output_ttJets.root 1.0 2017 MC ttJets
 
 ./ttHHanalyzer_bTagSF filelistTest/file_JetHT_C_test.txt output_JetHT_C.root 1.0 2017 Data JetHT C
