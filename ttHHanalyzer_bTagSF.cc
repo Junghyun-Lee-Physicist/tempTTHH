@@ -27,7 +27,7 @@ void ttHHanalyzer::performAnalysis(){
 void ttHHanalyzer::loop(sysName sysType, bool up){
 
     int nevents = _ev->size();
-    nevents = 50000;
+//    nevents = 50000;
 
     std::cout<<"weight = "<<_weight<<std::endl;  
     _SampleWeight = _weight;
