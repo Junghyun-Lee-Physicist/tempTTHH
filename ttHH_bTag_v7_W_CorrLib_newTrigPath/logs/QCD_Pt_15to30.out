@@ -1,5 +1,13 @@
 Welcome to the [ bash_profile ]
-Agent pid 50798
+Agent pid 41249
 Sample Name: QCD_Pt_15to30
 Data or MC : MC
 Weight : 2.63689e+06
+Event loop completed.
+bin  r_file(FromHist)  r_implied(ReW/WithSF)  NoSF/WithSF
+
+=== nJets bin-by-bin summary ===
+bin  range      count   NoSF_sum        WithSF_sum      ratio(NoSF/WithSF)   ReW_sum         delta(ReW/NoSF)
+===============================================================
+
+--------------------------------------

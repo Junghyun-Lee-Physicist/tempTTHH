@@ -18,6 +18,8 @@ CorrectionsManager::CorrectionsManager(const std::string& runYear,
 ////    goldenJsonPath = "/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/GoldenJson";
     jsonPath = "/Users/jhlee/correctionLib/corrections/jsonpog-integration";
     goldenJsonPath = "/Users/jhlee/tempTTHH/GoldenJson";
+    trigSFPath = "/Users/jhlee/tempTTHH/Correction/TriggerSF";
+
     std::cout<<"[CorrectionsManager] json library path : "<<jsonPath<<std::endl;
 
     loadJME_();          // always load MC JEC/JER; Data only if isData_
@@ -25,6 +27,16 @@ CorrectionsManager::CorrectionsManager(const std::string& runYear,
     loadBTag_();         // MC-only b-tag SF (or Data if you wish)
     loadGoldenJSON_();   // only Data
 
+    // [중요] Trigger SF 로드
+    loadTrigger_();
+}
+
+// 소멸자 (ROOT 파일 닫기용, 헤더에 ~CorrectionsManager() 선언 필요)
+CorrectionsManager::~CorrectionsManager() {
+    if (trigSFFile_) {
+        trigSFFile_->Close();
+        delete trigSFFile_;
+    }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -82,7 +94,7 @@ void CorrectionsManager::loadJME_() {
     // 3) 데이터면 Data용 JEC도 로드
     if (isData_) {
         std::string key_data;
-        if      (runYear_ == "2016PreVFP_UL" || runYear_ == "2016PostVFP_UL")
+        if (runYear_ == "2016PreVFP_UL" || runYear_ == "2016PostVFP_UL")
             key_data = "Summer19UL16_Run" + dataEra_ + "_V7_DATA_L1L2L3Res_AK4PFchs";
         else if (runYear_ == "2017_UL")
             key_data = "Summer19UL17_Run" + dataEra_ + "_V5_DATA_L1L2L3Res_AK4PFchs";
@@ -171,6 +183,69 @@ void CorrectionsManager::loadGoldenJSON_() {
     }
 }
 
+void CorrectionsManager::loadTrigger_() {
+    if (isData_) return; // 데이터는 SF 적용 안 함
+
+    // [경로 설정] ScaleFactors.root 위치 지정
+    // 예: 현재 디렉토리 혹은 특정 경로
+    std::string fileName = trigSFPath + "/ScaleFactors_" + runYear_ + ".root"; 
+    
+    if (kVerbose) std::cout << "[loadTrigger] Opening " << fileName << "\n";
+
+    trigSFFile_ = TFile::Open(fileName.c_str(), "READ");
+    if (!trigSFFile_ || trigSFFile_->IsZombie()) {
+        std::cerr << "[CorrectionsManager] ERROR: Cannot open " << fileName << std::endl;
+        return;
+    }
+
+    // [히스토그램 가져오기]
+    // *주의*: EventLooper에서 만든 SF 히스토그램의 이름(Key)을 정확히 적어야 합니다.
+    // 보통 h_SF, h_ScaleFactor, 혹은 h_Pass / h_Total의 결과물 등입니다.
+    std::string histName = "SF_Bjet0"; 
+    
+    hTrigSF_ = (TH2*)trigSFFile_->Get(histName.c_str());
+    if (!hTrigSF_) {
+        std::cerr << "[CorrectionsManager] ERROR: Histogram '" << histName 
+                  << "' not found in " << fileName << std::endl;
+        trigSFFile_->Close();
+        trigSFFile_ = nullptr;
+    } else {
+        // 소유권 문제 방지 (파일 닫혀도 유지하고 싶으면 SetDirectory(0) 필요하지만, 
+        // 여기선 파일을 계속 열어둘 것이므로 괜찮음)
+        if (kVerbose) std::cout << "  -> Loaded Trigger SF Histogram: " << histName << "\n";
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+// 5) JEC Uncertainty (only for MC, Normally we do not apply JEC uncertainty into data)
+//--------------------------------------------------------------------------------------------------
+
+void CorrectionsManager::loadJECUncertainty_() {
+// 경로 및 파일 설정 (기존 loadJME_와 동일한 파일 사용 가정)
+    const std::string base = jsonPath + "/POG/JME/" + runYear_ + "/";
+    const std::string file = base + "jet_jerc.json.gz";
+    auto cset = correction::CorrectionSet::from_file(file);
+
+    std::string key_unc;
+    // Run Year에 따른 Key 설정 (예시 패턴, 실제 JSON 키 확인 필요)
+    // JSON 파일 내의 "Total" Uncertainty 키를 찾아서 할당
+    if (runYear_ == "2016PreVFP_UL" || runYear_ == "2016PostVFP_UL") {
+        key_unc = "Summer19UL16_V7_MC_Total_AK4PFchs"; 
+    } else if (runYear_ == "2017_UL") {
+        key_unc = "Summer19UL17_V5_MC_Total_AK4PFchs";
+    } else if (runYear_ == "2018_UL") {
+        key_unc = "Summer19UL18_V5_MC_Total_AK4PFchs";
+    }
+
+    try {
+        jec_Unc_ = cset->at(key_unc);
+        if (kVerbose) std::cout << "  -> JEC_Unc key : " << key_unc << "\n";
+    } catch (const std::exception& e) {
+        std::cerr << "[CorrectionsManager] Error loading JEC Uncertainty: " << e.what() << std::endl;
+        // 필요 시 throw 또는 대체 처리
+    }
+}
+
 //--------------------------------------------------------------------------------------------------
 //  API implementations
 //--------------------------------------------------------------------------------------------------
@@ -249,6 +324,29 @@ double CorrectionsManager::smearJER(double corr_pt,
     }
 }
 
+double CorrectionsManager::getTriggerSF(double ht, double jet6pt, double syst) const {
+    
+    if (isData_ || !hTrigSF_) return 1.0;
+
+    // 1) Bin 찾기
+    // HT(X축), Jet6Pt(Y축) 가정 (EventLooper 로직 따름)
+    int bin = hTrigSF_->FindBin(ht, jet6pt);
+
+    // 2) 값 가져오기
+    double sf = hTrigSF_->GetBinContent(bin);
+    double err = hTrigSF_->GetBinError(bin);
+
+    // 3) Systematic 적용 (syst = 1.0이면 +1sigma, -1.0이면 -1sigma)
+    if (syst != 0.0) {
+        sf += (syst * err);
+    }
+
+    // 4) 안전장치 (SF가 0이거나 음수면 1.0 처리 혹은 그대로 반환)
+    if (sf <= 0) return 1.0; 
+
+    return sf;
+}
+
 double CorrectionsManager::getBTagSF(int hf,
                                      double eta,
                                      double pt,
@@ -275,4 +373,13 @@ bool CorrectionsManager::passGoldenJSON(int run, int lumi) const {
         if (lumi>=p.first && lumi<=p.second) return true;
     }
     return false;
+}
+
+// [추가] Uncertainty 값 반환 (Input 순서는 JSON 파일에 정의된 inputs 순서 확인 필요: 보통 Eta, Pt)
+double CorrectionsManager::getJECUncertainty(double eta, double pt, double area, double rho) const {
+    if(isData_) return 0.0; // 데이터는 JEC Uncertainty 적용 안함 (보통)
+    
+    // correctionlib의 inputs 순서가 [eta, pt] 인지 확인 필요. 
+    // 예제 코드: inputs = [JetEta, JetPt]
+    return jec_Unc_->evaluate({eta, pt}); 
 }

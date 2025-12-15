@@ -1,6 +1,28 @@
 Welcome to the [ bash_profile ]
-Agent pid 53617
+Agent pid 43797
 Sample Name: JetHT_B
 Data or MC : Data
 Weight : 1
-  [ makeBTagWeight_reweight::Loop() ] : Current Sample --> Data JetHT, Era : B
+  [ makeBTagWeight_Final::Loop() ] : Current Sample --> Data JetHT, Era : B
+Event loop completed.
+bin  r_file(FromHist)  r_implied(ReW/WithSF)  NoSF/WithSF
+8  1  1  1
+9  1  1  1
+10  1  1  1
+11  1  1  1
+12  1  1  1
+13  1  1  1
+14  1  1  1
+
+=== nJets bin-by-bin summary ===
+bin  range      count   NoSF_sum        WithSF_sum      ratio(NoSF/WithSF)   ReW_sum         delta(ReW/NoSF)
+  8  [7,8):    2521     1903.695786     1903.695786            1.000000     1903.695786  0.000000 %
+  9  [8,9):    1405     1087.970538     1087.970538            1.000000     1087.970538  0.000000 %
+ 10  [9,10):     546      435.743036      435.743036            1.000000      435.743036  0.000000 %
+ 11  [10,11):     166      139.093164      139.093164            1.000000      139.093164  0.000000 %
+ 12  [11,12):      48       42.139331       42.139331            1.000000       42.139331  0.000000 %
+ 13  [12,13):      10        9.141846        9.141846            1.000000        9.141846  0.000000 %
+ 14  [13,14):       7        6.336672        6.336672            1.000000        6.336672  0.000000 %
+===============================================================
+
+--------------------------------------

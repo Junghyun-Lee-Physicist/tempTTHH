@@ -41,6 +41,7 @@ std::vector<SampleInfo> getSampleList() {
 //    samples.push_back({"QCD_HT1000to1500", kYellow, "QCD HT1000-1500"});
 //    samples.push_back({"QCD_HT1500to2000", kOrange-9, "QCD HT1500-2000"});
 //    samples.push_back({"QCD_HT2000toInf", kOrange-7, "QCD HT2000-Inf"});
+
     samples.push_back({"QCD_Pt_15to30",     kYellow-9, "QCD Pt15-30"});
     samples.push_back({"QCD_Pt_30to50",     kYellow-8, "QCD Pt30-50"});
     samples.push_back({"QCD_Pt_50to80",     kYellow-7, "QCD Pt50-80"});
@@ -313,7 +314,8 @@ void makeStackPlot_Final(TString varName, TString histNameBase, TString xTitle,
             hRatio->GetYaxis()->SetLabelOffset(0.01);
             hRatio->GetYaxis()->SetNdivisions(505);
             hRatio->SetMinimum(0.5);
-            hRatio->SetMaximum(1.5);
+//            hRatio->SetMaximum(1.5);
+            hRatio->SetMaximum(5.0);
             
             hRatio->Draw("E");
             

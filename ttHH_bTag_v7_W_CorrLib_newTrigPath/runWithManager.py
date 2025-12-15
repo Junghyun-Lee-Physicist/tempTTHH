@@ -78,7 +78,7 @@ SAMPLES: List[str] = [
 # ---------------------- SETTINGS ----------------------
 COMMAND_TEMPLATE   = "./exe_bTagStudy {sample}"
 WORKDIR            = "."
-MAX_CONCURRENT     = 4
+MAX_CONCURRENT     = 20
 MIN_FREE_MEM_MB    = 4000            # Launch only if MemAvailable > this
 ALLOW_ON_UNKNOWN   = True            # If mem_available can't be determined (0), allow 1 job to avoid deadlock
 CHECK_INTERVAL_SEC = 3

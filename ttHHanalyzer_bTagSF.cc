@@ -103,103 +103,68 @@ void ttHHanalyzer::createObjects(event * thisEvent, sysName sysType, bool up){
 
     _ev->fillObjects();
  
-    ////thisEvent->setMuonTrigger(
-    ////    _ev->HLT_IsoMu27
-    ////);
+    // =================================================================
+    // 1. [Definition] 복잡한 HLT 경로를 의미 있는 변수로 변환
+    // =================================================================
+
+    // 1-1. Era 확인 (샘플 이름에 "_B"가 포함되어 있으면 Era B로 간주)
+    // (만약 sampleName이 "JetHT_B" 처럼 정확히 들어온다면 find 대신 == 사용 가능)
+    bool isEraB = (_sampleName.find("_B") != std::string::npos);
+
+    // 1-2. Trigger Mapping (Era에 따른 HLT 경로 선택)
+    // (1) 4J3T (QuadJet + TripleBTag) -> BTagCSV 데이터셋의 주력
+    bool fired_4J3T = isEraB ? _ev->HLT_HT300PT30_QuadJet_75_60_45_40_TripeCSV_p07 
+                             : _ev->HLT_PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0;
+
+    // (2) 6J (MultiJet + BTag) -> JetHT 데이터셋의 주력 1
+    bool fired_6J1T = isEraB ? _ev->HLT_PFHT430_SixJet40_BTagCSV_p080 
+                             : _ev->HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5;
+                             
+    bool fired_6J2T = isEraB ? _ev->HLT_PFHT380_SixJet32_DoubleBTagCSV_p075 
+                             : _ev->HLT_PFHT380_SixPFJet32_DoublePFBTagCSV_2p2;
+
+    // (3) HT (Pure HT) -> JetHT 데이터셋의 주력 2
+    bool fired_HT   = _ev->HLT_PFHT1050; // Era 공통
 
 
-    ////if(_DataOrMC == "Data") {
+    // 1-3. Logical Grouping (논리 그룹 정의)
+    // BTagCSV가 가져가야 할 트리거 그룹
+    bool group_BTagCSV = fired_4J3T;
 
-    ////    if(_sampleName == "JetHT_B"){
-    ////        thisEvent->setHadTrigger(
-
-    ////            (_ev->HLT_PFHT1050 ||
-    ////            _ev->HLT_PFHT430_SixJet40_BTagCSV_p080 ||
-    ////            _ev->HLT_PFHT380_SixJet32_DoubleBTagCSV_p075) &&
-
-    ////            !(_ev->HLT_HT300PT30_QuadJet_75_60_45_40_TripeCSV_p07 ||
-    ////              _ev->HLT_PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0)
-    ////        );
-    ////    }
-    ////    else if (_sampleName == "JetHT_C" || _sampleName == "JetHT_D" 
-    ////            || _sampleName == "JetHT_E" || _sampleName == "JetHT_F"){
-    ////        thisEvent->setHadTrigger(
-    ////            (_ev->HLT_PFHT1050 ||
-    ////            _ev->HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5 ||
-    ////            _ev->HLT_PFHT380_SixPFJet32_DoublePFBTagCSV_2p2) &&
-
-    ////            !(_ev->HLT_HT300PT30_QuadJet_75_60_45_40_TripeCSV_p07 ||
-    ////              _ev->HLT_PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0)
-    ////        );
-    ////    }
-    ////    else if(_sampleName == "BTagCSV_B"){
-    ////        thisEvent->setHadTrigger(
-    ////            _ev->HLT_HT300PT30_QuadJet_75_60_45_40_TripeCSV_p07
-    ////        );
-    ////    }
-    ////    else if(_sampleName == "BTagCSV_C" || _sampleName == "BTagCSV_D" 
-    ////            || _sampleName == "BTagCSV_E" || _sampleName == "BTagCSV_F"){
-
-    ////        thisEvent->setHadTrigger(
-    ////            _ev->HLT_PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0
-    ////        );
-    ////    }
-    ////    else if (_sampleName == "SingleMuon_B" || _sampleName == "SingleMuon_C" || _sampleName == "SingleMuon_D" 
-    ////            || _sampleName == "SingleMuon_E" || _sampleName == "SingleMuon_F"){
-    ////        thisEvent->setHadTrigger(
-    ////            (_ev->HLT_PFHT1050 ||
-    ////            _ev->HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5 ||
-    ////            _ev->HLT_PFHT380_SixPFJet32_DoublePFBTagCSV_2p2) &&
-
-    ////            !(_ev->HLT_HT300PT30_QuadJet_75_60_45_40_TripeCSV_p07 ||
-    ////              _ev->HLT_PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0)
-    ////        );
-    ////           //print("This is the Single Muon Data Set", "b");
-    ////    }
-    ////    else {
-    ////        print("This is weird, I assume there is/are more than 1 Data sample without JetHT & BTagCSV", "r", "error");
-    ////        std::exit(EXIT_FAILURE);
-    ////    }
-    ////}
-    ////else if(_DataOrMC == "MC"){
-    ////     thisEvent->setHadTrigger(
-    ////         _ev->HLT_PFHT1050 ||
-    ////         _ev->HLT_PFHT430_SixJet40_BTagCSV_p080 ||
-    ////         _ev->HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5 ||
-    ////         _ev->HLT_PFHT380_SixJet32_DoubleBTagCSV_p075 ||
-    ////         _ev->HLT_PFHT380_SixPFJet32_DoublePFBTagCSV_2p2 ||
-    ////         _ev->HLT_HT300PT30_QuadJet_75_60_45_40_TripeCSV_p07 ||
-    ////         _ev->HLT_PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0
-    ////     );
-    ////}
-    ////else {
-    ////    print("This is weird, You need to set the data type as Data or MC. Please check the arguments", "r", "error");
-    ////    std::exit(EXIT_FAILURE);
-    ////}
+    // JetHT가 가져가야 할 트리거 그룹 (6J OR HT)
+    bool group_JetHT   = (fired_6J1T || fired_6J2T || fired_HT);
 
 
+    // =================================================================
+    // 2. [Application] 데이터셋별 역할 분담 (Orthogonality Enforcement)
+    // =================================================================
     
-//    thisEvent->setTrigger(_ev->HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL ||
-//			  _ev->HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ ||
-//			  _ev->HLT_Ele27_WPTight_Gsf ||
-//			  _ev->HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL ||
-//			  _ev->HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ ||
-//			  _ev->HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ ||
-//			  _ev->HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ ||
-//			  _ev->HLT_Ele32_WPTight_Gsf ||
-//			  _ev->HLT_IsoMu24_eta2p1 ||
-//			  _ev->HLT_IsoMu27 ||
-//			  _ev->HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ ||
-//			  _ev->HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8 ||
-//			  _ev->HLT_IsoMu24_eta2p1 ||
-//			  _ev->HLT_IsoMu27);
-    //thisEvent->setFilter(_ev->Flag_goodVertices ||
-    //			 _ev->Flag_globalSuperTightHalo2016Filter ||
-    //			 _ev->Flag_HBHENoiseFilter ||
-    //			 _ev->Flag_HBHENoiseIsoFilter ||
-    //			 _ev->Flag_EcalDeadCellTriggerPrimitiveFilter ||
-    //			 _ev->Flag_BadPFMuonFilter);
+    bool passHadTrig = false;
 
+    if (_DataOrMC == "MC") {
+        // [MC]: 그냥 뭐라도 터지면 다 가져감 (OR)
+        passHadTrig = (group_BTagCSV || group_JetHT);
+    }
+    else { // [Data]
+        if (_sampleName.find("BTagCSV") != std::string::npos) {
+            // [Rule 1] BTagCSV 데이터셋은 4J3T 그룹만 챙긴다.
+            passHadTrig = group_BTagCSV;
+        }
+        else if (_sampleName.find("JetHT") != std::string::npos) {
+            // [Rule 2] JetHT 데이터셋은 자기 그룹(6J or HT)을 챙기되,
+            //          만약 4J3T가 같이 터졌으면 BTagCSV에 양보한다. (Veto)
+            passHadTrig = (group_JetHT && !group_BTagCSV);
+        }
+        else {
+            // 안전장치
+             std::cerr << "[ERROR] Unknown Data Sample: " << _sampleName << std::endl;
+             std::exit(EXIT_FAILURE);
+        }
+    }
+
+    // 최종 결과 적용
+    thisEvent->setHadTrigger(passHadTrig);
+ 
     // Set the noise filter
     // https://twiki.cern.ch/twiki/bin/viewauth/CMS/MissingETOptionalFiltersRun2#2018_2017_data_and_MC_UL
     thisEvent->setFilter(_ev->Flag_goodVertices &&
@@ -305,205 +270,136 @@ void ttHHanalyzer::createObjects(event * thisEvent, sysName sysType, bool up){
 
     float dR = 0., deltaEta = 0., deltaPhi = 0.;
     bool passPuId = false;
+    float rho = _ev->fixedGridRhoFastjetAll;
     for (int i = 0; i < (int)jet.size(); ++i) {
 
         const auto& jetRaw = jet[i];
-    
-        // 1) build the ORIGINAL jet (nanoAOD JEC already applied)
-        objectJet* origJet = new objectJet(
-            jetRaw.pt,
-            jetRaw.eta,
-            jetRaw.phi,
-            jetRaw.mass
-        );
-        origJet->bTagCSV    = jetRaw.btagDeepFlavB;
-        origJet->jetID      = jetRaw.jetId;
-        origJet->jetPUid    = jetRaw.puId;
-        origJet->hadFlav    = jetRaw.hadronFlavour;
-        origJet->partonFlav = jetRaw.partonFlavour;
 
-
-
-        if(fabs(origJet->getp4()->M() - jetRaw.mass) > 0.0001) {
-	    std::cout<< "orig = "<<origJet->getp4()->M()<<", "<<"jetRaw = "<<jetRaw.mass<<std::endl;
-            std::cout<< "origJet->getpt()->M() and jetRaw.mass are diff"<<std::endl;
-        }
-        if(fabs(origJet->getp4()->Pt() - jetRaw.pt) > 0.0001) {
-
-	    std::cout<< "orig = "<<origJet->getp4()->Pt()<<", "<<"jetRaw = "<<jetRaw.pt<<std::endl;
-            std::cout<< "origJet->getpt()->Pt() and jetRaw.pt are diff"<<std::endl;
-        }
-
+        // 1. Pre-cuts
         if( !(jetRaw.pt > cut["jetPt"] && fabs(jetRaw.eta) < cut["jetEta"] && jetRaw.jetId >= cut["jetID"]) ) continue;
         if( jetRaw.pt < 50.0 && jetRaw.puId < cut["jetPUid"] ) continue;
-        passPuId = true;
+ 
+        // 2. Calculation (지역 변수 사용, Heap 할당 X)
+        float ntuplePt  = jetRaw.pt;                // NanoAOD Default (Corrected)
+        float rawFactor = jetRaw.rawFactor;
+        float rawPt     = ntuplePt * (1.0f - rawFactor);
+        // float rawMass   = jetRaw.mass * (1.0f - rawFactor);
 
-        // === A) Recover RAW pT / mass ===
-        float ntuplePt  = origJet->getp4()->Pt();      // pt_nom
-        float rawFactor = jetRaw.rawFactor;            // nanoAOD‐provideds
-        float rawPt     = ntuplePt * (1.0 - rawFactor);
-
-	////float oldraw = jetRaw.pt_nom * (1.0 - rawFactor);
-	////std::cout<<"!!!!! diff = "<<rawPt - oldraw<<std::endl; //이런 로직이면 차이 0
-        ////float rawMass   = origJet->getp4()->M() * rawFactor;
-        float rawMass   = origJet->getp4()->M() * (1.0 - rawFactor);
+            // --- A) Re-apply JEC ---
+            double jecSF = corrMgr->getJEC(jetRaw.eta, rawPt, jetRaw.area, rho);
+            float ptJEC  = rawPt * jecSF;               // 내가 재계산한 pT
 
 
-        // store for validation (make sure objectJet has these members!)
-        origJet->origPt   = ntuplePt;
-        origJet->rawPt    = rawPt;
-        origJet->rawMass  = rawMass;
-    
-        if (debugCorrections) {
-            std::cout << "[JEC/JER] ntuplePt=" << ntuplePt
-                      << " rawFactor=" << rawFactor
-                      << " -> rawPt=" << rawPt << "\n";
-        }
-    
-        // === B) Get gen‐matched pT for JER ===
-        float genPt = -1.f;
-        if (jetRaw.genJetIdx >= 0 && jetRaw.genJetIdx < (int)genJet.size()) {
-            genPt = genJet[jetRaw.genJetIdx].pt;
-        }
-        origJet->genMatchedPt = genPt;
-    
-        // === C) Apply JEC ===
-        float rho = _ev->fixedGridRhoFastjetAll;
-        double jecSF = corrMgr->getJEC(
-//            _ev->run,                        // UInt_t run number
-            origJet->getp4()->Eta(),         // η
-            rawPt,                           // raw pT
-            jetRaw.area,                     // jet area
-            rho                              // ρ (for L1FastJet)
-        );
-        float ptJEC       = rawPt * jecSF;
-        origJet->jecSF    = jecSF;
-        origJet->ptJEC    = ptJEC;
-    
-        if (debugCorrections) {
-            std::cout << "[JEC] run=" << _ev->run
-	              << " origPt(ntuple's corrJet)=" << ntuplePt
-                      << " rawPt=" << rawPt
-                      << " eta=" << origJet->getp4()->Eta()
-                      << " jecSF=" << jecSF
-                      << " -> ptJEC=" << ptJEC << "\n";
-        }
-
-        // === D) Apply JER ===
-        double smearedPt = corrMgr->smearJER(
-            ptJEC,                           // JEC‐corrected pT
-            genPt,                           // gen‐matched pT (-1 if none)
-            origJet->getp4()->Eta(),         // η
-            rho,                             // ρ
-	    //"nominal"
-            "nom"
-        );
-        double jerSF      = (ptJEC > 0. ? smearedPt/ptJEC : 1.0);
-        origJet->jerSF    = jerSF;
-        origJet->ptJER    = smearedPt;
-    
-        if (debugCorrections) {
-            std::cout << "[JER] ptJEC=" << ptJEC
-                      << " genPt=" << genPt
-                      << " rho="   << rho
-                      << " jerSF=" << jerSF
-                      << " -> ptJER=" << smearedPt << "\n";
-        }
+            // --- [Validation] On-the-fly Check --- 
+            // (JEC 재적용 관련 validation, 재적용 JEC와 ntuple default JEC pT의 차이가 크면 에러 출력)
+            float relDiff = -1.f;        
+            if (ntuplePt > 0) {
+                relDiff = (ptJEC - ntuplePt) / ntuplePt;
+            
+                // 디버깅용: 차이가 너무 크면 출력
+                if (debugCorrections && fabs(relDiff) > 0.01) { 
+                     std::cout << "[JEC Diff] Idx:" << i << " Orig:" << ntuplePt << " New:" << ptJEC << std::endl;
+                }
+            }
         
+            // --- B) Apply JER ---
+            float genPt = -1.f;
+            if (jetRaw.genJetIdx >= 0 && jetRaw.genJetIdx < (int)genJet.size()) {
+                genPt = genJet[jetRaw.genJetIdx].pt;
+            }
+
+            double smearedPt = corrMgr->smearJER(ptJEC, genPt, jetRaw.eta, rho, "nom");
+
+        // 3. Final Cuts (on Smeared pT)
+        if (smearedPt < cut["jetPt"]) continue;
+        
+        // PU ID Check (Low pT only)
+        bool passPuId = true;
+        if (smearedPt < 50.0 && jetRaw.puId < cut["jetPUid"]) {
+            // continue; // 컷을 여기서 바로 할지, flag만 세울지 결정 (기존 코드는 continue)
+             continue; 
+        }
+
+        // 4. Create Final Object (단 한 번만 생성)
         objectJet* newJet = new objectJet(
             smearedPt,
             jetRaw.eta,
             jetRaw.phi,
-            jetRaw.mass
+            jetRaw.mass 
         );
 
-        newJet->origPt     = ntuplePt;
-        newJet->ptJEC      = ptJEC;
-        newJet->rawPt      = rawPt;
-        newJet->rawMass    = rawMass;
-        newJet->jerSF      = jerSF;
-	newJet->ptJER      = smearedPt;
-        newJet->jetPUid    = jetRaw.puId;
-	newJet->passPuId   = passPuId;
-        newJet->bTagCSV    = jetRaw.btagDeepFlavB;
-        newJet->hadFlav    = jetRaw.hadronFlavour;
-        newJet->partonFlav = jetRaw.partonFlavour;
+        // 메타데이터 저장
+        newJet->JEC_DiffRatio = relDiff;
+        newJet->bTagCSV       = jetRaw.btagDeepFlavB;
+        newJet->jetID         = jetRaw.jetId;
+        newJet->jetPUid       = jetRaw.puId;
+        newJet->passPuId      = passPuId;
+        newJet->hadFlav       = jetRaw.hadronFlavour;
+        newJet->partonFlav    = jetRaw.partonFlavour;
+        newJet->genMatchedPt  = genPt; // 필요하다면
 
-	// === E) hand off to event ===
+        // 이벤트에 등록
         thisEvent->selectJet(newJet);
-	delete origJet;
+    }   // <--- Jet Loop End (여기가 닫혔는지 꼭 확인!)
+    
+	thisEvent->orderJets();
 
-  }
-    thisEvent->orderJets();
-	
+    // =================================================================
+    // GenPart Loop: Memory Leak Fix
+    // =================================================================
+    for (int i = 0; i < (int)genPart.size(); i++) {
+        
+        // [중요] 조건 먼저 검사 (조건 불만족 시 객체 생성 안 함 -> 메모리 누수 방지)
+        bool isBQuark = (abs(genPart[i].pdgId) == 5);
+        bool isHard   = (genPart[i].statusFlags & 256);
 
-    // Selecting b jets from genParticle info
-        for (int i = 0; i < genPart.size(); i++) {
-        currentGenPart = new objectGenPart(genPart[i].pt,
-                                           genPart[i].eta,
-                                           genPart[i].phi,
-                                           genPart[i].mass);
+        if (!isBQuark || !isHard) continue;
+
+        // 합격한 경우에만 new 할당
+        currentGenPart = new objectGenPart(
+            genPart[i].pt, genPart[i].eta, genPart[i].phi, genPart[i].mass
+        );
         currentGenPart->hasHiggsMother = false;
         currentGenPart->hasTopMother   = false;
 
-        // only b quarks with statusFlags bit 256
-        if ( (abs(genPart[i].pdgId) == 5) && (genPart[i].statusFlags & 256) ) {
-            thisEvent->selectGenPart(currentGenPart);
+        // Mother Tracing (While loop로 간소화)
+        int motherInd = genPart[i].genPartIdxMother;
+        while (motherInd >= 0 && motherInd < (int)genPart.size()) {
+            int mPDG = abs(genPart[motherInd].pdgId);
+            bool mStatus = (genPart[motherInd].statusFlags & 256);
 
-            int motherInd = genPart[i].genPartIdxMother;
-            // ** boundary check **
-            if (motherInd < 0 || motherInd >= int(genPart.size())) {
-                // mother index invalid: skip mother checks
-                continue;
+            if (mStatus) {
+                if (mPDG == 25) currentGenPart->hasHiggsMother = true;
+                if (mPDG == 6)  currentGenPart->hasTopMother   = true;
             }
-
-            // 바로 부모가 Higgs/Top인지 보고
-            if (abs(genPart[motherInd].pdgId) == 25
-                && (genPart[motherInd].statusFlags & 256)) {
-                currentGenPart->hasHiggsMother = true;
-            }
-            else if (abs(genPart[motherInd].pdgId) == 6
-                     && (genPart[motherInd].statusFlags & 256)) {
-                currentGenPart->hasTopMother = true;
-            }
-            else {
-                // 조부모 이상 탐색하면서 boundary 검사
-                while (motherInd > 0
-                       && motherInd < int(genPart.size())
-                       && !( (abs(genPart[motherInd].pdgId) == 25
-                               && (genPart[motherInd].statusFlags & 256))
-                           || (abs(genPart[motherInd].pdgId) == 6
-                               && (genPart[motherInd].statusFlags & 256)) )) {
-                    motherInd = genPart[motherInd].genPartIdxMother;
-                    if (motherInd < 0 || motherInd >= int(genPart.size())) break;
-                    if (abs(genPart[motherInd].pdgId) == 25
-                        && (genPart[motherInd].statusFlags & 256)) {
-                        currentGenPart->hasHiggsMother = true;
-                    }
-                    else if (abs(genPart[motherInd].pdgId) == 6
-                             && (genPart[motherInd].statusFlags & 256)) {
-                        currentGenPart->hasTopMother = true;
-                    }
-                }
-            }
+            if (currentGenPart->hasHiggsMother && currentGenPart->hasTopMother) break;
+            
+            motherInd = genPart[motherInd].genPartIdxMother;
         }
-    }
-    
-}
+
+        thisEvent->selectGenPart(currentGenPart);
+    } // GenPart Loop End
+
+} // CreateObject Function End
+           
 
 
 
 bool ttHHanalyzer::selectObjects(event *thisEvent){
 
-
     cutflow["noCut"]+=1;
     hCutFlow->Fill("noCut",1);
     hCutFlow_w->Fill("noCut",_weight);
 
-    ////if(cut["trigger"] > 0 && thisEvent->getTriggerAccept() == false){
-    ////    return false;
-    ////}
-
+    //if(cut["trigger"] > 0 && thisEvent->getTriggerAccept() == false){
+    //    return false;
+    //}
+    if(cut["trigger"] > 0 && thisEvent->getHadTriggerAccept() == true)
+    {
+        cutflow["HadTrigger"]+=1;                 
+        hCutFlow->Fill("HadTrigger",1);
+        hCutFlow_w->Fill("HadTrigger",_weight);
+    }
     ////////if(cut["trigger"] > 0 && thisEvent->getMuonTriggerAccept() == false)
     ////////{
     ////////    return false;
@@ -518,7 +414,6 @@ bool ttHHanalyzer::selectObjects(event *thisEvent){
     cutflow["noiseFilter"]+=1;
     hCutFlow->Fill("noiseFilter",1);
     hCutFlow_w->Fill("noiseFilter",_weight);
-
 
 ///    if(cut["pv"] < 0 && thisEvent->getPVvalue() == false){
 ///        return false;
@@ -537,7 +432,6 @@ bool ttHHanalyzer::selectObjects(event *thisEvent){
     cutflow["njets>=6"]+=1;                 
     hCutFlow->Fill("njets>=6",1);
     hCutFlow_w->Fill("njets>=6",_weight);
-
 
     ////if(!(thisEvent->getnbJet() >= cut["nbJets"])){
     ////        return false;
@@ -631,13 +525,6 @@ bool ttHHanalyzer::selectObjects(event *thisEvent){
     ////	}
     ////}
     ////cutflow["nMassCut"]+=1;
-
-    //////if(cut["trigger"] > 0 && thisEvent->getHadTriggerAccept() == true)
-    //////{
-    //////    cutflow["HadTrigger"]+=1;                 
-    //////    hCutFlow->Fill("HadTrigger",1);
-    //////    hCutFlow_w->Fill("HadTrigger",_weight);
-    //////}
 
     cutflow["nTotal"]+=1;
 
@@ -1121,20 +1008,10 @@ void ttHHanalyzer::fillHistos(event * thisEvent){
    ////// }
    int nSel = thisEvent->getnSelJet();
    for(int ih = 0; ih < nSel && ih < nHistsJets; ++ih){
-     float origPt    = thisEvent->getSelJets()->at(ih)->origPt;   // nanoAOD JEC 적용 후 pT
-     float smearedPt = thisEvent->getSelJets()->at(ih)->getp4()->Pt();           // JEC+JER 적용된 최종 pT
-     float ptJEC     = thisEvent->getSelJets()->at(ih)->ptJEC;
+     float JEC_DiffRatio = thisEvent->getSelJets()->at(ih)->JEC_DiffRatio;   // nanoAOD JEC 적용 후 pT
 
-     // A) 원본 pT
-     h_origPt.at(ih)->Fill(origPt, _weight);
-     //h_origPt.at(ih)->Fill(origPt);
-
-     h_JECPt.at(ih)->Fill(ptJEC, _weight);
-     //h_JECPt.at(ih)->Fill(ptJEC);
-
-     // B) 스메어된 pT
-     h_smearedPt.at(ih)->Fill(smearedPt, _weight);
-     //h_smearedPt.at(ih)->Fill(smearedPt);
+     // [ 직접 JEC 해체 후 최신 버전 재적용한 JEC - NanoAOD orinigal Pt (NanoAOD의 기본 JEC) ] / [ NanoAOD original Pt ]
+     h_JEC_DiffRatio.at(ih)->Fill(JEC_DiffRatio, _weight);
    }
   
    ////// for(int ih=0; ih < thisEvent->getnbJet() && ih < nHistsbJets; ih++){
@@ -1209,11 +1086,7 @@ void ttHHanalyzer::writeHistos(){
 //        hjetsBTagDisc.at(ih)->Write();
   
         // JEC-only 원본 pT
-        h_origPt.at(ih)->Write();
-	h_JECPt.at(ih)->Write();
-
-        // JEC+JER 스메어된 pT
-        h_smearedPt.at(ih)->Write();
+        h_JEC_DiffRatio.at(ih)->Write();
 
     }
 

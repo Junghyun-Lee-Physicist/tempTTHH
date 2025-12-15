@@ -182,10 +182,11 @@ void EventLooperWithCorrections::Loop()
 
     if (!(nMuons == 1 && nElecs == 0)) continue;
 
-    if (nJets < 6) {
-      std::cerr << "[ERROR] nJets (" << nJets << ") are smaller than 6.." << std::endl;
-      exit(2);
-    }
+    if (nJets < 7) continue;
+//    if (nJets < 6) {
+//      std::cerr << "[ERROR] nJets (" << nJets << ") are smaller than 6.." << std::endl;
+//      exit(2);
+//    }
 
     if (!passMETFilters) {
       std::cerr << "[ERROR] It did not pass the noise filters.." << std::endl;

@@ -27,7 +27,7 @@ class makeBTagWeight {
        Bool_t          passTrigger_6J2T_CDEF;
        Bool_t          passTrigger_4J3T_B;
        Bool_t          passTrigger_4J3T_CDEF;
-       //Int_t           nMuons;
+       Int_t           nMuons;
        //Int_t           nElecs;
        Int_t           nJets;
        //Int_t           nbJets;
@@ -61,7 +61,7 @@ class makeBTagWeight {
        TBranch        *b_passTrigger_6J2T_CDEF;   //!
        TBranch        *b_passTrigger_4J3T_B;   //!
        TBranch        *b_passTrigger_4J3T_CDEF;   //!
-       //TBranch        *b_nMuons;   //!
+       TBranch        *b_nMuons;   //!
        //TBranch        *b_nElecs;   //!
        TBranch        *b_nJets;   //!
        //TBranch        *b_nbJets;   //!

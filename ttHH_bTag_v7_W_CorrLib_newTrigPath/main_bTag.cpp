@@ -24,8 +24,8 @@ int main(int argc, char** argv)
     int debug_nofEvt = 1000;
 
 //    makeBTagWeight* looper = new makeBTagWeight();
-    makeBTagWeight_reweight* looper = new makeBTagWeight_reweight();
-//    makeBTagWeight_Final* looper = new makeBTagWeight_Final(); // b-jet and lepton veto
+//    makeBTagWeight_reweight* looper = new makeBTagWeight_reweight();
+    makeBTagWeight_Final* looper = new makeBTagWeight_Final(); // b-jet and lepton veto
 
     looper->setNtupleName(sampleName);
     looper->setDebug(Debug, debug_nofEvt);

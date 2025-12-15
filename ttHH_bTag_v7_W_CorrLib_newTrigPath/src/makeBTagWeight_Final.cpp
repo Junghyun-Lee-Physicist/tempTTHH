@@ -309,11 +309,14 @@ auto clampBin = [&](int ib){
         if (debug) std::cout<<"  [ debug ] current entry --> "<<ientry<<std::endl;
         if (debug) std::cout<<"  [ debug ]     # of jets = "<<nJets<<std::endl;
 
+        if (nMuons != 1) continue;
+
         // 이벤트 선택
-        if (nJets < 6) {
-            std::cerr << "[ERROR] nJets (" << nJets << ") are smaller than 6.."<< std::endl;
-            exit(2);
-        }
+	if (nJets < 7) continue;
+        //if (nJets < 6) {
+        //    std::cerr << "[ERROR] nJets (" << nJets << ") are smaller than 6.."<< std::endl;
+        //    exit(2);
+        //}
 
         if (!passMETFilters) {
             std::cerr << "[ERROR] It did not pass the noise filters.."<< std::endl;
@@ -361,7 +364,9 @@ auto clampBin = [&](int ib){
 
         // 스케일 팩터 가져오기
         double sf = sfHist->GetBinContent(htBin, ptBin);
-        if(Jet6PT > 90.0 && HT > 150.0 && HT < 600.0) sf = 1.0;
+//        if(Jet6PT > 90.0 && HT > 150.0 && HT < 600.0) sf = 1.0;
+        if(Jet6PT > 90.0 && HT > 150.0 && HT < 700.0) sf = 1.0;
+
         if(sf == 0) {
             std::cerr << "[ERROR] sf is 0.. then double check sf = ("<< sf <<")"<< std::endl;
             std::cerr << "[ERROR] and It's pT & HT = " << Jet6PT <<", "<< HT << std::endl;
@@ -473,12 +478,14 @@ sumWithSF[iBin] += weightWithSF;
 sumReW[iBin]    += weightReweight;
 cnt[iBin]       += 1;
 
-        if(nJets < 8) continue;
         int nBjet = 0;
+	int nLooseB = 0;
         for(int iJ=0; iJ<nJets; iJ++){
             if(bTagScore->at(iJ) > 0.3040) nBjet++;
+	    if(bTagScore->at(iJ) > 0.0532) nLooseB++;
         }
-        if (nBjet < 4) continue;
+        if (nBjet != 3) continue;
+	if (nLooseB < 4) continue; 
 
 
         // --------------------
@@ -638,7 +645,7 @@ void makeBTagWeight_Final::Init()
    fChain->SetBranchAddress("passTrigger_6J2T_CDEF", &passTrigger_6J2T_CDEF, &b_passTrigger_6J2T_CDEF);
    fChain->SetBranchAddress("passTrigger_4J3T_B", &passTrigger_4J3T_B, &b_passTrigger_4J3T_B);
    fChain->SetBranchAddress("passTrigger_4J3T_CDEF", &passTrigger_4J3T_CDEF, &b_passTrigger_4J3T_CDEF);
-   //fChain->SetBranchAddress("nMuons", &nMuons, &b_nMuons);
+   fChain->SetBranchAddress("nMuons", &nMuons, &b_nMuons);
    //fChain->SetBranchAddress("nElecs", &nElecs, &b_nElecs);
    fChain->SetBranchAddress("nJets", &nJets, &b_nJets);
    //fChain->SetBranchAddress("nbJets", &nbJets, &b_nbJets);

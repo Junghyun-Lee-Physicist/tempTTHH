@@ -1,6 +1,22 @@
 Welcome to the [ bash_profile ]
-Agent pid 54023
+Agent pid 44435
 Sample Name: BTagCSV_B
 Data or MC : Data
 Weight : 1
-  [ makeBTagWeight_reweight::Loop() ] : Current Sample --> Data BTagCSV, Era : B
+  [ makeBTagWeight_Final::Loop() ] : Current Sample --> Data BTagCSV, Era : B
+Event loop completed.
+bin  r_file(FromHist)  r_implied(ReW/WithSF)  NoSF/WithSF
+8  1  1  1
+9  1  1  1
+10  1  1  1
+11  1  1  1
+
+=== nJets bin-by-bin summary ===
+bin  range      count   NoSF_sum        WithSF_sum      ratio(NoSF/WithSF)   ReW_sum         delta(ReW/NoSF)
+  8  [7,8):      25       17.184742       17.184742            1.000000       17.184742  0.000000 %
+  9  [8,9):       4        2.781713        2.781713            1.000000        2.781713  0.000000 %
+ 10  [9,10):       1        0.625741        0.625741            1.000000        0.625741  0.000000 %
+ 11  [10,11):       1        0.686012        0.686012            1.000000        0.686012  0.000000 %
+===============================================================
+
+--------------------------------------

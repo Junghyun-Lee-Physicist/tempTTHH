@@ -121,32 +121,32 @@ class objectJet:public objectPhysics {
  public:
     
     using objectPhysics::objectPhysics;
-    bool matchedtoHiggs = false;
-    float minChiHiggs = 0.;
-    int minChiHiggsIndex = 0;
-    float matchedtoHiggsdR = 0.;
-    //int bTag;
-    float bTagCSV, jetID, jetPUid;
 
-    int hadFlav, partonFlav;
+	// --- [Metadata] 분석에 필요한 핵심 정보만 유지 ---
+    float bTagCSV  = -99.f;
+    int   jetID    = -99;
+    int   jetPUid  = -99;
+    bool  passPuId = false;
+
+	// MC Truth info
+    int hadFlav = -99;
+	int partonFlav = -99;
+    float  genMatchedPt = -1.f;  // matched gen-jet pT, or -1
 
     // Working Point
     static constexpr float valbTagTight  = 0.7476; //This is not used
     static constexpr float valbTagMedium = 0.3040;
     static constexpr float valbTagLoose  = 0.0532;
 
-    // new members for JEC/JER validation
-    float  origPt       = 0.;
-    float  rawPt        = 0.;   // uncorrected jet pT
-    float  rawMass      = 0.;
-    float  jecSF        = 1.;   // JEC scale factor
-    float  ptJEC        = 0.;   // after applying JEC
-    float  jerSF        = 1.;   // JER scale factor (or ptJER/ptJEC)
-    float  ptJER        = 0.;   // after applying JER
-    float  genMatchedPt = -1.;  // matched gen-jet pT, or -1
+	bool matchedtoHiggs = false;
+    bool matchedtoTop   = false;
+    float matchedtoHiggsdR = 999.f;
+    int minChiHiggsIndex = -1;
 
-    bool   passPuId = false;
+	// JEC 재적용 검증
+	float JEC_DiffRatio = -1.f;
 
+	virtual ~objectJet() {}
 };
 
 class objectMET:public objectPhysics {
@@ -843,10 +843,6 @@ class event{
     }
 
 
-
-
-
-
     void setFilter(bool clean){
 	_filter = clean;
     }
@@ -940,7 +936,7 @@ class ttHHanalyzer {
     void fillTree(event * thisevent);
     void writeTree();
    
-    std::vector<TH1D*> h_origPt, h_JECPt, h_smearedPt;
+    std::vector<TH1D*> h_JEC_DiffRatio;
 
     TH1F * hmet,* hmetPhi, *hmetEta, *hAvgDeltaRjj, *hAvgDeltaRbb,*hAvgDeltaRbj, *hAvgDeltaEtajj, *hAvgDeltaEtabb, *hAvgDeltaEtabj, *hminDeltaRjj, *hminDeltaRbb, *hminDeltaRbj,  *hminDeltaRpTjj, *hminDeltaRpTbb, *hminDeltaRpTbj, *hminDeltaRMassjj, *hminDeltaRMassbb,*hminDeltaRMassbj, *hmaxDeltaEtajj, *hmaxDeltaEtabb, *hmaxDeltaEtabj, *hmaxPTmassjbb, *hmaxPTmassjjj, *hjetAverageMass, *hBjetAverageMass, *hHadronicHiggsAverageMass, *hLightJetAverageMass, *hBjetAverageMassSqr, *hHadronicHiggsSoftDropMass1, *hHadronicHiggsSoftDropMass2, *hjetHT, *hBjetHT, *hHadronicHiggsHT, *hLightJetHT, *hjetNumber, *hBjetNumber, *hHadronicHiggsNumber, *hLightJetNumber, *hInvMassHadW, *hInvMassZ1, *hInvMassZ2,*hInvMassZ1_zoomIn, *hInvMassZ2_zoomIn, *hInvMassHSingleMatched,*hInvMassHSingleNotMatched ,*hChi2HiggsSingleNotMatched, *hChi2HiggsSingleMatched , *hInvMassH1, *hInvMassH2,*hInvMassH1_zoomIn, *hInvMassH2_zoomIn, *hInvMassHZ1, *hInvMassHZ2, *hInvMassHZ1_zoomIn, *hInvMassHZ2_zoomIn, *hInvMassH1mChi, *hInvMassH2mChi,*hPTH1, *hPTH2, *hChi2Higgs, *hChi2HiggsZ, *hChi2HadW, *hChi2Z, *hAplanarity, *hSphericity, *hTransSphericity, *hCvalue, *hDvalue, *hBjetAplanarity, *hBjetSphericity, *hBjetTransSphericity ,*hBjetCvalue, *hBjetDvalue, *hCentralityjl, *hCentralityjb, *hleptonNumber, *hLeptonPT1, *hMuonPT1, *hElePT1, *hLeptonPhi1, *hMuonPhi1, *hElePhi1, *hLeptonEta1, *hMuonEta1, *hEleEta1, *hLeptonPT2, *hMuonPT2, *hElePT2, *hLeptonPhi2, *hMuonPhi2, *hElePhi2, *hLeptonEta2, *hMuonEta2, *hEleEta2, *hLepCharge1, *hLepCharge2, *hleptonHT, *hST, *hDiMuonMass, *hDiElectronMass, *hDiMuonPT, *hDiElectronPT, *hDiMuonEta, *hDiElectronEta, *hH0, *hH1, *hH2, *hH3, *hH4, *hR1, *hR2, * hR3, *hR4, *hBjetH0, *hBjetH1, *hBjetH2, *hBjetH3, *hBjetH4, *hBjetR1, *hBjetR2, * hBjetR3, *hBjetR4, *hCutFlow, *hCutFlow_w,
 	*hInvMassHH1Matched,
@@ -1155,20 +1151,11 @@ class ttHHanalyzer {
             // What is above comment meaning?
 	    // if i is bigger or equal to 7, MaxPtRange will be 300.0
 	
-            h_origPt.push_back(new TH1D(
-                TString::Format("h_origPt_%d", i), "orig p_{T} of jet; p_{T} [GeV]; entries", 
-                50, 0.0, 300.0
+            h_JEC_DiffRatio.push_back(new TH1D(
+                TString::Format("h_JEC_DiffRatio_%d", i), "JEC Validation: (ReCalc - NanoAOD)/NanoAOD; p_{T} [GeV]; entries", 
+                100, -0.05, 0.05
 	    ));
-            h_JECPt.push_back(new TH1D(
-                TString::Format("h_JECPt_%d", i), "user JEC  p_{T} of jet; p_{T} [GeV]; entries", 
-                50, 0.0, 300.0
-	    ));
-
-            h_smearedPt.push_back(new TH1D(
-                TString::Format("h_smearedPt_%d", i), "smeared p_{T} of jet; p_{T} [GeV]; entries", 
-                50, 0.0, 300.0
-            ));
-
+     
             hjetsPTs.at(i)  = new TH1F(TString::Format("jetPT%d",(i+1))+trail, TString::Format("jet%d p_{T} [GeV]",i+1)+trail, nBins, 0.0, MaxJetPtRange);
             hjetsEtas.at(i) = new TH1F(TString::Format("jetEta%d",(i+1))+trail, TString::Format("jet%d #eta",i+1)+trail, nBins, etaRange.first, etaRange.second);
 

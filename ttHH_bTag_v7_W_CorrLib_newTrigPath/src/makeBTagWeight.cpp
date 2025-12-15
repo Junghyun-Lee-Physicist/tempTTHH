@@ -114,13 +114,11 @@ void makeBTagWeight::Loop()
     }    
 
 
-
-
     ////// Eta 분할을 사용할지 여부 설정 (true: 사용, false: 사용하지 않음)
     ////useEtaBinning = false; // 필요한 경우 이 값을 false로 설정하여 Eta 분할을 끌 수 있습니다.
 
-////    TFile* sfFile = TFile::Open("ScaleFactors.root", "READ");
-    TString TrigSFpath = "ScaleFactors_" + sampleName + ".root";
+////    TString TrigSFpath = "ScaleFactors_" + sampleName + ".root";
+    TString TrigSFpath = "ScaleFactors.root";
     TFile* sfFile = TFile::Open(TrigSFpath, "READ");
 
     if (!sfFile || sfFile->IsZombie())
@@ -216,7 +214,6 @@ void makeBTagWeight::Loop()
     ////}
 
 
-
     BTagCalibration calib("deepJet", "/Users/jhlee/Desktop/Work/ttHH/ttHH_bTag_v5_W_CorrLib/ScaleFactors/bTag/reshaping_deepJet_106XUL17_v3.csv");
 
     // OP=RESHAPING, sysType="central" (추가 systematic up/down 이름들 벡터로 넣을 수 있음)
@@ -266,12 +263,14 @@ void makeBTagWeight::Loop()
 	if (debug) std::cout<<"  [ debug ] current entry --> "<<ientry<<std::endl;
  	if (debug) std::cout<<"  [ debug ]     # of jets = "<<nJets<<std::endl;
 
+        if (nMuons != 1) continue;
 
         // 이벤트 선택
-        if (nJets < 6) {
-            std::cerr << "[ERROR] nJets (" << nJets << ") are smaller than 6.."<< std::endl;
-            exit(2);
-        }
+	if (nJets < 7) continue;
+//        if (nJets < 6) {
+//            std::cerr << "[ERROR] nJets (" << nJets << ") are smaller than 6.."<< std::endl;
+//            exit(2);
+//        }
 
         if (!passMETFilters) {
             std::cerr << "[ERROR] It did not pass the noise filters.."<< std::endl;
@@ -334,14 +333,14 @@ void makeBTagWeight::Loop()
 	}
 
 
-
         if(debug) std::cout<<"  [ debug ] Pass all selections!!"<<std::endl;
 
         // 스케일 팩터 가져오기
         double sf = sfHist->GetBinContent(htBin, ptBin);
         ////if (sf == 0) sf = 1.0; // 스케일 팩터가 0인 경우 1로 설정
         if (Jet6PT >= 90.0 && Jet6PT < 150.0 &&
-            HT      >= 150.0 && HT      < 600.0) {
+//            HT      >= 150.0 && HT      < 600.0) {
+            HT      >= 150.0 && HT      < 700.0) {
       
 	    std::cout<<"  [ WARNING ] Empty bin when HT - " << HT << ", Jet6PT - "<<Jet6PT<<" and sf = "<<sf<<std::endl;
 	    std::cout<<"  [ WARNING ] Change sf [ "<<sf<<" ] into -> 1.0"<<std::endl;
@@ -587,7 +586,7 @@ void makeBTagWeight::Init()
    fChain->SetBranchAddress("passTrigger_6J2T_CDEF", &passTrigger_6J2T_CDEF, &b_passTrigger_6J2T_CDEF);
    fChain->SetBranchAddress("passTrigger_4J3T_B", &passTrigger_4J3T_B, &b_passTrigger_4J3T_B);
    fChain->SetBranchAddress("passTrigger_4J3T_CDEF", &passTrigger_4J3T_CDEF, &b_passTrigger_4J3T_CDEF);
-   //fChain->SetBranchAddress("nMuons", &nMuons, &b_nMuons);
+   fChain->SetBranchAddress("nMuons", &nMuons, &b_nMuons);
    //fChain->SetBranchAddress("nElecs", &nElecs, &b_nElecs);
    fChain->SetBranchAddress("nJets", &nJets, &b_nJets);
    //fChain->SetBranchAddress("nbJets", &nbJets, &b_nbJets);

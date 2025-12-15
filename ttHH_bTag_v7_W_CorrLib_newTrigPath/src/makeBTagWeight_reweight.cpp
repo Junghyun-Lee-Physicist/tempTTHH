@@ -11,161 +11,6 @@
 
 #include "SampleInfoManager.h"
 
-///////////////////////// ABCD ///////////////////////// 
-// (1) ABCD 경계/파일 경로 — 코드 내부 전역 상수(스크립트 변경 불필요)
-static const double ABCD_HT_CUT = 800.0;     // 필요시 여기 숫자만 바꾸면 됨
-static const int    ABCD_NJ_CUT = 8;         // 필요시 여기 숫자만 바꾸면 됨
-static const char*  ABCD_INPUTS_PATH = "./abcd_inputs/QCD_ABCD_inputs.root";
-static const char*  ABCD_MAP_PATH    = "./QCD_ABCD_SF.root";
-
-// (2) 2D 누적 히스토(런타임)
-static TH2D* hB_data    = nullptr;  // B(0,1) : Data
-static TH2D* hC_data    = nullptr;  // C(1,0) : Data
-static TH2D* hD_data    = nullptr;  // D(0,0) : Data
-static TH2D* hB_nonQCD  = nullptr;  // B : nonQCD MC (with all SF/reweight)
-static TH2D* hC_nonQCD  = nullptr;  // C : nonQCD MC
-static TH2D* hD_nonQCD  = nullptr;  // D : nonQCD MC
-static TH2D* hA_qcdMC   = nullptr;  // A : QCD MC (closure)
-static TH2D* hSF_A      = nullptr;  // A-bin SF map (HT,Njets)
-
-// (3) 히스토 helper
-static TH2D* book2D(const char* name, const char* title){
-  // HT:[0,2000], Njets:[0,20] — 필요하면 binning 수정 가능
-  TH2D* h = new TH2D(name, title, 10, 0, 2000, 10, 0, 20);
-  h->Sumw2();
-  return h;
-
-// ===== [QCD ABCD] init: 히스토 준비 + 기존 맵 로드(있으면) =====
-static void QCD_ABCD_Init(){
-  // 러닝 히스토
-  hB_data   = book2D("hB_data","B data");
-  hC_data   = book2D("hC_data","C data");
-  hD_data   = book2D("hD_data","D data");
-  hB_nonQCD = book2D("hB_nonQCD","B nonQCD");
-  hC_nonQCD = book2D("hC_nonQCD","C nonQCD");
-  hD_nonQCD = book2D("hD_nonQCD","D nonQCD");
-  hA_qcdMC  = book2D("hA_qcdMC","A qcdMC (closure)");
-
-  // 기존 맵이 있으면 로드 — 있으면 즉시 적용 가능, 없으면 첫 턴에 생성 후 2회차부터 적용
-  std::unique_ptr<TFile> f(TFile::Open(ABCD_MAP_PATH,"READ"));
-  if (f && !f->IsZombie()){
-    TH2D* tmp = dynamic_cast<TH2D*>(f->Get("hSF_A"));
-    if (tmp) hSF_A = (TH2D*)tmp->Clone("hSF_A_runtime");
-  }
-}
-
-// ===== [QCD ABCD] inputs 업데이트 저장 =====
-static void QCD_ABCD_FlushInputs(const std::string& tag){
-  gSystem->mkdir(gSystem->DirName(ABCD_INPUTS_PATH), true);
-  TFile fout(ABCD_INPUTS_PATH, "UPDATE");
-  // tag는 샘플 식별자(예: "Data_Run2018B", "TTTo2L2Nu", "QCD_HT1500to2000" 등)
-  if (hB_data)   hB_data->Write((std::string("B_data_")+tag).c_str(), TObject::kOverwrite);
-  if (hC_data)   hC_data->Write((std::string("C_data_")+tag).c_str(), TObject::kOverwrite);
-  if (hD_data)   hD_data->Write((std::string("D_data_")+tag).c_str(), TObject::kOverwrite);
-  if (hB_nonQCD) hB_nonQCD->Write((std::string("B_nonQCD_")+tag).c_str(), TObject::kOverwrite);
-  if (hC_nonQCD) hC_nonQCD->Write((std::string("C_nonQCD_")+tag).c_str(), TObject::kOverwrite);
-  if (hD_nonQCD) hD_nonQCD->Write((std::string("D_nonQCD_")+tag).c_str(), TObject::kOverwrite);
-  if (hA_qcdMC)  hA_qcdMC->Write((std::string("A_qcdMC_")+tag).c_str(), TObject::kOverwrite);
-  fout.Close();
-}
-
-// ===== [QCD ABCD] 맵 생성(누적 파일 -> A_pred, hSF_A 작성) =====
-static void QCD_ABCD_RebuildMap(){
-  std::unique_ptr<TFile> fin(TFile::Open(ABCD_INPUTS_PATH,"READ"));
-  if (!fin || fin->IsZombie()) return;
-
-  // total 합산용
-  std::unique_ptr<TH2D> B_data_tot(book2D("B_data_tot","B_data_tot"));
-  std::unique_ptr<TH2D> C_data_tot(book2D("C_data_tot","C_data_tot"));
-  std::unique_ptr<TH2D> D_data_tot(book2D("D_data_tot","D_data_tot"));
-  std::unique_ptr<TH2D> B_nonQCD_tot(book2D("B_nonQCD_tot","B_nonQCD_tot"));
-  std::unique_ptr<TH2D> C_nonQCD_tot(book2D("C_nonQCD_tot","C_nonQCD_tot"));
-  std::unique_ptr<TH2D> D_nonQCD_tot(book2D("D_nonQCD_tot","D_nonQCD_tot"));
-  std::unique_ptr<TH2D> A_qcdMC_tot(book2D("A_qcdMC_tot","A_qcdMC_tot"));
-
-  // 키 스캔해서 누적
-  TIter nx(fin->GetListOfKeys()); TKey* k;
-  while ((k = (TKey*)nx())){
-    TObject* obj = k->ReadObj();
-    TH2D* h = dynamic_cast<TH2D*>(obj);
-    if (!h) continue;
-    const std::string n = h->GetName();
-    if      (n.rfind("B_data_",0)==0)    B_data_tot->Add(h);
-    else if (n.rfind("C_data_",0)==0)    C_data_tot->Add(h);
-    else if (n.rfind("D_data_",0)==0)    D_data_tot->Add(h);
-    else if (n.rfind("B_nonQCD_",0)==0)  B_nonQCD_tot->Add(h);
-    else if (n.rfind("C_nonQCD_",0)==0)  C_nonQCD_tot->Add(h);
-    else if (n.rfind("D_nonQCD_",0)==0)  D_nonQCD_tot->Add(h);
-    else if (n.rfind("A_qcdMC_",0)==0)   A_qcdMC_tot->Add(h);
-  }
-
-  // A_pred & SF = A_pred / A_qcdMC
-  std::unique_ptr<TH2D> A_pred((TH2D*)B_data_tot->Clone("A_pred"));
-  A_pred->Reset();
-  std::unique_ptr<TH2D> SF_A((TH2D*)B_data_tot->Clone("hSF_A"));
-  SF_A->Reset();
-
-  const int nxbin = B_data_tot->GetNbinsX();
-  const int nybin = B_data_tot->GetNbinsY();
-  for (int ix=1; ix<=nxbin; ++ix){
-    for (int iy=1; iy<=nybin; ++iy){
-      const double Bq = std::max(0.0, B_data_tot->GetBinContent(ix,iy) - B_nonQCD_tot->GetBinContent(ix,iy));
-      const double Cq = std::max(0.0, C_data_tot->GetBinContent(ix,iy) - C_nonQCD_tot->GetBinContent(ix,iy));
-      const double Dq = std::max(1e-9, D_data_tot->GetBinContent(ix,iy) - D_nonQCD_tot->GetBinContent(ix,iy));
-      const double Ap = (Bq*Cq)/Dq;
-      const double Amc = std::max(1e-9, A_qcdMC_tot->GetBinContent(ix,iy));
-      A_pred->SetBinContent(ix,iy, Ap);
-      SF_A->SetBinContent(ix,iy, Ap/Amc);
-    }
-  }
-
-  // 저장
-  TFile fout(ABCD_MAP_PATH,"RECREATE");
-  A_pred->Write();
-  SF_A->Write();
-  B_data_tot->Write(); C_data_tot->Write(); D_data_tot->Write();
-  B_nonQCD_tot->Write(); C_nonQCD_tot->Write(); D_nonQCD_tot->Write();
-  A_qcdMC_tot->Write();
-  fout.Close();
-
-  // 런타임 적용용으로 메모리에 복제
-  hSF_A = (TH2D*)SF_A->Clone("hSF_A_runtime");
-}
-
-}
-
-///////////////////////// ABCD ///////////////////////// 
-
-
-
-
-static std::string QCD_ABCD_MODE = getEnvStr("QCD_ABCD_MODE","derive"); // 기본 derive
-static std::string QCD_ABCD_IN_DIR = getEnvStr("QCD_ABCD_IN_DIR","./");
-static std::string QCD_ABCD_MAP = getEnvStr("QCD_ABCD_MAP","./QCD_ABCD_SF.root");
-static double HT_CUT = getEnvD("HT_CUT", 800.0);
-static int    NJ_CUT = getEnvI("NJ_CUT", 8);
-
-// [ABCD] 런타임 히스토(한 잡에서 채움 or 로드)
-static TH2D* hB_data = nullptr;     // B(0,1)
-static TH2D* hC_data = nullptr;     // C(1,0)
-static TH2D* hD_data = nullptr;     // D(0,0)
-static TH2D* hB_nonQCD = nullptr;
-static TH2D* hC_nonQCD = nullptr;
-static TH2D* hD_nonQCD = nullptr;
-static TH2D* hA_qcdMC = nullptr;    // closure용
-static TH2D* hSF_A = nullptr;       // apply용 (맵)
-
-// [ABCD] 히스토 생성 헬퍼
-static TH2D* book2D(const char* name, const char* title){
-  // HT: [0, 2000], Njets: [0, 20] 예시 (원하면 바꿔도 됨)
-  TH2D* h = new TH2D(name,title,  10, 0, 2000,  10, 0, 20);
-  h->Sumw2();
-  return h;
-}
-
-
-
-
 void makeBTagWeight_reweight::Loop()
 {
     if (fChain == 0) return;
@@ -353,7 +198,8 @@ auto clampBin = [&](int ib){
 ////    }
 
 
-    TString TrigSFpath = "ScaleFactors_" + sampleName + ".root";
+////    TString TrigSFpath = "ScaleFactors_" + sampleName + ".root";
+    TString TrigSFpath = "ScaleFactors.root";
     TFile* sfFile = TFile::Open(TrigSFpath, "READ");
 
     if (!sfFile || sfFile->IsZombie())
@@ -461,10 +307,6 @@ auto clampBin = [&](int ib){
     double Jet6Eta = -999.0;
     double weight = 1.0;
     double btaggingSF = -55555.0;
- 
-    // ABCD //
-    QCD_ABCD_Init();
-    // ABCD //
 
     for (Long64_t jentry=0; jentry<nentries; jentry++) {
 
@@ -488,11 +330,14 @@ auto clampBin = [&](int ib){
         if (debug) std::cout<<"  [ debug ] current entry --> "<<ientry<<std::endl;
         if (debug) std::cout<<"  [ debug ]     # of jets = "<<nJets<<std::endl;
 
+        if (nMuons != 1) continue;
+
         // 이벤트 선택
-        if (nJets < 6) {
-            std::cerr << "[ERROR] nJets (" << nJets << ") are smaller than 6.."<< std::endl;
-            exit(2);
-        }
+	if (nJets < 7) continue;
+//        if (nJets < 6) {
+//            std::cerr << "[ERROR] nJets (" << nJets << ") are smaller than 6.."<< std::endl;
+//            exit(2);
+//        }
 
         if (!passMETFilters) {
             std::cerr << "[ERROR] It did not pass the noise filters.."<< std::endl;
@@ -511,29 +356,12 @@ auto clampBin = [&](int ib){
             exit(5);
         }
 
-///////////////////////// ABCD ///////////////////////// 
-// ===== 이벤트 루프 안, baseline(selection) 통과 직후에 추가 =====
 
-// (1) HT/Njets는 "기존 브랜치/변수"를 그대로 사용 (중복 계산 금지)
-double HT_forABCD   = HT;     // ← 네 코드의 HT 브랜치/변수명 그대로
-int    Njets_forABCD= Njets;  // ← 네 코드의 Njets 브랜치/변수명 그대로
-
-// (2) 2D 좌표 (히스토 범위 보호용 클램프)
-const double xHT = std::min(HT_forABCD, 1999.9);
-const double yNJ = std::min((double)Njets_forABCD, 19.9);
-
-// (3) ABCD region 플래그 (baseline에서 HT/NJ 컷은 빼고, 여기서 분기)
-const bool htHigh = (HT_forABCD > ABCD_HT_CUT);
-const bool njHigh = (Njets_forABCD >= ABCD_NJ_CUT);
-const bool inA = (htHigh && njHigh);
-const bool inB = (!htHigh && njHigh);
-const bool inC = (htHigh && !njHigh);
-const bool inD = (!htHigh && !njHigh);
-
-///////////////////////// ABCD ///////////////////////// 
-
-
-
+///////        int nBjet = 0;
+///////        for(int iJ=0; iJ<nJets; iJ++){
+///////            if(bTagScore->at(iJ) > 0.3040) nBjet++;
+///////        }
+///////        if (nBjet < 3) continue;
 
 
         int htBin = -1;
@@ -565,7 +393,9 @@ const bool inD = (!htHigh && !njHigh);
         double sf = sfHist->GetBinContent(htBin, ptBin);
         ////if (sf == 0) sf = 1.0; // 스케일 팩터가 0인 경우 1로 설정
         if (Jet6PT >= 90.0 && Jet6PT < 150.0 &&
-            HT      >= 150.0 && HT      < 600.0) {
+//            HT      >= 150.0 && HT      < 600.0) {
+            HT      >= 150.0 && HT      < 700.0) {
+
 
             std::cout<<"  [ WARNING ] Empty bin when HT - " << HT << ", Jet6PT - "<<Jet6PT<<" and sf = "<<sf<<std::endl;
             std::cout<<"  [ WARNING ] Change sf [ "<<sf<<" ] into -> 1.0"<<std::endl;
@@ -708,11 +538,9 @@ const bool inD = (!htHigh && !njHigh);
 
 ////        if(btaggingSF == 0.0) btaggingSF = 1.0;
 
-
-
 	double weightNoSF = baseWeight * sf * L1NPu;
 	double weightWithSF = baseWeight * btaggingSF * sf * L1NPu;
-    double weightReweight = baseWeight * btaggingSF * btagReweightValue * sf * L1NPu; 
+        double weightReweight = baseWeight * btaggingSF * btagReweightValue * sf * L1NPu; 
 
 int iBin = clampBin(h_ratio_nJet->FindBin(nJets));
 
@@ -721,43 +549,6 @@ sumNoSF[iBin]   += weightNoSF;
 sumWithSF[iBin] += weightWithSF;
 sumReW[iBin]    += weightReweight;
 cnt[iBin]       += 1;
-
-
-//// ABCD ////
-// (4) 샘플/가중치
-const bool isData  = isRealData;
-const bool isQCDmc = (!isData) && sampleNameContainsQCD; // 네 코드의 판별 로직 사용
-const double wMC   = weightWithSF * weightReweight;      // 비QCD/ QCD MC 모두 동일한 "기존 최종가중치"
-const double wData = 1.0;
-
-// (5) B/C/D/A 누적 (데이터/비QCD/QCD 별로 분리 저장)
-if (isData){
-  if (inB && hB_data) hB_data->Fill(xHT, yNJ, wData);
-  if (inC && hC_data) hC_data->Fill(xHT, yNJ, wData);
-  if (inD && hD_data) hD_data->Fill(xHT, yNJ, wData);
-} else if (isQCDmc){
-  if (inA && hA_qcdMC) hA_qcdMC->Fill(xHT, yNJ, wMC); // closure
-} else {
-  if (inB && hB_nonQCD) hB_nonQCD->Fill(xHT, yNJ, wMC);
-  if (inC && hC_nonQCD) hC_nonQCD->Fill(xHT, yNJ, wMC);
-  if (inD && hD_nonQCD) hD_nonQCD->Fill(xHT, yNJ, wMC);
-}
-
-// (6) QCD MC + A영역이면 SF 적용
-double qcd_abcd_sf = 1.0;
-if (isQCDmc && inA && hSF_A){
-  const int bx = hSF_A->GetXaxis()->FindBin(xHT);
-  const int by = hSF_A->GetYaxis()->FindBin(yNJ);
-  qcd_abcd_sf = hSF_A->GetBinContent(bx, by);
-
-  // (7) "기존 최종가중치"에 곱해서 사용 (기존 흐름 변형 X)
-  double weightFinal = isData ? 1.0 : (wMC * qcd_abcd_sf);
-weightReweight = weightFinal;
-//// ABCD ////
-
-
-
-
 
 
         // --------------------
