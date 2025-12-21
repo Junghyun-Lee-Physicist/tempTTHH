@@ -396,10 +396,11 @@ bool ttHHanalyzer::selectObjects(event *thisEvent){
     //}
     if(cut["trigger"] > 0 && thisEvent->getHadTriggerAccept() == true)
     {
-        cutflow["HadTrigger"]+=1;                 
-        hCutFlow->Fill("HadTrigger",1);
-        hCutFlow_w->Fill("HadTrigger",_weight);
+	return false;
     }
+    cutflow["HadTrigger"]+=1;                 
+    hCutFlow->Fill("HadTrigger",1);
+    hCutFlow_w->Fill("HadTrigger",_weight);
     ////////if(cut["trigger"] > 0 && thisEvent->getMuonTriggerAccept() == false)
     ////////{
     ////////    return false;

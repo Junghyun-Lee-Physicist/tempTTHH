@@ -14,7 +14,7 @@
 //              name/value pairs is readily achieved with, well, name/value 
 //              pairs! Name/value pair is just another name for variable.
 // 
-//              Thinking in terms of objects, in the context of high-energy 
+//              Thinking in terms of objects, in the context of high energy 
 //              physics analysis, has yielded great complexity. On the other 
 //              hand, thinking in terms of name/value pairs reduces the 
 //              complexity enormously. The irreducible complexity, which 
@@ -100,6 +100,15 @@
 #else
 #include "treestream.h"
 #endif
+
+#include "Rtypes.h"        // ClassImp 매크로 정의(header 대신 Imp)
+#include "treestream.h"
+#include "eventBuffer.h"
+
+//ClassImp(itreestream);       // itreestream 클래스 구현 매크로
+//ClassImp(otreestream);       // otreestream 클래스 구현 매크로
+//ClassImp(eventBuffer);       // eventBuffer 구조체 구현 매크로
+
 //----------------------------------------------------------------------------
 using namespace std;
 
@@ -1160,8 +1169,10 @@ itreestream::_open(vector<string>& fname, vector<string>& tname)
 
 itreestream::~itreestream()
 {
+  std::cout<<"debug : before [ _statuscode ] and [ close() ] in ~itreestream"<<std::endl;
   _statuscode = kSUCCESS;
   close();
+  std::cout<<"debug : end of ~itreestream"<<std::endl;
 }
 
 void
@@ -1395,12 +1406,16 @@ itreestream::_getleaf(TBranch* branch, TLeaf* leaf)
 void
 itreestream::close()
 {
+  std::cout<<"debug : before [ _statuscode ] and [ close() ] in itreestream::close()"<<std::endl;
   _statuscode = kSUCCESS;
   
   if ( _tree == 0 ) return;
   DBUG("itreestream::close file", 1);
   if ( _delete ) delete  _tree;
-  _tree = 0;
+//////  _tree = 0;
+  _tree = nullptr;
+  std::cout<<"debug : end of itreestream::close()"<<std::endl;
+
 }
 
 bool
@@ -1608,7 +1623,7 @@ itreestream::read(int start, vector<vector<double> >& v)
 {
   if ( v.size() < _bufmap.size() ) return;
 
-  size_t nrows = (size_t)size() < v[0].size() ? (size_t)size() : v[0].size();
+  size_t nrows = size() < v[0].size() ? size() : v[0].size();
   for(size_t c=0; c < nrows; c++)
     {      
       int entry = start + c;
@@ -1906,11 +1921,8 @@ itreestream::_select(string namen, void* address, int maxsize, char srctype,
     }
   else
     {
-////      warning("itreestream - branch " + namen + " not found");
-////      _statuscode = kBADBRANCH;
-      // Jh.Lee modified above 2 line, 
-      // If treestream could not find specific branch, then it will occur "fetal error"
-      fatal("itreestream - CRITICAL ERROR: Branch '" + namen + "' not found! Aborting.");
+      warning("itreestream - branch " + namen + " not found");
+      _statuscode = kBADBRANCH;
     }
 }  
 
@@ -2198,20 +2210,24 @@ otreestream::otreestream(TFile* file_,
 
 otreestream::~otreestream()
 {
+  std::cout<<"debug : before [ _statuscode ] and [ close() ] in ~otreestream"<<std::endl;
   _statuscode = kSUCCESS;
   close();
+  std::cout<<"debug : after [ _statuscode ] and [ close() ] in ~otreestream"<<std::endl;
 }
 
 void
 otreestream::close(bool closefile)
 {
+
+  std::cout<<"debug : before [ _statuscode ] in otreestream::close(bool closefile)"<<std::endl;
   _statuscode = kSUCCESS;
 
   if ( _file == 0 ) return;
-  if ( _tree == 0 ) return;
   
   DBUG("otreestream::close file (before)", 1);
 
+  std::cout<<"debug : before [ SelectedData::iterator it = selecteddata.begin(); ] in close(bool closefile)"<<std::endl;
   SelectedData::iterator it = selecteddata.begin();
   while ( it != selecteddata.end() ) 
     {
@@ -2221,20 +2237,19 @@ otreestream::close(bool closefile)
     }
   DBUG("otreestream::close file (after)", 1);
 
+  std::cout<<"debug : before [ if ( closefile ) ] in otreestream::close(bool closefile)"<<std::endl;
   if ( closefile )
     {
       _file->Write(0, TObject::kOverwrite); //kWriteDelete
-      //_file->Close(); // causes a crash in ROOT
-      try
-	{
-	  delete _file;
-	}
-      catch (...)
-	{}
+      _file->Close(); // causes a crash in ROOT 
+      delete _file;
+      _file = nullptr; // added newly
+
+      _tree = 0;
+      _file = 0;
     }
-  
-  _tree = 0;
-  _file = 0;
+  std::cout<<"debug : end of otreestream::close(bool closefile) function"<<std::endl;
+
 }
 
 bool
@@ -2319,7 +2334,7 @@ otreestream::add(string namen, vector<float>& d)
 }
 
 void 
-otreestream::add                                                                                    (string namen, vector<long>& d)
+otreestream::add(string namen, vector<long>& d)
 {
   _add(namen, &d, d.size(), 'L', 'L', true);
 }
@@ -2353,73 +2368,6 @@ otreestream::add(string namen, vector<unsigned short>& d)
 {
   _add(namen, &d, d.size(), 's', 's', true);
 }
-
-
-void 
-otreestream::add(string namen, vector<string>& d)
-{
-  _add(namen, &d, d.size(), 'C', 'C', true);
-}
-
-
-
-// Vector of vectors
-
-void 
-otreestream::add(string namen, vector<vector<double>>& d)
-{
-  _add(namen, &d, d.size(), 'D', 'D', true);
-}
-
-void 
-otreestream::add(string namen, vector<vector<float>>& d)
-{
-  _add(namen, &d, d.size(), 'F', 'F', true);
-}
-
-void 
-otreestream::add(string namen, vector<vector<long>>& d)
-{
-  _add(namen, &d, d.size(), 'L', 'L', true);
-}
-
-void 
-otreestream::add(string namen, vector<vector<int>>& d)
-{
-  _add(namen, &d, d.size(), 'I', 'I', true);
-}
-
-void 
-otreestream::add(string namen, vector<vector<short>>& d)
-{
-  _add(namen, &d, d.size(), 'S', 'S', true);
-}
-
-void 
-otreestream::add(string namen, vector<vector<bool>>& d)
-{
-  _add(namen, &d, d.size(), 'O', 'O', true);
-}
-
-void 
-otreestream::add(string namen, vector<vector<unsigned int>>& d)
-{
-  _add(namen, &d, d.size(), 'i', 'i', true);
-}
-
-void 
-otreestream::add(string namen, vector<vector<unsigned short>>& d)
-{
-  _add(namen, &d, d.size(), 's', 's', true);
-}
-
-
-void 
-otreestream::add(string namen, vector<vector<string>>& d)
-{
-  _add(namen, &d, d.size(), 'C', 'C', true);
-}
-
 
 void 
 otreestream::add(string namen)

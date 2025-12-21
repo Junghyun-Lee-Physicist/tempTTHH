@@ -8,10 +8,15 @@
 
 ./ttHHanalyzer_bTagSF filelistTest/file_JetHT_C_test.txt output_JetHT_C.root 1.0 2017 Data JetHT C
 
-
 ./ttHHanalyzer_bTagSF filelistTest/file_ttJets_eos.txt output_ttJets.root 3.44 2017 MC ttJets
 
 ./ttHHanalyzer_bTagSF filelistTest/file_JetHT_C_eos.txt output_JetHT_C.root 1.0 2017 Data JetHT C
+
+
+# For Tier3 test
+./ttHHanalyzer_bTagSF filelistTest/file_tt4b_Tier3.txt output_tt4b.root 0.001299971501 2017 MC tt4b A
+./ttHHanalyzer_bTagSF filelistTest/file_BTagCSVB_Tier3.txt output_BTagCSVB.root 1.0 2017 Data BTagCSVB B
+
 
 no warning make
 --> 

@@ -1,4 +1,3 @@
-
 # <filelist file name> <output-dir name> <weight> <year> <MC or Data> <Sample name>
 # e.g.) filelist_JetHT_B.txt JetHT_B 1.0 2017 Data JetHT_B
 
@@ -41,5 +40,4 @@ filelist_QCD_HT700to1000.txt QCD_HT700to1000 5.58692197 2017 MC QCD_HT700to1000 
 filelist_QCD_HT1000to1500.txt QCD_HT1000to1500 3.285809224 2017 MC QCD_HT1000to1500 A
 filelist_QCD_HT1500to2000.txt QCD_HT1500to2000 0.3658958167 2017 MC QCD_HT1500to2000 A
 filelist_QCD_HT2000toInf.txt QCD_HT2000toInf 0.1606282808 2017 MC QCD_HT2000toInf A 
-filelist_ttJets.txt ttJets 3.441071667 2017 MC ttJets A
 filelist_ttbb.txt ttbb 0.007814764492 2017 MC ttbb A

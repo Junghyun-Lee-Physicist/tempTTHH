@@ -156,6 +156,7 @@ typedef std::map<std::string, Field*>  SelectedData;
               <i>TLorentzVector</i> objects to take advantage of the host of 
               useful mathematical operations these objects define on them.
 */
+#include "Rtypes.h"
 class itreestream
 {
  public:
@@ -238,7 +239,7 @@ class itreestream
       of the variable to read. You can check that all is well by
       calling the good() method after a call to select. The most likely
       error is failure to provide a buffer of non-zero length.
-                                                                                                                                                                                                                      <br>
+      <br>
       <b>Note</b>: The type of the buffer need not match that of the variable.
   */
   void   select(std::string namen, std::vector<double>& data);
@@ -394,6 +395,9 @@ class itreestream
   bool _delete;
   std::string _treename;
   std::vector<std::string>  _treenames;
+
+  ClassDef(itreestream, 1);
+
 };
 
 std::ostream& operator<<(std::ostream& os, const itreestream& tuple);
@@ -490,38 +494,6 @@ class otreestream
   void   add(std::string namen, std::vector<float>& data);
 
   ///
-  void   add(std::string namen, std::vector<std::string>& data);
-
-  // -----------------------------------------------------------------------
-  ///
-  void   add(std::string namen, std::vector<std::vector<long> >& data);
-
-  ///
-  void   add(std::string namen, std::vector<std::vector<int>>& data);
-
-  ///
-  void   add(std::string namen, std::vector<std::vector<short>>& data);
-
-  ///
-  void   add(std::string namen, std::vector<std::vector<bool>>& data);
-
-  ///
-  void   add(std::string namen, std::vector<std::vector<unsigned int>>& data);
-
-  ///
-  void   add(std::string namen, std::vector<std::vector<unsigned short>>& data);
-
-  ///
-  void   add(std::string namen, std::vector<std::vector<double>>& data);
-
-  ///
-  void   add(std::string namen, std::vector<std::vector<float>>& data);
-
-  ///
-  void   add(std::string namen, std::vector<std::vector<std::string>>& data);
-
-  
-  ///
   void   add(std::string namen);
 
   ///
@@ -587,6 +559,8 @@ class otreestream
 
   void _add(std::string name, void* address, int maxsize,
 	    char srctype, char iotype, int isvector=0);
+
+  ClassDef(otreestream, 1);
 };
 
 std::ostream& operator<<(std::ostream& os, const otreestream& tuple);

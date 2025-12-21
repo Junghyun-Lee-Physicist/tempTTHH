@@ -75,7 +75,7 @@ class CondorJobManager:
                     self.setup_and_submit_job()
 
                 except Exception as e:
-                    print("  Error with process of the condor job submition with {line} : {e}")
+                    print(f"  Error with process of the condor job submition with {line} : {e}")
                     continue
 
 
@@ -116,8 +116,8 @@ class CondorJobManager:
         ##subprocess.run(['df', '-h'])
         
         # Print User Home directory space
-        print("\nUser Home Memory Status:")
-        subprocess.run(['fs', 'lq'])
+####        print("\nUser Home Memory Status:")
+####        subprocess.run(['fs', 'lq'])
 
 ####        # Check EOS storage space
 ####        print("\nEOS Storage Space:")
@@ -133,25 +133,28 @@ class CondorJobManager:
     def prepare_output_directory(self):
         # Check if the output directory exists in EOS
         # Since the output directory is in EOS, we need to use EOS commands to check and create it
-        eos_base_cmd = ['eos', 'root://eosuser.cern.ch']
-        eos_base_cmd = ['']
+####        eos_base_cmd = ['eos', 'root://eosuser.cern.ch']
 
         # Check if the directory exists
-        check_dir_cmd = eos_base_cmd + ['ls', self.path_output]
+####        check_dir_cmd = eos_base_cmd + ['ls', self.path_output]
+        check_dir_cmd = ['ls', '-d', self.path_output]
+
         result = subprocess.run(check_dir_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         if result.returncode != 0:
             # Directory does not exist, create it
             print(f"Creating EOS output directory: {self.path_output}")
-            mkdir_cmd = eos_base_cmd + ['mkdir', '-p', self.path_output]
-            result = subprocess.run(mkdir_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            if result.returncode != 0:
+####            mkdir_cmd = eos_base_cmd + ['mkdir', '-p', self.path_output]
+            mkdir_cmd = ['mkdir', '-p', self.path_output]
+            mk_result = subprocess.run(mkdir_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            if mk_result.returncode != 0:
                 print(f"Error creating output directory: {result.stderr}")
                 sys.exit(1)
         else:
             print(f"EOS output directory exists: {self.path_output}")
 
         # Set permissions to 755
-        chmod_cmd = eos_base_cmd + ['chmod', '755', self.path_output]
+####        chmod_cmd = eos_base_cmd + ['chmod', '755', self.path_output]
+        chmod_cmd = ['chmod', '755', self.path_output]
         result = subprocess.run(chmod_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         if result.returncode != 0:
             print(f"Error setting permissions on output directory: {result.stderr}")

@@ -14,11 +14,15 @@ CorrectionsManager::CorrectionsManager(const std::string& runYear,
   , dataEra_(dataEra)
   , isData_(isData)
 {
-////    jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration";
-////    goldenJsonPath = "/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/GoldenJson";
-    jsonPath = "/Users/jhlee/correctionLib/corrections/jsonpog-integration";
-    goldenJsonPath = "/Users/jhlee/tempTTHH/GoldenJson";
-    trigSFPath = "/Users/jhlee/tempTTHH/Correction/TriggerSF";
+////    jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration"; // lxplus
+////    goldenJsonPath = "/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/GoldenJson"; // lxplus
+////    jsonPath = "/Users/jhlee/correctionLib/corrections/jsonpog-integration"; // Local
+////    goldenJsonPath = "/Users/jhlee/tempTTHH/GoldenJson"; // Local
+    jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration"; // Tier3
+    goldenJsonPath = "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/GoldenJson"; // Tier3
+
+////    trigSFPath = "/Users/jhlee/tempTTHH/Correction/TriggerSF"; // Local
+    trigSFPath = "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/Correction/TriggerSF"; // Tier3
 
     std::cout<<"[CorrectionsManager] json library path : "<<jsonPath<<std::endl;
 
