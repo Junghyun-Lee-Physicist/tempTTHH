@@ -323,6 +323,10 @@ class event{
 	return _sumSelJetScalarpT;
     }
 
+    float getSumSelJetScalarpT() const {
+        return _sumSelJetScalarpT;
+    }
+
     float getSumSelJetpT(){
 	return _sumSelJetp4.Pt();
     }
@@ -497,6 +501,10 @@ class event{
 	return &_selectJets;
     }
 
+    const std::vector<objectJet*>* getSelJets() const {
+        return &_selectJets;
+    }
+
     std::vector<float> getSelJetsMass(){
         return _selectJetsMass;
     }
@@ -511,6 +519,10 @@ class event{
 
     std::vector<objectJet*>* getSelbJets(){
 	return &_selectbJets;
+    }
+
+    const std::vector<objectJet*>* getSelbJets() const {
+        return &_selectbJets;
     }
 
     std::vector<objectJet*>* getSelLightJets(){
@@ -814,6 +826,10 @@ class event{
 
     float getbTagSys(){
 	return _bTagSysW;
+    }
+
+    float getbTagSys() const {
+        return _bTagSysW;
     }
 
     void setbTagSys(float bTagSysWeight){
