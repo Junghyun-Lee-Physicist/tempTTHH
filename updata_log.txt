@@ -1,0 +1,5 @@
+2026-01-03 18:55:22 UTC
+- Converted analyzer config files to YAML format and validated MC eraName is empty during job submission.
+- Added analyzer-side era validation against sampleName and switched trigger era selection to use eraName.
+2026-01-03 19:05:20 UTC
+- Rewrote analyzer config YAML files into structured YAML (common/samples) format and updated submitters to load with a simple YAML parser.

@@ -107,9 +107,8 @@ void ttHHanalyzer::createObjects(event * thisEvent, sysName sysType, bool up){
     // 1. [Definition] 복잡한 HLT 경로를 의미 있는 변수로 변환
     // =================================================================
 
-    // 1-1. Era 확인 (샘플 이름에 "_B"가 포함되어 있으면 Era B로 간주)
-    // (만약 sampleName이 "JetHT_B" 처럼 정확히 들어온다면 find 대신 == 사용 가능)
-    bool isEraB = (_sampleName.find("_B") != std::string::npos);
+    // 1-1. Era 확인 (설정된 eraName을 사용)
+    bool isEraB = (_era == "B");
 
     // 1-2. Trigger Mapping (Era에 따른 HLT 경로 선택)
     // (1) 4J3T (QuadJet + TripleBTag) -> BTagCSV 데이터셋의 주력

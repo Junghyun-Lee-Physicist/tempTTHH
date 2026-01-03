@@ -3,6 +3,7 @@
 import os
 import sys
 import time
+import re
 import subprocess
 script_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(script_dir, 'python', 'ttHHmodules'))
@@ -25,7 +26,7 @@ class CondorJobManager:
         self.memorySize = "10 GB"
         self.jobFlavour = "tomorrow"
 
-        self.config_file_path = os.path.join(self.analyzer_path, "AnalyzerConfig/Btag_2017_FH.txt")
+        self.config_file_path = os.path.join(self.analyzer_path, "AnalyzerConfig/Btag_2017_FH.yml")
         self.proxy_path = os.path.join(self.analyzer_path, "proxy.cert")
         self.condor_files_path = os.path.join(self.analyzer_path, "condor/filePath_Btag")
         self.sample_list_path = os.path.join(self.analyzer_path, "filelistBtag")
@@ -63,35 +64,41 @@ class CondorJobManager:
 
 
     def process_config_file(self):
-        with open(self.config_file_path, 'r') as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith('#'):
-                    continue # Skep empty lines or comments
+        config = self.load_yaml_config(self.config_file_path)
+        common = config.get("common", {})
+        for entry in config.get("samples", []):
+            try:
+                self.parse_config_entry(entry, common)
+                self.prepare_output_directory()
+                self.setup_and_submit_job()
 
-                try:
-                    self.parse_config_line(line)
-                    self.prepare_output_directory()
-                    self.setup_and_submit_job()
-
-                except Exception as e:
-                    print("  Error with process of the condor job submition with {line} : {e}")
-                    continue
+            except Exception as e:
+                print(f"  Error with process of the condor job submition with {entry} : {e}")
+                continue
 
 
-    def parse_config_line(self, line):
-        # Parse the configuration line into individual components
-        parts = line.strip().split()
-        if len(parts) < 7:
-            raise ValueError(f"Invalid configuration line (expected at least 7 fields) : {line}")
+    def parse_config_entry(self, entry, common):
+        required_keys = [
+            "filelist",
+            "output_dir",
+            "weight",
+            "data_or_mc",
+            "sample_name",
+        ]
+        missing_keys = [key for key in required_keys if key not in entry]
+        if missing_keys:
+            raise ValueError(f"Invalid configuration entry (missing keys: {missing_keys}) : {entry}")
 
-        self.file_list_name = parts[0]
-        self.output_dir = parts[1]
-        self.weight = parts[2]
-        self.year = parts[3]
-        self.data_or_mc = parts[4]
-        self.sample_name = parts[5]
-        self.era = parts[6]
+        self.file_list_name = entry["filelist"]
+        self.output_dir = entry["output_dir"]
+        self.weight = entry["weight"]
+        self.year = entry.get("year", common.get("year", ""))
+        self.data_or_mc = entry["data_or_mc"]
+        self.sample_name = entry["sample_name"]
+        self.era = entry.get("era", "")
+
+        if self.data_or_mc == "MC" and str(self.era).strip():
+            raise ValueError("MC samples must not define an eraName. Please leave era empty.")
 
         self.path_output = os.path.join(self.path_output_base, self.output_dir + "/")
 
@@ -100,6 +107,56 @@ class CondorJobManager:
         self.arg_list_file = os.path.join(self.condor_files_path, f"arguments_{self.output_dir}.txt")
         self.tmp_folder = os.path.join(self.condor_files_path, f"tmp_{self.output_dir}_{self.time_info}")
         self.make_directory(self.tmp_folder)
+
+    def load_yaml_config(self, path):
+        def parse_value(raw_value):
+            value = raw_value.strip()
+            if (value.startswith('"') and value.endswith('"')) or (value.startswith("'") and value.endswith("'")):
+                value = value[1:-1]
+            if re.fullmatch(r"-?\\d+\\.\\d+", value):
+                return float(value)
+            return value
+
+        config = {"common": {}, "samples": []}
+        section = None
+        current_sample = None
+
+        with open(path, "r") as f:
+            for raw_line in f:
+                line = raw_line.strip()
+                if not line or line.startswith("#"):
+                    continue
+
+                if line == "common:":
+                    section = "common"
+                    continue
+                if line == "samples:":
+                    section = "samples"
+                    continue
+
+                if section == "samples" and line.startswith("- "):
+                    if current_sample:
+                        config["samples"].append(current_sample)
+                    current_sample = {}
+                    line = line[2:].strip()
+                    if line:
+                        key, value = line.split(":", 1)
+                        current_sample[key.strip()] = parse_value(value)
+                    continue
+
+                if ":" in line:
+                    key, value = line.split(":", 1)
+                    if section == "common":
+                        config["common"][key.strip()] = parse_value(value)
+                    elif section == "samples":
+                        if current_sample is None:
+                            current_sample = {}
+                        current_sample[key.strip()] = parse_value(value)
+
+        if current_sample:
+            config["samples"].append(current_sample)
+
+        return config
 
 
     def print_memory_status(self):
@@ -175,7 +232,10 @@ class CondorJobManager:
                         per_job_filelist.write(line + '\n')
 
                     # Write the arguments for this job to the argument list file
-                    argout.write(f"{per_job_filelist_path} {self.output_dir}_{count}.root {self.weight} {self.year} {self.data_or_mc} {self.sample_name} {self.era}\n")
+                    argout.write(
+                        f"{per_job_filelist_path} {self.output_dir}_{count}.root {self.weight} {self.year} "
+                        f"{self.data_or_mc} {self.sample_name} \"{self.era}\"\n"
+                    )
                     count += 1
 
     

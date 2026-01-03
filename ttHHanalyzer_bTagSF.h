@@ -10,6 +10,7 @@
 #include "TFile.h"
 #include <iterator>
 #include <string>
+#include <cctype>
 #include "EventShape/Class/src/EventShape.cc"
 #include <TLorentzVector.h>
 #include "TRandom3.h"
@@ -902,7 +903,21 @@ class ttHHanalyzer {
 	_runYear = runYear;
 	_DataOrMC = DataOrMC;
 	_sampleName = sampleName;
-	_era = era;
+	_era = trimWhitespace(era);
+
+        std::string sampleEra = extractEraFromSampleName(_sampleName);
+        if (_DataOrMC == "MC") {
+            if (!_era.empty()) {
+                std::cerr << "[ERROR] MC samples must not define an eraName. Provided eraName: " << _era << std::endl;
+                std::exit(EXIT_FAILURE);
+            }
+        } else if (_DataOrMC == "Data") {
+            if (_era.empty() || sampleEra.empty() || sampleEra != _era) {
+                std::cerr << "[ERROR] eraName mismatch between config and sampleName. "
+                          << "eraName: " << _era << ", sampleName: " << _sampleName << std::endl;
+                std::exit(EXIT_FAILURE);
+            }
+        }
 
         std::string yearForCorr = "";
 	bool isData = false;
@@ -1006,6 +1021,28 @@ class ttHHanalyzer {
     // Golden JSON (data 럼이섹션 머스크)
     static bool goldenLoaded;
     static std::map<int,std::vector<std::pair<int,int>>> goldenLumiList;
+
+    static std::string trimWhitespace(std::string value) {
+        value.erase(value.begin(), std::find_if(value.begin(), value.end(), [](unsigned char ch) {
+            return !std::isspace(ch);
+        }));
+        value.erase(std::find_if(value.rbegin(), value.rend(), [](unsigned char ch) {
+            return !std::isspace(ch);
+        }).base(), value.end());
+        return value;
+    }
+
+    static std::string extractEraFromSampleName(const std::string& sampleName) {
+        std::size_t pos = sampleName.rfind('_');
+        if (pos == std::string::npos || pos + 1 >= sampleName.size()) {
+            return "";
+        }
+        std::string suffix = sampleName.substr(pos + 1);
+        if (suffix.size() != 1 || !std::isalpha(static_cast<unsigned char>(suffix[0]))) {
+            return "";
+        }
+        return suffix;
+    }
 
 
     void diMotherReco(const TLorentzVector & dPar1p4,const TLorentzVector & dPar2p4,const TLorentzVector & dPar3p4,const TLorentzVector & dPar4p4, const float mother1mass, const float  mother2mass, float & _minChi2,float & _bbMassMin1, float & _bbMassMin2);
