@@ -356,6 +356,14 @@ void ttHHanalyzer::createObjects(event * thisEvent, sysName sysType, bool up){
 
         // 이벤트에 등록
         thisEvent->selectJet(newJet);
+        if (newJet->bTagCSV >= objectJet::valbTagMedium) {
+            thisEvent->selectbJet(newJet);
+        } else {
+            thisEvent->selectLightJet(newJet);
+        }
+        if (newJet->bTagCSV >= objectJet::valbTagLoose) {
+            thisEvent->selectLoosebJet(newJet);
+        }
     }   // <--- Jet Loop End (여기가 닫혔는지 꼭 확인!)
     
 	thisEvent->orderJets();
@@ -412,7 +420,38 @@ bool ttHHanalyzer::selectObjects(event *thisEvent){
         thisEvent->getSelLightJets()->size() >= 2 ? thisEvent->getSelLightJets() : thisEvent->getSelJets(),
         wMass
     );
-    float higgsMass = closestMassPair(thisEvent->getSelbJets(), cHiggsMass);
+
+    _minChi2Higgs = cLargeValue;
+    _bbMassMin1Higgs = -1.0f;
+    _bbMassMin2Higgs = -1.0f;
+
+    auto* bjets = thisEvent->getSelbJets();
+    if (bjets->size() >= 4) {
+        for (size_t i = 0; i < bjets->size() - 3; ++i) {
+            for (size_t j = i + 1; j < bjets->size() - 2; ++j) {
+                for (size_t k = j + 1; k < bjets->size() - 1; ++k) {
+                    for (size_t l = k + 1; l < bjets->size(); ++l) {
+                        diMotherReco(*bjets->at(i)->getp4(), *bjets->at(j)->getp4(),
+                                     *bjets->at(k)->getp4(), *bjets->at(l)->getp4(),
+                                     cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
+                        diMotherReco(*bjets->at(i)->getp4(), *bjets->at(k)->getp4(),
+                                     *bjets->at(j)->getp4(), *bjets->at(l)->getp4(),
+                                     cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
+                        diMotherReco(*bjets->at(i)->getp4(), *bjets->at(l)->getp4(),
+                                     *bjets->at(j)->getp4(), *bjets->at(k)->getp4(),
+                                     cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
+                    }
+                }
+            }
+        }
+    }
+
+    float higgsMass = -1.0f;
+    if (_bbMassMin1Higgs > 0.0f && _bbMassMin2Higgs > 0.0f) {
+        higgsMass = (std::fabs(_bbMassMin1Higgs - cHiggsMass) < std::fabs(_bbMassMin2Higgs - cHiggsMass))
+                        ? _bbMassMin1Higgs
+                        : _bbMassMin2Higgs;
+    }
 
     fillCutStepHist(CutStep::kNoCut, thisEvent, hadWMass, higgsMass);
 
@@ -518,7 +557,8 @@ bool ttHHanalyzer::selectObjects(event *thisEvent){
 
     const float higgsMassMin = 90.0f;
     const float higgsMassMax = 160.0f;
-    if (higgsMass < 0.0f || higgsMass < higgsMassMin || higgsMass > higgsMassMax) {
+    if (_bbMassMin1Higgs < higgsMassMin || _bbMassMin1Higgs > higgsMassMax ||
+        _bbMassMin2Higgs < higgsMassMin || _bbMassMin2Higgs > higgsMassMax) {
         return false;
     }
     cutflow["HiggsMassWindow"]+=1;
