@@ -11,6 +11,7 @@
 #include <iterator>
 #include <string>
 #include <cctype>
+#include <limits>
 #include "EventShape/Class/src/EventShape.cc"
 #include <TLorentzVector.h>
 #include "TRandom3.h"
@@ -965,8 +966,8 @@ class ttHHanalyzer {
     ////tthHypothesisCombinatorics * HypoComb; 
 
 //    fifo_map<std::string,int> cutflow{{"noCut", 0}, {"MuonTrigger", 0}, {"njets>=6", 0}, {"nbjets>=3", 0}, {"6thJetsPT>40", 0}, {"nlepton==0", 0}, {"HT>500", 0}, {"nljets>=2", 0}, {"30<ljetsM<250", 0}, {"HadTrigger", 0}};
-    fifo_map<std::string,int> cutflow{{"noCut", 0}, {"noiseFilter", 0}, {"pv>=1", 0}, {"njets>=6", 0}, {"6thJetsPT>40", 0}, {"HT>500", 0}};
-    fifo_map<std::string,int> cutflow_w{{"noCut", 0}, {"noiseFilter", 0}, {"pv>=1", 0}, {"njets>=6", 0}, {"6thJetsPT>40", 0}, {"HT>500", 0}};
+    fifo_map<std::string,int> cutflow{{"noCut", 0}, {"HadTrigger", 0}, {"noiseFilter", 0}, {"pv>=1", 0}, {"njets>=6", 0}, {"6thJetsPT>40", 0}, {"nlepton==0", 0}, {"HT>500", 0}, {"30<HadW<250", 0}, {"HiggsMassWindow", 0}, {"nTotal", 0}};
+    fifo_map<std::string,int> cutflow_w{{"noCut", 0}, {"HadTrigger", 0}, {"noiseFilter", 0}, {"pv>=1", 0}, {"njets>=6", 0}, {"6thJetsPT>40", 0}, {"nlepton==0", 0}, {"HT>500", 0}, {"30<HadW<250", 0}, {"HiggsMassWindow", 0}, {"nTotal", 0}};
     //fifo_map<std::string,int> cutflow_w{{"noCut", 0}, {"MuonTrigger", 0}, {"nJets>=6", 0}, {"nbJets>=4", 0}, {"6thJetsPT>40", 0}, {"nlepton==0", 0}, {"HT>500", 0}, {"nljets>=2", 0}, {"30<ljetsM<250", 0}, {"HadTrigger", 0}};
     //    fifo_map<std::string,int> cutflow{{"noCut", 0}, {"njets>3", 0}, {"nbjets>2", 0}, {"nlepton==2", 0}, {"nOpositeChargedLep", 0}, {"nMassCut", 0}, {"nTotal", 0}};
 
@@ -1011,6 +1012,29 @@ class ttHHanalyzer {
     float _bbMassMin1Z, _bbMassMin2Z, _minChi2Z = 999999999.;
     TRandom3 _rand;
 
+    enum class CutStep {
+        kNoCut = 0,
+        kHadTrigger,
+        kNoiseFilter,
+        kPrimaryVertex,
+        kNumJets,
+        kSixthJetPt,
+        kLeptonVeto,
+        kHT,
+        kHadWMass,
+        kHiggsMass,
+        kTotal
+    };
+
+    std::vector<std::string> _cutStepLabels;
+    std::vector<TH1F*> _cutStepJetPt;
+    std::vector<TH1F*> _cutStepJetEta;
+    std::vector<TH1F*> _cutStepJetPhi;
+    std::vector<TH1F*> _cutStepHT;
+    std::vector<TH1F*> _cutStepBTag;
+    std::vector<TH1F*> _cutStepHadWMass;
+    std::vector<TH1F*> _cutStepHiggsMass;
+
     // L1 prefiring 보정
     const correction::Correction *prefireJetCorr = nullptr;
     const correction::Correction *prefirePhotonCorr = nullptr;
@@ -1047,6 +1071,54 @@ class ttHHanalyzer {
 
     void diMotherReco(const TLorentzVector & dPar1p4,const TLorentzVector & dPar2p4,const TLorentzVector & dPar3p4,const TLorentzVector & dPar4p4, const float mother1mass, const float  mother2mass, float & _minChi2,float & _bbMassMin1, float & _bbMassMin2);
     void motherReco(const TLorentzVector & dPar1p4,const TLorentzVector & dPar2p4, const float mother1mass, float & _minChi2,float & _bbMassMin1);
+
+    float closestMassPair(const std::vector<objectJet*>* jets, float targetMass) const {
+        if (!jets || jets->size() < 2) {
+            return -1.0f;
+        }
+        float bestMass = -1.0f;
+        float bestDiff = std::numeric_limits<float>::max();
+        for (size_t i = 0; i < jets->size(); ++i) {
+            for (size_t j = i + 1; j < jets->size(); ++j) {
+                TLorentzVector pair = *(*jets)[i]->getp4() + *(*jets)[j]->getp4();
+                float mass = pair.M();
+                float diff = std::fabs(mass - targetMass);
+                if (diff < bestDiff) {
+                    bestDiff = diff;
+                    bestMass = mass;
+                }
+            }
+        }
+        return bestMass;
+    }
+
+    void fillCutStepHist(CutStep step, const event* thisEvent, float hadWMass, float higgsMass) {
+        const size_t idx = static_cast<size_t>(step);
+        if (idx >= _cutStepJetPt.size()) {
+            return;
+        }
+        const auto* jets = thisEvent->getSelJets();
+        const auto* bjets = thisEvent->getSelbJets();
+        float weight = _weight * thisEvent->getbTagSys();
+
+        if (!jets->empty()) {
+            _cutStepJetPt.at(idx)->Fill(jets->at(0)->getp4()->Pt(), weight);
+            _cutStepJetEta.at(idx)->Fill(jets->at(0)->getp4()->Eta(), weight);
+            _cutStepJetPhi.at(idx)->Fill(jets->at(0)->getp4()->Phi(), weight);
+        }
+        if (!bjets->empty()) {
+            _cutStepBTag.at(idx)->Fill(bjets->at(0)->bTagCSV, weight);
+        } else if (!jets->empty()) {
+            _cutStepBTag.at(idx)->Fill(jets->at(0)->bTagCSV, weight);
+        }
+        _cutStepHT.at(idx)->Fill(thisEvent->getSumSelJetScalarpT(), weight);
+        if (hadWMass > 0.0f) {
+            _cutStepHadWMass.at(idx)->Fill(hadWMass, weight);
+        }
+        if (higgsMass > 0.0f) {
+            _cutStepHiggsMass.at(idx)->Fill(higgsMass, weight);
+        }
+    }
 
     /*    std::vector<double> getJetCutFlow(event *thisevent){
 	int jetCounter = 0;
@@ -1364,6 +1436,52 @@ class ttHHanalyzer {
 	hLeptonEta2 = new TH1F("leptonEta2"+trail, "lepton #eta_{2}"+trail, 50, -3, 3);
 	hMuonEta2 = new TH1F("muonEta2"+trail, "muon #eta_{2}"+trail, 50, -3, 3);
 	hEleEta2 = new TH1F("eleEta2"+trail, "ele #eta_{2}"+trail, 50, -3, 3); 
+
+        _of->file->cd();
+        TDirectory *cutflowDir = _of->file->mkdir("CutflowKinematics"+trail);
+        tmpDirs.push_back(cutflowDir);
+        cutflowDir->cd();
+
+        _cutStepLabels = {
+            "noCut",
+            "HadTrigger",
+            "noiseFilter",
+            "pv>=1",
+            "njets>=6",
+            "6thJetsPT>40",
+            "nlepton==0",
+            "HT>500",
+            "30<HadW<250",
+            "HiggsMassWindow",
+            "nTotal"
+        };
+
+        const size_t cutStepCount = static_cast<size_t>(CutStep::kTotal) + 1;
+        _cutStepJetPt.resize(cutStepCount);
+        _cutStepJetEta.resize(cutStepCount);
+        _cutStepJetPhi.resize(cutStepCount);
+        _cutStepHT.resize(cutStepCount);
+        _cutStepBTag.resize(cutStepCount);
+        _cutStepHadWMass.resize(cutStepCount);
+        _cutStepHiggsMass.resize(cutStepCount);
+
+        for (size_t i = 0; i < cutStepCount; ++i) {
+            const TString titleSuffix = TString::Format(" (%s)", _cutStepLabels.at(i).c_str());
+            _cutStepJetPt.at(i) = new TH1F(TString::Format("cutStep_%zu_jetPt", i),
+                                           "Leading jet p_{T} [GeV]"+titleSuffix, 50, 0, 2000);
+            _cutStepJetEta.at(i) = new TH1F(TString::Format("cutStep_%zu_jetEta", i),
+                                            "Leading jet #eta"+titleSuffix, 50, -3, 3);
+            _cutStepJetPhi.at(i) = new TH1F(TString::Format("cutStep_%zu_jetPhi", i),
+                                            "Leading jet #phi"+titleSuffix, 50, -3.2, 3.2);
+            _cutStepHT.at(i) = new TH1F(TString::Format("cutStep_%zu_ht", i),
+                                        "H_{T} [GeV]"+titleSuffix, 50, 0, 4000);
+            _cutStepBTag.at(i) = new TH1F(TString::Format("cutStep_%zu_btag", i),
+                                          "Leading b-tag discriminant"+titleSuffix, 50, 0, 1);
+            _cutStepHadWMass.at(i) = new TH1F(TString::Format("cutStep_%zu_hadW", i),
+                                              "m_{W,had} [GeV]"+titleSuffix, 50, 0, 300);
+            _cutStepHiggsMass.at(i) = new TH1F(TString::Format("cutStep_%zu_higgs", i),
+                                               "m_{bb} closest to Higgs [GeV]"+titleSuffix, 50, 0, 300);
+        }
 	
 	_histoDirs = tmpDirs;
     }

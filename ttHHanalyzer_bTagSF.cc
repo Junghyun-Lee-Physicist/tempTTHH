@@ -215,27 +215,43 @@ void ttHHanalyzer::createObjects(event * thisEvent, sysName sysType, bool up){
     
 
     bool thereIsALeadLepton = false;
-	
+
     for(int i = 0; i < muonT.size(); i++){
-	if(fabs(muonT[i].eta) < cut["muonEta"] && muonT[i].tightId == true && muonT[i].pfRelIso04_all  < cut["muonIso"]){
-	//if(fabs(muonT[i].eta) < cut["muonEta"] && muonT[i].mvaTTH > 0.15 && muonT[i].pfRelIso04_all  < cut["muonIso"]){
-	    if(muonT[i].pt > cut["leadMuonPt"]){
-		thereIsALeadLepton = true;
-		break;
-	    }
-	}
+        if(fabs(muonT[i].eta) < cut["muonEta"] && muonT[i].tightId == true && muonT[i].pfRelIso04_all  < cut["muonIso"]){
+            if(muonT[i].pt > cut["leadMuonPt"]){
+                thereIsALeadLepton = true;
+                break;
+            }
+        }
     }
     if(!thereIsALeadLepton){
-	for(int i = 0; i < ele.size(); i++){
-	    if(fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660){  //Electrons tracked neither in the barrel nor in the endcap are discarded.
-		if(fabs(ele[i].eta) < cut["eleEta"] && ele[i].mvaFall17V2Iso_WP90 == true && ele[i].pfRelIso03_all  < cut["eleIso"]){ 
-		    if(ele[i].pt > cut["leadElePt"]){
-			thereIsALeadLepton = true;
-			break;
-		    }
-		}
-	    }
-	}
+        for(int i = 0; i < ele.size(); i++){
+            if(fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660){  //Electrons tracked neither in the barrel nor in the endcap are discarded.
+                if(fabs(ele[i].eta) < cut["eleEta"] && ele[i].mvaFall17V2Iso_WP90 == true && ele[i].pfRelIso03_all  < cut["eleIso"]){ 
+                    if(ele[i].pt > cut["leadElePt"]){
+                        thereIsALeadLepton = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    for(int i = 0; i < muonT.size(); i++){
+        if(fabs(muonT[i].eta) < cut["muonEta"] && muonT[i].tightId == true && muonT[i].pfRelIso04_all  < cut["muonIso"]){
+            if(muonT[i].pt > cut["subLeadMuonPt"]){
+                nVetoMuons += 1;
+            }
+        }
+    }
+    for(int i = 0; i < ele.size(); i++){
+        if(fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660){  //Electrons tracked neither in the barrel nor in the endcap are discarded.
+            if(fabs(ele[i].eta) < cut["eleEta"] && ele[i].mvaFall17V2Iso_WP90 == true && ele[i].pfRelIso03_all  < cut["eleIso"]){ 
+                if(ele[i].pt > cut["subLeadElePt"]){
+                    nVetoEle += 1;
+                }
+            }
+        }
     }
      if(thereIsALeadLepton){ //we can add all leptons passing to the sublead selection to our containers
          for(int i = 0; i < muonT.size(); i++){
@@ -265,6 +281,7 @@ void ttHHanalyzer::createObjects(event * thisEvent, sysName sysType, bool up){
          }
      }
     thisEvent->orderLeptons();
+    thisEvent->setnVetoLepton(nVetoMuons + nVetoEle);
 
 
     float dR = 0., deltaEta = 0., deltaPhi = 0.;
@@ -390,17 +407,23 @@ bool ttHHanalyzer::selectObjects(event *thisEvent){
     hCutFlow->Fill("noCut",1);
     hCutFlow_w->Fill("noCut",_weight);
 
-    //if(cut["trigger"] > 0 && thisEvent->getTriggerAccept() == false){
-    //    return false;
-    //}
-////    if(cut["trigger"] > 0 && thisEvent->getHadTriggerAccept() == false)
-////    {
-////	return false;
-////    }
+    const float wMass = 80.377f;
+    float hadWMass = closestMassPair(
+        thisEvent->getSelLightJets()->size() >= 2 ? thisEvent->getSelLightJets() : thisEvent->getSelJets(),
+        wMass
+    );
+    float higgsMass = closestMassPair(thisEvent->getSelbJets(), cHiggsMass);
 
-////    cutflow["HadTrigger"]+=1;                 
-////    hCutFlow->Fill("HadTrigger",1);
-////    hCutFlow_w->Fill("HadTrigger",_weight);
+    fillCutStepHist(CutStep::kNoCut, thisEvent, hadWMass, higgsMass);
+
+    if(cut["trigger"] > 0 && thisEvent->getHadTriggerAccept() == false){
+        return false;
+    }
+
+    cutflow["HadTrigger"]+=1;                 
+    hCutFlow->Fill("HadTrigger",1);
+    hCutFlow_w->Fill("HadTrigger",_weight);
+    fillCutStepHist(CutStep::kHadTrigger, thisEvent, hadWMass, higgsMass);
 
     ////////if(cut["trigger"] > 0 && thisEvent->getMuonTriggerAccept() == false)
     ////////{
@@ -416,6 +439,7 @@ bool ttHHanalyzer::selectObjects(event *thisEvent){
     cutflow["noiseFilter"]+=1;
     hCutFlow->Fill("noiseFilter",1);
     hCutFlow_w->Fill("noiseFilter",_weight);
+    fillCutStepHist(CutStep::kNoiseFilter, thisEvent, hadWMass, higgsMass);
 
 ///    if(cut["pv"] < 0 && thisEvent->getPVvalue() == false){
 ///        return false;
@@ -426,6 +450,7 @@ bool ttHHanalyzer::selectObjects(event *thisEvent){
     cutflow["pv>=1"]+=1;
     hCutFlow->Fill("pv>=1",1);
     hCutFlow_w->Fill("pv>=1",_weight);	
+    fillCutStepHist(CutStep::kPrimaryVertex, thisEvent, hadWMass, higgsMass);
 
 
     if(!(thisEvent->getnSelJet() >= cut["nJets"] )){
@@ -434,6 +459,7 @@ bool ttHHanalyzer::selectObjects(event *thisEvent){
     cutflow["njets>=6"]+=1;                 
     hCutFlow->Fill("njets>=6",1);
     hCutFlow_w->Fill("njets>=6",_weight);
+    fillCutStepHist(CutStep::kNumJets, thisEvent, hadWMass, higgsMass);
 
     ////if(!(thisEvent->getnbJet() >= cut["nbJets"])){
     ////        return false;
@@ -451,13 +477,15 @@ bool ttHHanalyzer::selectObjects(event *thisEvent){
     cutflow["6thJetsPT>40"]+=1;
     hCutFlow->Fill("6thJetsPT>40",1);
     hCutFlow_w->Fill("6thJetsPT>40",_weight);
+    fillCutStepHist(CutStep::kSixthJetPt, thisEvent, hadWMass, higgsMass);
 
-    //if(!(thisEvent->getnSelLepton() == cut["nLeptons"])){
-    //    return false;
-    //}
-    //cutflow["nlepton==0"]+=1;                 
-    //hCutFlow->Fill("nlepton==0", 1);
-    //hCutFlow_w->Fill("nlepton==0", _weight);
+    if(!(thisEvent->getnVetoLepton() == cut["nLeptons"])){
+        return false;
+    }
+    cutflow["nlepton==0"]+=1;                 
+    hCutFlow->Fill("nlepton==0", 1);
+    hCutFlow_w->Fill("nlepton==0", _weight);
+    fillCutStepHist(CutStep::kLeptonVeto, thisEvent, hadWMass, higgsMass);
 
     thisEvent->getStatsComb(thisEvent->getSelJets(), thisEvent->getSelLeptons(), ljetStat);
     thisEvent->getStatsComb(thisEvent->getSelbJets(), thisEvent->getSelLeptons(), lbjetStat);
@@ -469,6 +497,7 @@ bool ttHHanalyzer::selectObjects(event *thisEvent){
     cutflow["HT>500"]+=1;
     hCutFlow->Fill("HT>500",1);
     hCutFlow_w->Fill("HT>500",_weight);
+    fillCutStepHist(CutStep::kHT, thisEvent, hadWMass, higgsMass);
 
  
     ////if(!(thisEvent->getnLightJet() >= cut["nlJets"])){
@@ -479,30 +508,23 @@ bool ttHHanalyzer::selectObjects(event *thisEvent){
     ////hCutFlow_w->Fill("nljets>=2",_weight);    
 
 
-    ////const float W_mass = 80.377f;
-    ////float closest_mass_difference = std::numeric_limits<float>::max();
-    ////float closest_pair_mass_sum = 0.0f;
-    ////std::vector<float> jet_masses = thisEvent->getSelJetsMass();
+    if (hadWMass < 0.0f || hadWMass > 250.0f || hadWMass < 30.0f) {
+        return false;
+    }
+    cutflow["30<HadW<250"]+=1;
+    hCutFlow->Fill("30<HadW<250",1);
+    hCutFlow_w->Fill("30<HadW<250",_weight);
+    fillCutStepHist(CutStep::kHadWMass, thisEvent, hadWMass, higgsMass);
 
-    ////for (size_t i = 0; i < jet_masses.size(); ++i) {
-    ////    for (size_t j = i + 1; j < jet_masses.size(); ++j) {
-    ////        float mass_sum = jet_masses[i] + jet_masses[j];
-    ////        float mass_difference = std::fabs(mass_sum - W_mass);
-
-    ////        if (mass_difference < closest_mass_difference) {
-    ////            closest_mass_difference = mass_difference;
-    ////            closest_pair_mass_sum = mass_sum;
-    ////        }
-    ////    }
-    ////}
-    ////hInvMassHadW->Fill( closest_pair_mass_sum, _weight);
-
-    ////if( closest_pair_mass_sum > 250.0 || closest_pair_mass_sum < 30.0 ){
-    ////         return false;
-    ////}
-    ////cutflow["30<ljetsM<250"]+=1;
-    ////hCutFlow->Fill("30<ljetsM<250",1);
-    ////hCutFlow_w->Fill("30<ljetsM<250",_weight);
+    const float higgsMassMin = 90.0f;
+    const float higgsMassMax = 160.0f;
+    if (higgsMass < 0.0f || higgsMass < higgsMassMin || higgsMass > higgsMassMax) {
+        return false;
+    }
+    cutflow["HiggsMassWindow"]+=1;
+    hCutFlow->Fill("HiggsMassWindow",1);
+    hCutFlow_w->Fill("HiggsMassWindow",_weight);
+    fillCutStepHist(CutStep::kHiggsMass, thisEvent, hadWMass, higgsMass);
 
 
     ////if(thisEvent->getSelLeptons()->at(0)->charge == thisEvent->getSelLeptons()->at(1)->charge){
@@ -529,6 +551,9 @@ bool ttHHanalyzer::selectObjects(event *thisEvent){
     ////cutflow["nMassCut"]+=1;
 
     cutflow["nTotal"]+=1;
+    hCutFlow->Fill("nTotal",1);
+    hCutFlow_w->Fill("nTotal",_weight);
+    fillCutStepHist(CutStep::kTotal, thisEvent, hadWMass, higgsMass);
 
     /*	std::cout << x.first  // string (key)
 		  << ':' 
@@ -769,8 +794,8 @@ void ttHHanalyzer::process(event* thisEvent, sysName sysType, bool up){
                 std::cout << "[GoldenJSON] Skipping event: run=" 
                           << run << " lumi=" << lumi << std::endl;
             }
+            _failGoldenJson = true;
             return;
-	    _failGoldenJson = true;
         }
         if (debugCorrections) {
             std::cout << "[GoldenJSON] Accepted event: run=" 
@@ -1239,6 +1264,17 @@ void ttHHanalyzer::writeHistos(){
     hMuonPT2->Write();
     hEleEta2->Write();
     hElePT2->Write(); */
+
+    _histoDirs.at(2)->cd();
+    for (size_t i = 0; i < _cutStepJetPt.size(); ++i) {
+        _cutStepJetPt.at(i)->Write();
+        _cutStepJetEta.at(i)->Write();
+        _cutStepJetPhi.at(i)->Write();
+        _cutStepHT.at(i)->Write();
+        _cutStepBTag.at(i)->Write();
+        _cutStepHadWMass.at(i)->Write();
+        _cutStepHiggsMass.at(i)->Write();
+    }
 }
 void ttHHanalyzer::fillTree(event * thisEvent){
 
