@@ -236,9 +236,10 @@ class CondorJobManager:
                         per_job_filelist.write(line + '\n')
 
                     # Write the arguments for this job to the argument list file
+                    era_arg = self.era if str(self.era).strip() else "noEra"
                     argout.write(
                         f"{per_job_filelist_path} {self.output_dir}_{count}.root {self.weight} {self.year} "
-                        f"{self.data_or_mc} {self.sample_name} \"{self.era}\"\n"
+                        f"{self.data_or_mc} {self.sample_name} {era_arg}\n"
                     )
                     count += 1
 

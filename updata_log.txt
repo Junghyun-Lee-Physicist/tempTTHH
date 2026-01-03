@@ -5,3 +5,5 @@
 - Rewrote analyzer config YAML files into structured YAML (common/samples) format and updated submitters to load with a simple YAML parser.
 2026-01-03 19:31:54 UTC
 - Re-enabled trigger/lepton veto/W/Higgs mass selections, fixed Golden JSON flag handling, and added cut-step kinematics histograms.
+2026-01-03 19:43:40 UTC
+- Removed quoted era arguments in condor submitters and mapped empty era to noEra placeholder for safe passing.

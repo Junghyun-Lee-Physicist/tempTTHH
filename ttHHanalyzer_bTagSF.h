@@ -921,6 +921,9 @@ class ttHHanalyzer {
 	_DataOrMC = DataOrMC;
 	_sampleName = sampleName;
 	_era = trimWhitespace(era);
+        if (_era == "noEra" || _era == "-") {
+            _era.clear();
+        }
 
         std::string sampleEra = extractEraFromSampleName(_sampleName);
         if (_DataOrMC == "MC") {
