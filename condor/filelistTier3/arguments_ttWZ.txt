@@ -1,0 +1,2 @@
+/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_ttWZ_20251222-163036/filelist_ttWZ_0.txt ttWZ_0.root 0.0002901229714 2017 MC ttWZ A
+/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_ttWZ_20251222-163036/filelist_ttWZ_1.txt ttWZ_1.root 0.0002901229714 2017 MC ttWZ A

@@ -1,0 +1,7 @@
+/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_ttZHto4b_20251222-163036/filelist_ttZHto4b_0.txt ttZHto4b_0.root 0.0000005563481144 2017 MC ttZHto4b A
+/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_ttZHto4b_20251222-163036/filelist_ttZHto4b_1.txt ttZHto4b_1.root 0.0000005563481144 2017 MC ttZHto4b A
+/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_ttZHto4b_20251222-163036/filelist_ttZHto4b_2.txt ttZHto4b_2.root 0.0000005563481144 2017 MC ttZHto4b A
+/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_ttZHto4b_20251222-163036/filelist_ttZHto4b_3.txt ttZHto4b_3.root 0.0000005563481144 2017 MC ttZHto4b A
+/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_ttZHto4b_20251222-163036/filelist_ttZHto4b_4.txt ttZHto4b_4.root 0.0000005563481144 2017 MC ttZHto4b A
+/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_ttZHto4b_20251222-163036/filelist_ttZHto4b_5.txt ttZHto4b_5.root 0.0000005563481144 2017 MC ttZHto4b A
+/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_ttZHto4b_20251222-163036/filelist_ttZHto4b_6.txt ttZHto4b_6.root 0.0000005563481144 2017 MC ttZHto4b A

@@ -1,0 +1,76 @@
+
+
+START---------------
+WORKDIR  /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+WORKDIR  /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+TNM_PATH=/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+
+--------- Check arugments ---------------------------------------
+
+  - [ output file name ] --> /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput/ttZHto4b/ttZHto4b_0.root
+  - [ runYear ] --> 2017
+  - [ isData ] --> MC
+  - [ sampleName ] --> ttZHto4b
+  - [ eraName ] --> A
+
+--------- Check arugments ---------------------------------------
+
+
+eventBuffer - All branches selected
+ Output filename: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput/ttZHto4b/ttZHto4b_0.root
+[CorrectionsManager] json library path : /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration
+weight = 5.56348e-07
+
+	[35m[ Warning ]: This analyzer commented out [ "WTF" log ] in the header, Please check if you want!!![0m
+
+	[34m[ Log ]: --------------------------------------------------------------------------[0m
+	[34m[ Log ]: Before start, Let's check the analysis information[0m
+	[34m[ Log ]: Run Year    ----> [  2017  ][0m
+	[34m[ Log ]: Data or MC  ----> [  MC  ][0m
+	[34m[ Log ]: Sample Name ----> [  ttZHto4b  ][0m
+	[34m[ Log ]: --------------------------------------------------------------------------[0m
+
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 0[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 10000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 20000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 30000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 40000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 50000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 60000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 70000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 80000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 90000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 100000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 110000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 120000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 130000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 140000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 150000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 160000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 170000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 180000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 190000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 200000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 210000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 220000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 230000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 240000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 250000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 260000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 270000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 280000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 290000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 300000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 310000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 320000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 330000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 340000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 350000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 360000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 370000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 380000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 390000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 400000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 410000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 420000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttZHto4b: 430000[0m

@@ -27,7 +27,7 @@ void ttHHanalyzer::performAnalysis(){
 void ttHHanalyzer::loop(sysName sysType, bool up){
 
     int nevents = _ev->size();
-//    nevents = 50000;
+////    nevents = 1000;
 
     std::cout<<"weight = "<<_weight<<std::endl;  
     _SampleWeight = _weight;
@@ -394,13 +394,15 @@ bool ttHHanalyzer::selectObjects(event *thisEvent){
     //if(cut["trigger"] > 0 && thisEvent->getTriggerAccept() == false){
     //    return false;
     //}
-    if(cut["trigger"] > 0 && thisEvent->getHadTriggerAccept() == true)
-    {
-	return false;
-    }
-    cutflow["HadTrigger"]+=1;                 
-    hCutFlow->Fill("HadTrigger",1);
-    hCutFlow_w->Fill("HadTrigger",_weight);
+////    if(cut["trigger"] > 0 && thisEvent->getHadTriggerAccept() == false)
+////    {
+////	return false;
+////    }
+
+////    cutflow["HadTrigger"]+=1;                 
+////    hCutFlow->Fill("HadTrigger",1);
+////    hCutFlow_w->Fill("HadTrigger",_weight);
+
     ////////if(cut["trigger"] > 0 && thisEvent->getMuonTriggerAccept() == false)
     ////////{
     ////////    return false;

@@ -1,0 +1,11 @@
+x509userproxy           = /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/proxy.cert
+getenv                  = True
+executable              = /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/run_ttZZto4b.sh
+arguments               = $(args)
+output                  = /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_ttZZto4b_20251222-163036/job_ttZZto4b.$(ClusterId).$(ProcId).out
+MY.WantOS               = "el9"
+MY.XRDCP_CREATE_DIR     = True
+error                   = /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_ttZZto4b_20251222-163036/error_ttZZto4b.$(ClusterId).$(ProcId).err
+log                     = /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/log_ttZZto4b.$(ClusterId).log
+request_memory          = 10 GB
+queue args from /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/arguments_ttZZto4b.txt

@@ -1,0 +1,43 @@
+
+
+START---------------
+WORKDIR  /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+WORKDIR  /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+TNM_PATH=/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+
+--------- Check arugments ---------------------------------------
+
+  - [ output file name ] --> /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput/QCD_HT1500to2000/QCD_HT1500to2000_29.root
+  - [ runYear ] --> 2017
+  - [ isData ] --> MC
+  - [ sampleName ] --> QCD_HT1500to2000
+  - [ eraName ] --> A
+
+--------- Check arugments ---------------------------------------
+
+
+eventBuffer - All branches selected
+ Output filename: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput/QCD_HT1500to2000/QCD_HT1500to2000_29.root
+[CorrectionsManager] json library path : /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration
+weight = 0.365896
+
+	[35m[ Warning ]: This analyzer commented out [ "WTF" log ] in the header, Please check if you want!!![0m
+
+	[34m[ Log ]: --------------------------------------------------------------------------[0m
+	[34m[ Log ]: Before start, Let's check the analysis information[0m
+	[34m[ Log ]: Run Year    ----> [  2017  ][0m
+	[34m[ Log ]: Data or MC  ----> [  MC  ][0m
+	[34m[ Log ]: Sample Name ----> [  QCD_HT1500to2000  ][0m
+	[34m[ Log ]: --------------------------------------------------------------------------[0m
+
+	[36m[ Log ]: Processed events of 2017, MC, QCD_HT1500to2000: 0[0m
+	[36m[ Log ]: Processed events of 2017, MC, QCD_HT1500to2000: 10000[0m
+	[36m[ Log ]: Processed events of 2017, MC, QCD_HT1500to2000: 20000[0m
+	[36m[ Log ]: Processed events of 2017, MC, QCD_HT1500to2000: 30000[0m
+	[36m[ Log ]: Processed events of 2017, MC, QCD_HT1500to2000: 40000[0m
+	[36m[ Log ]: Processed events of 2017, MC, QCD_HT1500to2000: 50000[0m
+	[36m[ Log ]: Processed events of 2017, MC, QCD_HT1500to2000: 60000[0m
+	[36m[ Log ]: Processed events of 2017, MC, QCD_HT1500to2000: 70000[0m
+	[36m[ Log ]: Processed events of 2017, MC, QCD_HT1500to2000: 80000[0m
+	[36m[ Log ]: Processed events of 2017, MC, QCD_HT1500to2000: 90000[0m
+	[36m[ Log ]: Processed events of 2017, MC, QCD_HT1500to2000: 100000[0m

@@ -1,0 +1,20 @@
+
+
+START---------------
+WORKDIR  /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+WORKDIR  /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+TNM_PATH=/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+
+--------- Check arugments ---------------------------------------
+
+  - [ output file name ] --> /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput/BTagCSV_B/BTagCSV_B_5.root
+  - [ runYear ] --> 2017
+  - [ isData ] --> Data
+  - [ sampleName ] --> BTagCSV_B
+  - [ eraName ] --> B
+
+--------- Check arugments ---------------------------------------
+
+
+eventBuffer - All branches selected
+ Output filename: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput/BTagCSV_B/BTagCSV_B_5.root

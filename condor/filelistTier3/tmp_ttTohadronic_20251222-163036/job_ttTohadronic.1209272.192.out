@@ -1,0 +1,160 @@
+
+
+START---------------
+WORKDIR  /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+WORKDIR  /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+TNM_PATH=/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+
+--------- Check arugments ---------------------------------------
+
+  - [ output file name ] --> /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput/ttTohadronic/ttTohadronic_192.root
+  - [ runYear ] --> 2017
+  - [ isData ] --> MC
+  - [ sampleName ] --> ttTohadronic
+  - [ eraName ] --> A
+
+--------- Check arugments ---------------------------------------
+
+
+eventBuffer - All branches selected
+ Output filename: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput/ttTohadronic/ttTohadronic_192.root
+[CorrectionsManager] json library path : /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration
+weight = 0.0674599
+
+	[35m[ Warning ]: This analyzer commented out [ "WTF" log ] in the header, Please check if you want!!![0m
+
+	[34m[ Log ]: --------------------------------------------------------------------------[0m
+	[34m[ Log ]: Before start, Let's check the analysis information[0m
+	[34m[ Log ]: Run Year    ----> [  2017  ][0m
+	[34m[ Log ]: Data or MC  ----> [  MC  ][0m
+	[34m[ Log ]: Sample Name ----> [  ttTohadronic  ][0m
+	[34m[ Log ]: --------------------------------------------------------------------------[0m
+
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 0[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 10000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 20000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 30000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 40000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 50000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 60000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 70000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 80000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 90000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 100000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 110000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 120000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 130000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 140000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 150000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 160000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 170000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 180000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 190000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 200000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 210000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 220000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 230000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 240000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 250000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 260000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 270000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 280000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 290000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 300000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 310000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 320000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 330000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 340000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 350000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 360000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 370000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 380000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 390000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 400000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 410000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 420000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 430000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 440000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 450000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 460000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 470000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 480000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 490000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 500000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 510000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 520000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 530000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 540000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 550000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 560000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 570000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 580000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 590000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 600000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 610000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 620000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 630000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 640000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 650000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 660000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 670000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 680000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 690000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 700000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 710000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 720000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 730000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 740000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 750000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 760000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 770000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 780000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 790000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 800000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 810000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 820000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 830000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 840000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 850000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 860000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 870000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 880000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 890000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 900000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 910000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 920000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 930000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 940000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 950000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 960000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 970000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 980000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 990000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1000000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1010000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1020000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1030000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1040000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1050000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1060000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1070000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1080000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1090000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1100000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1110000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1120000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1130000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1140000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1150000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1160000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1170000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1180000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1190000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1200000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1210000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1220000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1230000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1240000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1250000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1260000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttTohadronic: 1270000[0m

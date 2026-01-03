@@ -1,0 +1,61 @@
+
+
+START---------------
+WORKDIR  /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+WORKDIR  /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+TNM_PATH=/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+
+--------- Check arugments ---------------------------------------
+
+  - [ output file name ] --> /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput/BTagCSV_E/BTagCSV_E_9.root
+  - [ runYear ] --> 2017
+  - [ isData ] --> Data
+  - [ sampleName ] --> BTagCSV_E
+  - [ eraName ] --> E
+
+--------- Check arugments ---------------------------------------
+
+
+eventBuffer - All branches selected
+ Output filename: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput/BTagCSV_E/BTagCSV_E_9.root
+[CorrectionsManager] json library path : /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration
+weight = 1
+
+	[35m[ Warning ]: This analyzer commented out [ "WTF" log ] in the header, Please check if you want!!![0m
+
+	[34m[ Log ]: --------------------------------------------------------------------------[0m
+	[34m[ Log ]: Before start, Let's check the analysis information[0m
+	[34m[ Log ]: Run Year    ----> [  2017  ][0m
+	[34m[ Log ]: Data or MC  ----> [  Data  ][0m
+	[34m[ Log ]: Sample Name ----> [  BTagCSV_E  ][0m
+	[34m[ Log ]: --------------------------------------------------------------------------[0m
+
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 0[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 10000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 20000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 30000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 40000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 50000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 60000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 70000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 80000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 90000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 100000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 110000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 120000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 130000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 140000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 150000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 160000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 170000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 180000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 190000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 200000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 210000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 220000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 230000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 240000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 250000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 260000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 270000[0m
+	[36m[ Log ]: Processed events of 2017, Data, BTagCSV_E: 280000[0m

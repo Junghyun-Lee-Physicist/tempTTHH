@@ -39,7 +39,7 @@ std::map<std::string, float> cut {
     {"nJets", 6} // nJets higher than 
     , {"nLeptons", 0} // nLepton equals to
     //, {"nVetoLeptons", 0} // nVetoLepton equals to
-    , {"nbJets", 3}
+    , {"nbJets", 0}
     , {"jetPt", 30} // jet pT higher than
     ////, {"leadElePt", 25} // leadElectron pT higher than
     ////, {"leadMuonPt", 25} // leadMuon pT higher than

@@ -1,0 +1,54 @@
+
+
+START---------------
+WORKDIR  /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+WORKDIR  /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+TNM_PATH=/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+
+--------- Check arugments ---------------------------------------
+
+  - [ output file name ] --> /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput/SingleMuon_B/SingleMuon_B_11.root
+  - [ runYear ] --> 2017
+  - [ isData ] --> Data
+  - [ sampleName ] --> SingleMuon_B
+  - [ eraName ] --> B
+
+--------- Check arugments ---------------------------------------
+
+
+eventBuffer - All branches selected
+ Output filename: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput/SingleMuon_B/SingleMuon_B_11.root
+[CorrectionsManager] json library path : /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration
+weight = 1
+
+	[35m[ Warning ]: This analyzer commented out [ "WTF" log ] in the header, Please check if you want!!![0m
+
+	[34m[ Log ]: --------------------------------------------------------------------------[0m
+	[34m[ Log ]: Before start, Let's check the analysis information[0m
+	[34m[ Log ]: Run Year    ----> [  2017  ][0m
+	[34m[ Log ]: Data or MC  ----> [  Data  ][0m
+	[34m[ Log ]: Sample Name ----> [  SingleMuon_B  ][0m
+	[34m[ Log ]: --------------------------------------------------------------------------[0m
+
+	[36m[ Log ]: Processed events of 2017, Data, SingleMuon_B: 0[0m
+	[36m[ Log ]: Processed events of 2017, Data, SingleMuon_B: 10000[0m
+	[36m[ Log ]: Processed events of 2017, Data, SingleMuon_B: 20000[0m
+	[36m[ Log ]: Processed events of 2017, Data, SingleMuon_B: 30000[0m
+	[36m[ Log ]: Processed events of 2017, Data, SingleMuon_B: 40000[0m
+	[36m[ Log ]: Processed events of 2017, Data, SingleMuon_B: 50000[0m
+	[36m[ Log ]: Processed events of 2017, Data, SingleMuon_B: 60000[0m
+	[36m[ Log ]: Processed events of 2017, Data, SingleMuon_B: 70000[0m
+	[36m[ Log ]: Processed events of 2017, Data, SingleMuon_B: 80000[0m
+	[36m[ Log ]: Processed events of 2017, Data, SingleMuon_B: 90000[0m
+	[36m[ Log ]: Processed events of 2017, Data, SingleMuon_B: 100000[0m
+	[36m[ Log ]: Processed events of 2017, Data, SingleMuon_B: 110000[0m
+	[36m[ Log ]: Processed events of 2017, Data, SingleMuon_B: 120000[0m
+	[36m[ Log ]: Processed events of 2017, Data, SingleMuon_B: 130000[0m
+	[36m[ Log ]: Processed events of 2017, Data, SingleMuon_B: 140000[0m
+	[36m[ Log ]: Processed events of 2017, Data, SingleMuon_B: 150000[0m
+	[36m[ Log ]: Processed events of 2017, Data, SingleMuon_B: 160000[0m
+	[36m[ Log ]: Processed events of 2017, Data, SingleMuon_B: 170000[0m
+	[36m[ Log ]: Processed events of 2017, Data, SingleMuon_B: 180000[0m
+	[36m[ Log ]: Processed events of 2017, Data, SingleMuon_B: 190000[0m
+	[36m[ Log ]: Processed events of 2017, Data, SingleMuon_B: 200000[0m
+	[36m[ Log ]: Processed events of 2017, Data, SingleMuon_B: 210000[0m

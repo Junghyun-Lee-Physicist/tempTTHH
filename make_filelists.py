@@ -4,7 +4,7 @@ import shutil
 # ==============================================================================
 # [설정] 경로 확인
 # ==============================================================================
-SAMPLE_DIR = "/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2017UL_15thDec2025_v3"
+SAMPLE_DIR = "/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2017UL_30thDec2025_v8"
 OUTPUT_DIR = "filelistTier3/" 
 
 # ==============================================================================
@@ -13,6 +13,7 @@ OUTPUT_DIR = "filelistTier3/"
 directories = [
     "BTagCSV",
     "JetHT",
+    "SingleMuon",
     "QCD_HT1000to1500_TuneCP5_13TeV-madgraphMLM-pythia8",
     "QCD_HT1500to2000_TuneCP5_13TeV-madgraphMLM-pythia8",
     "QCD_HT2000toInf_TuneCP5_13TeV-madgraphMLM-pythia8",
@@ -53,7 +54,6 @@ mc_name_mapping = {
     "TTZZTo4b": "ttZZto4b",
     "TTbb_4f": "ttbb",
 
-
     "TTTo2L2Nu": "ttTo2L2Nu",
     "TTToSemiLeptonic": "ttToSemiLeptonic",
     "TTWJetsToQQ": "ttWJetsToQQ",
@@ -65,7 +65,7 @@ def find_root_files(start_path):
     for root, dirs, files in os.walk(start_path):
         for file in files:
             # tree*.root 패턴 매칭
-            if file.startswith("tree") and file.endswith(".root"):
+            if file.startswith("slimmedNtuple") and file.endswith(".root"):
                 absolute_path = os.path.abspath(os.path.join(root, file))
                 root_files.append(absolute_path)
     return root_files
@@ -149,9 +149,11 @@ def main():
         print(f"-> [PROCESSING] {dirname} ...")
 
         # --- CASE 1: Data (JetHT, BTagCSV) ---
-        if "JetHT" in dirname or "BTagCSV" in dirname:
-            process_prefix = "JetHT" if "JetHT" in dirname else "BTagCSV"
-            
+##        if "JetHT" in dirname or "BTagCSV" in dirname or "SingleMuon" in dirname:
+##            process_prefix = "JetHT" if "JetHT" in dirname else "BTagCSV"
+        if "JetHT" in dirname or "BTagCSV" in dirname or "SingleMuon" in dirname:
+            process_prefix = "JetHT" if "JetHT" in dirname else ("SingleMuon" if "SingleMuon" in dirname else "BTagCSV")
+
             subdirs = []
             try:
                 subdirs = [d for d in os.listdir(full_dir_path) if os.path.isdir(os.path.join(full_dir_path, d))]

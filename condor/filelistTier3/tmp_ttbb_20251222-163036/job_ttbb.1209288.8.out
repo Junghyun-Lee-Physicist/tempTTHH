@@ -1,0 +1,102 @@
+
+
+START---------------
+WORKDIR  /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+WORKDIR  /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+TNM_PATH=/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+
+--------- Check arugments ---------------------------------------
+
+  - [ output file name ] --> /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput/ttbb/ttbb_8.root
+  - [ runYear ] --> 2017
+  - [ isData ] --> MC
+  - [ sampleName ] --> ttbb
+  - [ eraName ] --> A
+
+--------- Check arugments ---------------------------------------
+
+
+eventBuffer - All branches selected
+ Output filename: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput/ttbb/ttbb_8.root
+[CorrectionsManager] json library path : /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration
+weight = 0.00781476
+
+	[35m[ Warning ]: This analyzer commented out [ "WTF" log ] in the header, Please check if you want!!![0m
+
+	[34m[ Log ]: --------------------------------------------------------------------------[0m
+	[34m[ Log ]: Before start, Let's check the analysis information[0m
+	[34m[ Log ]: Run Year    ----> [  2017  ][0m
+	[34m[ Log ]: Data or MC  ----> [  MC  ][0m
+	[34m[ Log ]: Sample Name ----> [  ttbb  ][0m
+	[34m[ Log ]: --------------------------------------------------------------------------[0m
+
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 0[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 10000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 20000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 30000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 40000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 50000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 60000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 70000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 80000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 90000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 100000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 110000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 120000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 130000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 140000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 150000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 160000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 170000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 180000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 190000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 200000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 210000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 220000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 230000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 240000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 250000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 260000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 270000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 280000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 290000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 300000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 310000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 320000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 330000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 340000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 350000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 360000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 370000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 380000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 390000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 400000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 410000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 420000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 430000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 440000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 450000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 460000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 470000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 480000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 490000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 500000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 510000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 520000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 530000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 540000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 550000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 560000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 570000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 580000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 590000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 600000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 610000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 620000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 630000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 640000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 650000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 660000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 670000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 680000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttbb: 690000[0m

@@ -1,0 +1,61 @@
+
+
+START---------------
+WORKDIR  /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+WORKDIR  /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+TNM_PATH=/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+
+--------- Check arugments ---------------------------------------
+
+  - [ output file name ] --> /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput/ttWW/ttWW_5.root
+  - [ runYear ] --> 2017
+  - [ isData ] --> MC
+  - [ sampleName ] --> ttWW
+  - [ eraName ] --> A
+
+--------- Check arugments ---------------------------------------
+
+
+eventBuffer - All branches selected
+ Output filename: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput/ttWW/ttWW_5.root
+[CorrectionsManager] json library path : /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration
+weight = 0.000415513
+
+	[35m[ Warning ]: This analyzer commented out [ "WTF" log ] in the header, Please check if you want!!![0m
+
+	[34m[ Log ]: --------------------------------------------------------------------------[0m
+	[34m[ Log ]: Before start, Let's check the analysis information[0m
+	[34m[ Log ]: Run Year    ----> [  2017  ][0m
+	[34m[ Log ]: Data or MC  ----> [  MC  ][0m
+	[34m[ Log ]: Sample Name ----> [  ttWW  ][0m
+	[34m[ Log ]: --------------------------------------------------------------------------[0m
+
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 0[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 10000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 20000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 30000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 40000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 50000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 60000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 70000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 80000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 90000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 100000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 110000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 120000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 130000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 140000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 150000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 160000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 170000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 180000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 190000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 200000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 210000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 220000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 230000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 240000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 250000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 260000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 270000[0m
+	[36m[ Log ]: Processed events of 2017, MC, ttWW: 280000[0m

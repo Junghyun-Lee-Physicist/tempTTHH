@@ -12,6 +12,8 @@
 
 ./ttHHanalyzer_bTagSF filelistTest/file_JetHT_C_eos.txt output_JetHT_C.root 1.0 2017 Data JetHT C
 
+./ttHHanalyzer_bTagSF filelistTest/file_artificial.txt output_artificial.root 1.0 2017 MC Arti A
+
 
 # For Tier3 test
 ./ttHHanalyzer_bTagSF filelistTest/file_tt4b_Tier3.txt output_tt4b.root 0.001299971501 2017 MC tt4b A
