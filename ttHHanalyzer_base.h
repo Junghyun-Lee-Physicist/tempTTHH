@@ -129,6 +129,7 @@ class objectJet:public objectPhysics {
     int   jetID    = -99;
     int   jetPUid  = -99;
     bool  passPuId = false;
+    float mass_DiffRatio = -99.f; // JEC mass validation: (ReCalc - NanoAOD)/NanoAOD
 
 	// MC Truth info
     int hadFlav = -99;
@@ -972,6 +973,7 @@ class ttHHanalyzer_base {
     void writeTree();
    
     std::vector<TH1D*> h_JEC_DiffRatio;
+    std::vector<TH1D*> h_JEC_Mass_DiffRatio; // Mass 변경 확인용
 
     TH1F * hmet,* hmetPhi, *hmetEta, *hAvgDeltaRjj, *hAvgDeltaRbb,*hAvgDeltaRbj, *hAvgDeltaEtajj, *hAvgDeltaEtabb, *hAvgDeltaEtabj, *hminDeltaRjj, *hminDeltaRbb, *hminDeltaRbj,  *hminDeltaRpTjj, *hminDeltaRpTbb, *hminDeltaRpTbj, *hminDeltaRMassjj, *hminDeltaRMassbb,*hminDeltaRMassbj, *hmaxDeltaEtajj, *hmaxDeltaEtabb, *hmaxDeltaEtabj, *hmaxPTmassjbb, *hmaxPTmassjjj, *hjetAverageMass, *hBjetAverageMass, *hHadronicHiggsAverageMass, *hLightJetAverageMass, *hBjetAverageMassSqr, *hHadronicHiggsSoftDropMass1, *hHadronicHiggsSoftDropMass2, *hjetHT, *hBjetHT, *hHadronicHiggsHT, *hLightJetHT, *hjetNumber, *hBjetNumber, *hHadronicHiggsNumber, *hLightJetNumber, *hInvMassHadW, *hInvMassZ1, *hInvMassZ2,*hInvMassZ1_zoomIn, *hInvMassZ2_zoomIn, *hInvMassHSingleMatched,*hInvMassHSingleNotMatched ,*hChi2HiggsSingleNotMatched, *hChi2HiggsSingleMatched , *hInvMassH1, *hInvMassH2,*hInvMassH1_zoomIn, *hInvMassH2_zoomIn, *hInvMassHZ1, *hInvMassHZ2, *hInvMassHZ1_zoomIn, *hInvMassHZ2_zoomIn, *hInvMassH1mChi, *hInvMassH2mChi,*hPTH1, *hPTH2, *hChi2Higgs, *hChi2HiggsZ, *hChi2HadW, *hChi2Z, *hAplanarity, *hSphericity, *hTransSphericity, *hCvalue, *hDvalue, *hBjetAplanarity, *hBjetSphericity, *hBjetTransSphericity ,*hBjetCvalue, *hBjetDvalue, *hCentralityjl, *hCentralityjb, *hleptonNumber, *hLeptonPT1, *hMuonPT1, *hElePT1, *hLeptonPhi1, *hMuonPhi1, *hElePhi1, *hLeptonEta1, *hMuonEta1, *hEleEta1, *hLeptonPT2, *hMuonPT2, *hElePT2, *hLeptonPhi2, *hMuonPhi2, *hElePhi2, *hLeptonEta2, *hMuonEta2, *hEleEta2, *hLepCharge1, *hLepCharge2, *hleptonHT, *hST, *hDiMuonMass, *hDiElectronMass, *hDiMuonPT, *hDiElectronPT, *hDiMuonEta, *hDiElectronEta, *hH0, *hH1, *hH2, *hH3, *hH4, *hR1, *hR2, * hR3, *hR4, *hBjetH0, *hBjetH1, *hBjetH2, *hBjetH3, *hBjetH4, *hBjetR1, *hBjetR2, * hBjetR3, *hBjetR4, *hCutFlow, *hCutFlow_w,
 	*hInvMassHH1Matched,
@@ -1020,7 +1022,6 @@ class ttHHanalyzer_base {
     bool debugCorrections;         
     //////////////////////////////////
 
-    std::vector<event*> events;
     outputFile * _of;
     float _bbMassMinSHiggsNotMatched, _bbMassMinSHiggsMatched, _minChi2SHiggsNotMatched = 999999999. , _minChi2SHiggsMatched = 999999999.; 
     float _bbMassMinHH1NotMatched, _bbMassMinHH1Matched,_bbMassMinHH2NotMatched, _bbMassMinHH2Matched, _minChi2HHNotMatched = 999999999. , _minChi2HHMatched = 999999999.; 
@@ -1281,6 +1282,11 @@ class ttHHanalyzer_base {
 	
             h_JEC_DiffRatio.push_back(new TH1D(
                 TString::Format("h_JEC_DiffRatio_%d", i), "JEC Validation: (ReCalc - NanoAOD)/NanoAOD; p_{T} [GeV]; entries", 
+                100, -0.05, 0.05
+	    ));
+            h_JEC_Mass_DiffRatio.push_back(new TH1D(
+                TString::Format("h_JEC_Mass_DiffRatio_%d", i),
+                "JEC Mass Validation: (ReCalc - NanoAOD)/NanoAOD; Mass [GeV]; entries",
                 100, -0.05, 0.05
 	    ));
      

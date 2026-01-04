@@ -18,10 +18,6 @@ void ttHHanalyzer_base::performAnalysis(){
 
     loop(noSys, false);
     _of->file->Close();
-    for ( auto e : events ){
-        delete e;
-    }
-    events.clear();
 }
 
 void ttHHanalyzer_base::loop(sysName sysType, bool up){
@@ -64,20 +60,19 @@ void ttHHanalyzer_base::loop(sysName sysType, bool up){
     std::string analysisInfo = _runYear + ", " + _DataOrMC + ", " + _sampleName;
 
     for(int entry=0; entry < nevents; entry++){
-	event * currentEvent = new event;
+        event * currentEvent = new event;
         ////cout << "Processed events: " << entry << endl;
-	_ev->read(entry);       // read an event into event buffer
-	process(currentEvent, sysType, up);
+        _ev->read(entry);       // read an event into event buffer
+        process(currentEvent, sysType, up);
 
-	if (entry % 10000 == 0){
-	//if (entry % 1 == 0){
+        if (entry % 10000 == 0){
+        //if (entry % 1 == 0){
             print("Processed events of " + analysisInfo + ": " + to_string(entry) ,"c");
             currentEvent->summarize();
         }
 
-	events.push_back(currentEvent);
+        delete currentEvent;
     }
-    //    events.back()->summarize();
 
     
     if(debugCorrections) std::cout<<"debug : Before [ writeHistos() ]"<<std::endl;
@@ -109,6 +104,9 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
 
     // 1-1. Era 확인 (설정된 eraName을 사용)
     bool isEraB = (_era == "B");
+    // TODO: 현재는 2017년도 기준 B run과 나머지(C,D,E,F)만 구분하고 있음.
+    // 추후 2016, 2018 Data 분석 시 각 연도별/Era별 정확한 HLT Path 존재 여부 및 Prescale 로직 확인 후
+    // 코드를 확장해야 함. (CorrectionsManager 등에서 Map 형태로 관리 권장)
 
     // 1-2. Trigger Mapping (Era에 따른 HLT 경로 선택)
     // (1) 4J3T (QuadJet + TripleBTag) -> BTagCSV 데이터셋의 주력
@@ -217,6 +215,9 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
     bool thereIsALeadLepton = false;
 
     for(int i = 0; i < muonT.size(); i++){
+        // CHECK: 현재 Veto Muon으로 TightID를 사용 중. 일반적으로 Veto 용도로는 LooseID를 권장함.
+        // Muon POG 권장사항 확인 필요 (예: LooseID + LooseIso).
+        // TightID 사용 시 "Loose하지만 가짜는 아닌" 뮤온을 놓쳐서 Hadronic 채널 오염 가능성 있음.
         if(fabs(muonT[i].eta) < cut["muonEta"] && muonT[i].tightId == true && muonT[i].pfRelIso04_all  < cut["muonIso"]){
             if(muonT[i].pt > cut["leadMuonPt"]){
                 thereIsALeadLepton = true;
@@ -226,6 +227,7 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
     }
     if(!thereIsALeadLepton){
         for(int i = 0; i < ele.size(); i++){
+            // CHECK: Electron Veto 역시 WP90(Tight에 가까움) 사용 중. Egamma POG의 Veto WP 권장사항 확인 필요.
             if(fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660){  //Electrons tracked neither in the barrel nor in the endcap are discarded.
                 if(fabs(ele[i].eta) < cut["eleEta"] && ele[i].mvaFall17V2Iso_WP90 == true && ele[i].pfRelIso03_all  < cut["eleIso"]){ 
                     if(ele[i].pt > cut["leadElePt"]){
@@ -292,18 +294,19 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
         const auto& jetRaw = jet[i];
 
         // 1. Pre-cuts
-        if( !(jetRaw.pt > cut["jetPt"] && fabs(jetRaw.eta) < cut["jetEta"] && jetRaw.jetId >= cut["jetID"]) ) continue;
-        if( jetRaw.pt < 50.0 && jetRaw.puId < cut["jetPUid"] ) continue;
+        // [UPDATE] 보정 후 기준으로 pT 컷을 적용하기 위해 여기서는 eta/ID만 최소한으로 확인
+        if( !(fabs(jetRaw.eta) < cut["jetEta"] && jetRaw.jetId >= cut["jetID"]) ) continue;
  
         // 2. Calculation (지역 변수 사용, Heap 할당 X)
         float ntuplePt  = jetRaw.pt;                // NanoAOD Default (Corrected)
         float rawFactor = jetRaw.rawFactor;
         float rawPt     = ntuplePt * (1.0f - rawFactor);
-        // float rawMass   = jetRaw.mass * (1.0f - rawFactor);
+        float rawMass   = jetRaw.mass * (1.0f - rawFactor);
 
             // --- A) Re-apply JEC ---
             double jecSF = corrMgr->getJEC(jetRaw.eta, rawPt, jetRaw.area, rho);
             float ptJEC  = rawPt * jecSF;               // 내가 재계산한 pT
+            float massJEC = rawMass * jecSF;
 
 
             // --- [Validation] On-the-fly Check --- 
@@ -330,9 +333,8 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
         if (smearedPt < cut["jetPt"]) continue;
         
         // PU ID Check (Low pT only)
-        bool passPuId = true;
+        passPuId = true;
         if (smearedPt < 50.0 && jetRaw.puId < cut["jetPUid"]) {
-            // continue; // 컷을 여기서 바로 할지, flag만 세울지 결정 (기존 코드는 continue)
              continue; 
         }
 
@@ -341,7 +343,7 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
             smearedPt,
             jetRaw.eta,
             jetRaw.phi,
-            jetRaw.mass 
+            massJEC
         );
 
         // 메타데이터 저장
@@ -353,6 +355,11 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
         newJet->hadFlav       = jetRaw.hadronFlavour;
         newJet->partonFlav    = jetRaw.partonFlavour;
         newJet->genMatchedPt  = genPt; // 필요하다면
+        if (jetRaw.mass > 0.0f) {
+            newJet->mass_DiffRatio = (massJEC - jetRaw.mass) / jetRaw.mass;
+        } else {
+            newJet->mass_DiffRatio = 0.0f;
+        }
 
         // 이벤트에 등록
         thisEvent->selectJet(newJet);
@@ -426,6 +433,9 @@ bool ttHHanalyzer_base::selectObjects(event *thisEvent){
     _bbMassMin2Higgs = -1.0f;
 
     auto* bjets = thisEvent->getSelbJets();
+    // ttHH(bb) Hadronic Channel 연구이므로, Higgs -> bb 붕괴를 재구성하기 위해
+    // 최소 4개의 b-jet이 존재해야만 Higgs Pair Candidate를 생성할 수 있음.
+    // 따라서 아래 조건문(size >= 4)은 분석의 필수 조건임.
     if (bjets->size() >= 4) {
         for (size_t i = 0; i < bjets->size() - 3; ++i) {
             for (size_t j = i + 1; j < bjets->size() - 2; ++j) {
@@ -622,7 +632,9 @@ void ttHHanalyzer_base::diMotherReco(const TLorentzVector & dPar1p4,const TLoren
     float bbMass1, bbMass2, chi2;
     bbMass1 = (dPar1p4+dPar2p4).M();
     bbMass2 = (dPar3p4+dPar4p4).M();
-    chi2 = pow((bbMass1 - mother1mass),2)/pow((dPar1p4.Pt()+dPar2p4.Pt())/2.*0.2,0.5) + pow((bbMass2 - mother2mass),2)/pow((dPar3p4.Pt()+dPar4p4.Pt())/2.*0.02,0.5);
+    // [FIX] 2nd term denominator 0.02 -> 0.2 corrected. Assuming 20% resolution for both candidates.
+    chi2 = pow((bbMass1 - mother1mass),2)/pow((dPar1p4.Pt()+dPar2p4.Pt())/2.*0.2,0.5)
+         + pow((bbMass2 - mother2mass),2)/pow((dPar3p4.Pt()+dPar4p4.Pt())/2.*0.2,0.5);
     if(_minChi2 > chi2){
 	_minChi2      = chi2;
 	_bbMassMin1   = bbMass1;
@@ -870,11 +882,17 @@ void ttHHanalyzer_base::process(event* thisEvent, sysName sysType, bool up){
     // 4) gen weight
     _genWeight = 1.0;
     if (_DataOrMC != "Data") {
-	float genWgt = _ev->genWeight;
-	_genWeight *= genWgt;
+        float genWgt = _ev->genWeight;
+        _genWeight *= genWgt;
 	if (debugCorrections) {
             std::cout << "[genWeight] weight=" << _genWeight <<std::endl;
         }
+    }
+
+    if (_DataOrMC != "Data") {
+        // [UPDATE] 모든 가중치를 메인 _weight 변수에 반영 (cutflow/hist에 적용)
+        _weight *= (_PUWeight * _L1PrefiringWeight * _genWeight);
+        // if(debugCorrections) std::cout << "Final Event Weight: " << _weight << std::endl;
     }
 
     // 5) Build physics objects in thisEvent from the raw buffer
@@ -1076,9 +1094,11 @@ void ttHHanalyzer_base::fillHistos(event * thisEvent){
    int nSel = thisEvent->getnSelJet();
    for(int ih = 0; ih < nSel && ih < nHistsJets; ++ih){
      float JEC_DiffRatio = thisEvent->getSelJets()->at(ih)->JEC_DiffRatio;   // nanoAOD JEC 적용 후 pT
+     float Mass_DiffRatio = thisEvent->getSelJets()->at(ih)->mass_DiffRatio;
 
      // [ 직접 JEC 해체 후 최신 버전 재적용한 JEC - NanoAOD orinigal Pt (NanoAOD의 기본 JEC) ] / [ NanoAOD original Pt ]
      h_JEC_DiffRatio.at(ih)->Fill(JEC_DiffRatio, _weight);
+     h_JEC_Mass_DiffRatio.at(ih)->Fill(Mass_DiffRatio, _weight);
    }
   
    ////// for(int ih=0; ih < thisEvent->getnbJet() && ih < nHistsbJets; ih++){
@@ -1154,6 +1174,7 @@ void ttHHanalyzer_base::writeHistos(){
   
         // JEC-only 원본 pT
         h_JEC_DiffRatio.at(ih)->Write();
+        h_JEC_Mass_DiffRatio.at(ih)->Write();
 
     }
 
