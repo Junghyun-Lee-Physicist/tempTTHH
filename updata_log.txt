@@ -9,3 +9,5 @@
 - Removed quoted era arguments in condor submitters and mapped empty era to noEra placeholder for safe passing.
 2026-01-03 20:29:53 UTC
 - Added medium/loose b-jet classification, restored chi2 Higgs reconstruction from 4 b-jets, and applied Higgs mass window cut.
+2026-01-04 16:02:22 UTC
+- Added ttHHanalyzer_base analyzer/config/submitter equivalents mirroring bTagSF with updated names.
