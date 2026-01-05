@@ -212,32 +212,36 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
 ////    }
     
 
-    bool thereIsALeadLepton = false;
-
-    for(int i = 0; i < muonT.size(); i++){
-        // CHECK: 현재 Veto Muon으로 TightID를 사용 중. 일반적으로 Veto 용도로는 LooseID를 권장함.
-        // Muon POG 권장사항 확인 필요 (예: LooseID + LooseIso).
-        // TightID 사용 시 "Loose하지만 가짜는 아닌" 뮤온을 놓쳐서 Hadronic 채널 오염 가능성 있음.
-        if(fabs(muonT[i].eta) < cut["muonEta"] && muonT[i].tightId == true && muonT[i].pfRelIso04_all  < cut["muonIso"]){
-            if(muonT[i].pt > cut["leadMuonPt"]){
-                thereIsALeadLepton = true;
-                break;
-            }
-        }
-    }
-    if(!thereIsALeadLepton){
-        for(int i = 0; i < ele.size(); i++){
-            // CHECK: Electron Veto 역시 WP90(Tight에 가까움) 사용 중. Egamma POG의 Veto WP 권장사항 확인 필요.
-            if(fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660){  //Electrons tracked neither in the barrel nor in the endcap are discarded.
-                if(fabs(ele[i].eta) < cut["eleEta"] && ele[i].mvaFall17V2Iso_WP90 == true && ele[i].pfRelIso03_all  < cut["eleIso"]){ 
-                    if(ele[i].pt > cut["leadElePt"]){
-                        thereIsALeadLepton = true;
-                        break;
-                    }
-                }
-            }
-        }
-    }
+    // Leading lepton def
+    // But FH channel don't need this..
+    // We just use subleading lepton def for veto
+    // update in 5th Jan, 2026
+////    bool thereIsALeadLepton = false;
+////
+////    for(int i = 0; i < muonT.size(); i++){
+////        // CHECK: 현재 Veto Muon으로 TightID를 사용 중. 일반적으로 Veto 용도로는 LooseID를 권장함.
+////        // Muon POG 권장사항 확인 필요 (예: LooseID + LooseIso).
+////        // TightID 사용 시 "Loose하지만 가짜는 아닌" 뮤온을 놓쳐서 Hadronic 채널 오염 가능성 있음.
+////        if(fabs(muonT[i].eta) < cut["muonEta"] && muonT[i].tightId == true && muonT[i].pfRelIso04_all  < cut["muonIso"]){
+////            if(muonT[i].pt > cut["leadMuonPt"]){
+////                thereIsALeadLepton = true;
+////                break;
+////            }
+////        }
+////    }
+////    if(!thereIsALeadLepton){
+////        for(int i = 0; i < ele.size(); i++){
+////            // CHECK: Electron Veto 역시 WP90(Tight에 가까움) 사용 중. Egamma POG의 Veto WP 권장사항 확인 필요.
+////            if(fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660){  //Electrons tracked neither in the barrel nor in the endcap are discarded.
+////                if(fabs(ele[i].eta) < cut["eleEta"] && ele[i].mvaFall17V2Iso_WP90 == true && ele[i].pfRelIso03_all  < cut["eleIso"]){ 
+////                    if(ele[i].pt > cut["leadElePt"]){
+////                        thereIsALeadLepton = true;
+////                        break;
+////                    }
+////                }
+////            }
+////        }
+////    }
 
     for(int i = 0; i < muonT.size(); i++){
         if(fabs(muonT[i].eta) < cut["muonEta"] && muonT[i].tightId == true && muonT[i].pfRelIso04_all  < cut["muonIso"]){
@@ -255,34 +259,40 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
             }
         }
     }
-     if(thereIsALeadLepton){ //we can add all leptons passing to the sublead selection to our containers
-         for(int i = 0; i < muonT.size(); i++){
-             if(fabs(muonT[i].eta) < cut["muonEta"] && muonT[i].tightId == true && muonT[i].pfRelIso04_all < cut["muonIso"]){
-             //	    if(fabs(muonT[i].eta) < cut["muonEta"] && muonT[i].mvaTTH > 0.15 && muonT[i].pfRelIso04_all  < cut["muonIso"]){	
-         	if(muonT[i].pt > cut["subLeadMuonPt"]){
-         	    currentMuon = new objectLep(muonT[i].pt, muonT[i].eta, muonT[i].phi, 0.);
-         	    currentMuon->charge = muonT[i].charge;
-         	    currentMuon->miniPFRelIso = muonT[i].miniPFRelIso_all;
-         	    currentMuon->pfRelIso04 = muonT[i].pfRelIso04_all;
-         	    thisEvent->selectMuon(currentMuon);
-         	}
-             }
-         }
-         for(int i = 0; i < ele.size(); i++){
-             if(fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660){  //Electrons tracked neither in the barrel nor in the endcap are discarded.
-         	      if(fabs(ele[i].eta) < cut["eleEta"] && ele[i].mvaFall17V2Iso_WP90 == true && ele[i].pfRelIso03_all  < cut["eleIso"]){ 
-                  if(ele[i].pt > cut["subLeadElePt"]){
-         		currentEle = new objectLep(ele[i].pt, ele[i].eta, ele[i].phi, 0.);	 
-         		currentEle->charge = ele[i].charge;
-         		currentEle->miniPFRelIso = ele[i].miniPFRelIso_all;
-         		currentEle->pfRelIso03 = ele[i].pfRelIso03_all;
-         		thisEvent->selectEle(currentEle);
-         	      }
-               }
-         	}
-         }
-     }
-    thisEvent->orderLeptons();
+
+
+    // Leading lepton def
+    // But FH channel don't need this..
+    // We just use subleading lepton def for veto
+    // update in 5th Jan, 2026
+////     if(thereIsALeadLepton){ //we can add all leptons passing to the sublead selection to our containers
+////         for(int i = 0; i < muonT.size(); i++){
+////             if(fabs(muonT[i].eta) < cut["muonEta"] && muonT[i].tightId == true && muonT[i].pfRelIso04_all < cut["muonIso"]){
+////             //	    if(fabs(muonT[i].eta) < cut["muonEta"] && muonT[i].mvaTTH > 0.15 && muonT[i].pfRelIso04_all  < cut["muonIso"]){	
+////         	if(muonT[i].pt > cut["subLeadMuonPt"]){
+////         	    currentMuon = new objectLep(muonT[i].pt, muonT[i].eta, muonT[i].phi, 0.);
+////         	    currentMuon->charge = muonT[i].charge;
+////         	    currentMuon->miniPFRelIso = muonT[i].miniPFRelIso_all;
+////         	    currentMuon->pfRelIso04 = muonT[i].pfRelIso04_all;
+////         	    thisEvent->selectMuon(currentMuon);
+////         	}
+////             }
+////         }
+////         for(int i = 0; i < ele.size(); i++){
+////             if(fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660){  //Electrons tracked neither in the barrel nor in the endcap are discarded.
+////         	      if(fabs(ele[i].eta) < cut["eleEta"] && ele[i].mvaFall17V2Iso_WP90 == true && ele[i].pfRelIso03_all  < cut["eleIso"]){ 
+////                  if(ele[i].pt > cut["subLeadElePt"]){
+////         		currentEle = new objectLep(ele[i].pt, ele[i].eta, ele[i].phi, 0.);	 
+////         		currentEle->charge = ele[i].charge;
+////         		currentEle->miniPFRelIso = ele[i].miniPFRelIso_all;
+////         		currentEle->pfRelIso03 = ele[i].pfRelIso03_all;
+////         		thisEvent->selectEle(currentEle);
+////         	      }
+////               }
+////         	}
+////         }
+////     }
+////    thisEvent->orderLeptons();
     thisEvent->setnVetoLepton(nVetoMuons + nVetoEle);
 
 
@@ -1341,7 +1351,8 @@ void ttHHanalyzer_base::writeHistos(){
         _cutStepHT.at(i)->Write();
         _cutStepBTag.at(i)->Write();
         _cutStepHadWMass.at(i)->Write();
-        _cutStepHiggsMass.at(i)->Write();
+        _cutStepHiggsMass01.at(i)->Write();
+        _cutStepHiggsMass02.at(i)->Write();
     }
 }
 void ttHHanalyzer_base::fillTree(event * thisEvent){
