@@ -34,29 +34,29 @@ std::vector<SampleInfo> getSampleList() {
     
     // 색상과 표시 이름 설정
     // QCD HT별로 쪼개기
-//    samples.push_back({"QCD_HT200to300", kYellow-9, "QCD HT200-300"});
-//    samples.push_back({"QCD_HT300to500", kYellow-7, "QCD HT300-500"});
-//    samples.push_back({"QCD_HT500to700", kYellow-5, "QCD HT500-700"});
-//    samples.push_back({"QCD_HT700to1000", kYellow-3, "QCD HT700-1000"});
-//    samples.push_back({"QCD_HT1000to1500", kYellow, "QCD HT1000-1500"});
-//    samples.push_back({"QCD_HT1500to2000", kOrange-9, "QCD HT1500-2000"});
-//    samples.push_back({"QCD_HT2000toInf", kOrange-7, "QCD HT2000-Inf"});
+    samples.push_back({"QCD_HT200to300", kYellow-9, "QCD HT200-300"});
+    samples.push_back({"QCD_HT300to500", kYellow-7, "QCD HT300-500"});
+    samples.push_back({"QCD_HT500to700", kYellow-5, "QCD HT500-700"});
+    samples.push_back({"QCD_HT700to1000", kYellow-3, "QCD HT700-1000"});
+    samples.push_back({"QCD_HT1000to1500", kYellow, "QCD HT1000-1500"});
+    samples.push_back({"QCD_HT1500to2000", kOrange-9, "QCD HT1500-2000"});
+    samples.push_back({"QCD_HT2000toInf", kOrange-7, "QCD HT2000-Inf"});
 
-    samples.push_back({"QCD_Pt_15to30",     kYellow-9, "QCD Pt15-30"});
-    samples.push_back({"QCD_Pt_30to50",     kYellow-8, "QCD Pt30-50"});
-    samples.push_back({"QCD_Pt_50to80",     kYellow-7, "QCD Pt50-80"});
-    samples.push_back({"QCD_Pt_80to120",    kYellow-6, "QCD Pt80-120"});
-    samples.push_back({"QCD_Pt_120to170",   kYellow-5, "QCD Pt120-170"});
-    samples.push_back({"QCD_Pt_170to300",   kYellow-4, "QCD Pt170-300"});
-    samples.push_back({"QCD_Pt_300to470",   kYellow-3, "QCD Pt300-470"});
-    samples.push_back({"QCD_Pt_470to600",   kYellow-2, "QCD Pt470-600"});
-    samples.push_back({"QCD_Pt_600to800",   kYellow-1, "QCD Pt600-800"});
-    samples.push_back({"QCD_Pt_800to1000",  kYellow,   "QCD Pt800-1000"});
-    samples.push_back({"QCD_Pt_1000to1400", kOrange-9, "QCD Pt1000-1400"});
-    samples.push_back({"QCD_Pt_1400to1800", kOrange-7, "QCD Pt1400-1800"});
-    samples.push_back({"QCD_Pt_1800to2400", kOrange-5, "QCD Pt1800-2400"});
-    samples.push_back({"QCD_Pt_2400to3200", kOrange-2, "QCD Pt2400-3200"});
-    samples.push_back({"QCD_Pt_3200toInf",  kOrange,   "QCD Pt3200-Inf"});
+//    samples.push_back({"QCD_Pt_15to30",     kYellow-9, "QCD Pt15-30"});
+//    samples.push_back({"QCD_Pt_30to50",     kYellow-8, "QCD Pt30-50"});
+//    samples.push_back({"QCD_Pt_50to80",     kYellow-7, "QCD Pt50-80"});
+//    samples.push_back({"QCD_Pt_80to120",    kYellow-6, "QCD Pt80-120"});
+//    samples.push_back({"QCD_Pt_120to170",   kYellow-5, "QCD Pt120-170"});
+//    samples.push_back({"QCD_Pt_170to300",   kYellow-4, "QCD Pt170-300"});
+//    samples.push_back({"QCD_Pt_300to470",   kYellow-3, "QCD Pt300-470"});
+//    samples.push_back({"QCD_Pt_470to600",   kYellow-2, "QCD Pt470-600"});
+//    samples.push_back({"QCD_Pt_600to800",   kYellow-1, "QCD Pt600-800"});
+//    samples.push_back({"QCD_Pt_800to1000",  kYellow,   "QCD Pt800-1000"});
+//    samples.push_back({"QCD_Pt_1000to1400", kOrange-9, "QCD Pt1000-1400"});
+//    samples.push_back({"QCD_Pt_1400to1800", kOrange-7, "QCD Pt1400-1800"});
+//    samples.push_back({"QCD_Pt_1800to2400", kOrange-5, "QCD Pt1800-2400"});
+//    samples.push_back({"QCD_Pt_2400to3200", kOrange-2, "QCD Pt2400-3200"});
+//    samples.push_back({"QCD_Pt_3200toInf",  kOrange,   "QCD Pt3200-Inf"});
 
     samples.push_back({"ttJets", kRed-7, "t#bar{t}+jets"});
     samples.push_back({"ttbb", kRed-9, "t#bar{t}+b#bar{b}"});

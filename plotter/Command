@@ -1,0 +1,9 @@
+
+python3 extract_structure.py
+# and you can get structure_info.yml
+# open configure file and delete unused histogram or leaf etc
+
+
+python3 python3 create_sample_config.py
+# and you can get samples_config.yml
+# open configure file, and you can modify color info and etc

@@ -24,7 +24,7 @@
 
 wait
 
-outputName="250915_corrlib"
+outputName="260105_Tier3"
 PlotterName="TriggerEfficiency.cpp"
 mkdir -p output/${outputName}
 mv output_*.root output/${outputName}

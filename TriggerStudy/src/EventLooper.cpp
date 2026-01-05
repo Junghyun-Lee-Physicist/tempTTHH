@@ -150,7 +150,7 @@ void EventLooper::Loop()
 	    exit(55);
 	}
 
-       // 이벤트 선택
+        // 이벤트 선택
         if (!(nMuons == 1 && nElecs == 0)) continue;
         //if (nMuons != 1) continue;
 ////        if (nJets < 6) continue; // 6번째 제트가 존재하는지 확인
@@ -166,11 +166,10 @@ void EventLooper::Loop()
 ////        if (HT < 500.0 ) continue;
 
         // 이벤트 선택
-        if (nJets < 7) continue;
-//        if (nJets < 6) {
-//            std::cerr << "[ERROR] nJets (" << nJets << ") are smaller than 6.."<< std::endl;
-//            exit(2);
-//        }
+        if (nJets < 7) {
+            std::cerr << "[ERROR] nJets (" << nJets << ") are smaller than 7.."<< std::endl;
+            exit(2);
+        }
 
         if (!passMETFilters) {
             std::cerr << "[ERROR] It did not pass the noise filters.."<< std::endl;
@@ -201,6 +200,7 @@ void EventLooper::Loop()
 ////                exit(6);
 ////            }
 ////        }
+
         if (!isData) {
 	    if (channel == "diLep"){   
                 weight = 0.1419595905 * L1PrefiringWeight * PUWeight;
@@ -219,6 +219,7 @@ void EventLooper::Loop()
                 exit(6);
             }
         }
+
 
 
 ////        bool trigJetHT_B = passTrigger_HLT_PFHT1050 || passTrigger_6J1T_B || passTrigger_6J2T_B;
@@ -293,7 +294,7 @@ void EventLooper::Loop()
 void EventLooper::Init()
 {
    // TTree 초기화 및 브랜치 설정
-   TString ntupleDir  = "/Users/jhlee/ttHH/ntuple/skimmed/";
+   TString ntupleDir  = "/Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forSFs/";
    //TString ntupleDir  = "/eos/user/j/junghyun/ttHH/Btag_el9/merged/";
    TString ntupleName = getInputName();
    TString ntuplePath = ntupleDir + ntupleName;

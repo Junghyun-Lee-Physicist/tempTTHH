@@ -1,0 +1,226 @@
+description: Configuration for HADD-merged samples
+samples:
+  BTagCSV_B:
+    type: DATA
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/BTagCSV_B.root
+    label: Data
+    color: '#000000'
+  BTagCSV_C:
+    type: DATA
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/BTagCSV_C.root
+    label: Data
+    color: '#000000'
+  BTagCSV_D:
+    type: DATA
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/BTagCSV_D.root
+    label: Data
+    color: '#000000'
+  BTagCSV_E:
+    type: DATA
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/BTagCSV_E.root
+    label: Data
+    color: '#000000'
+  BTagCSV_F:
+    type: DATA
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/BTagCSV_F.root
+    label: Data
+    color: '#000000'
+  JetHT_B:
+    type: DATA
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/JetHT_B.root
+    label: Data
+    color: '#000000'
+  JetHT_C:
+    type: DATA
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/JetHT_C.root
+    label: Data
+    color: '#000000'
+  JetHT_D:
+    type: DATA
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/JetHT_D.root
+    label: Data
+    color: '#000000'
+  JetHT_E:
+    type: DATA
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/JetHT_E.root
+    label: Data
+    color: '#000000'
+  JetHT_F:
+    type: DATA
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/JetHT_F.root
+    label: Data
+    color: '#000000'
+  QCD_HT1000to1500:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/QCD_HT1000to1500.root
+    label: QCD_HT1000to1500
+    color: '#332288'
+  QCD_HT1500to2000:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/QCD_HT1500to2000.root
+    label: QCD_HT1500to2000
+    color: '#88CCEE'
+  QCD_HT2000toInf:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/QCD_HT2000toInf.root
+    label: QCD_HT2000toInf
+    color: '#44AA99'
+  QCD_HT200to300:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/QCD_HT200to300.root
+    label: QCD_HT200to300
+    color: '#117733'
+  QCD_HT300to500:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/QCD_HT300to500.root
+    label: QCD_HT300to500
+    color: '#999933'
+  QCD_HT500to700:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/QCD_HT500to700.root
+    label: QCD_HT500to700
+    color: '#DDCC77'
+  QCD_HT700to1000:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/QCD_HT700to1000.root
+    label: QCD_HT700to1000
+    color: '#CC6677'
+  TTTo2L2Nu:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/TTTo2L2Nu.root
+    label: TTTo2L2Nu
+    color: '#882255'
+  TTToSemiLeptonic:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/TTToSemiLeptonic.root
+    label: TTToSemiLeptonic
+    color: '#AA4499'
+  tt4b:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/tt4b.root
+    label: tt4b
+    color: '#DDDDDD'
+  ttHH:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/ttHH.root
+    label: ttHH
+    color: '#332288'
+  ttHtobb:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/ttHtobb.root
+    label: ttHtobb
+    color: '#88CCEE'
+  ttTohadronic:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/ttTohadronic.root
+    label: ttTohadronic
+    color: '#44AA99'
+  ttWH:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/ttWH.root
+    label: ttWH
+    color: '#117733'
+  ttWW:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/ttWW.root
+    label: ttWW
+    color: '#999933'
+  ttWZ:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/ttWZ.root
+    label: ttWZ
+    color: '#DDCC77'
+  ttZHto4b:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/ttZHto4b.root
+    label: ttZHto4b
+    color: '#CC6677'
+  ttZZto4b:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/ttZZto4b.root
+    label: ttZZto4b
+    color: '#882255'
+  ttZtobb:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/ttZtobb.root
+    label: ttZtobb
+    color: '#AA4499'
+  ttbb:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/ttbb.root
+    label: ttbb
+    color: '#DDDDDD'
+  tttW:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/tttW.root
+    label: tttW
+    color: '#332288'
+  tttt:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forBase/tttt.root
+    label: tttt
+    color: '#88CCEE'

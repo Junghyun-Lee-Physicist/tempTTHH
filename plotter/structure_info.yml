@@ -1,0 +1,426 @@
+description: Internal structure of Analyzer Output files
+structure:
+  CutflowKinematics/cutStep_0_jetPt:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_0_jetPt
+  CutflowKinematics/cutStep_0_jetEta:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_0_jetEta
+  CutflowKinematics/cutStep_0_jetPhi:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_0_jetPhi
+  CutflowKinematics/cutStep_0_ht:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_0_ht
+  CutflowKinematics/cutStep_0_btag:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_0_btag
+  CutflowKinematics/cutStep_0_hadW:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_0_hadW
+  CutflowKinematics/cutStep_0_higgs can01:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_0_higgs can01
+  CutflowKinematics/cutStep_0_higgs can02:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_0_higgs can02
+  CutflowKinematics/cutStep_1_jetPt:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_1_jetPt
+  CutflowKinematics/cutStep_1_jetEta:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_1_jetEta
+  CutflowKinematics/cutStep_1_jetPhi:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_1_jetPhi
+  CutflowKinematics/cutStep_1_ht:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_1_ht
+  CutflowKinematics/cutStep_1_btag:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_1_btag
+  CutflowKinematics/cutStep_1_hadW:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_1_hadW
+  CutflowKinematics/cutStep_1_higgs can01:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_1_higgs can01
+  CutflowKinematics/cutStep_1_higgs can02:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_1_higgs can02
+  CutflowKinematics/cutStep_2_jetPt:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_2_jetPt
+  CutflowKinematics/cutStep_2_jetEta:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_2_jetEta
+  CutflowKinematics/cutStep_2_jetPhi:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_2_jetPhi
+  CutflowKinematics/cutStep_2_ht:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_2_ht
+  CutflowKinematics/cutStep_2_btag:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_2_btag
+  CutflowKinematics/cutStep_2_hadW:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_2_hadW
+  CutflowKinematics/cutStep_2_higgs can01:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_2_higgs can01
+  CutflowKinematics/cutStep_2_higgs can02:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_2_higgs can02
+  CutflowKinematics/cutStep_3_jetPt:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_3_jetPt
+  CutflowKinematics/cutStep_3_jetEta:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_3_jetEta
+  CutflowKinematics/cutStep_3_jetPhi:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_3_jetPhi
+  CutflowKinematics/cutStep_3_ht:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_3_ht
+  CutflowKinematics/cutStep_3_btag:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_3_btag
+  CutflowKinematics/cutStep_3_hadW:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_3_hadW
+  CutflowKinematics/cutStep_3_higgs can01:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_3_higgs can01
+  CutflowKinematics/cutStep_3_higgs can02:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_3_higgs can02
+  CutflowKinematics/cutStep_4_jetPt:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_4_jetPt
+  CutflowKinematics/cutStep_4_jetEta:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_4_jetEta
+  CutflowKinematics/cutStep_4_jetPhi:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_4_jetPhi
+  CutflowKinematics/cutStep_4_ht:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_4_ht
+  CutflowKinematics/cutStep_4_btag:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_4_btag
+  CutflowKinematics/cutStep_4_hadW:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_4_hadW
+  CutflowKinematics/cutStep_4_higgs can01:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_4_higgs can01
+  CutflowKinematics/cutStep_4_higgs can02:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_4_higgs can02
+  CutflowKinematics/cutStep_5_jetPt:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_5_jetPt
+  CutflowKinematics/cutStep_5_jetEta:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_5_jetEta
+  CutflowKinematics/cutStep_5_jetPhi:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_5_jetPhi
+  CutflowKinematics/cutStep_5_ht:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_5_ht
+  CutflowKinematics/cutStep_5_btag:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_5_btag
+  CutflowKinematics/cutStep_5_hadW:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_5_hadW
+  CutflowKinematics/cutStep_5_higgs can01:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_5_higgs can01
+  CutflowKinematics/cutStep_5_higgs can02:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_5_higgs can02
+  CutflowKinematics/cutStep_6_jetPt:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_6_jetPt
+  CutflowKinematics/cutStep_6_jetEta:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_6_jetEta
+  CutflowKinematics/cutStep_6_jetPhi:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_6_jetPhi
+  CutflowKinematics/cutStep_6_ht:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_6_ht
+  CutflowKinematics/cutStep_6_btag:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_6_btag
+  CutflowKinematics/cutStep_6_hadW:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_6_hadW
+  CutflowKinematics/cutStep_6_higgs can01:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_6_higgs can01
+  CutflowKinematics/cutStep_6_higgs can02:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_6_higgs can02
+  CutflowKinematics/cutStep_7_jetPt:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_7_jetPt
+  CutflowKinematics/cutStep_7_jetEta:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_7_jetEta
+  CutflowKinematics/cutStep_7_jetPhi:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_7_jetPhi
+  CutflowKinematics/cutStep_7_ht:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_7_ht
+  CutflowKinematics/cutStep_7_btag:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_7_btag
+  CutflowKinematics/cutStep_7_hadW:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_7_hadW
+  CutflowKinematics/cutStep_7_higgs can01:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_7_higgs can01
+  CutflowKinematics/cutStep_7_higgs can02:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_7_higgs can02
+  CutflowKinematics/cutStep_8_jetPt:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_8_jetPt
+  CutflowKinematics/cutStep_8_jetEta:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_8_jetEta
+  CutflowKinematics/cutStep_8_jetPhi:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_8_jetPhi
+  CutflowKinematics/cutStep_8_ht:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_8_ht
+  CutflowKinematics/cutStep_8_btag:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_8_btag
+  CutflowKinematics/cutStep_8_hadW:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_8_hadW
+  CutflowKinematics/cutStep_8_higgs can01:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_8_higgs can01
+  CutflowKinematics/cutStep_8_higgs can02:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_8_higgs can02
+  CutflowKinematics/cutStep_9_jetPt:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_9_jetPt
+  CutflowKinematics/cutStep_9_jetEta:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_9_jetEta
+  CutflowKinematics/cutStep_9_jetPhi:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_9_jetPhi
+  CutflowKinematics/cutStep_9_ht:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_9_ht
+  CutflowKinematics/cutStep_9_btag:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_9_btag
+  CutflowKinematics/cutStep_9_hadW:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_9_hadW
+  CutflowKinematics/cutStep_9_higgs can01:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_9_higgs can01
+  CutflowKinematics/cutStep_9_higgs can02:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_9_higgs can02
+  CutflowKinematics/cutStep_10_jetPt:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_10_jetPt
+  CutflowKinematics/cutStep_10_jetEta:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_10_jetEta
+  CutflowKinematics/cutStep_10_jetPhi:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_10_jetPhi
+  CutflowKinematics/cutStep_10_ht:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_10_ht
+  CutflowKinematics/cutStep_10_btag:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_10_btag
+  CutflowKinematics/cutStep_10_hadW:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_10_hadW
+  CutflowKinematics/cutStep_10_higgs can01:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_10_higgs can01
+  CutflowKinematics/cutStep_10_higgs can02:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_10_higgs can02
+  CutflowKinematics/cutStep_11_jetPt:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_11_jetPt
+  CutflowKinematics/cutStep_11_jetEta:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_11_jetEta
+  CutflowKinematics/cutStep_11_jetPhi:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_11_jetPhi
+  CutflowKinematics/cutStep_11_ht:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_11_ht
+  CutflowKinematics/cutStep_11_btag:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_11_btag
+  CutflowKinematics/cutStep_11_hadW:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_11_hadW
+  CutflowKinematics/cutStep_11_higgs can01:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_11_higgs can01
+  CutflowKinematics/cutStep_11_higgs can02:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/CutflowKinematics/cutStep_11_higgs can02
+  Tree/Tree:
+    type: Tree
+    classname: TTree
+    key_path: ()/Tree/Tree
+    num_entries: 3744656
+    branches:
+    - passTrigger_HLT_IsoMu27
+    - passTrigger_HLT_PFHT1050
+    - passTrigger_6J1T_B
+    - passTrigger_6J1T_CDEF
+    - passTrigger_6J2T_B
+    - passTrigger_6J2T_CDEF
+    - passTrigger_4J3T_B
+    - passTrigger_4J3T_CDEF
+    - nMuons
+    - nElecs
+    - nJets
+    - HT
+    - jetPt
+    - jetEta
+    - bTagScore
+    - jetPUids
+    - hadFlavs
+    - partonFlavs
+    - eventNumber
+    - runNumber
+    - SampleWeight
+    - PUWeight
+    - L1PrefiringWeight
+    - genWeight
+    - failGoldenJson
+    - passMETFilters
+  Tree/cutflow:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/Tree/cutflow
+  Tree/cutflow_w:
+    type: Histogram
+    classname: TH1F
+    key_path: ()/Tree/cutflow_w

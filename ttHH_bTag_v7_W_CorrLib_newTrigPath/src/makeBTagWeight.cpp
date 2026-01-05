@@ -266,11 +266,10 @@ void makeBTagWeight::Loop()
         if (nMuons != 1) continue;
 
         // 이벤트 선택
-	if (nJets < 7) continue;
-//        if (nJets < 6) {
-//            std::cerr << "[ERROR] nJets (" << nJets << ") are smaller than 6.."<< std::endl;
-//            exit(2);
-//        }
+        if (nJets < 7) {
+            std::cerr << "[ERROR] nJets (" << nJets << ") are smaller than 7.."<< std::endl;
+            exit(2);
+        }
 
         if (!passMETFilters) {
             std::cerr << "[ERROR] It did not pass the noise filters.."<< std::endl;
@@ -556,7 +555,7 @@ void makeBTagWeight::Loop()
 void makeBTagWeight::Init()
 {
    // TTree 초기화 및 브랜치 설정
-   TString ntupleDir  = "/Users/jhlee/ttHH/ntuple/skimmed/";
+   TString ntupleDir  = "/Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forSFs/";
    //TString ntupleDir  = "/Users/jhlee/Desktop/Work/ttHH/TriggerStudyv2/ntuple/250609/";
    TString ntupleName = getInputName();
    TString ntuplePath = ntupleDir + ntupleName;

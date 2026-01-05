@@ -312,11 +312,11 @@ auto clampBin = [&](int ib){
         if (nMuons != 1) continue;
 
         // 이벤트 선택
-	if (nJets < 7) continue;
-        //if (nJets < 6) {
-        //    std::cerr << "[ERROR] nJets (" << nJets << ") are smaller than 6.."<< std::endl;
-        //    exit(2);
-        //}
+	//if (nJets < 7) continue;
+        if (nJets < 7) {
+            std::cerr << "[ERROR] nJets (" << nJets << ") are smaller than 7.."<< std::endl;
+            exit(2);
+        }
 
         if (!passMETFilters) {
             std::cerr << "[ERROR] It did not pass the noise filters.."<< std::endl;
@@ -478,15 +478,15 @@ sumWithSF[iBin] += weightWithSF;
 sumReW[iBin]    += weightReweight;
 cnt[iBin]       += 1;
 
-        int nBjet = 0;
-	int nLooseB = 0;
-        for(int iJ=0; iJ<nJets; iJ++){
-            if(bTagScore->at(iJ) > 0.3040) nBjet++;
-	    if(bTagScore->at(iJ) > 0.0532) nLooseB++;
-        }
-        if (nBjet != 3) continue;
-	if (nLooseB < 4) continue; 
-
+////        int nBjet = 0;
+////	int nLooseB = 0;
+////        for(int iJ=0; iJ<nJets; iJ++){
+////            if(bTagScore->at(iJ) > 0.3040) nBjet++;
+////	    if(bTagScore->at(iJ) > 0.0532) nLooseB++;
+////        }
+////        if (nBjet < 4) continue;
+////	//if (nLooseB < 4) continue; 
+////
 
         // --------------------
         // (3) 이벤트 레벨 히스토그램 Fill
@@ -615,7 +615,7 @@ std::cout << "===============================================================\n\
 void makeBTagWeight_Final::Init()
 {
    // TTree 초기화 및 브랜치 설정
-   TString ntupleDir  = "/Users/jhlee/ttHH/ntuple/skimmed/";
+   TString ntupleDir  = "/Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forSFs/";   
    //TString ntupleDir  = "/Users/jhlee/Desktop/Work/ttHH/TriggerStudyv2/ntuple/250609/";
    TString ntupleName = getInputName();
    TString ntuplePath = ntupleDir + ntupleName;
