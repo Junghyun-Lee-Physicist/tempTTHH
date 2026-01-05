@@ -81,12 +81,18 @@ void ttHHanalyzer_base::loop(sysName sysType, bool up){
     writeTree();
     if(debugCorrections) std::cout<<"debug : After writeTree() & Before hcutFlow()"<<std::endl;
 
-//    for (const auto& x : cutflow){
-//	std::cout << x.first  // string (key)
-//		  << ':' 
-//		  << x.second // string's value 
-//		  << std::endl;
-//    } 
+    // [¿¿] ¿¿ map ¿¿ ¿¿ ¿¿ -> ¿¿ ¿¿ ¿¿¿¿ ¿¿
+    std::cout << "=== CutFlow Summary ===" << std::endl;
+    for (size_t i = 0; i < _cutStepLabels.size(); ++i) {
+        std::cout << _cutStepLabels[i] 
+                  << " : " << _cutFlowCount[i] 
+                  << " (weighted: " << _cutFlowWeight[i] << ")" 
+                  << std::endl;
+        
+        // hCutFlow ¿¿¿¿¿¿ ¿¿ ¿¿¿¿ ¿¿ Set¿¿ ¿¿¿ ¿¿¿ ¿¿ ¿ (¿¿¿¿)
+        // hCutFlow->SetBinContent(i+1, _cutFlowCount[i]);
+    }
+
     hCutFlow->Write();
     if(debugCorrections) std::cout<<"debug : After hCutFlow() & Before hCutFlow_w()"<<std::endl;
     hCutFlow_w->Write();
@@ -430,10 +436,30 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
 
 
 bool ttHHanalyzer_base::selectObjects(event *thisEvent){
+     
+    // [¿¿] Helper Lambda ¿¿ ¿¿
+    // ¿ ¿¿ ¿¿¿ "¿¿¿ + hCutFlow ¿¿¿ + ¿¿¿ ¿¿ ¿¿¿"¿ ¿¿
+    auto processStep = [&](CutStep step, float wMassVal) {
+        int idx = static_cast<int>(step);
+        
+        // A. ¿¿ ¿¿¿ ¿¿
+        if (idx < _cutFlowCount.size()) {
+            _cutFlowCount[idx] += 1.0;
+            _cutFlowWeight[idx] += _weight;
+        }
 
-    cutflow["noCut"]+=1;
-    hCutFlow->Fill("noCut",1);
-    hCutFlow_w->Fill("noCut",_weight);
+        // B. CutFlow ¿¿¿¿¿ ¿¿¿ (¿¿¿ ¿¿ ¿¿¿ ¿¿ -> ¿¿)
+        hCutFlow->Fill(idx); 
+        hCutFlow_w->Fill(idx, _weight);
+
+        // C. ¿¿¿ ¿¿¿ ¿¿ ¿¿¿ (¿¿ ¿¿ ¿¿¿)
+        fillCutStepHist(step, thisEvent, wMassVal);
+    };
+
+
+    // ----------------------------------------------------
+    // ¿¿ ¿ ¿¿ ¿¿ ¿¿
+    // ----------------------------------------------------
 
     const float wMass = 80.377f;
     float hadWMass = closestMassPair(
@@ -441,9 +467,11 @@ bool ttHHanalyzer_base::selectObjects(event *thisEvent){
         wMass
     );
 
+    // Higgs Reconstruction (Histogram ¿¿¿¿)
     _minChi2Higgs = cLargeValue;
     _bbMassMin1Higgs = -1.0f;
     _bbMassMin2Higgs = -1.0f;
+
 
     auto* bjets = thisEvent->getSelbJets();
     // ttHH(bb) Hadronic Channel ì—°êµ¬ì´ë¯€ë¡œ, Higgs -> bb ë¶•ê´´ë¥¼ ìž¬êµ¬ì„±í•˜ê¸° ìœ„í•´
@@ -479,16 +507,20 @@ bool ttHHanalyzer_base::selectObjects(event *thisEvent){
 ////                        : _bbMassMin2Higgs;
 ////    }
 
+    // Step 0: No Cut
     fillCutStepHist(CutStep::kNoCut, thisEvent, hadWMass);
 
+    // Step 1: Trigger    
     if(cut["trigger"] > 0 && thisEvent->getHadTriggerAccept() == false){
         return false;
     }
+    processStep(CutStep::kHadTrigger, hadWMass);
 
-    cutflow["HadTrigger"]+=1;                 
-    hCutFlow->Fill("HadTrigger",1);
-    hCutFlow_w->Fill("HadTrigger",_weight);
-    fillCutStepHist(CutStep::kHadTrigger, thisEvent, hadWMass);
+    // Step 2: Noise Filter
+    if(cut["filter"] > 0 && thisEvent->getMETFilter() == false){
+        return false;
+    }
+    processStep(CutStep::kNoiseFilter, hadWMass);
 
     ////////if(cut["trigger"] > 0 && thisEvent->getMuonTriggerAccept() == false)
     ////////{
@@ -498,89 +530,49 @@ bool ttHHanalyzer_base::selectObjects(event *thisEvent){
     ////////hCutFlow->Fill("MuonTrigger",1);
     ////////hCutFlow_w->Fill("MuonTrigger",_weight);
 
-    if(cut["filter"] > 0 && thisEvent->getMETFilter() == false){
-        return false;
-    }
-    cutflow["noiseFilter"]+=1;
-    hCutFlow->Fill("noiseFilter",1);
-    hCutFlow_w->Fill("noiseFilter",_weight);
-    fillCutStepHist(CutStep::kNoiseFilter, thisEvent, hadWMass);
-
-///    if(cut["pv"] < 0 && thisEvent->getPVvalue() == false){
-///        return false;
-///    }
+    // Step 3: Primary Vertex
     if(cut["pv"] > 0 && thisEvent->getPVvalue() == false){
         return false;
     }
-    cutflow["pv>=1"]+=1;
-    hCutFlow->Fill("pv>=1",1);
-    hCutFlow_w->Fill("pv>=1",_weight);	
-    fillCutStepHist(CutStep::kPrimaryVertex, thisEvent, hadWMass);
+    processStep(CutStep::kPrimaryVertex, hadWMass);
 
 
+    // Step 4: nJets >= 6
     if(!(thisEvent->getnSelJet() >= cut["nJets"] )){
-	return false;
+        return false;
     }
-    cutflow["njets>=6"]+=1;                 
-    hCutFlow->Fill("njets>=6",1);
-    hCutFlow_w->Fill("njets>=6",_weight);
-    fillCutStepHist(CutStep::kNumJets, thisEvent, hadWMass);
+    processStep(CutStep::kNumJets, hadWMass);
 
-    ////if(!(thisEvent->getnbJet() >= cut["nbJets"])){
-    ////        return false;
-    ////}
-    ////cutflow["nbjets>=3"]+=1;                 
-    ////hCutFlow->Fill("nbjets>=3",1);
-    ////hCutFlow_w->Fill("nbjets>=3",_weight);
-    
-    //    if(!(thisEvent->getnSelLepton()  == cut["nLeptons"])){
-    ////if(thisEvent->getnSelLepton() < 1){
-   
+    // Step 5: 6th Jet Pt > 40
     if(!(thisEvent->getSelJets()->at(5)->getp4()->Pt() > cut["6thJetsPT"])){
-            return false;
+        return false;
     }
-    cutflow["6thJetsPT>40"]+=1;
-    hCutFlow->Fill("6thJetsPT>40",1);
-    hCutFlow_w->Fill("6thJetsPT>40",_weight);
-    fillCutStepHist(CutStep::kSixthJetPt, thisEvent, hadWMass);
+    processStep(CutStep::kSixthJetPt, hadWMass);
 
+    // Step 6: Lepton Veto (nLepton == 0)
     if(!(thisEvent->getnVetoLepton() == cut["nLeptons"])){
         return false;
     }
-    cutflow["nlepton==0"]+=1;                 
-    hCutFlow->Fill("nlepton==0", 1);
-    hCutFlow_w->Fill("nlepton==0", _weight);
-    fillCutStepHist(CutStep::kLeptonVeto, thisEvent, hadWMass);
+    processStep(CutStep::kLeptonVeto, hadWMass);
 
+    // (¿¿: ¿¿ ¿¿ ¿¿ ¿¿)
     thisEvent->getStatsComb(thisEvent->getSelJets(), thisEvent->getSelLeptons(), ljetStat);
     thisEvent->getStatsComb(thisEvent->getSelbJets(), thisEvent->getSelLeptons(), lbjetStat);
 
-
+    // Step 7: HT > 500
     if(!(thisEvent->getSumSelJetScalarpT() > cut["HT"])){
         return false;
     }
-    cutflow["HT>500"]+=1;
-    hCutFlow->Fill("HT>500",1);
-    hCutFlow_w->Fill("HT>500",_weight);
-    fillCutStepHist(CutStep::kHT, thisEvent, hadWMass);
+    processStep(CutStep::kHT, hadWMass);
 
- 
-    ////if(!(thisEvent->getnLightJet() >= cut["nlJets"])){
-    ////        return false;
-    ////}
-    ////cutflow["nljets>=2"]+=1;
-    ////hCutFlow->Fill("nljets>=2",1);
-    ////hCutFlow_w->Fill("nljets>=2",_weight);    
-
-
+    // Step 8: Hadronic W Mass
     if (hadWMass < 0.0f || hadWMass > 250.0f || hadWMass < 30.0f) {
         return false;
     }
-    cutflow["30<HadW<250"]+=1;
-    hCutFlow->Fill("30<HadW<250",1);
-    hCutFlow_w->Fill("30<HadW<250",_weight);
-    fillCutStepHist(CutStep::kHadWMass, thisEvent, hadWMass);
+    processStep(CutStep::kHadWMass, hadWMass);
 
+
+    // Step 9: Higgs Mass Window (¿¿ ¿¿¿¿ ¿ ¿¿¿¿ pass)
     // We do not use higgs window right now.. in 05th Jan 2026
 ////    const float higgsMassMin = 90.0f;
 ////    const float higgsMassMax = 160.0f;
@@ -593,40 +585,9 @@ bool ttHHanalyzer_base::selectObjects(event *thisEvent){
 ////    hCutFlow_w->Fill("HiggsMassWindow",_weight);
 ////    fillCutStepHist(CutStep::kHiggsMass, thisEvent, hadWMass);
 
-
-    ////if(thisEvent->getSelLeptons()->at(0)->charge == thisEvent->getSelLeptons()->at(1)->charge){
-    ////	return false;
-    ////}
-    ////cutflow["nOpositeChargedLep"]+=1;
-
-    ////if(!(thisEvent->getnVetoLepton()  == cut["nVetoLeptons"])){
-    ////	return false;
-    ////}
-
     
-    ////if(thisEvent->getnSelMuon()  == cut["nLeptons"]){
-    ////	if(!((thisEvent->getSelMuonsMass() > 20) && (thisEvent->getSelMuonsMass() < 76 || thisEvent->getSelMuonsMass() > 106))){
-    ////        return false;
-    ////    }
-    ////}
-    ////
-    ////if(thisEvent->getnSelElectron()  == cut["nLeptons"]){
-    ////	if(!((thisEvent->getSelElectronsMass() > 20) && (thisEvent->getSelElectronsMass() < 76 || thisEvent->getSelElectronsMass() > 106))){
-    ////	    return false;
-    ////	}
-    ////}
-    ////cutflow["nMassCut"]+=1;
-
-    cutflow["nTotal"]+=1;
-    hCutFlow->Fill("nTotal",1);
-    hCutFlow_w->Fill("nTotal",_weight);
-    fillCutStepHist(CutStep::kTotal, thisEvent, hadWMass);
-
-    /*	std::cout << x.first  // string (key)
-		  << ':' 
-		  << x.second // string's value 
-		  << std::endl;
-		  } */
+    // Step 10: Total
+    processStep(CutStep::kTotal, hadWMass);
 	
    
     return true;

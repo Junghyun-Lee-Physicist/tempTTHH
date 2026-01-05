@@ -21,7 +21,8 @@
 //#include "HypothesisCombinatorics.h"
 //#include "include/tthHypothesisCombinatorics.h"
 //#include "include/HypothesisCombinatorics.h"
-#include "fifo_map.hpp"
+
+//#include "fifo_map.hpp" // No need now, I'll update cutflow logic
 
 #include "CorrectionsManager.h"
 
@@ -986,13 +987,11 @@ class ttHHanalyzer_base {
 
     ////tthHypothesisCombinatorics * HypoComb; 
 
-//    fifo_map<std::string,int> cutflow{{"noCut", 0}, {"MuonTrigger", 0}, {"njets>=6", 0}, {"nbjets>=3", 0}, {"6thJetsPT>40", 0}, {"nlepton==0", 0}, {"HT>500", 0}, {"nljets>=2", 0}, {"30<ljetsM<250", 0}, {"HadTrigger", 0}};
-    fifo_map<std::string,int> cutflow{{"noCut", 0}, {"HadTrigger", 0}, {"noiseFilter", 0}, {"pv>=1", 0}, {"njets>=6", 0}, {"6thJetsPT>40", 0}, {"nlepton==0", 0}, {"HT>500", 0}, {"30<HadW<250", 0}, {"HiggsMassWindow", 0}, {"nTotal", 0}};
-    fifo_map<std::string,int> cutflow_w{{"noCut", 0}, {"HadTrigger", 0}, {"noiseFilter", 0}, {"pv>=1", 0}, {"njets>=6", 0}, {"6thJetsPT>40", 0}, {"nlepton==0", 0}, {"HT>500", 0}, {"30<HadW<250", 0}, {"HiggsMassWindow", 0}, {"nTotal", 0}};
-    //fifo_map<std::string,int> cutflow_w{{"noCut", 0}, {"MuonTrigger", 0}, {"nJets>=6", 0}, {"nbJets>=4", 0}, {"6thJetsPT>40", 0}, {"nlepton==0", 0}, {"HT>500", 0}, {"nljets>=2", 0}, {"30<ljetsM<250", 0}, {"HadTrigger", 0}};
-    //    fifo_map<std::string,int> cutflow{{"noCut", 0}, {"njets>3", 0}, {"nbjets>2", 0}, {"nlepton==2", 0}, {"nOpositeChargedLep", 0}, {"nMassCut", 0}, {"nTotal", 0}};
+ 
+// No need now, I'll update cutflow logic
+////    fifo_map<std::string,int> cutflow{{"noCut", 0}, {"HadTrigger", 0}, {"noiseFilter", 0}, {"pv>=1", 0}, {"njets>=6", 0}, {"6thJetsPT>40", 0}, {"nlepton==0", 0}, {"HT>500", 0}, {"30<HadW<250", 0}, {"HiggsMassWindow", 0}, {"nTotal", 0}};
+////    fifo_map<std::string,int> cutflow_w{{"noCut", 0}, {"HadTrigger", 0}, {"noiseFilter", 0}, {"pv>=1", 0}, {"njets>=6", 0}, {"6thJetsPT>40", 0}, {"nlepton==0", 0}, {"HT>500", 0}, {"30<HadW<250", 0}, {"HiggsMassWindow", 0}, {"nTotal", 0}};
 
-    //    std::unordered_map<std::string, int> cutflow {{"noCut", 0}, {"njets>3", 0}, {"nbjets>2", 0}, {"nlepton==2", 0}, {"nOpositeChargedLep", 0}, {"nMassCut", 0}, {"nTotal", 0}};
 
  private: 
     bool _sys;
@@ -1046,6 +1045,9 @@ class ttHHanalyzer_base {
         kTotal
     };
 
+
+    // [수정] 라벨 벡터는 const static 혹은 생성자에서 초기화하도록 변경 권장하나,
+    // 기존 구조를 존중하여 멤버 변수로 유지하되 초기화 방식만 바꿉니다.
     std::vector<std::string> _cutStepLabels;
     std::vector<TH1F*> _cutStepJetPt;
     std::vector<TH1F*> _cutStepJetEta;
@@ -1055,6 +1057,10 @@ class ttHHanalyzer_base {
     std::vector<TH1F*> _cutStepHadWMass;
     std::vector<TH1F*> _cutStepHiggsMass01;
     std::vector<TH1F*> _cutStepHiggsMass02;
+    // [추가] 카운터용 벡터 (Map 대신 사용)
+    std::vector<double> _cutFlowCount;  // 갯수 (No Weight)
+    std::vector<double> _cutFlowWeight; // 가중치 적용 (Weight)
+
 
     // L1 prefiring 보정
     const correction::Correction *prefireJetCorr = nullptr;
@@ -1249,8 +1255,8 @@ class ttHHanalyzer_base {
 
         hjetsPTs.resize(nHistsJets); hjetsEtas.resize(nHistsJets); hbjetsPTs.resize(nHistsbJets); hbjetsEtas.resize(nHistsbJets); hLightJetsPTs.resize(nHistsLightJets), hLightJetsEtas.resize(nHistsLightJets), hjetsBTagDisc.resize(nHistsJets), hbjetsBTagDisc.resize(nHistsbJets), hLightJetsBTagDisc.resize(nHistsLightJets);
 
-	hCutFlow = new TH1F("cutflow", "N_{cutFlow}", cutflow.size(), 0, cutflow.size());
-	hCutFlow_w = new TH1F("cutflow_w", "N_{weighted}", cutflow.size(), 0, cutflow.size());
+////	hCutFlow = new TH1F("cutflow", "N_{cutFlow}", cutflow.size(), 0, cutflow.size());
+////	hCutFlow_w = new TH1F("cutflow_w", "N_{weighted}", cutflow.size(), 0, cutflow.size());
 
 	TString trail = "";
 	if(sysType == kbTag){
@@ -1471,6 +1477,7 @@ class ttHHanalyzer_base {
         tmpDirs.push_back(cutflowDir);
         cutflowDir->cd();
 
+        // 1. [추가/수정] CutStep 라벨 정의 (Enum 순서와 100% 일치해야 함)
         _cutStepLabels = {
             "noCut",
             "HadTrigger",
@@ -1481,11 +1488,21 @@ class ttHHanalyzer_base {
             "nlepton==0",
             "HT>500",
             "30<HadW<250",
-            "HiggsMassWindow",
+            "HiggsMassWindow", // kHiggsMass
             "nTotal"
         };
 
+        // 2. [추가] 카운터 벡터 초기화
+        size_t nSteps = _cutStepLabels.size();
+        _cutFlowCount.assign(nSteps, 0.0);
+        _cutFlowWeight.assign(nSteps, 0.0);
+
         const size_t cutStepCount = static_cast<size_t>(CutStep::kTotal) + 1;
+        // [추가] 여기서 카운터 벡터 초기화 (0.0으로 채움)
+        // resize 대신 assign을 쓰면 크기 변경과 동시에 값 초기화가 보장됩니다.
+        _cutFlowCount.assign(cutStepCount, 0.0);
+        _cutFlowWeight.assign(cutStepCount, 0.0);
+	// 히스토그램 벡터 리사이즈 (기존 코드)
         _cutStepJetPt.resize(cutStepCount);
         _cutStepJetEta.resize(cutStepCount);
         _cutStepJetPhi.resize(cutStepCount);
@@ -1495,6 +1512,10 @@ class ttHHanalyzer_base {
         _cutStepHiggsMass01.resize(cutStepCount);
         _cutStepHiggsMass02.resize(cutStepCount);
 
+
+        // hCutFlow 히스토그램 생성 (라벨링 포함)
+        hCutFlow = new TH1F("cutflow", "N_{cutFlow}", cutStepCount, 0, cutStepCount);
+        hCutFlow_w = new TH1F("cutflow_w", "N_{weighted}", cutStepCount, 0, cutStepCount);
 
         for (size_t i = 0; i < cutStepCount; ++i) {
             const TString titleSuffix = TString::Format(" (%s)", _cutStepLabels.at(i).c_str());
@@ -1513,7 +1534,12 @@ class ttHHanalyzer_base {
             _cutStepHiggsMass01.at(i) = new TH1F(TString::Format("cutStep_%zu_higgs can01", i),
                                                "m_{bb} closest to Higgs 1st candidate [GeV]"+titleSuffix, 50, 0, 300);
             _cutStepHiggsMass02.at(i) = new TH1F(TString::Format("cutStep_%zu_higgs can02", i),
-                                               "m_{bb} closest to Higgs 2nd candiate [GeV]"+titleSuffix, 50, 0, 300);
+
+            // hCutFlow 축 라벨 설정         
+	    if (i < _cutStepLabels.size()) {
+                hCutFlow->GetXaxis()->SetBinLabel(i + 1, _cutStepLabels[i].c_str());
+                hCutFlow_w->GetXaxis()->SetBinLabel(i + 1, _cutStepLabels[i].c_str());
+            }
 
         }
 	
