@@ -99,67 +99,67 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
     _ev->fillObjects();
  
     // =================================================================
-    // 1. [Definition] 복잡한 HLT 경로를 의미 있는 변수로 변환
+    // 1. [Definition] ë³µìž¡í•œ HLT ê²½ë¡œë¥¼ ì˜ë¯¸ ìžˆëŠ” ë³€ìˆ˜ë¡œ ë³€í™˜
     // =================================================================
 
-    // 1-1. Era 확인 (설정된 eraName을 사용)
+    // 1-1. Era í™•ì¸ (ì„¤ì •ëœ eraNameì„ ì‚¬ìš©)
     bool isEraB = (_era == "B");
-    // TODO: 현재는 2017년도 기준 B run과 나머지(C,D,E,F)만 구분하고 있음.
-    // 추후 2016, 2018 Data 분석 시 각 연도별/Era별 정확한 HLT Path 존재 여부 및 Prescale 로직 확인 후
-    // 코드를 확장해야 함. (CorrectionsManager 등에서 Map 형태로 관리 권장)
+    // TODO: í˜„ìž¬ëŠ” 2017ë…„ë„ ê¸°ì¤€ B runê³¼ ë‚˜ë¨¸ì§€(C,D,E,F)ë§Œ êµ¬ë¶„í•˜ê³  ìžˆìŒ.
+    // ì¶”í›„ 2016, 2018 Data ë¶„ì„ ì‹œ ê° ì—°ë„ë³„/Eraë³„ ì •í™•í•œ HLT Path ì¡´ìž¬ ì—¬ë¶€ ë° Prescale ë¡œì§ í™•ì¸ í›„
+    // ì½”ë“œë¥¼ í™•ìž¥í•´ì•¼ í•¨. (CorrectionsManager ë“±ì—ì„œ Map í˜•íƒœë¡œ ê´€ë¦¬ ê¶Œìž¥)
 
-    // 1-2. Trigger Mapping (Era에 따른 HLT 경로 선택)
-    // (1) 4J3T (QuadJet + TripleBTag) -> BTagCSV 데이터셋의 주력
+    // 1-2. Trigger Mapping (Eraì— ë”°ë¥¸ HLT ê²½ë¡œ ì„ íƒ)
+    // (1) 4J3T (QuadJet + TripleBTag) -> BTagCSV ë°ì´í„°ì…‹ì˜ ì£¼ë ¥
     bool fired_4J3T = isEraB ? _ev->HLT_HT300PT30_QuadJet_75_60_45_40_TripeCSV_p07 
                              : _ev->HLT_PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0;
 
-    // (2) 6J (MultiJet + BTag) -> JetHT 데이터셋의 주력 1
+    // (2) 6J (MultiJet + BTag) -> JetHT ë°ì´í„°ì…‹ì˜ ì£¼ë ¥ 1
     bool fired_6J1T = isEraB ? _ev->HLT_PFHT430_SixJet40_BTagCSV_p080 
                              : _ev->HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5;
                              
     bool fired_6J2T = isEraB ? _ev->HLT_PFHT380_SixJet32_DoubleBTagCSV_p075 
                              : _ev->HLT_PFHT380_SixPFJet32_DoublePFBTagCSV_2p2;
 
-    // (3) HT (Pure HT) -> JetHT 데이터셋의 주력 2
-    bool fired_HT   = _ev->HLT_PFHT1050; // Era 공통
+    // (3) HT (Pure HT) -> JetHT ë°ì´í„°ì…‹ì˜ ì£¼ë ¥ 2
+    bool fired_HT   = _ev->HLT_PFHT1050; // Era ê³µí†µ
 
 
-    // 1-3. Logical Grouping (논리 그룹 정의)
-    // BTagCSV가 가져가야 할 트리거 그룹
+    // 1-3. Logical Grouping (ë…¼ë¦¬ ê·¸ë£¹ ì •ì˜)
+    // BTagCSVê°€ ê°€ì ¸ê°€ì•¼ í•  íŠ¸ë¦¬ê±° ê·¸ë£¹
     bool group_BTagCSV = fired_4J3T;
 
-    // JetHT가 가져가야 할 트리거 그룹 (6J OR HT)
+    // JetHTê°€ ê°€ì ¸ê°€ì•¼ í•  íŠ¸ë¦¬ê±° ê·¸ë£¹ (6J OR HT)
     bool group_JetHT   = (fired_6J1T || fired_6J2T || fired_HT);
 
 
     // =================================================================
-    // 2. [Application] 데이터셋별 역할 분담 (Orthogonality Enforcement)
+    // 2. [Application] ë°ì´í„°ì…‹ë³„ ì—­í•  ë¶„ë‹´ (Orthogonality Enforcement)
     // =================================================================
     
     bool passHadTrig = false;
 
     if (_DataOrMC == "MC") {
-        // [MC]: 그냥 뭐라도 터지면 다 가져감 (OR)
+        // [MC]: ê·¸ëƒ¥ ë­ë¼ë„ í„°ì§€ë©´ ë‹¤ ê°€ì ¸ê° (OR)
         passHadTrig = (group_BTagCSV || group_JetHT);
     }
     else { // [Data]
         if (_sampleName.find("BTagCSV") != std::string::npos) {
-            // [Rule 1] BTagCSV 데이터셋은 4J3T 그룹만 챙긴다.
+            // [Rule 1] BTagCSV ë°ì´í„°ì…‹ì€ 4J3T ê·¸ë£¹ë§Œ ì±™ê¸´ë‹¤.
             passHadTrig = group_BTagCSV;
         }
         else if (_sampleName.find("JetHT") != std::string::npos) {
-            // [Rule 2] JetHT 데이터셋은 자기 그룹(6J or HT)을 챙기되,
-            //          만약 4J3T가 같이 터졌으면 BTagCSV에 양보한다. (Veto)
+            // [Rule 2] JetHT ë°ì´í„°ì…‹ì€ ìžê¸° ê·¸ë£¹(6J or HT)ì„ ì±™ê¸°ë˜,
+            //          ë§Œì•½ 4J3Tê°€ ê°™ì´ í„°ì¡Œìœ¼ë©´ BTagCSVì— ì–‘ë³´í•œë‹¤. (Veto)
             passHadTrig = (group_JetHT && !group_BTagCSV);
         }
         else {
-            // 안전장치
+            // ì•ˆì „ìž¥ì¹˜
              std::cerr << "[ERROR] Unknown Data Sample: " << _sampleName << std::endl;
              std::exit(EXIT_FAILURE);
         }
     }
 
-    // 최종 결과 적용
+    // ìµœì¢… ê²°ê³¼ ì ìš©
     thisEvent->setHadTrigger(passHadTrig);
  
     // Set the noise filter
@@ -219,9 +219,9 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
 ////    bool thereIsALeadLepton = false;
 ////
 ////    for(int i = 0; i < muonT.size(); i++){
-////        // CHECK: 현재 Veto Muon으로 TightID를 사용 중. 일반적으로 Veto 용도로는 LooseID를 권장함.
-////        // Muon POG 권장사항 확인 필요 (예: LooseID + LooseIso).
-////        // TightID 사용 시 "Loose하지만 가짜는 아닌" 뮤온을 놓쳐서 Hadronic 채널 오염 가능성 있음.
+////        // CHECK: í˜„ìž¬ Veto Muonìœ¼ë¡œ TightIDë¥¼ ì‚¬ìš© ì¤‘. ì¼ë°˜ì ìœ¼ë¡œ Veto ìš©ë„ë¡œëŠ” LooseIDë¥¼ ê¶Œìž¥í•¨.
+////        // Muon POG ê¶Œìž¥ì‚¬í•­ í™•ì¸ í•„ìš” (ì˜ˆ: LooseID + LooseIso).
+////        // TightID ì‚¬ìš© ì‹œ "Looseí•˜ì§€ë§Œ ê°€ì§œëŠ” ì•„ë‹Œ" ë®¤ì˜¨ì„ ë†“ì³ì„œ Hadronic ì±„ë„ ì˜¤ì—¼ ê°€ëŠ¥ì„± ìžˆìŒ.
 ////        if(fabs(muonT[i].eta) < cut["muonEta"] && muonT[i].tightId == true && muonT[i].pfRelIso04_all  < cut["muonIso"]){
 ////            if(muonT[i].pt > cut["leadMuonPt"]){
 ////                thereIsALeadLepton = true;
@@ -231,7 +231,7 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
 ////    }
 ////    if(!thereIsALeadLepton){
 ////        for(int i = 0; i < ele.size(); i++){
-////            // CHECK: Electron Veto 역시 WP90(Tight에 가까움) 사용 중. Egamma POG의 Veto WP 권장사항 확인 필요.
+////            // CHECK: Electron Veto ì—­ì‹œ WP90(Tightì— ê°€ê¹Œì›€) ì‚¬ìš© ì¤‘. Egamma POGì˜ Veto WP ê¶Œìž¥ì‚¬í•­ í™•ì¸ í•„ìš”.
 ////            if(fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660){  //Electrons tracked neither in the barrel nor in the endcap are discarded.
 ////                if(fabs(ele[i].eta) < cut["eleEta"] && ele[i].mvaFall17V2Iso_WP90 == true && ele[i].pfRelIso03_all  < cut["eleIso"]){ 
 ////                    if(ele[i].pt > cut["leadElePt"]){
@@ -304,10 +304,10 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
         const auto& jetRaw = jet[i];
 
         // 1. Pre-cuts
-        // [UPDATE] 보정 후 기준으로 pT 컷을 적용하기 위해 여기서는 eta/ID만 최소한으로 확인
+        // [UPDATE] ë³´ì • í›„ ê¸°ì¤€ìœ¼ë¡œ pT ì»·ì„ ì ìš©í•˜ê¸° ìœ„í•´ ì—¬ê¸°ì„œëŠ” eta/IDë§Œ ìµœì†Œí•œìœ¼ë¡œ í™•ì¸
         if( !(fabs(jetRaw.eta) < cut["jetEta"] && jetRaw.jetId >= cut["jetID"]) ) continue;
  
-        // 2. Calculation (지역 변수 사용, Heap 할당 X)
+        // 2. Calculation (ì§€ì—­ ë³€ìˆ˜ ì‚¬ìš©, Heap í• ë‹¹ X)
         float ntuplePt  = jetRaw.pt;                // NanoAOD Default (Corrected)
         float rawFactor = jetRaw.rawFactor;
         float rawPt     = ntuplePt * (1.0f - rawFactor);
@@ -315,17 +315,17 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
 
             // --- A) Re-apply JEC ---
             double jecSF = corrMgr->getJEC(jetRaw.eta, rawPt, jetRaw.area, rho);
-            float ptJEC  = rawPt * jecSF;               // 내가 재계산한 pT
+            float ptJEC  = rawPt * jecSF;               // ë‚´ê°€ ìž¬ê³„ì‚°í•œ pT
             float massJEC = rawMass * jecSF;
 
 
             // --- [Validation] On-the-fly Check --- 
-            // (JEC 재적용 관련 validation, 재적용 JEC와 ntuple default JEC pT의 차이가 크면 에러 출력)
+            // (JEC ìž¬ì ìš© ê´€ë ¨ validation, ìž¬ì ìš© JECì™€ ntuple default JEC pTì˜ ì°¨ì´ê°€ í¬ë©´ ì—ëŸ¬ ì¶œë ¥)
             float relDiff = -1.f;        
             if (ntuplePt > 0) {
                 relDiff = (ptJEC - ntuplePt) / ntuplePt;
             
-                // 디버깅용: 차이가 너무 크면 출력
+                // ë””ë²„ê¹…ìš©: ì°¨ì´ê°€ ë„ˆë¬´ í¬ë©´ ì¶œë ¥
                 if (debugCorrections && fabs(relDiff) > 0.01) { 
                      std::cout << "[JEC Diff] Idx:" << i << " Orig:" << ntuplePt << " New:" << ptJEC << std::endl;
                 }
@@ -348,7 +348,7 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
              continue; 
         }
 
-        // 4. Create Final Object (단 한 번만 생성)
+        // 4. Create Final Object (ë‹¨ í•œ ë²ˆë§Œ ìƒì„±)
         objectJet* newJet = new objectJet(
             smearedPt,
             jetRaw.eta,
@@ -356,7 +356,7 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
             massJEC
         );
 
-        // 메타데이터 저장
+        // ë©”íƒ€ë°ì´í„° ì €ìž¥
         newJet->JEC_DiffRatio = relDiff;
         newJet->bTagCSV       = jetRaw.btagDeepFlavB;
         newJet->jetID         = jetRaw.jetId;
@@ -364,15 +364,15 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
         newJet->passPuId      = passPuId;
         newJet->hadFlav       = jetRaw.hadronFlavour;
         newJet->partonFlav    = jetRaw.partonFlavour;
-        newJet->genMatchedPt  = genPt; // 필요하다면
+        newJet->genMatchedPt  = genPt; // í•„ìš”í•˜ë‹¤ë©´
         if (jetRaw.mass > 0.0f) {
             newJet->mass_DiffRatio = (massJEC - jetRaw.mass) / jetRaw.mass;
         } else {
             newJet->mass_DiffRatio = 0.0f;
         }
 
-        // 이벤트에 등�
-	// WP에 따른 분류 로직
+        // ì´ë²¤íŠ¸ì— ë“±ë¡
+	// WPì— ë”°ë¥¸ ë¶„ë¥˜ ë¡œì§
         thisEvent->selectJet(newJet);
         if (newJet->bTagCSV >= objectJet::valbTagMedium) {
             thisEvent->selectbJet(newJet);
@@ -384,7 +384,7 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
 ////            thisEvent->selectLoosebJet(newJet);
 ////        }
 
-    }   // <--- Jet Loop End (여기가 닫혔는지 꼭 확인!)
+    }   // <--- Jet Loop End (ì—¬ê¸°ê°€ ë‹«í˜”ëŠ”ì§€ ê¼­ í™•ì¸!)
     
 	thisEvent->orderJets();
 
@@ -393,62 +393,43 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
     // =================================================================
     for (int i = 0; i < (int)genPart.size(); i++) {
         
-        // [중요] 조건 먼저 검사 (조건 불만족 시 객체 생성 안 함 -> 메모리 누수 방지)
+        // [ì¤‘ìš”] ì¡°ê±´ ë¨¼ì € ê²€ì‚¬ (ì¡°ê±´ ë¶ˆë§Œì¡± ì‹œ ê°ì²´ ìƒì„± ì•ˆ í•¨ -> ë©”ëª¨ë¦¬ ëˆ„ìˆ˜ ë°©ì§€)
         bool isBQuark = (abs(genPart[i].pdgId) == 5);
         bool isHard   = (genPart[i].statusFlags & 256);
 
         if (!isBQuark || !isHard) continue;
 
-        // 합격한 경우에만 new 할당
+        // í•©ê²©í•œ ê²½ìš°ì—ë§Œ new í• ë‹¹
         currentGenPart = new objectGenPart(
             genPart[i].pt, genPart[i].eta, genPart[i].phi, genPart[i].mass
         );
         currentGenPart->hasHiggsMother = false;
         currentGenPart->hasTopMother   = false;
 
-        // Mother Tracing (While loop로 간소화)
-        int motherInd = genPart[i].genPartIdxMother;
-        while (motherInd >= 0 && motherInd < (int)genPart.size()) {
-            int mPDG = abs(genPart[motherInd].pdgId);
-            bool mStatus = (genPart[motherInd].statusFlags & 256);
-
-            if (mStatus) {
-                if (mPDG == 25) currentGenPart->hasHiggsMother = true;
-                if (mPDG == 6)  currentGenPart->hasTopMother   = true;
-            }
-            if (currentGenPart->hasHiggsMother && currentGenPart->hasTopMother) break;
-            
-            motherInd = genPart[motherInd].genPartIdxMother;
+    auto fillStep = [&](CutStep step) {
+        const size_t idx = static_cast<size_t>(step);
+        if (idx >= _cutFlowCounts.size()) {
+            return;
         }
+        _cutFlowCounts[idx] += 1;
+        _cutFlowCountsW[idx] += _weight;
+        hCutFlow->Fill(static_cast<double>(idx) + 0.5);
+        hCutFlow_w->Fill(static_cast<double>(idx) + 0.5, _weight);
+        fillCutStepHist(step, thisEvent, hadWMass);
+    };
 
-        thisEvent->selectGenPart(currentGenPart);
-    } // GenPart Loop End
+    fillStep(CutStep::kNoCut);
 
-} // CreateObject Function End
-           
+    fillStep(CutStep::kHadTrigger);
+    fillStep(CutStep::kNoiseFilter);
 
-
-
-bool ttHHanalyzer_base::selectObjects(event *thisEvent){
-
-    cutflow["noCut"]+=1;
-    hCutFlow->Fill("noCut",1);
-    hCutFlow_w->Fill("noCut",_weight);
-
-    const float wMass = 80.377f;
-    float hadWMass = closestMassPair(
-        thisEvent->getSelLightJets()->size() >= 2 ? thisEvent->getSelLightJets() : thisEvent->getSelJets(),
-        wMass
-    );
-
-    _minChi2Higgs = cLargeValue;
-    _bbMassMin1Higgs = -1.0f;
-    _bbMassMin2Higgs = -1.0f;
-
-    auto* bjets = thisEvent->getSelbJets();
-    // ttHH(bb) Hadronic Channel 연구이므로, Higgs -> bb 붕괴를 재구성하기 위해
-    // 최소 4개의 b-jet이 존재해야만 Higgs Pair Candidate를 생성할 수 있음.
-    // 따라서 아래 조건문(size >= 4)은 분석의 필수 조건임.
+    fillStep(CutStep::kPrimaryVertex);
+    fillStep(CutStep::kNumJets);
+    fillStep(CutStep::kSixthJetPt);
+    fillStep(CutStep::kLeptonVeto);
+    fillStep(CutStep::kHT);
+    fillStep(CutStep::kHadWMass);
+    fillStep(CutStep::kTotal);
     if (bjets->size() >= 4) {
         for (size_t i = 0; i < bjets->size() - 3; ++i) {
             for (size_t j = i + 1; j < bjets->size() - 2; ++j) {
@@ -907,7 +888,7 @@ void ttHHanalyzer_base::process(event* thisEvent, sysName sysType, bool up){
     }
 
     if (_DataOrMC != "Data") {
-        // [UPDATE] 모든 가중치를 메인 _weight 변수에 반영 (cutflow/hist에 적용)
+        // [UPDATE] ëª¨ë“  ê°€ì¤‘ì¹˜ë¥¼ ë©”ì¸ _weight ë³€ìˆ˜ì— ë°˜ì˜ (cutflow/histì— ì ìš©)
         _weight *= (_PUWeight * _L1PrefiringWeight * _genWeight);
         // if(debugCorrections) std::cout << "Final Event Weight: " << _weight << std::endl;
     }
@@ -1110,10 +1091,10 @@ void ttHHanalyzer_base::fillHistos(event * thisEvent){
    ////// }
    int nSel = thisEvent->getnSelJet();
    for(int ih = 0; ih < nSel && ih < nHistsJets; ++ih){
-     float JEC_DiffRatio = thisEvent->getSelJets()->at(ih)->JEC_DiffRatio;   // nanoAOD JEC 적용 후 pT
+     float JEC_DiffRatio = thisEvent->getSelJets()->at(ih)->JEC_DiffRatio;   // nanoAOD JEC ì ìš© í›„ pT
      float Mass_DiffRatio = thisEvent->getSelJets()->at(ih)->mass_DiffRatio;
 
-     // [ 직접 JEC 해체 후 최신 버전 재적용한 JEC - NanoAOD orinigal Pt (NanoAOD의 기본 JEC) ] / [ NanoAOD original Pt ]
+     // [ ì§ì ‘ JEC í•´ì²´ í›„ ìµœì‹  ë²„ì „ ìž¬ì ìš©í•œ JEC - NanoAOD orinigal Pt (NanoAODì˜ ê¸°ë³¸ JEC) ] / [ NanoAOD original Pt ]
      h_JEC_DiffRatio.at(ih)->Fill(JEC_DiffRatio, _weight);
      h_JEC_Mass_DiffRatio.at(ih)->Fill(Mass_DiffRatio, _weight);
    }
@@ -1189,7 +1170,7 @@ void ttHHanalyzer_base::writeHistos(){
 //        hjetsEtas.at(ih)->Write();
 //        hjetsBTagDisc.at(ih)->Write();
   
-        // JEC-only 원본 pT
+        // JEC-only ì›ë³¸ pT
         h_JEC_DiffRatio.at(ih)->Write();
         h_JEC_Mass_DiffRatio.at(ih)->Write();
 
