@@ -47,8 +47,8 @@ std::map<std::string, float> cut {
     ////, {"leadMuonPt", 25} // leadMuon pT higher than
     ////, {"subLeadElePt", 15} // subLeadElectron pT higher than
     ////, {"subLeadMuonPt", 15} // subLeadMuon pT higher than
-    , {"leadElePt", 15}     //// New Def for leptons to veto at Hadronic channel 
-    , {"leadMuonPt", 15}    //// New Def for leptons to veto at Hadronic channel
+    , {"leadElePt", 25}     //// New Def for leptons to veto at Hadronic channel 
+    , {"leadMuonPt", 25}    //// New Def for leptons to veto at Hadronic channel
     , {"subLeadElePt", 15}  //// New Def for leptons to veto at Hadronic channel
     , {"subLeadMuonPt", 15} //// New Def for leptons to veto at Hadronic channel
     //    , {"vetoLepPt", 15} // lepton pT higher than
@@ -1053,7 +1053,8 @@ class ttHHanalyzer_base {
     std::vector<TH1F*> _cutStepHT;
     std::vector<TH1F*> _cutStepBTag;
     std::vector<TH1F*> _cutStepHadWMass;
-    std::vector<TH1F*> _cutStepHiggsMass;
+    std::vector<TH1F*> _cutStepHiggsMass01;
+    std::vector<TH1F*> _cutStepHiggsMass02;
 
     // L1 prefiring 보정
     const correction::Correction *prefireJetCorr = nullptr;
@@ -1112,32 +1113,35 @@ class ttHHanalyzer_base {
         return bestMass;
     }
 
-    void fillCutStepHist(CutStep step, const event* thisEvent, float hadWMass, float higgsMass) {
+    void fillCutStepHist(CutStep step, const event* thisEvent, float hadWMass) {
         const size_t idx = static_cast<size_t>(step);
         if (idx >= _cutStepJetPt.size()) {
             return;
         }
         const auto* jets = thisEvent->getSelJets();
-        const auto* bjets = thisEvent->getSelbJets();
+////        const auto* bjets = thisEvent->getSelbJets();
         float weight = _weight * thisEvent->getbTagSys();
 
         if (!jets->empty()) {
             _cutStepJetPt.at(idx)->Fill(jets->at(0)->getp4()->Pt(), weight);
             _cutStepJetEta.at(idx)->Fill(jets->at(0)->getp4()->Eta(), weight);
             _cutStepJetPhi.at(idx)->Fill(jets->at(0)->getp4()->Phi(), weight);
-        }
-        if (!bjets->empty()) {
-            _cutStepBTag.at(idx)->Fill(bjets->at(0)->bTagCSV, weight);
-        } else if (!jets->empty()) {
             _cutStepBTag.at(idx)->Fill(jets->at(0)->bTagCSV, weight);
         }
+
         _cutStepHT.at(idx)->Fill(thisEvent->getSumSelJetScalarpT(), weight);
+	
         if (hadWMass > 0.0f) {
             _cutStepHadWMass.at(idx)->Fill(hadWMass, weight);
         }
-        if (higgsMass > 0.0f) {
-            _cutStepHiggsMass.at(idx)->Fill(higgsMass, weight);
+
+        if (_bbMassMin1Higgs > 0.0f) {
+            _cutStepHiggsMass01.at(idx)->Fill(_bbMassMin1Higgs, weight);
         }
+        if (_bbMassMin2Higgs > 0.0f) {
+            _cutStepHiggsMass02.at(idx)->Fill(_bbMassMin2Higgs, weight);
+        }
+
     }
 
     /*    std::vector<double> getJetCutFlow(event *thisevent){
@@ -1488,7 +1492,9 @@ class ttHHanalyzer_base {
         _cutStepHT.resize(cutStepCount);
         _cutStepBTag.resize(cutStepCount);
         _cutStepHadWMass.resize(cutStepCount);
-        _cutStepHiggsMass.resize(cutStepCount);
+        _cutStepHiggsMass01.resize(cutStepCount);
+        _cutStepHiggsMass02.resize(cutStepCount);
+
 
         for (size_t i = 0; i < cutStepCount; ++i) {
             const TString titleSuffix = TString::Format(" (%s)", _cutStepLabels.at(i).c_str());
@@ -1504,8 +1510,11 @@ class ttHHanalyzer_base {
                                           "Leading b-tag discriminant"+titleSuffix, 50, 0, 1);
             _cutStepHadWMass.at(i) = new TH1F(TString::Format("cutStep_%zu_hadW", i),
                                               "m_{W,had} [GeV]"+titleSuffix, 50, 0, 300);
-            _cutStepHiggsMass.at(i) = new TH1F(TString::Format("cutStep_%zu_higgs", i),
-                                               "m_{bb} closest to Higgs [GeV]"+titleSuffix, 50, 0, 300);
+            _cutStepHiggsMass01.at(i) = new TH1F(TString::Format("cutStep_%zu_higgs can01", i),
+                                               "m_{bb} closest to Higgs 1st candidate [GeV]"+titleSuffix, 50, 0, 300);
+            _cutStepHiggsMass02.at(i) = new TH1F(TString::Format("cutStep_%zu_higgs can02", i),
+                                               "m_{bb} closest to Higgs 2nd candiate [GeV]"+titleSuffix, 50, 0, 300);
+
         }
 	
 	_histoDirs = tmpDirs;

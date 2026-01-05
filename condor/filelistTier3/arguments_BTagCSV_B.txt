@@ -1,3 +1,0 @@
-/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_BTagCSV_B_20251222-163036/filelist_BTagCSV_B_0.txt BTagCSV_B_0.root 1.0 2017 Data BTagCSV_B B
-/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_BTagCSV_B_20251222-163036/filelist_BTagCSV_B_1.txt BTagCSV_B_1.root 1.0 2017 Data BTagCSV_B B
-/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_BTagCSV_B_20251222-163036/filelist_BTagCSV_B_2.txt BTagCSV_B_2.root 1.0 2017 Data BTagCSV_B B

@@ -1,1 +1,7 @@
 corrlib
+output_*.root
+condor
+proxy.cert
+ttHHanalyzer_base
+tmp
+.DS_Store

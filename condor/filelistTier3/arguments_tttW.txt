@@ -1,5 +1,0 @@
-/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_tttW_20251222-163036/filelist_tttW_0.txt tttW_0.root 0.00008453854444 2017 MC tttW A
-/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_tttW_20251222-163036/filelist_tttW_1.txt tttW_1.root 0.00008453854444 2017 MC tttW A
-/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_tttW_20251222-163036/filelist_tttW_2.txt tttW_2.root 0.00008453854444 2017 MC tttW A
-/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_tttW_20251222-163036/filelist_tttW_3.txt tttW_3.root 0.00008453854444 2017 MC tttW A
-/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_tttW_20251222-163036/filelist_tttW_4.txt tttW_4.root 0.00008453854444 2017 MC tttW A

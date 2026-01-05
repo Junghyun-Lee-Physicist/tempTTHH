@@ -1,8 +1,0 @@
-/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_BTagCSV_D_20251222-163036/filelist_BTagCSV_D_0.txt BTagCSV_D_0.root 1.0 2017 Data BTagCSV_D D
-/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_BTagCSV_D_20251222-163036/filelist_BTagCSV_D_1.txt BTagCSV_D_1.root 1.0 2017 Data BTagCSV_D D
-/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_BTagCSV_D_20251222-163036/filelist_BTagCSV_D_2.txt BTagCSV_D_2.root 1.0 2017 Data BTagCSV_D D
-/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_BTagCSV_D_20251222-163036/filelist_BTagCSV_D_3.txt BTagCSV_D_3.root 1.0 2017 Data BTagCSV_D D
-/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_BTagCSV_D_20251222-163036/filelist_BTagCSV_D_4.txt BTagCSV_D_4.root 1.0 2017 Data BTagCSV_D D
-/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_BTagCSV_D_20251222-163036/filelist_BTagCSV_D_5.txt BTagCSV_D_5.root 1.0 2017 Data BTagCSV_D D
-/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_BTagCSV_D_20251222-163036/filelist_BTagCSV_D_6.txt BTagCSV_D_6.root 1.0 2017 Data BTagCSV_D D
-/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3/tmp_BTagCSV_D_20251222-163036/filelist_BTagCSV_D_7.txt BTagCSV_D_7.root 1.0 2017 Data BTagCSV_D D

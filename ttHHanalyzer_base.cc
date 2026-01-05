@@ -361,16 +361,19 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
             newJet->mass_DiffRatio = 0.0f;
         }
 
-        // 이벤트에 등록
+        // 이벤트에 등�
+	// WP에 따른 분류 로직
         thisEvent->selectJet(newJet);
         if (newJet->bTagCSV >= objectJet::valbTagMedium) {
             thisEvent->selectbJet(newJet);
-        } else {
+        } 
+	else if (newJet->bTagCSV < objectJet::valbTagLoose) {
             thisEvent->selectLightJet(newJet);
         }
-        if (newJet->bTagCSV >= objectJet::valbTagLoose) {
-            thisEvent->selectLoosebJet(newJet);
-        }
+////        if (newJet->bTagCSV >= objectJet::valbTagLoose) {
+////            thisEvent->selectLoosebJet(newJet);
+////        }
+
     }   // <--- Jet Loop End (여기가 닫혔는지 꼭 확인!)
     
 	thisEvent->orderJets();
@@ -456,14 +459,17 @@ bool ttHHanalyzer_base::selectObjects(event *thisEvent){
         }
     }
 
-    float higgsMass = -1.0f;
-    if (_bbMassMin1Higgs > 0.0f && _bbMassMin2Higgs > 0.0f) {
-        higgsMass = (std::fabs(_bbMassMin1Higgs - cHiggsMass) < std::fabs(_bbMassMin2Higgs - cHiggsMass))
-                        ? _bbMassMin1Higgs
-                        : _bbMassMin2Higgs;
-    }
+    // This is the logic of choosing single higgs mass
+    // It could be right but we need to think about it..
+    // in 5th Jan 2026
+////    float higgsMass = -1.0f;
+////    if (_bbMassMin1Higgs > 0.0f && _bbMassMin2Higgs > 0.0f) {
+////        higgsMass = (std::fabs(_bbMassMin1Higgs - cHiggsMass) < std::fabs(_bbMassMin2Higgs - cHiggsMass))
+////                        ? _bbMassMin1Higgs
+////                        : _bbMassMin2Higgs;
+////    }
 
-    fillCutStepHist(CutStep::kNoCut, thisEvent, hadWMass, higgsMass);
+    fillCutStepHist(CutStep::kNoCut, thisEvent, hadWMass);
 
     if(cut["trigger"] > 0 && thisEvent->getHadTriggerAccept() == false){
         return false;
@@ -472,7 +478,7 @@ bool ttHHanalyzer_base::selectObjects(event *thisEvent){
     cutflow["HadTrigger"]+=1;                 
     hCutFlow->Fill("HadTrigger",1);
     hCutFlow_w->Fill("HadTrigger",_weight);
-    fillCutStepHist(CutStep::kHadTrigger, thisEvent, hadWMass, higgsMass);
+    fillCutStepHist(CutStep::kHadTrigger, thisEvent, hadWMass);
 
     ////////if(cut["trigger"] > 0 && thisEvent->getMuonTriggerAccept() == false)
     ////////{
@@ -488,7 +494,7 @@ bool ttHHanalyzer_base::selectObjects(event *thisEvent){
     cutflow["noiseFilter"]+=1;
     hCutFlow->Fill("noiseFilter",1);
     hCutFlow_w->Fill("noiseFilter",_weight);
-    fillCutStepHist(CutStep::kNoiseFilter, thisEvent, hadWMass, higgsMass);
+    fillCutStepHist(CutStep::kNoiseFilter, thisEvent, hadWMass);
 
 ///    if(cut["pv"] < 0 && thisEvent->getPVvalue() == false){
 ///        return false;
@@ -499,7 +505,7 @@ bool ttHHanalyzer_base::selectObjects(event *thisEvent){
     cutflow["pv>=1"]+=1;
     hCutFlow->Fill("pv>=1",1);
     hCutFlow_w->Fill("pv>=1",_weight);	
-    fillCutStepHist(CutStep::kPrimaryVertex, thisEvent, hadWMass, higgsMass);
+    fillCutStepHist(CutStep::kPrimaryVertex, thisEvent, hadWMass);
 
 
     if(!(thisEvent->getnSelJet() >= cut["nJets"] )){
@@ -508,7 +514,7 @@ bool ttHHanalyzer_base::selectObjects(event *thisEvent){
     cutflow["njets>=6"]+=1;                 
     hCutFlow->Fill("njets>=6",1);
     hCutFlow_w->Fill("njets>=6",_weight);
-    fillCutStepHist(CutStep::kNumJets, thisEvent, hadWMass, higgsMass);
+    fillCutStepHist(CutStep::kNumJets, thisEvent, hadWMass);
 
     ////if(!(thisEvent->getnbJet() >= cut["nbJets"])){
     ////        return false;
@@ -526,7 +532,7 @@ bool ttHHanalyzer_base::selectObjects(event *thisEvent){
     cutflow["6thJetsPT>40"]+=1;
     hCutFlow->Fill("6thJetsPT>40",1);
     hCutFlow_w->Fill("6thJetsPT>40",_weight);
-    fillCutStepHist(CutStep::kSixthJetPt, thisEvent, hadWMass, higgsMass);
+    fillCutStepHist(CutStep::kSixthJetPt, thisEvent, hadWMass);
 
     if(!(thisEvent->getnVetoLepton() == cut["nLeptons"])){
         return false;
@@ -534,7 +540,7 @@ bool ttHHanalyzer_base::selectObjects(event *thisEvent){
     cutflow["nlepton==0"]+=1;                 
     hCutFlow->Fill("nlepton==0", 1);
     hCutFlow_w->Fill("nlepton==0", _weight);
-    fillCutStepHist(CutStep::kLeptonVeto, thisEvent, hadWMass, higgsMass);
+    fillCutStepHist(CutStep::kLeptonVeto, thisEvent, hadWMass);
 
     thisEvent->getStatsComb(thisEvent->getSelJets(), thisEvent->getSelLeptons(), ljetStat);
     thisEvent->getStatsComb(thisEvent->getSelbJets(), thisEvent->getSelLeptons(), lbjetStat);
@@ -546,7 +552,7 @@ bool ttHHanalyzer_base::selectObjects(event *thisEvent){
     cutflow["HT>500"]+=1;
     hCutFlow->Fill("HT>500",1);
     hCutFlow_w->Fill("HT>500",_weight);
-    fillCutStepHist(CutStep::kHT, thisEvent, hadWMass, higgsMass);
+    fillCutStepHist(CutStep::kHT, thisEvent, hadWMass);
 
  
     ////if(!(thisEvent->getnLightJet() >= cut["nlJets"])){
@@ -563,18 +569,19 @@ bool ttHHanalyzer_base::selectObjects(event *thisEvent){
     cutflow["30<HadW<250"]+=1;
     hCutFlow->Fill("30<HadW<250",1);
     hCutFlow_w->Fill("30<HadW<250",_weight);
-    fillCutStepHist(CutStep::kHadWMass, thisEvent, hadWMass, higgsMass);
+    fillCutStepHist(CutStep::kHadWMass, thisEvent, hadWMass);
 
-    const float higgsMassMin = 90.0f;
-    const float higgsMassMax = 160.0f;
-    if (_bbMassMin1Higgs < higgsMassMin || _bbMassMin1Higgs > higgsMassMax ||
-        _bbMassMin2Higgs < higgsMassMin || _bbMassMin2Higgs > higgsMassMax) {
-        return false;
-    }
-    cutflow["HiggsMassWindow"]+=1;
-    hCutFlow->Fill("HiggsMassWindow",1);
-    hCutFlow_w->Fill("HiggsMassWindow",_weight);
-    fillCutStepHist(CutStep::kHiggsMass, thisEvent, hadWMass, higgsMass);
+    // We do not use higgs window right now.. in 05th Jan 2026
+////    const float higgsMassMin = 90.0f;
+////    const float higgsMassMax = 160.0f;
+////    if (_bbMassMin1Higgs < higgsMassMin || _bbMassMin1Higgs > higgsMassMax ||
+////        _bbMassMin2Higgs < higgsMassMin || _bbMassMin2Higgs > higgsMassMax) {
+////        return false;
+////    }
+////    cutflow["HiggsMassWindow"]+=1;
+////    hCutFlow->Fill("HiggsMassWindow",1);
+////    hCutFlow_w->Fill("HiggsMassWindow",_weight);
+////    fillCutStepHist(CutStep::kHiggsMass, thisEvent, hadWMass);
 
 
     ////if(thisEvent->getSelLeptons()->at(0)->charge == thisEvent->getSelLeptons()->at(1)->charge){
@@ -603,7 +610,7 @@ bool ttHHanalyzer_base::selectObjects(event *thisEvent){
     cutflow["nTotal"]+=1;
     hCutFlow->Fill("nTotal",1);
     hCutFlow_w->Fill("nTotal",_weight);
-    fillCutStepHist(CutStep::kTotal, thisEvent, hadWMass, higgsMass);
+    fillCutStepHist(CutStep::kTotal, thisEvent, hadWMass);
 
     /*	std::cout << x.first  // string (key)
 		  << ':' 
