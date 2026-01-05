@@ -9,8 +9,6 @@
 
 #include "correction.h"
 
-using namespace std;
-
 #include "Logger.h"
 using namespace Logger;
  
