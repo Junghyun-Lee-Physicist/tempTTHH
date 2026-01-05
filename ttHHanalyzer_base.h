@@ -451,11 +451,11 @@ class event{
 	return _selectGenParts.size(); 
     }
 
-    int getnbJet(){
+    int getnbJet() const {
 	return _selectbJets.size(); 
     }
 
-    int getnLightJet(){
+    int getnLightJet() const {
     	return _selectLightJets.size(); 
     }
 
@@ -467,7 +467,7 @@ class event{
 	return _selectHadronicHiggses.size();
     }
 
-    int getnSelJet(){
+    int getnSelJet() const {
 	return _selectJets.size(); 
     }
 
