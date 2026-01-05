@@ -421,8 +421,9 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
     fillStep(CutStep::kNoCut);
 
     fillStep(CutStep::kHadTrigger);
-    fillStep(CutStep::kNoiseFilter);
-
+        const int bin = static_cast<int>(idx) + 1;
+        hCutFlow->AddBinContent(bin, 1.0);
+        hCutFlow_w->AddBinContent(bin, _weight);
     fillStep(CutStep::kPrimaryVertex);
     fillStep(CutStep::kNumJets);
     fillStep(CutStep::kSixthJetPt);
