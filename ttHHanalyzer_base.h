@@ -40,10 +40,10 @@ const float cZMass = 91.;
 
 
 std::map<std::string, float> cut { 
-    {"nJets", 6} // nJets higher than 
+    {"nJets", 7} // nJets higher than 
     , {"nLeptons", 0} // nLepton equals to
     //, {"nVetoLeptons", 0} // nVetoLepton equals to
-    , {"nbJets", 0}
+    , {"nbJets", 4}
     , {"jetPt", 30} // jet pT higher than
     ////, {"leadElePt", 25} // leadElectron pT higher than
     ////, {"leadMuonPt", 25} // leadMuon pT higher than
@@ -1041,15 +1041,31 @@ class ttHHanalyzer_base {
         kSixthJetPt,
         kLeptonVeto,
         kHT,
+	kNumbJets,
         kHadWMass,
         kHiggsMass,
         kTotal
     };
 
+    // cutStepLabels must match above CutStep!!!
+    const std::vector<std::string> _cutStepLabels = {
+        "noCut",
+        "HadTrigger",
+        "noiseFilter",
+        "pv>=1",
+        "njets>=7",
+        "6thJetsPT>40",
+        "nlepton==0",
+        "HT>500",
+        "nbjets>=4",
+        "30<HadW<250",
+        "HiggsMassWindow",
+        "nTotal"
+    };
+
 
     // [수정] 라벨 벡터는 const static 혹은 생성자에서 초기화하도록 변경 권장하나,
     // 기존 구조를 존중하여 멤버 변수로 유지하되 초기화 방식만 바꿉니다.
-    std::vector<std::string> _cutStepLabels;
     std::vector<TH1F*> _cutStepJetPt;
     std::vector<TH1F*> _cutStepJetEta;
     std::vector<TH1F*> _cutStepJetPhi;
@@ -1478,21 +1494,6 @@ class ttHHanalyzer_base {
         tmpDirs.push_back(cutflowDir);
         cutflowDir->cd();
 
-        // 1. [추가/수정] CutStep 라벨 정의 (Enum 순서와 100% 일치해야 함)
-        _cutStepLabels = {
-            "noCut",
-            "HadTrigger",
-            "noiseFilter",
-            "pv>=1",
-            "njets>=6",
-            "6thJetsPT>40",
-            "nlepton==0",
-            "HT>500",
-            "30<HadW<250",
-            "HiggsMassWindow", // kHiggsMass
-            "nTotal"
-        };
-
         // 2. [추가] 카운터 벡터 초기화
         size_t nSteps = _cutStepLabels.size();
         _cutFlowCount.assign(nSteps, 0.0);
@@ -1535,6 +1536,7 @@ class ttHHanalyzer_base {
             _cutStepHiggsMass01.at(i) = new TH1F(TString::Format("cutStep_%zu_higgs can01", i),
                                                "m_{bb} closest to Higgs 1st candidate [GeV]"+titleSuffix, 50, 0, 300);
             _cutStepHiggsMass02.at(i) = new TH1F(TString::Format("cutStep_%zu_higgs can02", i),
+                                               "m_{bb} closest to Higgs 2nd candidate [GeV]"+titleSuffix, 50, 0, 300);
 
             // hCutFlow 축 라벨 설정         
 	    if (i < _cutStepLabels.size()) {

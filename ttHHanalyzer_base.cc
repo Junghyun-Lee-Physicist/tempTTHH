@@ -535,7 +535,7 @@ bool ttHHanalyzer_base::selectObjects(event *thisEvent){
     processStep(CutStep::kPrimaryVertex, hadWMass);
 
 
-    // Step 4: nJets >= 6
+    // Step 4: nJets >= 7
     if(!(thisEvent->getnSelJet() >= cut["nJets"] )){
         return false;
     }
@@ -563,14 +563,22 @@ bool ttHHanalyzer_base::selectObjects(event *thisEvent){
     }
     processStep(CutStep::kHT, hadWMass);
 
-    // Step 8: Hadronic W Mass
+
+    // Step 8: nbJets >= 4
+    if(!(thisEvent->getnSelJet() >= cut["nbJets"] )){
+        return false;
+    }
+    processStep(CutStep::kNumbJets, hadWMass);
+
+
+    // Step 9: Hadronic W Mass
     if (hadWMass < 0.0f || hadWMass > 250.0f || hadWMass < 30.0f) {
         return false;
     }
     processStep(CutStep::kHadWMass, hadWMass);
 
 
-    // Step 9: Higgs Mass Window (¿¿ ¿¿¿¿ ¿ ¿¿¿¿ pass)
+    // Step 10: Higgs Mass Window (¿¿ ¿¿¿¿ ¿ ¿¿¿¿ pass)
     // We do not use higgs window right now.. in 05th Jan 2026
 ////    const float higgsMassMin = 90.0f;
 ////    const float higgsMassMax = 160.0f;
@@ -584,7 +592,7 @@ bool ttHHanalyzer_base::selectObjects(event *thisEvent){
 ////    fillCutStepHist(CutStep::kHiggsMass, thisEvent, hadWMass);
 
     
-    // Step 10: Total
+    // Step 11: Total
     processStep(CutStep::kTotal, hadWMass);
 	
    
