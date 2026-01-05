@@ -13,3 +13,10 @@
 - Added ttHHanalyzer_base analyzer/config/submitter equivalents mirroring bTagSF with updated names.
 2026-01-04 18:20:33 UTC
 - Updated ttHHanalyzer_base weights, JEC mass validation, chi2 fix, and memory handling with detailed inline comments.
+2026-01-05 07:49:45 UTC
+- Replaced cutflow magic strings with CutStep enum/labels for consistent ordering and binning.
+- Added cut-step validation histograms for jet, b-jet, and light-jet multiplicities.
+2026-01-05 08:03:05 UTC
+- Switched cutflow step filling to explicit bin updates to keep per-step histograms distinct.
+2026-01-05 08:10:07 UTC
+- Marked jet-count getters as const to allow const event usage in cut-step validation fills.
