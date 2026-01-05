@@ -21,14 +21,14 @@ class CondorJobManager:
         self.analyzer_path = f"{script_dir}"
         self.nameofExe = "ttHHanalyzer_bTagSF" # Name of compiled execution file to run analyzer
         ##self.path_output_base = "/eos/user/t/tom/<eos-storage or anywhere you want to store the outputs>"
-        self.path_output_base = "/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput"
+        self.path_output_base = "/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_TrigBTag"
         self.os_version = "el9"
         self.memorySize = "10 GB"
 ##        self.jobFlavour = "tomorrow"
 
-        self.config_file_path = os.path.join(self.analyzer_path, "AnalyzerConfig/Tier3_2017_FH.yml")
+        self.config_file_path = os.path.join(self.analyzer_path, "AnalyzerConfig/Tier3_2017_FH_TrigBTag.yml")
         self.proxy_path = os.path.join(self.analyzer_path, "proxy.cert")
-        self.condor_files_path = os.path.join(self.analyzer_path, "condor/filelistTier3")
+        self.condor_files_path = os.path.join(self.analyzer_path, "condor/filelistTier3_TrigBTag")
         self.sample_list_path = os.path.join(self.analyzer_path, "filelistTier3")
 
         self.make_directory(self.condor_files_path)
