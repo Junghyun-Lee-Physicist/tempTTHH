@@ -17,7 +17,8 @@
 
 # For Tier3 test
 ./ttHHanalyzer_bTagSF filelistTest/file_tt4b_Tier3.txt output_tt4b.root 0.001299971501 2017 MC tt4b A
-./ttHHanalyzer_bTagSF filelistTest/file_BTagCSVB_Tier3.txt output_BTagCSVB.root 1.0 2017 Data BTagCSVB B
+./ttHHanalyzer_base filelistTest/file_BTagCSVB_Tier3.txt output_BTagCSV_B.root 1.0 2017 Data BTagCSV_B B
+./ttHHanalyzer_base filelistTest/file_SingleMuonD_Tier3.txt output_SingleMuon_D.root 1.0 2017 Data SingleMuon_D D
 
 
 no warning make

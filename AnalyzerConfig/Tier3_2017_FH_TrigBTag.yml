@@ -116,6 +116,18 @@ samples:
     data_or_mc: "MC"
     sample_name: "ttTohadronic"
     era: ""
+  - filelist: "filelist_TTTo2L2Nu.txt"
+    output_dir: "TTTo2L2Nu"
+    weight: 0.1419595905
+    data_or_mc: "MC"
+    sample_name: "TTTo2L2Nu"
+    era: ""
+  - filelist: "filelist_TTToSemiLeptonic.txt"
+    output_dir: "TTToSemiLeptonic"
+    weight: 0.01049544017
+    data_or_mc: "MC"
+    sample_name: "TTToSemiLeptonic"
+    era: ""
   - filelist: "filelist_tttt.txt"
     output_dir: "tttt"
     weight: 0.00003242340643

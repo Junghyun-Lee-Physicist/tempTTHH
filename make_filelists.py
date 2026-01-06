@@ -5,7 +5,7 @@ import shutil
 # [설정] 경로 확인
 # ==============================================================================
 SAMPLE_DIR = "/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2017UL_30thDec2025_v8"
-OUTPUT_DIR = "filelistTier3/" 
+OUTPUT_DIR = "filelistTier3" 
 
 # ==============================================================================
 # [대상 디렉토리 목록]
@@ -40,7 +40,9 @@ directories = [
 ]
 
 mc_name_mapping = {
+    "TTTo2L2Nu": "TTTo2L2Nu",
     "TTToHadronic": "ttTohadronic",
+    "TTToSemiLeptonic": "TTToSemiLeptonic",
     "TTHHTo4b": "ttHH",
     "TT4b": "tt4b",
     "ttHTobb": "ttHtobb",
@@ -53,9 +55,6 @@ mc_name_mapping = {
     "TTZToBB": "ttZtobb",
     "TTZZTo4b": "ttZZto4b",
     "TTbb_4f": "ttbb",
-
-    "TTTo2L2Nu": "ttTo2L2Nu",
-    "TTToSemiLeptonic": "ttToSemiLeptonic",
     "TTWJetsToQQ": "ttWJetsToQQ",
 }
 

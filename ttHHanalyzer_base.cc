@@ -156,6 +156,11 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
             //          만약 4J3T가 같이 터졌으면 BTagCSV에 양보한다. (Veto)
             passHadTrig = (group_JetHT && !group_BTagCSV);
         }
+        else if (_sampleName.find("SingleMuon") != std::string::npos) {
+	    // [Rule 3] Single muon for Trigger Study
+	    // Handle the logic same as MC trigger path
+            passHadTrig = (group_BTagCSV || group_JetHT);
+        }
         else {
             // 안전장치
              std::cerr << "[ERROR] Unknown Data Sample: " << _sampleName << std::endl;
@@ -506,7 +511,7 @@ bool ttHHanalyzer_base::selectObjects(event *thisEvent){
 ////    }
 
     // Step 0: No Cut
-    fillCutStepHist(CutStep::kNoCut, thisEvent, hadWMass);
+    processStep(CutStep::kHadTrigger, hadWMass);
 
     // Step 1: Trigger    
     if(cut["trigger"] > 0 && thisEvent->getHadTriggerAccept() == false){
@@ -590,6 +595,7 @@ bool ttHHanalyzer_base::selectObjects(event *thisEvent){
 ////    hCutFlow->Fill("HiggsMassWindow",1);
 ////    hCutFlow_w->Fill("HiggsMassWindow",_weight);
 ////    fillCutStepHist(CutStep::kHiggsMass, thisEvent, hadWMass);
+    processStep(CutStep::kHiggsMass, hadWMass);
 
     
     // Step 11: Total
