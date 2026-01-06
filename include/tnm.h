@@ -58,7 +58,7 @@ struct commandLine
     double externalweight; //Gamze
     std::string runYear; //Gamze  
     //    int runYear; //Gamze  
-    std::string isData; //Gamze
+    std::string DataOrMC; //Gamze
     std::string sampleName; //Gamze
     std::string eraName; //Gamze
     

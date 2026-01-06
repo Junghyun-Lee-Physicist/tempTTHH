@@ -1809,8 +1809,8 @@ int main(int argc, char** argv){
 
     std::cout << "\n--------- Check arugments ---------------------------------------\n" << std::endl;
     std::cout << "  - [ output file name ] --> " << cl.outputfilename << std::endl;
-    std::cout << "  - [ runYear ] --> " << cl.runYear << std::endl;
-    std::cout << "  - [ isData ] --> " << cl.isData << std::endl;
+    std::cout << "  - [ runYear -string- ] --> " << cl.runYear << std::endl;
+    std::cout << "  - [ DataOrMC -string- ] --> " << cl.DataOrMC << std::endl;
     std::cout << "  - [ sampleName ] --> " << cl.sampleName << std::endl;
     std::cout << "  - [ eraName ] --> " << cl.eraName << std::endl;
     std::cout << "\n--------- Check arugments ---------------------------------------\n" << std::endl;
@@ -1830,7 +1830,7 @@ int main(int argc, char** argv){
 
     bool debugVerbose = false;
 
-    ttHHanalyzer_bTagSF analysis(cl.outputfilename, &ev, weight, true, cl.runYear, cl.isData, cl.sampleName, cl.eraName, debugVerbose);
+    ttHHanalyzer_bTagSF analysis(cl.outputfilename, &ev, weight, true, cl.runYear, cl.DataOrMC, cl.sampleName, cl.eraName, debugVerbose);
 
     if(debugVerbose) std::cout<<"debug : Before [ performAnalysis ] in main() function"<<std::endl;
     analysis.performAnalysis();

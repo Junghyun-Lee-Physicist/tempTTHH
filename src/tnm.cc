@@ -254,9 +254,9 @@ commandLine::decode(int argc, char** argv)
 
  // 5th (optional) command line argument - Gamze
   if ( argc > 5 )
-      isData = std::string(argv[5]);
+      DataOrMC = std::string(argv[5]);
   else
-      isData = std::string("nothing");
+      DataOrMC = std::string("nothing");
 
  // 6th (optional) command line argument - Gamze
   if ( argc > 6 )
