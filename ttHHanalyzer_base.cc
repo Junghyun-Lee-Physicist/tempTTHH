@@ -23,8 +23,9 @@ void ttHHanalyzer_base::loop(sysName sysType, bool up){
     int nevents = _ev->size();
 ////    nevents = 1000;
 
-    std::cout<<"weight = "<<_weight<<std::endl;  
-    _SampleWeight = _weight;
+    //std::cout<<"weight = "<<_weight<<std::endl;  
+    std::cout << "Base Weight = " << _baseWeight << std::endl; // [¿¿]
+    _SampleWeight = _baseWeight; // Tree ¿¿¿¿ Base Weight¿ ¿¿ (¿¿ ¿¿¿ ¿¿ evtWeight ¿¿)
 
     cout<<endl;
     print("This analyzer commented out [ \"WTF\" log ] in the header, Please check if you want!!!", "magenta", "warning");
@@ -440,22 +441,17 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
 
 bool ttHHanalyzer_base::selectObjects(event *thisEvent){
      
-    // [¿¿] Helper Lambda ¿¿ ¿¿
-    // ¿ ¿¿ ¿¿¿ "¿¿¿ + hCutFlow ¿¿¿ + ¿¿¿ ¿¿ ¿¿¿"¿ ¿¿
     auto processStep = [&](CutStep step, float wMassVal) {
         int idx = static_cast<int>(step);
         
-        // A. ¿¿ ¿¿¿ ¿¿
         if (idx < _cutFlowCount.size()) {
             _cutFlowCount[idx] += 1.0;
-            _cutFlowWeight[idx] += _weight;
+            _cutFlowWeight[idx] += _evtWeight; // [¿¿] _weight -> _evtWeight
         }
 
-        // B. CutFlow ¿¿¿¿¿ ¿¿¿ (¿¿¿ ¿¿ ¿¿¿ ¿¿ -> ¿¿)
         hCutFlow->Fill(idx); 
-        hCutFlow_w->Fill(idx, _weight);
+        hCutFlow_w->Fill(idx, _evtWeight);
 
-        // C. ¿¿¿ ¿¿¿ ¿¿ ¿¿¿ (¿¿ ¿¿ ¿¿¿)
         fillCutStepHist(step, thisEvent, wMassVal);
     };
 
@@ -845,24 +841,26 @@ void ttHHanalyzer_base::process(event* thisEvent, sysName sysType, bool up){
         }
     }
 
+    if (debugCorrections) {
+	std::cout << "[process] : Current evtWeight="<< _evtWeight << std::endl;
+    }
+
     _PUWeight = 1.0;
     // 2) Pileup reweighting for MC
     if (_DataOrMC != "Data") {
         float nTrue = _ev->Pileup_nTrueInt;
-        double puW  = corrMgr->getPUWeight(nTrue, "nominal");
-        _PUWeight   *= puW;
+        _PUWeight = corrMgr->getPUWeight(nTrue, "nominal");
         if (debugCorrections) {
             std::cout << "[PU] nTrue=" << nTrue 
-                      << " weight=" << puW 
-                      << " -> evtWeight=" << _weight << std::endl;
+                      << " weight=" << _PUWeight
         }
     }
 
     // 3) L1 pre-firing weight
     _L1PrefiringWeight = 1.0;
     if (_DataOrMC != "Data") {
-	float preFireWgt = _ev->L1PreFiringWeight_Nom;
-	_L1PrefiringWeight  *= preFireWgt;
+	_L1PrefiringWeight = _ev->L1PreFiringWeight_Nom;
+
         if (debugCorrections) {
 	    std::cout << "[L1PreFiring] weight=" << preFireWgt <<std::endl;
 	}
@@ -872,17 +870,19 @@ void ttHHanalyzer_base::process(event* thisEvent, sysName sysType, bool up){
     // 4) gen weight
     _genWeight = 1.0;
     if (_DataOrMC != "Data") {
-        float genWgt = _ev->genWeight;
-        _genWeight *= genWgt;
+        _genWeight = _ev->genWeight;
 	if (debugCorrections) {
             std::cout << "[genWeight] weight=" << _genWeight <<std::endl;
         }
     }
 
     if (_DataOrMC != "Data") {
-        // [UPDATE] ëª¨ë“  ê°€ì¤‘ì¹˜ë¥¼ ë©”ì¸ _weight ë³€ìˆ˜ì— ë°˜ì˜ (cutflow/histì— ì ìš©)
-        _weight *= (_PUWeight * _L1PrefiringWeight * _genWeight);
-        // if(debugCorrections) std::cout << "Final Event Weight: " << _weight << std::endl;
+	
+	// [¿¿] ¿¿¿ ¿¿¿ ¿¿ (¿¿ ¿¿¿ *= ¿¿¿¿, ¿¿/¿¿ ¿¿¿ ¿¿)
+        // ¿¿ ¿¿: _weight *= ... (¿¿ ¿¿¿ ¿¿ ¿¿¿ ¿¿¿)
+        // ¿¿ ¿¿: _evtWeight¿ ¿¿
+        _evtWeight *= (_PUWeight * _L1PrefiringWeight * _genWeight);
+        if(debugCorrections) std::cout << "Final Event Weight: " << _evtWeight << std::endl;
     }
 
     // 5) Build physics objects in thisEvent from the raw buffer
@@ -1087,68 +1087,68 @@ void ttHHanalyzer_base::fillHistos(event * thisEvent){
      float Mass_DiffRatio = thisEvent->getSelJets()->at(ih)->mass_DiffRatio;
 
      // [ ì§ì ‘ JEC í•´ì²´ í›„ ìµœì‹  ë²„ì „ ìž¬ì ìš©í•œ JEC - NanoAOD orinigal Pt (NanoAODì˜ ê¸°ë³¸ JEC) ] / [ NanoAOD original Pt ]
-     h_JEC_DiffRatio.at(ih)->Fill(JEC_DiffRatio, _weight);
-     h_JEC_Mass_DiffRatio.at(ih)->Fill(Mass_DiffRatio, _weight);
+     h_JEC_DiffRatio.at(ih)->Fill(JEC_DiffRatio, _evtWeight);
+     h_JEC_Mass_DiffRatio.at(ih)->Fill(Mass_DiffRatio, _evtWeight);
    }
   
    ////// for(int ih=0; ih < thisEvent->getnbJet() && ih < nHistsbJets; ih++){
-   //////     hbjetsPTs.at(ih)->Fill(thisEvent->getSelbJets()->at(ih)->getp4()->Pt(),_weight*thisEvent->getbTagSys());
-   //////     hbjetsEtas.at(ih)->Fill(thisEvent->getSelbJets()->at(ih)->getp4()->Eta(),_weight*thisEvent->getbTagSys());
-   //////     hbjetsBTagDisc.at(ih)->Fill(getbJetCSV(thisEvent).at(ih),_weight*thisEvent->getbTagSys());
+   //////     hbjetsPTs.at(ih)->Fill(thisEvent->getSelbJets()->at(ih)->getp4()->Pt(),_evtWeight*thisEvent->getbTagSys());
+   //////     hbjetsEtas.at(ih)->Fill(thisEvent->getSelbJets()->at(ih)->getp4()->Eta(),_evtWeight*thisEvent->getbTagSys());
+   //////     hbjetsBTagDisc.at(ih)->Fill(getbJetCSV(thisEvent).at(ih),_evtWeight*thisEvent->getbTagSys());
    ////// }
 
 
    ////// for(int ih=0; ih < thisEvent->getnLightJet() && ih < nHistsLightJets; ih++){
-   //////     hLightJetsPTs.at(ih)->Fill(thisEvent->getSelLightJets()->at(ih)->getp4()->Pt(),_weight*thisEvent->getbTagSys());
-   //////     hLightJetsEtas.at(ih)->Fill(thisEvent->getSelLightJets()->at(ih)->getp4()->Eta(),_weight*thisEvent->getbTagSys());
-   //////     hLightJetsBTagDisc.at(ih)->Fill(getlightJetCSV(thisEvent).at(ih),_weight*thisEvent->getbTagSys());
+   //////     hLightJetsPTs.at(ih)->Fill(thisEvent->getSelLightJets()->at(ih)->getp4()->Pt(),_evtWeight*thisEvent->getbTagSys());
+   //////     hLightJetsEtas.at(ih)->Fill(thisEvent->getSelLightJets()->at(ih)->getp4()->Eta(),_evtWeight*thisEvent->getbTagSys());
+   //////     hLightJetsBTagDisc.at(ih)->Fill(getlightJetCSV(thisEvent).at(ih),_evtWeight*thisEvent->getbTagSys());
    ////// }
 
-    /*    hleptonNumber->Fill(thisEvent->getnSelLepton(),_weight*thisEvent->getbTagSys());
+    /*    hleptonNumber->Fill(thisEvent->getnSelLepton(),_evtWeight*thisEvent->getbTagSys());
 
 
     if(thisEvent->getnSelMuon() == 2){
-	hDiMuonMass->Fill(thisEvent->getSelMuonsMass(),_weight*thisEvent->getbTagSys());
-	hDiMuonPT->Fill(thisEvent->getSelMuonsPT(),_weight*thisEvent->getbTagSys());
-	hDiMuonEta->Fill(thisEvent->getSelMuonsEta(),_weight*thisEvent->getbTagSys());
+	hDiMuonMass->Fill(thisEvent->getSelMuonsMass(),_evtWeight*thisEvent->getbTagSys());
+	hDiMuonPT->Fill(thisEvent->getSelMuonsPT(),_evtWeight*thisEvent->getbTagSys());
+	hDiMuonEta->Fill(thisEvent->getSelMuonsEta(),_evtWeight*thisEvent->getbTagSys());
     }
 
     if(thisEvent->getnSelElectron() == 2){
-	hDiElectronMass->Fill(thisEvent->getSelElectronsMass(),_weight*thisEvent->getbTagSys());
-	hDiElectronPT->Fill(thisEvent->getSelElectronsPT(),_weight*thisEvent->getbTagSys());
-	hDiElectronEta->Fill(thisEvent->getSelElectronsEta(),_weight*thisEvent->getbTagSys());
+	hDiElectronMass->Fill(thisEvent->getSelElectronsMass(),_evtWeight*thisEvent->getbTagSys());
+	hDiElectronPT->Fill(thisEvent->getSelElectronsPT(),_evtWeight*thisEvent->getbTagSys());
+	hDiElectronEta->Fill(thisEvent->getSelElectronsEta(),_evtWeight*thisEvent->getbTagSys());
     }
 
-    hleptonHT->Fill(thisEvent->getSelLeptonHT(),_weight*thisEvent->getbTagSys());
-    hST->Fill(thisEvent->getSelLeptonST(),_weight*thisEvent->getbTagSys());
-    hLeptonPT1->Fill(thisEvent->getSelLeptons()->at(0)->getp4()->Pt(), _weight*thisEvent->getbTagSys());
-    hLeptonEta1->Fill(thisEvent->getSelLeptons()->at(0)->getp4()->Eta(), _weight*thisEvent->getbTagSys());
-    hLeptonPT2->Fill(thisEvent->getSelLeptons()->at(1)->getp4()->Pt(), _weight*thisEvent->getbTagSys());
-    hLeptonEta2->Fill(thisEvent->getSelLeptons()->at(1)->getp4()->Eta(), _weight*thisEvent->getbTagSys());
+    hleptonHT->Fill(thisEvent->getSelLeptonHT(),_evtWeight*thisEvent->getbTagSys());
+    hST->Fill(thisEvent->getSelLeptonST(),_evtWeight*thisEvent->getbTagSys());
+    hLeptonPT1->Fill(thisEvent->getSelLeptons()->at(0)->getp4()->Pt(), _evtWeight*thisEvent->getbTagSys());
+    hLeptonEta1->Fill(thisEvent->getSelLeptons()->at(0)->getp4()->Eta(), _evtWeight*thisEvent->getbTagSys());
+    hLeptonPT2->Fill(thisEvent->getSelLeptons()->at(1)->getp4()->Pt(), _evtWeight*thisEvent->getbTagSys());
+    hLeptonEta2->Fill(thisEvent->getSelLeptons()->at(1)->getp4()->Eta(), _evtWeight*thisEvent->getbTagSys());
 
 
     if(thisEvent->getnSelMuon() > 0){
-	hMuonPT1->Fill(thisEvent->getSelMuons()->at(0)->getp4()->Pt(), _weight*thisEvent->getbTagSys());
-	hMuonEta1->Fill(thisEvent->getSelMuons()->at(0)->getp4()->Eta(), _weight*thisEvent->getbTagSys());
+	hMuonPT1->Fill(thisEvent->getSelMuons()->at(0)->getp4()->Pt(), _evtWeight*thisEvent->getbTagSys());
+	hMuonEta1->Fill(thisEvent->getSelMuons()->at(0)->getp4()->Eta(), _evtWeight*thisEvent->getbTagSys());
     }
     
     if(thisEvent->getnSelElectron() > 0){
-	hElePT1->Fill(thisEvent->getSelElectrons()->at(0)->getp4()->Pt(), _weight*thisEvent->getbTagSys());
-	hEleEta1->Fill(thisEvent->getSelElectrons()->at(0)->getp4()->Eta(), _weight*thisEvent->getbTagSys());
+	hElePT1->Fill(thisEvent->getSelElectrons()->at(0)->getp4()->Pt(), _evtWeight*thisEvent->getbTagSys());
+	hEleEta1->Fill(thisEvent->getSelElectrons()->at(0)->getp4()->Eta(), _evtWeight*thisEvent->getbTagSys());
     }
     
     if(thisEvent->getnSelMuon() > 1){
-	hMuonPT2->Fill(thisEvent->getSelMuons()->at(1)->getp4()->Pt(), _weight*thisEvent->getbTagSys());
-	hMuonEta2->Fill(thisEvent->getSelMuons()->at(1)->getp4()->Eta(), _weight*thisEvent->getbTagSys());
+	hMuonPT2->Fill(thisEvent->getSelMuons()->at(1)->getp4()->Pt(), _evtWeight*thisEvent->getbTagSys());
+	hMuonEta2->Fill(thisEvent->getSelMuons()->at(1)->getp4()->Eta(), _evtWeight*thisEvent->getbTagSys());
     }
     
     if(thisEvent->getnSelElectron() > 1){
-	hElePT2->Fill(thisEvent->getSelElectrons()->at(1)->getp4()->Pt(), _weight*thisEvent->getbTagSys());
-	hEleEta2->Fill(thisEvent->getSelElectrons()->at(1)->getp4()->Eta(), _weight*thisEvent->getbTagSys());
+	hElePT2->Fill(thisEvent->getSelElectrons()->at(1)->getp4()->Pt(), _evtWeight*thisEvent->getbTagSys());
+	hEleEta2->Fill(thisEvent->getSelElectrons()->at(1)->getp4()->Eta(), _evtWeight*thisEvent->getbTagSys());
     } 
 
-    hLepCharge1->Fill(thisEvent->getSelLeptons()->at(0)->charge, _weight*thisEvent->getbTagSys());
-    hLepCharge2->Fill(thisEvent->getSelLeptons()->at(1)->charge, _weight*thisEvent->getbTagSys());
+    hLepCharge1->Fill(thisEvent->getSelLeptons()->at(0)->charge, _evtWeight*thisEvent->getbTagSys());
+    hLepCharge2->Fill(thisEvent->getSelLeptons()->at(1)->charge, _evtWeight*thisEvent->getbTagSys());
     */
 }
 

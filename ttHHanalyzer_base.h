@@ -915,7 +915,8 @@ class ttHHanalyzer_base {
     enum sysName { kJES, kJER, kbTag, noSys };
     ttHHanalyzer_base(const std::string & cl, eventBuffer * ev, float weight = 1., bool systematics = false, 
     std::string runYear = "nothing", std::string DataOrMC = "nothing", std::string sampleName = "nothing", std::string era = "noInputEra", bool debug = "false") {
-	_weight = weight;
+	//_weight = weight;
+	_baseWeight = weight; // 데이터셋 공통 상수 (CrossSection * Lumi / SumGenWeight)
 	_ev = ev;
 	_cl = cl;
 	_sys = systematics;
@@ -996,7 +997,9 @@ class ttHHanalyzer_base {
 
  private: 
     bool _sys;
-    float _weight;
+    //float _weight;
+    float _baseWeight; // [추가] 데이터셋 공통 상수 (CrossSection * Lumi / SumGenWeight)
+    float _evtWeight;  // [추가] 이벤트별 최종 가중치 (매 이벤트 리셋)    
     float _SampleWeight;
     float _PUWeight;
     float _L1PrefiringWeight;
@@ -1143,7 +1146,7 @@ class ttHHanalyzer_base {
         }
         const auto* jets = thisEvent->getSelJets();
 ////        const auto* bjets = thisEvent->getSelbJets();
-        float weight = _weight * thisEvent->getbTagSys();
+        float weight = _evtWeight * thisEvent->getbTagSys();
 
         if (!jets->empty()) {
             _cutStepJetPt.at(idx)->Fill(jets->at(0)->getp4()->Pt(), weight);
