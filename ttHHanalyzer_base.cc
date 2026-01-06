@@ -854,7 +854,7 @@ void ttHHanalyzer_base::process(event* thisEvent, sysName sysType, bool up){
         _PUWeight = corrMgr->getPUWeight(nTrue, "nominal");
         if (debugCorrections) {
             std::cout << "[PU] nTrue=" << nTrue 
-                      << " weight=" << _PUWeight
+                      << " weight=" << _PUWeight;
         }
     }
 
@@ -864,7 +864,7 @@ void ttHHanalyzer_base::process(event* thisEvent, sysName sysType, bool up){
 	_L1PrefiringWeight = _ev->L1PreFiringWeight_Nom;
 
         if (debugCorrections) {
-	    std::cout << "[L1PreFiring] weight=" << preFireWgt <<std::endl;
+	    std::cout << "[L1PreFiring] weight=" << _L1PrefiringWeight <<std::endl;
 	}
     }
 
