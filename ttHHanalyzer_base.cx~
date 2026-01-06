@@ -822,6 +822,7 @@ void ttHHanalyzer_base::analyze(event *thisEvent){
 
 void ttHHanalyzer_base::process(event* thisEvent, sysName sysType, bool up){
 
+  
     _evtWeight = _baseWeight;
 
     // 1) Golden JSON filter for data
