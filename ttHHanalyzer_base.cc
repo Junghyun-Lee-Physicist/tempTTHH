@@ -507,7 +507,7 @@ bool ttHHanalyzer_base::selectObjects(event *thisEvent){
 ////    }
 
     // Step 0: No Cut
-    processStep(CutStep::kHadTrigger, hadWMass);
+    processStep(CutStep::kNoCut, hadWMass);
 
     // Step 1: Trigger    
     if(cut["trigger"] > 0 && thisEvent->getHadTriggerAccept() == false){
@@ -871,12 +871,12 @@ void ttHHanalyzer_base::process(event* thisEvent, sysName sysType, bool up){
 
     // 4) gen weight
     _genWeight = 1.0;
-    if (_DataOrMC != "Data") {
-        _genWeight = _ev->genWeight;
-	if (debugCorrections) {
-            std::cout << "[genWeight] weight=" << _genWeight <<std::endl;
-        }
-    }
+////    if (_DataOrMC != "Data") {
+////        _genWeight = _ev->genWeight;
+////	if (debugCorrections) {
+////            std::cout << "[genWeight] weight=" << _genWeight <<std::endl;
+////        }
+////    }
 
     if (_DataOrMC != "Data") {
 	
