@@ -3,7 +3,7 @@
 // 사용법:
 //   root -l -q makeBTagStackPlot.C
 //
-// 이 매크로는 모든 샘플의 "Reweight_<SampleName>.root" 파일들을 읽어서
+// 이 매크로는 모든 샘플의 "Validation_<SampleName>.root" 파일들을 읽어서
 // SF 미적용, SF 적용, SF+Reweight 적용 각각에 대한 stack plot을 생성합니다.
 
 #include <TFile.h>
@@ -124,7 +124,7 @@ void makeStackPlot_Final(TString varName, TString histNameBase, TString xTitle,
 
     
     // Data 파일 열기
-    TFile* fData = TFile::Open(path + "/Data/Reweight_Data.root");
+    TFile* fData = TFile::Open(path + "/Data/Validation_Data.root");
     if (!fData || fData->IsZombie()) {
         std::cerr << "Cannot open Data file!" << std::endl;
         return;
@@ -171,7 +171,7 @@ void makeStackPlot_Final(TString varName, TString histNameBase, TString xTitle,
         double totalMC = 0;
         
         for (auto& sample : samples) {
-            TString fileName = path + "/MC/Reweight_" + sample.name + ".root";
+            TString fileName = path + "/MC/Validation_" + sample.name + ".root";
             TFile* fSample = TFile::Open(fileName);
             
             if (!fSample || fSample->IsZombie()) {

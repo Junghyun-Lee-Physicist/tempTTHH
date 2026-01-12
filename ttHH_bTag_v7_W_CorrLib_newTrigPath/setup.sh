@@ -1,2 +1,2 @@
 
-source /Users/jhlee/Desktop/Work/sampleInfoMan/setenv.sh
+source sampleInfoMan/setenv.sh

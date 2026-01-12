@@ -1,5 +1,101 @@
 description: Internal structure of Analyzer Output files
 structure:
+  jet/h_JEC_DiffRatio_0:
+    type: Histogram
+    classname: TH1D
+    key_path: ()/jet/h_JEC_DiffRatio_0
+  jet/h_JEC_Mass_DiffRatio_0:
+    type: Histogram
+    classname: TH1D
+    key_path: ()/jet/h_JEC_Mass_DiffRatio_0
+  jet/h_JEC_DiffRatio_1:
+    type: Histogram
+    classname: TH1D
+    key_path: ()/jet/h_JEC_DiffRatio_1
+  jet/h_JEC_Mass_DiffRatio_1:
+    type: Histogram
+    classname: TH1D
+    key_path: ()/jet/h_JEC_Mass_DiffRatio_1
+  jet/h_JEC_DiffRatio_2:
+    type: Histogram
+    classname: TH1D
+    key_path: ()/jet/h_JEC_DiffRatio_2
+  jet/h_JEC_Mass_DiffRatio_2:
+    type: Histogram
+    classname: TH1D
+    key_path: ()/jet/h_JEC_Mass_DiffRatio_2
+  jet/h_JEC_DiffRatio_3:
+    type: Histogram
+    classname: TH1D
+    key_path: ()/jet/h_JEC_DiffRatio_3
+  jet/h_JEC_Mass_DiffRatio_3:
+    type: Histogram
+    classname: TH1D
+    key_path: ()/jet/h_JEC_Mass_DiffRatio_3
+  jet/h_JEC_DiffRatio_4:
+    type: Histogram
+    classname: TH1D
+    key_path: ()/jet/h_JEC_DiffRatio_4
+  jet/h_JEC_Mass_DiffRatio_4:
+    type: Histogram
+    classname: TH1D
+    key_path: ()/jet/h_JEC_Mass_DiffRatio_4
+  jet/h_JEC_DiffRatio_5:
+    type: Histogram
+    classname: TH1D
+    key_path: ()/jet/h_JEC_DiffRatio_5
+  jet/h_JEC_Mass_DiffRatio_5:
+    type: Histogram
+    classname: TH1D
+    key_path: ()/jet/h_JEC_Mass_DiffRatio_5
+  jet/h_JEC_DiffRatio_6:
+    type: Histogram
+    classname: TH1D
+    key_path: ()/jet/h_JEC_DiffRatio_6
+  jet/h_JEC_Mass_DiffRatio_6:
+    type: Histogram
+    classname: TH1D
+    key_path: ()/jet/h_JEC_Mass_DiffRatio_6
+  jet/h_JEC_DiffRatio_7:
+    type: Histogram
+    classname: TH1D
+    key_path: ()/jet/h_JEC_DiffRatio_7
+  jet/h_JEC_Mass_DiffRatio_7:
+    type: Histogram
+    classname: TH1D
+    key_path: ()/jet/h_JEC_Mass_DiffRatio_7
+  jet/h_JEC_DiffRatio_8:
+    type: Histogram
+    classname: TH1D
+    key_path: ()/jet/h_JEC_DiffRatio_8
+  jet/h_JEC_Mass_DiffRatio_8:
+    type: Histogram
+    classname: TH1D
+    key_path: ()/jet/h_JEC_Mass_DiffRatio_8
+  jet/h_JEC_DiffRatio_9:
+    type: Histogram
+    classname: TH1D
+    key_path: ()/jet/h_JEC_DiffRatio_9
+  jet/h_JEC_Mass_DiffRatio_9:
+    type: Histogram
+    classname: TH1D
+    key_path: ()/jet/h_JEC_Mass_DiffRatio_9
+  jet/h_JEC_DiffRatio_10:
+    type: Histogram
+    classname: TH1D
+    key_path: ()/jet/h_JEC_DiffRatio_10
+  jet/h_JEC_Mass_DiffRatio_10:
+    type: Histogram
+    classname: TH1D
+    key_path: ()/jet/h_JEC_Mass_DiffRatio_10
+  jet/h_JEC_DiffRatio_11:
+    type: Histogram
+    classname: TH1D
+    key_path: ()/jet/h_JEC_DiffRatio_11
+  jet/h_JEC_Mass_DiffRatio_11:
+    type: Histogram
+    classname: TH1D
+    key_path: ()/jet/h_JEC_Mass_DiffRatio_11
   CutflowKinematics/cutStep_0_jetPt:
     type: Histogram
     classname: TH1F
@@ -388,7 +484,7 @@ structure:
     type: Tree
     classname: TTree
     key_path: ()/Tree/Tree
-    num_entries: 3744656
+    num_entries: 200577
     branches:
     - passTrigger_HLT_IsoMu27
     - passTrigger_HLT_PFHT1050

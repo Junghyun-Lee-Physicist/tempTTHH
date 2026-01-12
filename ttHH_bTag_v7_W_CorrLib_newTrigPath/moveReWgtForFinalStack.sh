@@ -47,21 +47,21 @@ mkdir -p "${Dir}/MC" "${Dir}/Data"
 
 for mc in "${MC[@]}"; do
 
-    mv "Reweight_${mc}.root" "${Dir}/MC/Reweight_${mc}.root"
+    mv "Validation_${mc}.root" "${Dir}/MC/Validation_${mc}.root"
     
 done
 
 for data in "${DATA[@]}"; do
 
-    mv "Reweight_${data}.root" "${Dir}/Data/Reweight_${data}.root"
+    mv "Validation_${data}.root" "${Dir}/Data/Validation_${data}.root"
 
 done
 
 cd ${Dir}/MC
-rm -rf Reweight_ttJets.root
-hadd Reweight_ttJets.root Reweight_ttTohadronic.root Reweight_TTTo2L2Nu.root Reweight_TTToSemiLeptonic.root
+rm -rf Validation_ttJets.root
+hadd Validation_ttJets.root Validation_ttTohadronic.root Validation_TTTo2L2Nu.root Validation_TTToSemiLeptonic.root
 
 cd -
 cd ${Dir}/Data
-rm -rf Reweight_Data.root
-hadd Reweight_Data.root *.root
+rm -rf Validation_Data.root
+hadd Validation_Data.root *.root

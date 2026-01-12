@@ -1,0 +1,110 @@
+Welcome to the [ bash_profile ]
+Agent pid 91072
+[main] Current mode --> Step03_Validation
+Sample Name: BTagCSV_F
+Current mode type --> Step03_Validation
+Data or MC : Data
+Weight : 1
+  [ makeBTagWeight::Loop() ] : Current Sample --> Data BTagCSV, Era : F
+  [ WARNING ] Empty bin when HT - 678.48, Jet6PT - 91.6421 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 681.618, Jet6PT - 91.1538 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 698.069, Jet6PT - 91.0541 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 687.288, Jet6PT - 92.4381 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 668.842, Jet6PT - 90.9058 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 686.005, Jet6PT - 91.4464 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 686.57, Jet6PT - 99.8254 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 673.888, Jet6PT - 91.5002 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 671.446, Jet6PT - 92.9975 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 677.104, Jet6PT - 90.5143 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 698.449, Jet6PT - 90.8745 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 689.664, Jet6PT - 93.9443 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 656.319, Jet6PT - 90.9644 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 696.815, Jet6PT - 90.8682 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 697.252, Jet6PT - 92.4973 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 632.805, Jet6PT - 90.1897 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 692.095, Jet6PT - 90.0751 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 671.997, Jet6PT - 90.2941 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 691.59, Jet6PT - 96.9162 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 664.737, Jet6PT - 90.7728 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 693.179, Jet6PT - 92.6251 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 658.253, Jet6PT - 90.6697 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 673.521, Jet6PT - 90.0615 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 690.18, Jet6PT - 97.053 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 677.497, Jet6PT - 91.6807 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 685.199, Jet6PT - 90.0646 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 694.614, Jet6PT - 90.912 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 680.508, Jet6PT - 90.1574 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 687.223, Jet6PT - 90.6339 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 678.209, Jet6PT - 92.1983 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 671.011, Jet6PT - 91.4356 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 685.529, Jet6PT - 91.9999 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 670.528, Jet6PT - 90.1405 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 695.113, Jet6PT - 90.3675 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 686.033, Jet6PT - 100.874 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 661.962, Jet6PT - 96.6678 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 686.28, Jet6PT - 91.0186 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 692.064, Jet6PT - 93.2607 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 661.997, Jet6PT - 90.683 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 682.447, Jet6PT - 92.5218 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 693.065, Jet6PT - 90.5903 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 668.683, Jet6PT - 90.6003 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 695.913, Jet6PT - 90.1216 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 669.575, Jet6PT - 90.1215 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 695.651, Jet6PT - 92.5741 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 674.2, Jet6PT - 90.1489 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 665.201, Jet6PT - 93.4541 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 672.16, Jet6PT - 90.6175 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 691.008, Jet6PT - 91.5732 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 669.054, Jet6PT - 92.5524 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+Event loop completed.
+Output name --> Validation_BTagCSV_F.root

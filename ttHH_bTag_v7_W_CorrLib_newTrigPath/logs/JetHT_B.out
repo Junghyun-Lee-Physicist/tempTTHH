@@ -1,0 +1,120 @@
+Welcome to the [ bash_profile ]
+Agent pid 90429
+[main] Current mode --> Step03_Validation
+Sample Name: JetHT_B
+Current mode type --> Step03_Validation
+Data or MC : Data
+Weight : 1
+  [ makeBTagWeight::Loop() ] : Current Sample --> Data JetHT, Era : B
+  [ WARNING ] Empty bin when HT - 691.943, Jet6PT - 96.13 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 699.904, Jet6PT - 95.5487 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 699.477, Jet6PT - 91.1518 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 663.36, Jet6PT - 90.827 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 686.995, Jet6PT - 91.1334 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 666.366, Jet6PT - 93.1443 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 678.712, Jet6PT - 90.0844 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 677.796, Jet6PT - 90.0217 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 655.973, Jet6PT - 91.9427 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 699.741, Jet6PT - 95.544 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 653.917, Jet6PT - 90.6825 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 662.808, Jet6PT - 97.8327 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 655.988, Jet6PT - 90.1026 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 652.801, Jet6PT - 90.2512 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 668.748, Jet6PT - 92.1828 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 688.275, Jet6PT - 99.5998 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 675.804, Jet6PT - 94.431 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 639.457, Jet6PT - 93.1339 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 696.446, Jet6PT - 91.7393 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 680.773, Jet6PT - 90.4175 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 662.998, Jet6PT - 90.8109 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 691.303, Jet6PT - 90.1391 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 652.52, Jet6PT - 93.538 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 638.592, Jet6PT - 91.4203 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 683.224, Jet6PT - 90.5719 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 687.477, Jet6PT - 94.6664 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 688.988, Jet6PT - 91.7026 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 685.147, Jet6PT - 95.7571 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 687.904, Jet6PT - 90.4341 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 672.338, Jet6PT - 90.8587 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 679.326, Jet6PT - 91.2069 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 682.236, Jet6PT - 93.6927 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 695.677, Jet6PT - 98.2424 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 681.454, Jet6PT - 90.0095 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 696.704, Jet6PT - 95.694 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 644.695, Jet6PT - 91.0477 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 652.178, Jet6PT - 93.8908 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 699.314, Jet6PT - 90.6895 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 686.247, Jet6PT - 90.506 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 671.389, Jet6PT - 90.7457 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 698.65, Jet6PT - 93.4125 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 690.721, Jet6PT - 90.0038 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 665.443, Jet6PT - 91.1926 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 627, Jet6PT - 91.3575 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 664.025, Jet6PT - 90.7569 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 646.106, Jet6PT - 93.3972 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 664.045, Jet6PT - 92.9323 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 670.483, Jet6PT - 91.8443 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 697.917, Jet6PT - 90.1797 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 690.107, Jet6PT - 93.685 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 662.229, Jet6PT - 95.2604 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 654.764, Jet6PT - 90.507 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 677.508, Jet6PT - 92.5458 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 697.398, Jet6PT - 91.2885 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 665.194, Jet6PT - 91.9351 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+Event loop completed.
+Output name --> Validation_JetHT_B.root

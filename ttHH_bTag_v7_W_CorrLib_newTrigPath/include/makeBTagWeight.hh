@@ -28,7 +28,7 @@ class makeBTagWeight {
        Bool_t          passTrigger_4J3T_B;
        Bool_t          passTrigger_4J3T_CDEF;
        Int_t           nMuons;
-       //Int_t           nElecs;
+       Int_t           nElecs;
        Int_t           nJets;
        //Int_t           nbJets;
        Float_t         HT;
@@ -46,6 +46,7 @@ class makeBTagWeight {
        //Int_t         partonFlavs[30];
        //UInt_t          eventNumber;
        //UInt_t          runNumber;
+       Float_t         genWeight;
        Float_t         PUWeight;
        Float_t         L1PrefiringWeight;
        Bool_t          failGoldenJson;
@@ -62,7 +63,7 @@ class makeBTagWeight {
        TBranch        *b_passTrigger_4J3T_B;   //!
        TBranch        *b_passTrigger_4J3T_CDEF;   //!
        TBranch        *b_nMuons;   //!
-       //TBranch        *b_nElecs;   //!
+       TBranch        *b_nElecs;   //!
        TBranch        *b_nJets;   //!
        //TBranch        *b_nbJets;   //!
        TBranch        *b_HT;   //!
@@ -73,7 +74,8 @@ class makeBTagWeight {
        //TBranch        *b_partonFlavs;   //! 
        //TBranch        *b_eventNumber;   //!
        //TBranch        *b_runNumber;   //!
-      
+ 
+       TBranch        *b_genWeight;
        TBranch        *b_PUWeight;
        TBranch        *b_L1PrefiringWeight;
        TBranch        *b_failGoldenJson;
@@ -89,13 +91,16 @@ class makeBTagWeight {
        virtual bool     Notify();
        virtual void     Show(Long64_t entry = -1);
 
+       void setMode(TString _name = "notDefined");
        void setNtupleName(TString _name = "notDefined");
        void setDebug(bool Debug = false, int nEvt = 10);
+       TString getMode();
        TString getInputName();
        TString getOutputName();
 
     private:
 
+       TString modeType   = "notDefined";
        TString ntupleName = "notDefined";
 
        // 스케일 팩터 계산을 위한 변수들
@@ -141,7 +146,6 @@ makeBTagWeight::makeBTagWeight(TTree *tree) : fChain(0)
     jetEta = 0;
     bTagScore = 0;
     hadFlavs = 0;
-
 }
 
 makeBTagWeight::~makeBTagWeight()
@@ -167,6 +171,10 @@ Long64_t makeBTagWeight::LoadTree(Long64_t entry)
    return centry;
 }
 
+void makeBTagWeight::setMode(TString _name){
+    modeType = _name;
+}
+
 void makeBTagWeight::setNtupleName(TString _name){
     ntupleName = _name;
 }
@@ -187,6 +195,12 @@ TString makeBTagWeight::getOutputName(){
 //    std::cout<<"Setted output name --> "<<ntupleName<<".root"<<std::endl;
     return ntupleName + ".root";
 }
+
+TString makeBTagWeight::getMode(){
+    return modeType;
+}
+
+
 
 #endif // #ifdef makeBTagWeight_cxx
 

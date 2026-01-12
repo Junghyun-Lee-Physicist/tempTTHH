@@ -16,6 +16,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Tuple, Optional
 
+##mode = "Step01_Calc_ReWgt"
+##mode = "Step02_Apply_ReWgt"
+mode = "Step03_Validation"
+
 # ======================= EDIT SAMPLES HERE =======================
 SAMPLES: List[str] = [
 
@@ -76,7 +80,7 @@ SAMPLES: List[str] = [
 # ================================================================
 
 # ---------------------- SETTINGS ----------------------
-COMMAND_TEMPLATE   = "./exe_bTagStudy {sample}"
+COMMAND_TEMPLATE   = "./exe_bTagStudy {sample}" + f" {mode}"
 WORKDIR            = "."
 MAX_CONCURRENT     = 20
 MIN_FREE_MEM_MB    = 4000            # Launch only if MemAvailable > this

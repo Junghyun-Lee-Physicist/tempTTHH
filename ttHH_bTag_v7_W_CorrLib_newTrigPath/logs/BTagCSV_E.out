@@ -1,0 +1,60 @@
+Welcome to the [ bash_profile ]
+Agent pid 91057
+[main] Current mode --> Step03_Validation
+Sample Name: BTagCSV_E
+Current mode type --> Step03_Validation
+Data or MC : Data
+Weight : 1
+  [ makeBTagWeight::Loop() ] : Current Sample --> Data BTagCSV, Era : E
+  [ WARNING ] Empty bin when HT - 688.603, Jet6PT - 98.1826 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 692.173, Jet6PT - 91.4034 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 668.717, Jet6PT - 90.8692 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 690.083, Jet6PT - 90.7387 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 694.2, Jet6PT - 94.0429 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 678.6, Jet6PT - 92.5338 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 691.303, Jet6PT - 93.9966 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 648.562, Jet6PT - 92.7543 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 693.416, Jet6PT - 91.5448 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 650.287, Jet6PT - 90.4111 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 675.806, Jet6PT - 97.7562 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 691.989, Jet6PT - 93.2418 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 688.725, Jet6PT - 91.2793 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 642.813, Jet6PT - 90.3791 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 652.391, Jet6PT - 92.4348 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 699.855, Jet6PT - 93.427 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 659.567, Jet6PT - 90.0754 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 658.834, Jet6PT - 90.6264 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 690.898, Jet6PT - 98.4944 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 688.103, Jet6PT - 90.8478 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 625.56, Jet6PT - 90.8933 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 675.557, Jet6PT - 90.681 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 696.055, Jet6PT - 93.9505 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 678.332, Jet6PT - 90.6365 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+  [ WARNING ] Empty bin when HT - 691.14, Jet6PT - 91.9472 and sf = 0
+  [ WARNING ] Change sf [ 0 ] into -> 1.0
+Event loop completed.
+Output name --> Validation_BTagCSV_E.root

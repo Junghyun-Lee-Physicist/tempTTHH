@@ -13,6 +13,7 @@ void makeBTagWeight::Loop()
 {
     if (fChain == 0) return;
 
+
     TH1::AddDirectory(kFALSE);
 
     // 입력 파일 이름으로부터 샘플 이름과 데이터 여부를 결정
@@ -22,6 +23,16 @@ void makeBTagWeight::Loop()
         sampleName.Remove(rootPos);
     }
     std::cout << "Sample Name: " << sampleName << std::endl;
+
+    std::cout<< "Current mode type --> "<< modeType << std::endl;
+    int stepNum = 0;
+    if(modeType=="Step01_Calc_ReWgt") stepNum = 1;
+    else if(modeType=="Step02_Apply_ReWgt") stepNum = 2;
+    else if(modeType=="Step03_Validation") stepNum = 3;
+    else {
+        std::cout<<"[ERROR] : Unknown mode!! please check the mode argument"<<std::endl;
+        exit(3);
+    }
 
     // Using sampleInfoManager library to get sample inforation (data or not, weight)
 
@@ -59,57 +70,108 @@ void makeBTagWeight::Loop()
         }
     }
     
-    TH1F* h_nJets_noSF;   
-    TH1F* h_nJets_withSF;
-    TH1F* h_nbJets_noSF;
-    TH1F* h_nbJets_withSF;
-    TH1F* h_HT_noSF;
-    TH1F* h_HT_withSF;
 
+    TString SFpath = "ScaleFactors/bTagReweight/";
+    TString reweightRoot = "bTagReweight_" + sampleName + ".root";
+    TH1F* h_ratio_nJet = nullptr;
+    TFile* fRatio = nullptr;
+    if(stepNum == 2 || stepNum == 3){
+        fRatio = TFile::Open( SFpath + reweightRoot,"READ");
+        if (!fRatio || fRatio->IsZombie()) {
+            std::cerr << "[ERROR] Cannot open" << reweightRoot << std::endl;
+            return;
+        }
+        h_ratio_nJet = (TH1F*)fRatio->Get("h_nJets_ratio");
+        if (!h_ratio_nJet) {
+            std::cerr << "[ERROR] Cannot find h_ratio_nJet in root" << std::endl;
+	    fRatio->Close();
+	    delete fRatio;
+            return;
+        }
+    }
+    double btagReweightValue = -555555.00;
+
+    TH1F* h_nJets_noSF = nullptr;   
+    TH1F* h_nJets_withSF = nullptr;
+    TH1F* h_nJets_reweight = nullptr;
+
+    TH1F* h_nbJets_noSF = nullptr;
+    TH1F* h_nbJets_withSF = nullptr;
+    TH1F* h_nbJets_reweight = nullptr;
+    
+    TH1F* h_HT_noSF = nullptr;
+    TH1F* h_HT_withSF = nullptr;
+    TH1F* h_HT_reweight = nullptr;
+
+    // (1) jetPt: noSF / withSF
     std::vector<TH1F*> h_jetPt_noSF_vec;
     std::vector<TH1F*> h_jetPt_withSF_vec;
+    std::vector<TH1F*> h_jetPt_reweight_vec;
+    // (2) jetEta: noSF / withSF
     std::vector<TH1F*> h_jetEta_noSF_vec;
     std::vector<TH1F*> h_jetEta_withSF_vec;
+    std::vector<TH1F*> h_jetEta_reweight_vec;
+    // (3) bTagScore: noSF / withSF
     std::vector<TH1F*> h_bTag_noSF_vec;
     std::vector<TH1F*> h_bTag_withSF_vec;
+    std::vector<TH1F*> h_bTag_reweight_vec;
+
 
     // (A) 히스토그램 생성 (이벤트 레벨, 제트 레벨 통합)
     // 이벤트 레벨
     h_nJets_noSF    = new TH1F("h_nJets_noSF",   "nJets (noSF); nJets; Events",   50, 0, 50);
     h_nJets_withSF  = new TH1F("h_nJets_withSF", "nJets (withSF); nJets; Events", 50, 0, 50);    
+    h_nJets_reweight  = new TH1F("h_nJets_reweight", "nJets (reweight); nJets; Events", 50, 0, 50);
 
     h_nbJets_noSF   = new TH1F("h_nbJets_noSF",   "nbJets (noSF); nbJets; Events",   15, 0, 15);
     h_nbJets_withSF = new TH1F("h_nbJets_withSF", "nbJets (withSF); nbJets; Events", 15, 0, 15);
+    h_nbJets_reweight = new TH1F("h_nbJets_reweight", "nbJets (reweight); nbJets; Events", 15, 0, 15);
 
     h_HT_noSF    = new TH1F("h_HT_noSF",   "HT (noSF);HT [GeV]; Events",   50, 0, 2000);
     h_HT_withSF  = new TH1F("h_HT_withSF", "HT (withSF);HT [GeV]; Events", 50, 0, 2000); 
+    h_HT_reweight  = new TH1F("h_HT_reweight", "HT (reweight);HT [GeV]; Events", 50, 0, 2000); 
 
     const int maxJetsObserved = 12;
     for(int iJet=0; iJet<maxJetsObserved; iJet++){
 
-            TString name_noSF   = Form("h_jetPt_noSF_jet%d", iJet);
-            TString title_noSF  = Form("Jet %d pT (noSF); p_{T} [GeV]; Events", iJet);
-            h_jetPt_noSF_vec.push_back(new TH1F(name_noSF, title_noSF, 50, 0, 500));
+        // jet Pt
+        TString name_noSF   = Form("h_jetPt_noSF_jet%d", iJet);
+        TString title_noSF  = Form("Jet %d pT (noSF)", iJet);
+        h_jetPt_noSF_vec.push_back(new TH1F(name_noSF, title_noSF, 50, 0, 500));
 
-            TString name_withSF   = Form("h_jetPt_withSF_jet%d", iJet);
-            TString title_withSF  = Form("Jet %d pT (withSF); p_{T} [GeV]; Events", iJet);
-            h_jetPt_withSF_vec.push_back(new TH1F(name_withSF, title_withSF, 50, 0, 500));
+        TString name_withSF   = Form("h_jetPt_withSF_jet%d", iJet);
+        TString title_withSF  = Form("Jet %d pT (withSF)", iJet);
+        h_jetPt_withSF_vec.push_back(new TH1F(name_withSF, title_withSF, 50, 0, 500));
 
-            TString etaName_noSF   = Form("h_jetEta_noSF_jet%d", iJet);
-            TString etaTitle_noSF  = Form("Jet %d #eta (NoSF);#eta;Events", iJet);
-            h_jetEta_noSF_vec.push_back(new TH1F(etaName_noSF, etaTitle_noSF, 50, -2.5, 2.5));
+        TString name_reweight   = Form("h_jetPt_reweight_jet%d", iJet);
+        TString title_reweight  = Form("Jet %d pT (reweight)", iJet);
+        h_jetPt_reweight_vec.push_back(new TH1F(name_reweight, title_reweight, 50, 0, 500));
 
-            TString etaName_withSF   = Form("h_jetEta_withSF_jet%d", iJet);
-            TString etaTitle_withSF  = Form("Jet %d #eta (WithSF);#eta;Events", iJet);
-            h_jetEta_withSF_vec.push_back(new TH1F(etaName_withSF, etaTitle_withSF, 50, -2.5, 2.5));
+        // jetEta
+        TString etaName_noSF   = Form("h_jetEta_noSF_jet%d",   iJet);
+        TString etaTitle_noSF  = Form("Jet %d #eta (NoSF);#eta;Events", iJet);
+        h_jetEta_noSF_vec.push_back(new TH1F(etaName_noSF, etaTitle_noSF, 50, -2.5, 2.5));
 
-            TString bTagName_noSF   = Form("h_bTag_noSF_jet%d", iJet);
-            TString bTagTitle_noSF  = Form("Jet %d bTagScore (NoSF);bTagScore;Events", iJet);
-            h_bTag_noSF_vec.push_back(new TH1F(bTagName_noSF, bTagTitle_noSF, 50, 0, 1.0));
+        TString etaName_withSF   = Form("h_jetEta_withSF_jet%d",   iJet);
+        TString etaTitle_withSF  = Form("Jet %d #eta (WithSF);#eta;Events", iJet);
+        h_jetEta_withSF_vec.push_back(new TH1F(etaName_withSF, etaTitle_withSF, 50, -2.5, 2.5));
 
-            TString bTagName_withSF   = Form("h_bTag_withSF_jet%d", iJet);
-            TString bTagTitle_withSF  = Form("Jet %d bTagScore (WithSF);bTagScore;Events", iJet);
-            h_bTag_withSF_vec.push_back(new TH1F(bTagName_withSF, bTagTitle_withSF, 50, 0, 1.0));   
+        TString etaName_reweight   = Form("h_jetEta_reweight_jet%d",   iJet);
+        TString etaTitle_reweight  = Form("Jet %d #eta (WithSF);#eta;Events", iJet);
+        h_jetEta_reweight_vec.push_back(new TH1F(etaName_reweight, etaTitle_reweight, 50, -2.5, 2.5));
+
+        // bTagScore
+        TString bTagName_noSF   = Form("h_bTag_noSF_jet%d",   iJet);
+        TString bTagTitle_noSF  = Form("Jet %d bTagScore (NoSF);bTagScore;Events", iJet);
+        h_bTag_noSF_vec.push_back(new TH1F(bTagName_noSF, bTagTitle_noSF, 50, 0, 1.0));
+
+        TString bTagName_withSF   = Form("h_bTag_withSF_jet%d",   iJet);
+        TString bTagTitle_withSF  = Form("Jet %d bTagScore (WithSF);bTagScore;Events", iJet);
+        h_bTag_withSF_vec.push_back(new TH1F(bTagName_withSF, bTagTitle_withSF, 50, 0, 1.0));
+
+        TString bTagName_reweight   = Form("h_bTag_reweight_jet%d",   iJet);
+        TString bTagTitle_reweight  = Form("Jet %d bTagScore (WithSF);bTagScore;Events", iJet);
+        h_bTag_reweight_vec.push_back(new TH1F(bTagName_reweight, bTagTitle_reweight, 50, 0, 1.0));
 
     }    
 
@@ -150,68 +212,6 @@ void makeBTagWeight::Loop()
         std::cerr << "Cannot find Scale Factor histogram: " << sfHistName << std::endl;
         return;
     }
-
-
-
-    // 변수 구간 설정
-    // HT bins
-    const auto& HT_bins_vec = BinConfig::getHTBins();
-    nBinsHT = BinConfig::HTBinCount;
-    for (int i = 0; i <= nBinsHT; ++i) {
-        HT_bins[i] = HT_bins_vec[i];
-    }
-
-    // pT bins
-    const auto& pT_bins_vec = BinConfig::getPTBins();
-    nBinspT = BinConfig::PTBinCount;
-    for (int i = 0; i <= nBinspT; ++i) {
-        pT_bins[i] = pT_bins_vec[i];
-    }
-
-        ////sfFile->Close();
-    // b-제트 수 bins (범위로 설정)
-    // 예: 3, 4, 5~8
-    ////const auto& nBjets_bins_vec = BinConfig::getNBJetsBins();
-    ////nBjetBins = BinConfig::NBJetsBinCount;
-    ////for (int i = 0; i <= nBjetBins; ++i) {
-    ////    nBjets_bins[i] = nBjets_bins_vec[i];
-    ////}
-
-    ////// Eta bins (필요한 경우만 초기화)
-    ////if (useEtaBinning) {
-    ////    const auto& eta_bins_vec = BinConfig::getEtaBins();
-    ////    nEtaBins = BinConfig::EtaBinCount;
-    ////    for (int i = 0; i <= nEtaBins; ++i) {
-    ////        eta_bins[i] = eta_bins_vec[i];
-    ////    }
-    ////} else {
-    ////    nEtaBins = 1; // Eta 분할을 사용하지 않을 경우 기본값 설정
-    ////}
-
-    ////// 히스토그램 초기화
-    ////for (int iEta = 0; iEta < nEtaBins; ++iEta) {
-    ////    for (int iBjet = 0; iBjet < nBjetBins; ++iBjet) {
-    ////        TString histName_Total, histTitle_Total;
-    ////        TString histName_Pass, histTitle_Pass;
-
-    ////        if (useEtaBinning) {
-    ////            histName_Total = Form("h_Total_Eta%d_Bjet%d", iEta, iBjet);
-    ////            histTitle_Total = Form("Total Events (Eta bin %d, b-jet bin %d);HT [GeV];6th Jet p_{T} [GeV]", iEta, iBjet);
-
-    ////            histName_Pass = Form("h_Pass_Eta%d_Bjet%d", iEta, iBjet);
-    ////            histTitle_Pass = Form("Passed Events (Eta bin %d, b-jet bin %d);HT [GeV];6th Jet p_{T} [GeV]", iEta, iBjet);
-    ////        } else {
-    ////            histName_Total = Form("h_Total_Bjet%d", iBjet);
-    ////            histTitle_Total = Form("Total Events (b-jet bin %d);HT [GeV];6th Jet p_{T} [GeV]", iBjet);
-
-    ////            histName_Pass = Form("h_Pass_Bjet%d", iBjet);
-    ////            histTitle_Pass = Form("Passed Events (b-jet bin %d);HT [GeV];6th Jet p_{T} [GeV]", iBjet);
-    ////        }
-
-    ////        h_Total[iEta][iBjet] = new TH2D(histName_Total, histTitle_Total, nBinsHT, HT_bins, nBinspT, pT_bins);
-    ////        h_Pass[iEta][iBjet] = new TH2D(histName_Pass, histTitle_Pass, nBinsHT, HT_bins, nBinspT, pT_bins);
-    ////    }
-    ////}
 
 
     BTagCalibration calib("deepJet", "/Users/jhlee/Desktop/Work/ttHH/ttHH_bTag_v5_W_CorrLib/ScaleFactors/bTag/reshaping_deepJet_106XUL17_v3.csv");
@@ -263,7 +263,7 @@ void makeBTagWeight::Loop()
 	if (debug) std::cout<<"  [ debug ] current entry --> "<<ientry<<std::endl;
  	if (debug) std::cout<<"  [ debug ]     # of jets = "<<nJets<<std::endl;
 
-        if (nMuons != 1) continue;
+        ///if (nMuons != 1) continue;
 
         // 이벤트 선택
         if (nJets < 7) {
@@ -295,35 +295,6 @@ void makeBTagWeight::Loop()
 ////	}
 ////	if (nBjet < 4) continue;
 
-        // HT와 Jet6PT bin 찾기
-        int htBin = -1;
-        for (int iHT = 0; iHT < nBinsHT; ++iHT) {
-            if (HT >= HT_bins[iHT] && HT < HT_bins[iHT+1]) {
-                htBin = iHT+1; // 히스토그램 bin 번호는 1부터 시작
-                break;
-            }
-        }
-//        if (htBin == -1) continue;
-        if(htBin == -1) {
-//////            std::cerr << "[ERROR] Can not find ht Bin.."<< std::endl;
-//////            exit(4);
-            htBin = nBinsHT;
-	}
-	
-        int ptBin = -1;
-        for (int ipT = 0; ipT < nBinspT; ++ipT) {
-            if (Jet6PT >= pT_bins[ipT] && Jet6PT < pT_bins[ipT+1]) {
-                ptBin = ipT+1;
-                break;
-            }
-        }
-//        if (ptBin == -1) continue;
-        if(ptBin == -1) {
-//////            std::cerr << "[ERROR] Can not find pt Bin.. & pT = ("<< Jet6PT<<")"<< std::endl;
-//////            exit(5);
-            ptBin = nBinspT;
-	}
-
 
 //        if(isData && failGoldenJson) continue;
         if(isData && failGoldenJson) {
@@ -335,8 +306,9 @@ void makeBTagWeight::Loop()
         if(debug) std::cout<<"  [ debug ] Pass all selections!!"<<std::endl;
 
         // 스케일 팩터 가져오기
-        double sf = sfHist->GetBinContent(htBin, ptBin);
-        ////if (sf == 0) sf = 1.0; // 스케일 팩터가 0인 경우 1로 설정
+        int bin = sfHist->FindBin(HT, Jet6PT);
+        double sf = sfHist->GetBinContent(bin);
+
         if (Jet6PT >= 90.0 && Jet6PT < 150.0 &&
 //            HT      >= 150.0 && HT      < 600.0) {
             HT      >= 150.0 && HT      < 700.0) {
@@ -350,7 +322,7 @@ void makeBTagWeight::Loop()
         if(sf == 0) {
             std::cerr << "[ERROR] sf is 0.. then double check sf = ("<< sf <<")"<< std::endl;
 	    std::cerr << "[ERROR] and It's pT & HT = " << Jet6PT <<", "<< HT << std::endl;
-	    std::cerr << "[ERROR] allocated pT & HT bin = "<< ptBin <<", "<< htBin << std::endl;
+	    std::cerr << "[ERROR] allocated pT & HT bin = "<< bin << std::endl;
 	    exit(7);
 	}
         //std::cout<<"sf : "<<sf<<std::endl;
@@ -425,13 +397,11 @@ void makeBTagWeight::Loop()
         //  - Data: OR-of-all AND PD-exclusive rule.
         bool passHadTrig = isData ? (passORHad && pdExclusiveRuleOK) : passORHad;
 
-        
         if (!passHadTrig) continue;
-
-
 
         ////baseWeight = 1.0;
 	btaggingSF = 1.0;
+        btagReweightValue = -555555555555.00;
 ////        int calJet = (nJets < 12) ? nJets : 12;
         if (!isData) {
             for(int iJ=0; iJ<nJets; iJ++){
@@ -464,28 +434,55 @@ void makeBTagWeight::Loop()
 	else {
 	    btaggingSF = 1.0;
 	}
+
+
+        if(stepNum == 2 || stepNum == 3){
+            if(debug) std::cout<<"  [ Log ] :  current nJets --> "<<nJets<<std::endl;
+            if (!isData) {
+                int iBin = h_ratio_nJet->FindBin(nJets);
+                if(debug) std::cout<<"  [ Log ] :      and it's bin  = "<<iBin<<std::endl;
+                btagReweightValue = h_ratio_nJet->GetBinContent(iBin);
+       	    }
+            else {
+       	        btagReweightValue = 1.0;
+            }
+	}
+        if(debug && (stepNum==2 || stepNum==3)) std::cout<<"  [ Log ] :      Final getted weight value  = "<<btagReweightValue<<std::endl;
+
+
         if(debug) std::cout<<"  [ debug ] Loaded L1pre & PU weight --> "<< L1PrefiringWeight <<", "<<PUWeight<<std::endl;
-        double L1NPu = L1PrefiringWeight * PUWeight;
-
+        double L1NPuGenWgt = L1PrefiringWeight * PUWeight * genWeight;
 ////        if(btaggingSF == 0.0) btaggingSF = 1.0;
-
 ////        std::cout<<"btaggingSF = "<<btaggingSF<<std::endl;
-	double weightNoSF = baseWeight * sf * L1NPu;
-	double weightWithSF = baseWeight * btaggingSF * sf * L1NPu;
+	double weightNoSF = baseWeight * sf * L1NPuGenWgt;
+	double weightWithSF = baseWeight * btaggingSF * sf * L1NPuGenWgt;
+        double weightReweight = baseWeight * btaggingSF * btagReweightValue * sf * L1NPuGenWgt; 
 
         if(debug) std::cout<<"  [ debug ] Will fill value HT = "<<HT<<" with weights NoSF = "<<weightNoSF<<", WithSF = "<<weightWithSF<<std::endl;
+
+        int nBjet = 0;
+	if(stepNum == 3){
+            for(int iJ=0; iJ<nJets; iJ++){
+                if(bTagScore->at(iJ) > 0.3040) nBjet++;
+            }
+            if (nBjet < 4) continue;
+    
+            if (nMuons + nElecs > 0) continue;
+	}
 
         // --------------------
         // (3) 이벤트 레벨 히스토그램 Fill
         // --------------------
         h_nJets_noSF->Fill( nJets,  weightNoSF );
         h_nJets_withSF->Fill( nJets, weightWithSF );
+        if(stepNum==2 || stepNum==3) h_nJets_reweight->Fill( nJets, weightReweight );
 
         //h_nbJets_noSF->Fill( nbJets, weightNoSF );
         //h_nbJets_withSF->Fill( nbJets, weightWithSF );
 
         h_HT_noSF->Fill( HT, weightNoSF );
         h_HT_withSF->Fill( HT, weightWithSF );
+        if(stepNum==2 || stepNum==3) h_HT_reweight->Fill( HT, weightReweight );
 
         // --------------------
         // (5) 제트 인덱스별 (leading~)
@@ -494,12 +491,15 @@ void makeBTagWeight::Loop()
 	for(int iJ=0; iJ<nToFill; iJ++){
             h_jetPt_noSF_vec[iJ]->Fill( jetPt->at(iJ),  weightNoSF );
             h_jetPt_withSF_vec[iJ]->Fill( jetPt->at(iJ), weightWithSF );
+	    if(stepNum==2 || stepNum==3) h_jetPt_reweight_vec[iJ]->Fill( jetPt->at(iJ), weightReweight ); 
 
             h_jetEta_noSF_vec[iJ]->Fill( jetEta->at(iJ), weightNoSF );
             h_jetEta_withSF_vec[iJ]->Fill( jetEta->at(iJ), weightWithSF );
+	    if(stepNum==2 || stepNum==3) h_jetEta_reweight_vec[iJ]->Fill( jetEta->at(iJ), weightReweight );
 
             h_bTag_noSF_vec[iJ]->Fill( bTagScore->at(iJ), weightNoSF );
             h_bTag_withSF_vec[iJ]->Fill( bTagScore->at(iJ), weightWithSF );
+	    if(stepNum==2 || stepNum==3) h_bTag_reweight_vec[iJ]->Fill( bTagScore->at(iJ), weightReweight );
         }
 
     }
@@ -507,15 +507,19 @@ void makeBTagWeight::Loop()
     if (debug) std::cout<<"-----------------------------------------------------------\n"<<std::endl;
 
     // Ratio Histogram
-    TH1F* h_nJets_ratio = (TH1F*)h_nJets_noSF->Clone("h_nJets_ratio");
-    h_nJets_ratio->SetTitle("Normalization ratio (NoSF/WithSF)");
-    h_nJets_ratio->Divide(h_nJets_withSF);
+    TH1F* h_nJets_ratio = nullptr;
+    if(stepNum==1){
+        h_nJets_ratio = (TH1F*)h_nJets_noSF->Clone("h_nJets_ratio");
+        h_nJets_ratio->SetTitle("Normalization ratio (NoSF/WithSF)");
+        h_nJets_ratio->Divide(h_nJets_withSF);
+    }
 
     std::cout << "Event loop completed." << std::endl;
 
     // 히스토그램 저장을 위한 출력 파일
-    TString SFpath = "ScaleFactors/bTagReweight/";
     TString tag = "bTagReweight_";
+    if(stepNum==2) tag = "Reweight_";
+    else if(stepNum==3) tag = "Validation_";
     TFile* outputFile = new TFile( tag + getOutputName(), "RECREATE");
     ////TFile* outputFile = new TFile( "bTagReweight_JetHT_F.root", "RECREATE");
     std::cout<<"Output name --> "<< tag + getOutputName()<<std::endl;
@@ -530,23 +534,25 @@ void makeBTagWeight::Loop()
     ////}
 
     // 이벤트 레벨
-    h_nJets_noSF->Write();   h_nJets_withSF->Write();
+    h_nJets_noSF->Write();   h_nJets_withSF->Write(); if(stepNum==2 || stepNum==3) h_nJets_reweight->Write();
     //h_nbJets_noSF->Write();  h_nbJets_withSF->Write();
-    h_HT_noSF->Write();      h_HT_withSF->Write();
+    h_HT_noSF->Write();      h_HT_withSF->Write(); if(stepNum==2 || stepNum==3) h_HT_reweight->Write();
 
-    h_nJets_ratio->Write();
+    if(stepNum==1) h_nJets_ratio->Write();
 
     // 제트 레벨 (인덱스별)
     for(int iJet=0; iJet<maxJetsObserved; iJet++){
         h_jetPt_noSF_vec[iJet]->Write();
         h_jetPt_withSF_vec[iJet]->Write();
+	if(stepNum==2 || stepNum==3) h_jetPt_reweight_vec[iJet]->Write();
 
         h_jetEta_noSF_vec[iJet]->Write();
         h_jetEta_withSF_vec[iJet]->Write();
+        if(stepNum==2 || stepNum==3) h_jetEta_reweight_vec[iJet]->Write();
 
         h_bTag_noSF_vec[iJet]->Write();
         h_bTag_withSF_vec[iJet]->Write();
-
+	if(stepNum==2 || stepNum==3) h_bTag_reweight_vec[iJet]->Write();
     }
 
     outputFile->Close();
@@ -555,12 +561,12 @@ void makeBTagWeight::Loop()
 void makeBTagWeight::Init()
 {
    // TTree 초기화 및 브랜치 설정
-   TString ntupleDir  = "/Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forSFs/";
+   TString ntupleDir  = "/Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/";
    //TString ntupleDir  = "/Users/jhlee/Desktop/Work/ttHH/TriggerStudyv2/ntuple/250609/";
    TString ntupleName = getInputName();
    TString ntuplePath = ntupleDir + ntupleName;
    TTree* tree = nullptr;
-   
+
    if (tree == 0) {
       TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject( ntuplePath );
       if (!f || !f->IsOpen()) {
@@ -586,7 +592,7 @@ void makeBTagWeight::Init()
    fChain->SetBranchAddress("passTrigger_4J3T_B", &passTrigger_4J3T_B, &b_passTrigger_4J3T_B);
    fChain->SetBranchAddress("passTrigger_4J3T_CDEF", &passTrigger_4J3T_CDEF, &b_passTrigger_4J3T_CDEF);
    fChain->SetBranchAddress("nMuons", &nMuons, &b_nMuons);
-   //fChain->SetBranchAddress("nElecs", &nElecs, &b_nElecs);
+   fChain->SetBranchAddress("nElecs", &nElecs, &b_nElecs);
    fChain->SetBranchAddress("nJets", &nJets, &b_nJets);
    //fChain->SetBranchAddress("nbJets", &nbJets, &b_nbJets);
    fChain->SetBranchAddress("HT", &HT, &b_HT);
@@ -602,6 +608,7 @@ void makeBTagWeight::Init()
    //fChain->SetBranchAddress("partonFlavs", partonFlavs, &b_partonFlavs);
   // fChain->SetBranchAddress("eventNumber", &eventNumber, &b_eventNumber);
    //fChain->SetBranchAddress("runNumber", &runNumber, &b_runNumber);   
+   fChain->SetBranchAddress("genWeight", &genWeight, &b_genWeight);
    fChain->SetBranchAddress("PUWeight", &PUWeight, &b_PUWeight);
    fChain->SetBranchAddress("L1PrefiringWeight", &L1PrefiringWeight, &b_L1PrefiringWeight);
    fChain->SetBranchAddress("failGoldenJson", &failGoldenJson, &b_failGoldenJson);

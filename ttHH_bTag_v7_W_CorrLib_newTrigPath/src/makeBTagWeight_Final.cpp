@@ -309,7 +309,7 @@ auto clampBin = [&](int ib){
         if (debug) std::cout<<"  [ debug ] current entry --> "<<ientry<<std::endl;
         if (debug) std::cout<<"  [ debug ]     # of jets = "<<nJets<<std::endl;
 
-        if (nMuons != 1) continue;
+        ////if (nMuons != 1) continue;
 
         // 이벤트 선택
 	//if (nJets < 7) continue;
@@ -615,7 +615,7 @@ std::cout << "===============================================================\n\
 void makeBTagWeight_Final::Init()
 {
    // TTree 초기화 및 브랜치 설정
-   TString ntupleDir  = "/Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forSFs/";   
+   TString ntupleDir  = "/Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/";   
    //TString ntupleDir  = "/Users/jhlee/Desktop/Work/ttHH/TriggerStudyv2/ntuple/250609/";
    TString ntupleName = getInputName();
    TString ntuplePath = ntupleDir + ntupleName;
