@@ -871,18 +871,15 @@ void ttHHanalyzer_base::process(event* thisEvent, sysName sysType, bool up){
 
     // 4) gen weight
     _genWeight = 1.0;
-////    if (_DataOrMC != "Data") {
-////        _genWeight = _ev->genWeight;
-////	if (debugCorrections) {
-////            std::cout << "[genWeight] weight=" << _genWeight <<std::endl;
-////        }
-////    }
+    if (_DataOrMC != "Data") {
+        _genWeight = _ev->genWeight;
+	if (debugCorrections) {
+            std::cout << "[genWeight] weight=" << _genWeight <<std::endl;
+        }
+    }
 
     if (_DataOrMC != "Data") {
 	
-	// [¿¿] ¿¿¿ ¿¿¿ ¿¿ (¿¿ ¿¿¿ *= ¿¿¿¿, ¿¿/¿¿ ¿¿¿ ¿¿)
-        // ¿¿ ¿¿: _weight *= ... (¿¿ ¿¿¿ ¿¿ ¿¿¿ ¿¿¿)
-        // ¿¿ ¿¿: _evtWeight¿ ¿¿
         _evtWeight *= (_PUWeight * _L1PrefiringWeight * _genWeight);
         if(debugCorrections) std::cout << "Final Event Weight: " << _evtWeight << std::endl;
     }
