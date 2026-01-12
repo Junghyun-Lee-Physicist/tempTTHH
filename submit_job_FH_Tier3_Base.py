@@ -23,7 +23,7 @@ class CondorJobManager:
         ##self.path_output_base = "/eos/user/t/tom/<eos-storage or anywhere you want to store the outputs>"
         self.path_output_base = "/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput"
         self.os_version = "el9"
-        self.memorySize = "10 GB"
+        self.memorySize = "12 GB"
 ##        self.jobFlavour = "tomorrow"
 
         self.config_file_path = os.path.join(self.analyzer_path, "AnalyzerConfig/Tier3_2017_FH_base.yml")

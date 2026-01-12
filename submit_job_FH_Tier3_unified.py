@@ -19,16 +19,17 @@ class CondorJobManager:
 
         # Variables for jobs, Please check before you run this script
         self.analyzer_path = f"{script_dir}"
-        self.nameofExe = "ttHHanalyzer_bTagSF" # Name of compiled execution file to run analyzer
+        self.nameofExe = "ttHHanalyzer_unified" # Name of compiled execution file to run analyzer
         ##self.path_output_base = "/eos/user/t/tom/<eos-storage or anywhere you want to store the outputs>"
-        self.path_output_base = "/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_bTagSF"
+        self.path_output_base = "/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_unified"
         self.os_version = "el9"
+        self.AnalyzerMode = "main" # main, btagsf, trigsf
         self.memorySize = "12 GB"
 ##        self.jobFlavour = "tomorrow"
 
-        self.config_file_path = os.path.join(self.analyzer_path, "AnalyzerConfig/Tier3_2017_FH_base.yml")
+        self.config_file_path = os.path.join(self.analyzer_path, "AnalyzerConfig/Tier3_2017_FH_unified.yml")
         self.proxy_path = os.path.join(self.analyzer_path, "proxy.cert")
-        self.condor_files_path = os.path.join(self.analyzer_path, "condor/filelistTier3_bTagSF")
+        self.condor_files_path = os.path.join(self.analyzer_path, "condor/filelistTier3_unified")
         self.sample_list_path = os.path.join(self.analyzer_path, "filelistTier3")
 
         self.make_directory(self.condor_files_path)
@@ -278,7 +279,7 @@ class CondorJobManager:
             fout.write(f"mkdir -p {self.path_output}\n")
             ##fout.write(f"eos root://eosuser.cern.ch chmod 777 {self.path_output}\n")
 ##            fout.write(f"\"{self.analyzer_path}/{self.nameofExe}\" \"$1\" \"root://eosuser.cern.ch/{self.path_output}$2\" \"$3\" \"$4\" \"$5\" \"$6\" \"$7\"\n")
-            fout.write(f"\"{self.analyzer_path}/{self.nameofExe}\" \"$1\" \"{self.path_output}$2\" \"$3\" \"$4\" \"$5\" \"$6\" \"$7\"\n")
+            fout.write(f"\"{self.analyzer_path}/{self.nameofExe}\" \"$1\" \"{self.path_output}$2\" \"$3\" \"$4\" \"$5\" \"$6\" \"$7\" \"--mode={self.AnalyzerMode}\"\n")
         subprocess.call(["chmod", "755", self.script_name])
 
 

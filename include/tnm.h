@@ -61,6 +61,8 @@ struct commandLine
     std::string DataOrMC; //Gamze
     std::string sampleName; //Gamze
     std::string eraName; //Gamze
+    std::string analysisMode;  // NEW: Add this member
+
     
   void decode(int argc, char** argv);
 };

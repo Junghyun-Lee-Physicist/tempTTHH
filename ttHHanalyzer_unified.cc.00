@@ -1,31 +1,43 @@
+
+/**
+ * @file ttHHanalyzer_unified.cc
+ * @brief Unified ttHH Analyzer Implementation with Mode-based Selection
+ * 
+**/
+
 #include "tnm.h"
 #include <cmath> 
 #include <algorithm>
 #include <vector>
 #include <map>
 #include "TVector3.h"
-#include "ttHHanalyzer_base.h"
+#include "ttHHanalyzer_unified.h"
 #include <iostream>
-
 #include "correction.h"
-
 #include "Logger.h"
-using namespace Logger;
- 
-void ttHHanalyzer_base::performAnalysis(){
 
+using namespace Logger;
+
+
+// =============================================================================
+// [Section 1] performAnalysis
+// =============================================================================
+void ttHHanalyzer_unified::performAnalysis() {
     loop(noSys, false);
     _of->file->Close();
 }
 
-void ttHHanalyzer_base::loop(sysName sysType, bool up){
+
+// =============================================================================
+// [Section 2] loop
+// =============================================================================
+void ttHHanalyzer_unified::loop(sysName sysType, bool up) {
 
     int nevents = _ev->size();
-////    nevents = 1000;
+    //int nevents = 1000;
 
-    //std::cout<<"weight = "<<_weight<<std::endl;  
-    std::cout << "Base Weight = " << _baseWeight << std::endl; // [¿¿]
-    _SampleWeight = _baseWeight; // Tree ¿¿¿¿ Base Weight¿ ¿¿ (¿¿ ¿¿¿ ¿¿ evtWeight ¿¿)
+    std::cout << "Weight in Configure file = " << _baseWeight << std::endl; 
+    _SampleWeight = _baseWeight;
 
     cout<<endl;
     print("This analyzer commented out [ \"WTF\" log ] in the header, Please check if you want!!!", "magenta", "warning");
@@ -36,7 +48,10 @@ void ttHHanalyzer_base::loop(sysName sysType, bool up){
     print("Run Year    ----> [  " + _runYear + "  ]", "b");
     print("Data or MC  ----> [  " + _DataOrMC + "  ]", "b");
     print("Sample Name ----> [  " + _sampleName + "  ]", "b");
+    print("Analysis Mode --> [  " + analysisModeName(_analysisMode) + "  ]", "b");  // NEW
+
     
+    // Validation checks
     string checklist = "[ tnm.cc ] & [ analyzer header ] & [ main ] & [ analyzer constructor ]";
     bool exitFlag = false;
     if(_runYear == "nothing"){
@@ -54,14 +69,17 @@ void ttHHanalyzer_base::loop(sysName sysType, bool up){
     print("--------------------------------------------------------------------------", "b");
     cout<<endl;
     if(exitFlag) std::exit(EXIT_FAILURE);
+    
 
     if(debugCorrections) std::cout<<"debug : Before begin the entry.."<<std::endl;
-    std::string analysisInfo = _runYear + ", " + _DataOrMC + ", " + _sampleName;
+    std::string analysisInfo = _runYear + ", " + _DataOrMC + ", " + _sampleName 
+                             + " [" + analysisModeName(_analysisMode) + "]";  
 
     for(int entry=0; entry < nevents; entry++){
         event * currentEvent = new event;
-        ////cout << "Processed events: " << entry << endl;
-        _ev->read(entry);       // read an event into event buffer
+        currentEvent->setSelectionPolicy(_policy);  
+
+        _ev->read(entry); // read an event using event buffer
         process(currentEvent, sysType, up);
 
         if (entry % 10000 == 0){
@@ -80,16 +98,13 @@ void ttHHanalyzer_base::loop(sysName sysType, bool up){
     writeTree();
     if(debugCorrections) std::cout<<"debug : After writeTree() & Before hcutFlow()"<<std::endl;
 
-    // [¿¿] ¿¿ map ¿¿ ¿¿ ¿¿ -> ¿¿ ¿¿ ¿¿¿¿ ¿¿
+    // Cutflow
     std::cout << "=== CutFlow Summary ===" << std::endl;
     for (size_t i = 0; i < _cutStepLabels.size(); ++i) {
         std::cout << _cutStepLabels[i] 
                   << " : " << _cutFlowCount[i] 
                   << " (weighted: " << _cutFlowWeight[i] << ")" 
                   << std::endl;
-        
-        // hCutFlow ¿¿¿¿¿¿ ¿¿ ¿¿¿¿ ¿¿ Set¿¿ ¿¿¿ ¿¿¿ ¿¿ ¿ (¿¿¿¿)
-        // hCutFlow->SetBinContent(i+1, _cutFlowCount[i]);
     }
 
     hCutFlow->Write();
@@ -99,15 +114,13 @@ void ttHHanalyzer_base::loop(sysName sysType, bool up){
 
 }
 
-void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool up){
+// =============================================================================
+// [Section 3] createObjects
+// =============================================================================
+void ttHHanalyzer_unified::createObjects(event* thisEvent, sysName sysType, bool up) {
 
     _ev->fillObjects();
  
-    // =================================================================
-    // 1. [Definition] ë³µìž¡í•œ HLT ê²½ë¡œë¥¼ ì˜ë¯¸ ìžˆëŠ” ë³€ìˆ˜ë¡œ ë³€í™˜
-    // =================================================================
-
-    // 1-1. Era í™•ì¸ (ì„¤ì •ëœ eraNameì„ ì‚¬ìš©)
     bool isEraB = (_era == "B");
     // TODO: í˜„ìž¬ëŠ” 2017ë…„ë„ ê¸°ì¤€ B runê³¼ ë‚˜ë¨¸ì§€(C,D,E,F)ë§Œ êµ¬ë¶„í•˜ê³  ìžˆìŒ.
     // ì¶”í›„ 2016, 2018 Data ë¶„ì„ ì‹œ ê° ì—°ë„ë³„/Eraë³„ ì •í™•í•œ HLT Path ì¡´ìž¬ ì—¬ë¶€ ë° Prescale ë¡œì§ í™•ì¸ í›„
@@ -187,12 +200,15 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
 
   
     thisEvent->setPV(_ev->PV_npvsGood);
+
+
+    // Get collections
     std::vector<eventBuffer::GenPart_s> genPart = _ev->GenPart;      
     std::vector<eventBuffer::GenJet_s> genJet = _ev->GenJet;
     std::vector<eventBuffer::Jet_s> jet = _ev->Jet;
     std::vector<eventBuffer::Muon_s> muonT = _ev->Muon;
     std::vector<eventBuffer::Electron_s> ele = _ev->Electron;
-////    std::vector<eventBuffer::FatJet_s> boostedJet = _ev->FatJet;
+    //std::vector<eventBuffer::FatJet_s> boostedJet = _ev->FatJet;
     objectGenPart * currentGenPart; 
     objectBoostedJet * currentBoostedJet;
     objectJet * currentJet;
@@ -222,88 +238,104 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
 ////    }
     
 
-    // Leading lepton def
-    // But FH channel don't need this..
-    // We just use subleading lepton def for veto
-    // update in 5th Jan, 2026
-////    bool thereIsALeadLepton = false;
-////
-////    for(int i = 0; i < muonT.size(); i++){
-////        // CHECK: í˜„ìž¬ Veto Muonìœ¼ë¡œ TightIDë¥¼ ì‚¬ìš© ì¤‘. ì¼ë°˜ì ìœ¼ë¡œ Veto ìš©ë„ë¡œëŠ” LooseIDë¥¼ ê¶Œìž¥í•¨.
-////        // Muon POG ê¶Œìž¥ì‚¬í•­ í™•ì¸ í•„ìš” (ì˜ˆ: LooseID + LooseIso).
-////        // TightID ì‚¬ìš© ì‹œ "Looseí•˜ì§€ë§Œ ê°€ì§œëŠ” ì•„ë‹Œ" ë®¤ì˜¨ì„ ë†“ì³ì„œ Hadronic ì±„ë„ ì˜¤ì—¼ ê°€ëŠ¥ì„± ìžˆìŒ.
-////        if(fabs(muonT[i].eta) < cut["muonEta"] && muonT[i].tightId == true && muonT[i].pfRelIso04_all  < cut["muonIso"]){
-////            if(muonT[i].pt > cut["leadMuonPt"]){
-////                thereIsALeadLepton = true;
-////                break;
-////            }
-////        }
-////    }
-////    if(!thereIsALeadLepton){
-////        for(int i = 0; i < ele.size(); i++){
-////            // CHECK: Electron Veto ì—­ì‹œ WP90(Tightì— ê°€ê¹Œì›€) ì‚¬ìš© ì¤‘. Egamma POGì˜ Veto WP ê¶Œìž¥ì‚¬í•­ í™•ì¸ í•„ìš”.
-////            if(fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660){  //Electrons tracked neither in the barrel nor in the endcap are discarded.
-////                if(fabs(ele[i].eta) < cut["eleEta"] && ele[i].mvaFall17V2Iso_WP90 == true && ele[i].pfRelIso03_all  < cut["eleIso"]){ 
-////                    if(ele[i].pt > cut["leadElePt"]){
-////                        thereIsALeadLepton = true;
-////                        break;
-////                    }
-////                }
-////            }
-////        }
-////    }
+    // =========================================================================
+    // [CHANGED] Conditional Lepton Collection based on SelectionPolicy
+    // =========================================================================    
+    bool thereIsALeadLepton = false;
 
-    for(int i = 0; i < muonT.size(); i++){
-        if(fabs(muonT[i].eta) < cut["muonEta"] && muonT[i].tightId == true && muonT[i].pfRelIso04_all  < cut["muonIso"]){
-            if(muonT[i].pt > cut["subLeadMuonPt"]){
+    // Lepton collection is needed for:
+    //   - kBTagSFDerivation: To have leptons for later trigger SF derivation
+    //   - kTriggerSFStudy: To select single-muon events
+    if (_policy.collectLeptons) {
+        // Check for lead lepton
+        for (size_t i = 0; i < muonT.size(); i++) {
+            if (fabs(muonT[i].eta) < cut["muonEta"] && 
+                muonT[i].tightId == true && 
+                muonT[i].pfRelIso04_all < cut["muonIso"]) {
+                if (muonT[i].pt > cut["leadMuonPt"]) {
+                    thereIsALeadLepton = true;
+                    break;
+                }
+            }
+        }
+        if (!thereIsALeadLepton) {
+            for (size_t i = 0; i < ele.size(); i++) {
+                if (fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || 
+                    fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660) {
+                    if (fabs(ele[i].eta) < cut["eleEta"] && 
+                        ele[i].mvaFall17V2Iso_WP90 == true && 
+                        ele[i].pfRelIso03_all < cut["eleIso"]) {
+                        if (ele[i].pt > cut["leadElePt"]) {
+                            thereIsALeadLepton = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Count veto leptons (always needed for lepton veto decision)
+    for (size_t i = 0; i < muonT.size(); i++) {
+        if (fabs(muonT[i].eta) < cut["muonEta"] && 
+            muonT[i].tightId == true && 
+            muonT[i].pfRelIso04_all < cut["muonIso"]) {
+            if (muonT[i].pt > cut["subLeadMuonPt"]) {
                 nVetoMuons += 1;
             }
         }
     }
-    for(int i = 0; i < ele.size(); i++){
-        if(fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660){  //Electrons tracked neither in the barrel nor in the endcap are discarded.
-            if(fabs(ele[i].eta) < cut["eleEta"] && ele[i].mvaFall17V2Iso_WP90 == true && ele[i].pfRelIso03_all  < cut["eleIso"]){ 
-                if(ele[i].pt > cut["subLeadElePt"]){
+    for (size_t i = 0; i < ele.size(); i++) {
+        if (fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || 
+            fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660) {
+            if (fabs(ele[i].eta) < cut["eleEta"] && 
+                ele[i].mvaFall17V2Iso_WP90 == true && 
+                ele[i].pfRelIso03_all < cut["eleIso"]) {
+                if (ele[i].pt > cut["subLeadElePt"]) {
                     nVetoEle += 1;
                 }
             }
         }
     }
 
-
-    // Leading lepton def
-    // But FH channel don't need this..
-    // We just use subleading lepton def for veto
-    // update in 5th Jan, 2026
-////     if(thereIsALeadLepton){ //we can add all leptons passing to the sublead selection to our containers
-////         for(int i = 0; i < muonT.size(); i++){
-////             if(fabs(muonT[i].eta) < cut["muonEta"] && muonT[i].tightId == true && muonT[i].pfRelIso04_all < cut["muonIso"]){
-////             //	    if(fabs(muonT[i].eta) < cut["muonEta"] && muonT[i].mvaTTH > 0.15 && muonT[i].pfRelIso04_all  < cut["muonIso"]){	
-////         	if(muonT[i].pt > cut["subLeadMuonPt"]){
-////         	    currentMuon = new objectLep(muonT[i].pt, muonT[i].eta, muonT[i].phi, 0.);
-////         	    currentMuon->charge = muonT[i].charge;
-////         	    currentMuon->miniPFRelIso = muonT[i].miniPFRelIso_all;
-////         	    currentMuon->pfRelIso04 = muonT[i].pfRelIso04_all;
-////         	    thisEvent->selectMuon(currentMuon);
-////         	}
-////             }
-////         }
-////         for(int i = 0; i < ele.size(); i++){
-////             if(fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660){  //Electrons tracked neither in the barrel nor in the endcap are discarded.
-////         	      if(fabs(ele[i].eta) < cut["eleEta"] && ele[i].mvaFall17V2Iso_WP90 == true && ele[i].pfRelIso03_all  < cut["eleIso"]){ 
-////                  if(ele[i].pt > cut["subLeadElePt"]){
-////         		currentEle = new objectLep(ele[i].pt, ele[i].eta, ele[i].phi, 0.);	 
-////         		currentEle->charge = ele[i].charge;
-////         		currentEle->miniPFRelIso = ele[i].miniPFRelIso_all;
-////         		currentEle->pfRelIso03 = ele[i].pfRelIso03_all;
-////         		thisEvent->selectEle(currentEle);
-////         	      }
-////               }
-////         	}
-////         }
-////     }
-////    thisEvent->orderLeptons();
+    // =========================================================================
+    // [CHANGED] Collect lepton objects only when policy says so
+    // =========================================================================
+    if (_policy.collectLeptons && thereIsALeadLepton) {
+        for (size_t i = 0; i < muonT.size(); i++) {
+            if (fabs(muonT[i].eta) < cut["muonEta"] && 
+                muonT[i].tightId == true && 
+                muonT[i].pfRelIso04_all < cut["muonIso"]) {
+                if (muonT[i].pt > cut["subLeadMuonPt"]) {
+                    objectLep* currentMuon = new objectLep(muonT[i].pt, muonT[i].eta, muonT[i].phi, 0.);
+                    currentMuon->charge = muonT[i].charge;
+                    currentMuon->miniPFRelIso = muonT[i].miniPFRelIso_all;
+                    currentMuon->pfRelIso04 = muonT[i].pfRelIso04_all;
+                    thisEvent->selectMuon(currentMuon);
+                }
+            }
+        }
+        for (size_t i = 0; i < ele.size(); i++) {
+            if (fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || 
+                fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660) {
+                if (fabs(ele[i].eta) < cut["eleEta"] && 
+                    ele[i].mvaFall17V2Iso_WP90 == true && 
+                    ele[i].pfRelIso03_all < cut["eleIso"]) {
+                    if (ele[i].pt > cut["subLeadElePt"]) {
+                        objectLep* currentEle = new objectLep(ele[i].pt, ele[i].eta, ele[i].phi, 0.);
+                        currentEle->charge = ele[i].charge;
+                        currentEle->miniPFRelIso = ele[i].miniPFRelIso_all;
+                        currentEle->pfRelIso03 = ele[i].pfRelIso03_all;
+                        thisEvent->selectEle(currentEle);
+                    }
+                }
+            }
+        }
+        thisEvent->orderLeptons();
+    }
+    
     thisEvent->setnVetoLepton(nVetoMuons + nVetoEle);
+
 
 
     float dR = 0., deltaEta = 0., deltaPhi = 0.;
@@ -438,8 +470,10 @@ void ttHHanalyzer_base::createObjects(event * thisEvent, sysName sysType, bool u
            
 
 
-
-bool ttHHanalyzer_base::selectObjects(event *thisEvent){
+// =============================================================================
+// [Section 4] selectObjects - Mode-dependent Selection Cuts
+// =============================================================================
+bool ttHHanalyzer_unified::selectObjects(event* thisEvent) {
      
     auto processStep = [&](CutStep step, float wMassVal) {
         int idx = static_cast<int>(step);
@@ -456,40 +490,42 @@ bool ttHHanalyzer_base::selectObjects(event *thisEvent){
     };
 
 
-    // ----------------------------------------------------
-    // ¿¿ ¿ ¿¿ ¿¿ ¿¿
-    // ----------------------------------------------------
-
+    // =========================================================================
+    // [CHANGED] Conditional HadWMass calculation
+    // =========================================================================
     const float wMass = 80.377f;
-    float hadWMass = closestMassPair(
-        thisEvent->getSelLightJets()->size() >= 2 ? thisEvent->getSelLightJets() : thisEvent->getSelJets(),
-        wMass
-    );
+    float hadWMass = -1.0f;
+    if (_policy.applyHadWMassCut) {
+        hadWMass = closestMassPair(
+            thisEvent->getSelLightJets()->size() >= 2 ? thisEvent->getSelLightJets() : thisEvent->getSelJets(),
+            wMass
+        );
+    }
 
-    // Higgs Reconstruction (Histogram ¿¿¿¿)
+    // =========================================================================
+    // [CHANGED] Conditional Higgs Reconstruction
+    // =========================================================================
     _minChi2Higgs = cLargeValue;
     _bbMassMin1Higgs = -1.0f;
     _bbMassMin2Higgs = -1.0f;
 
-
-    auto* bjets = thisEvent->getSelbJets();
-    // ttHH(bb) Hadronic Channel ì—°êµ¬ì´ë¯€ë¡œ, Higgs -> bb ë¶•ê´´ë¥¼ ìž¬êµ¬ì„±í•˜ê¸° ìœ„í•´
-    // ìµœì†Œ 4ê°œì˜ b-jetì´ ì¡´ìž¬í•´ì•¼ë§Œ Higgs Pair Candidateë¥¼ ìƒì„±í•  ìˆ˜ ìžˆìŒ.
-    // ë”°ë¼ì„œ ì•„ëž˜ ì¡°ê±´ë¬¸(size >= 4)ì€ ë¶„ì„ì˜ í•„ìˆ˜ ì¡°ê±´ìž„.
-    if (bjets->size() >= 4) {
-        for (size_t i = 0; i < bjets->size() - 3; ++i) {
-            for (size_t j = i + 1; j < bjets->size() - 2; ++j) {
-                for (size_t k = j + 1; k < bjets->size() - 1; ++k) {
-                    for (size_t l = k + 1; l < bjets->size(); ++l) {
-                        diMotherReco(*bjets->at(i)->getp4(), *bjets->at(j)->getp4(),
-                                     *bjets->at(k)->getp4(), *bjets->at(l)->getp4(),
-                                     cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
-                        diMotherReco(*bjets->at(i)->getp4(), *bjets->at(k)->getp4(),
-                                     *bjets->at(j)->getp4(), *bjets->at(l)->getp4(),
-                                     cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
-                        diMotherReco(*bjets->at(i)->getp4(), *bjets->at(l)->getp4(),
-                                     *bjets->at(j)->getp4(), *bjets->at(k)->getp4(),
-                                     cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
+    if (_policy.doHiggsReconstruction) {
+        auto* bjets = thisEvent->getSelbJets();
+        if (bjets->size() >= 4) {
+            for (size_t i = 0; i < bjets->size() - 3; ++i) {
+                for (size_t j = i + 1; j < bjets->size() - 2; ++j) {
+                    for (size_t k = j + 1; k < bjets->size() - 1; ++k) {
+                        for (size_t l = k + 1; l < bjets->size(); ++l) {
+                            diMotherReco(*bjets->at(i)->getp4(), *bjets->at(j)->getp4(),
+                                         *bjets->at(k)->getp4(), *bjets->at(l)->getp4(),
+                                         cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
+                            diMotherReco(*bjets->at(i)->getp4(), *bjets->at(k)->getp4(),
+                                         *bjets->at(j)->getp4(), *bjets->at(l)->getp4(),
+                                         cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
+                            diMotherReco(*bjets->at(i)->getp4(), *bjets->at(l)->getp4(),
+                                         *bjets->at(j)->getp4(), *bjets->at(k)->getp4(),
+                                         cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
+                        }
                     }
                 }
             }
@@ -506,80 +542,89 @@ bool ttHHanalyzer_base::selectObjects(event *thisEvent){
 ////                        : _bbMassMin2Higgs;
 ////    }
 
+
+    // =========================================================================
+    // Selection Cut Flow (mode-dependent)
+    // =========================================================================
     // Step 0: No Cut
     processStep(CutStep::kNoCut, hadWMass);
 
-    // Step 1: Trigger    
-    if(cut["trigger"] > 0 && thisEvent->getHadTriggerAccept() == false){
-        return false;
+    // Step 1: Trigger (CONDITIONAL)
+    if (_policy.applyTriggerCut) {
+        if (cut["trigger"] > 0 && thisEvent->getHadTriggerAccept() == false) {
+            return false;
+        }
     }
     processStep(CutStep::kHadTrigger, hadWMass);
 
-    // Step 2: Noise Filter
-    if(cut["filter"] > 0 && thisEvent->getMETFilter() == false){
+    // Step 2: Noise Filter (always applied)
+    if (cut["filter"] > 0 && thisEvent->getMETFilter() == false) {
         return false;
     }
     processStep(CutStep::kNoiseFilter, hadWMass);
 
-    ////////if(cut["trigger"] > 0 && thisEvent->getMuonTriggerAccept() == false)
-    ////////{
-    ////////    return false;
-    ////////}
-    ////////cutflow["MuonTrigger"]+=1;                 
-    ////////hCutFlow->Fill("MuonTrigger",1);
-    ////////hCutFlow_w->Fill("MuonTrigger",_weight);
-
-    // Step 3: Primary Vertex
-    if(cut["pv"] > 0 && thisEvent->getPVvalue() == false){
+    // Step 3: Primary Vertex (always applied)
+    if (cut["pv"] > 0 && thisEvent->getPVvalue() == false) {
         return false;
     }
     processStep(CutStep::kPrimaryVertex, hadWMass);
 
-
-    // Step 4: nJets >= 7
-    if(!(thisEvent->getnSelJet() >= cut["nJets"] )){
+    // Step 4: nJets >= 7 (always applied)
+    if (!(thisEvent->getnSelJet() >= cut["nJets"])) {
         return false;
     }
     processStep(CutStep::kNumJets, hadWMass);
 
-    // Step 5: 6th Jet Pt > 40
-    if(!(thisEvent->getSelJets()->at(5)->getp4()->Pt() > cut["6thJetsPT"])){
+    // Step 5: 6th Jet Pt > 40 (always applied)
+    if (!(thisEvent->getSelJets()->at(5)->getp4()->Pt() > cut["6thJetsPT"])) {
         return false;
     }
     processStep(CutStep::kSixthJetPt, hadWMass);
 
-    // Step 6: Lepton Veto (nLepton == 0)
-    if(!(thisEvent->getnVetoLepton() == cut["nLeptons"])){
-        return false;
+    // Step 6: Lepton Veto / Single Muon Requirement (CONDITIONAL)
+    if (_policy.requireSingleMuon) {
+        // Trigger SF Study: Require exactly 1 muon, 0 electrons
+        if (!(thisEvent->getnSelMuon() == 1 && thisEvent->getnSelElectron() == 0)) {
+            return false;
+        }
     }
+    else if (_policy.applyLeptonVeto) {
+        // Main Analysis: Veto all leptons
+        if (!(thisEvent->getnVetoLepton() == cut["nLeptons"])) {
+            return false;
+        }
+    }
+    // else: bTagSF mode - no lepton requirement
     processStep(CutStep::kLeptonVeto, hadWMass);
 
-    // (¿¿: ¿¿ ¿¿ ¿¿ ¿¿)
+    // Stats calculations (unchanged)
     thisEvent->getStatsComb(thisEvent->getSelJets(), thisEvent->getSelLeptons(), ljetStat);
     thisEvent->getStatsComb(thisEvent->getSelbJets(), thisEvent->getSelLeptons(), lbjetStat);
 
-    // Step 7: HT > 500
-    if(!(thisEvent->getSumSelJetScalarpT() > cut["HT"])){
+    // Step 7: HT > 500 (always applied)
+    if (!(thisEvent->getSumSelJetScalarpT() > cut["HT"])) {
         return false;
     }
     processStep(CutStep::kHT, hadWMass);
 
-
-    // Step 8: nbJets >= 4
-    if(!(thisEvent->getnSelbJet() >= cut["nbJets"] )){
-        return false;
+    // Step 8: nbJets >= 4 (CONDITIONAL)
+    if (_policy.applyBJetCut) {
+        if (!(thisEvent->getnbJet() >= cut["nbJets"])) {
+            return false;
+        }
     }
     processStep(CutStep::kNumbJets, hadWMass);
 
-
-    // Step 9: Hadronic W Mass
-    if (hadWMass < 0.0f || hadWMass > 250.0f || hadWMass < 30.0f) {
-        return false;
+    // Step 9: Hadronic W Mass (CONDITIONAL)
+    if (_policy.applyHadWMassCut) {
+        if (hadWMass < 0.0f || hadWMass > 250.0f || hadWMass < 30.0f) {
+            return false;
+        }
     }
     processStep(CutStep::kHadWMass, hadWMass);
 
 
-    // Step 10: Higgs Mass Window (¿¿ ¿¿¿¿ ¿ ¿¿¿¿ pass)
+    // Step 10: Higgs Mass Window (currently disabled in all modes)
     // We do not use higgs window right now.. in 05th Jan 2026
 ////    const float higgsMassMin = 90.0f;
 ////    const float higgsMassMax = 160.0f;
@@ -602,7 +647,7 @@ bool ttHHanalyzer_base::selectObjects(event *thisEvent){
 }
 
 
-void ttHHanalyzer_base::motherReco(const TLorentzVector & dPar1p4,const TLorentzVector & dPar2p4, const float mother1mass, float & _minChi2,float & _bbMassMin1){
+void ttHHanalyzer_unified::motherReco(const TLorentzVector & dPar1p4,const TLorentzVector & dPar2p4, const float mother1mass, float & _minChi2,float & _bbMassMin1){
     float bbMass1, chi2;
     bbMass1 = (dPar1p4+dPar2p4).M();
     chi2 = pow((bbMass1 - mother1mass),2)/pow((dPar1p4.Pt()+dPar2p4.Pt())/2.*0.02,0.5);
@@ -614,7 +659,7 @@ void ttHHanalyzer_base::motherReco(const TLorentzVector & dPar1p4,const TLorentz
 } 
 
 
-void ttHHanalyzer_base::diMotherReco(const TLorentzVector & dPar1p4,const TLorentzVector & dPar2p4,const TLorentzVector & dPar3p4,const TLorentzVector & dPar4p4, const float mother1mass, const float  mother2mass, float & _minChi2,float & _bbMassMin1, float & _bbMassMin2){
+void ttHHanalyzer_unified::diMotherReco(const TLorentzVector & dPar1p4,const TLorentzVector & dPar2p4,const TLorentzVector & dPar3p4,const TLorentzVector & dPar4p4, const float mother1mass, const float  mother2mass, float & _minChi2,float & _bbMassMin1, float & _bbMassMin2){
     float bbMass1, bbMass2, chi2;
     bbMass1 = (dPar1p4+dPar2p4).M();
     bbMass2 = (dPar3p4+dPar4p4).M();
@@ -630,7 +675,7 @@ void ttHHanalyzer_base::diMotherReco(const TLorentzVector & dPar1p4,const TLoren
     }
 } 
 
-void ttHHanalyzer_base::analyze(event *thisEvent){
+void ttHHanalyzer_unified::analyze(event *thisEvent){
 
     //////std::vector<objectJet*>* bJetsInv = thisEvent->getSelbJets(); 
     //////std::vector<objectJet*>* lbJetsInv = thisEvent->getLoosebJets(); 
@@ -704,7 +749,7 @@ void ttHHanalyzer_base::analyze(event *thisEvent){
 
     //////// HH & ZZ reco : 4 medium b jet case
 
-    //////if(thisEvent->getnSelbJet() >  3){
+    //////if(thisEvent->getnbJet() >  3){
     //////    for( int ibjet1 = 0; ibjet1 < bJetsInv->size(); ibjet1++){
     //////        for( int ibjet2 = ibjet1+1; ibjet2 < bJetsInv->size(); ibjet2++){
     //////    	if( ibjet1 == ibjet2) continue;
@@ -736,7 +781,7 @@ void ttHHanalyzer_base::analyze(event *thisEvent){
     //////    }
     //////    // HH & ZZ reco : 3 medium + 1 loose b jet case
     //////}
-    ////else if(thisEvent->getnSelbJet() == 3 && thisEvent->getnbLooseJet() > 3){
+    ////else if(thisEvent->getnbJet() == 3 && thisEvent->getnbLooseJet() > 3){
     ////    for( int ibjet1 = 0; ibjet1 < lbJetsInv->size(); ibjet1++){
     ////        for( int ibjet2 = 0; ibjet2 < bJetsInv->size(); ibjet2++){
     ////    	if( lbJetsInv->at(ibjet1) == bJetsInv->at(ibjet2)) continue;
@@ -778,7 +823,7 @@ void ttHHanalyzer_base::analyze(event *thisEvent){
     ////    }
     ////    // HH & ZZ reco : 3 medium b jet + 1 jet case 
     ////}
-    ////else if(thisEvent->getnSelbJet() == 3){
+    ////else if(thisEvent->getnbJet() == 3){
     ////    for( int ijet1 = 0; ijet1 < jetsInv->size(); ijet1++){
     ////        for( int ibjet2 = 0; ibjet2 < bJetsInv->size(); ibjet2++){
     ////    	if( jetsInv->at(ijet1) == bJetsInv->at(ibjet2)) continue;
@@ -820,7 +865,7 @@ void ttHHanalyzer_base::analyze(event *thisEvent){
 }
 
 
-void ttHHanalyzer_base::process(event* thisEvent, sysName sysType, bool up){
+void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
 
     _evtWeight = _baseWeight;
 
@@ -888,12 +933,11 @@ void ttHHanalyzer_base::process(event* thisEvent, sysName sysType, bool up){
     createObjects(thisEvent, sysType, up);
 
     if(!selectObjects(thisEvent))  return;
-////    selectObjects(thisEvent);
+
     _passMETFilters = false;
     _passMETFilters = thisEvent->getMETFilter();
-
     if(_passMETFilters != true){
-        std::cout<<"ERROR : filter is diff!!"<<std::endl;
+        std::cout<<"ERROR : filter is not properly applied!!"<<std::endl;
         exit(555);
     }
 
@@ -919,7 +963,7 @@ void ttHHanalyzer_base::process(event* thisEvent, sysName sysType, bool up){
 }
 
 
-void ttHHanalyzer_base::fillHistos(event * thisEvent){
+void ttHHanalyzer_unified::fillHistos(event * thisEvent){
 
     //    for(int i=0; i < cutflow.size(); i++){
     //	std::cout << "cutflow size: " << cutflow[i] << std::endl; 
@@ -950,14 +994,14 @@ void ttHHanalyzer_base::fillHistos(event * thisEvent){
 
    ////// hjetNumber->Fill(thisEvent->getnSelJet(),_weight*thisEvent->getbTagSys());
    ////// hHadronicHiggsNumber->Fill(thisEvent->getnHadronicHiggs(),_weight*thisEvent->getbTagSys());
-   ////// hBjetNumber->Fill(thisEvent->getnSelbJet(),_weight*thisEvent->getbTagSys());
+   ////// hBjetNumber->Fill(thisEvent->getnbJet(),_weight*thisEvent->getbTagSys());
    ////// hLightJetNumber->Fill(thisEvent->getnLightJet(),_weight*thisEvent->getbTagSys());
 
    ////// hjetAverageMass->Fill(thisEvent->getSumSelJetMass()/(float)thisEvent->getnSelJet(),_weight*thisEvent->getbTagSys());
    ////// hHadronicHiggsAverageMass->Fill(thisEvent->getSumSelHadronicHiggsMass()/(float)thisEvent->getnHadronicHiggs(),_weight*thisEvent->getbTagSys());
-   ////// hBjetAverageMass->Fill(thisEvent->getSumSelbJetMass()/(float)thisEvent->getnSelbJet(),_weight*thisEvent->getbTagSys());
+   ////// hBjetAverageMass->Fill(thisEvent->getSumSelbJetMass()/(float)thisEvent->getnbJet(),_weight*thisEvent->getbTagSys());
    ////// hLightJetAverageMass->Fill(thisEvent->getSumSelLightJetMass()/(float)thisEvent->getnLightJet(),_weight*thisEvent->getbTagSys());
-   ////// hBjetAverageMassSqr->Fill((thisEvent->getSumSelbJetMass()*thisEvent->getSumSelbJetMass())/(float)thisEvent->getnSelbJet(), _weight*thisEvent->getbTagSys());
+   ////// hBjetAverageMassSqr->Fill((thisEvent->getSumSelbJetMass()*thisEvent->getSumSelbJetMass())/(float)thisEvent->getnbJet(), _weight*thisEvent->getbTagSys());
 
    ////// if(thisEvent->getnHadronicHiggs() > 0){ 
    //////     hHadronicHiggsSoftDropMass1->Fill(thisEvent->getSelHadronicHiggses()->at(0)->softDropMass,_weight*thisEvent->getbTagSys());
@@ -1090,7 +1134,7 @@ void ttHHanalyzer_base::fillHistos(event * thisEvent){
      h_JEC_Mass_DiffRatio.at(ih)->Fill(Mass_DiffRatio, _evtWeight);
    }
   
-   ////// for(int ih=0; ih < thisEvent->getnSelbJet() && ih < nHistsbJets; ih++){
+   ////// for(int ih=0; ih < thisEvent->getnbJet() && ih < nHistsbJets; ih++){
    //////     hbjetsPTs.at(ih)->Fill(thisEvent->getSelbJets()->at(ih)->getp4()->Pt(),_evtWeight*thisEvent->getbTagSys());
    //////     hbjetsEtas.at(ih)->Fill(thisEvent->getSelbJets()->at(ih)->getp4()->Eta(),_evtWeight*thisEvent->getbTagSys());
    //////     hbjetsBTagDisc.at(ih)->Fill(getbJetCSV(thisEvent).at(ih),_evtWeight*thisEvent->getbTagSys());
@@ -1153,7 +1197,7 @@ void ttHHanalyzer_base::fillHistos(event * thisEvent){
 
 
 
-void ttHHanalyzer_base::writeHistos(){
+void ttHHanalyzer_unified::writeHistos(){
     _of->file->cd();
     _histoDirs.at(0)->cd();
     for(int ih=0; ih<nHistsJets; ih++){
@@ -1327,7 +1371,7 @@ void ttHHanalyzer_base::writeHistos(){
         _cutStepHiggsMass02.at(i)->Write();
     }
 }
-void ttHHanalyzer_base::fillTree(event * thisEvent){
+void ttHHanalyzer_unified::fillTree(event * thisEvent){
 
     jetPt.clear();
     jetEta.clear();
@@ -1352,7 +1396,7 @@ void ttHHanalyzer_base::fillTree(event * thisEvent){
     nMuons = thisEvent->getnSelMuon();
     nElecs = thisEvent->getnSelElectron();
     nJets = thisEvent->getnSelJet();
-    nbJets = thisEvent->getnSelbJet();
+    nbJets = thisEvent->getnbJet();
     HT = thisEvent->getSumSelJetScalarpT();
 
 
@@ -1503,7 +1547,7 @@ void ttHHanalyzer_base::fillTree(event * thisEvent){
     //////}
 
     //////// # b-jet
-    //////if(thisEvent->getnSelbJet() > 3){
+    //////if(thisEvent->getnbJet() > 3){
     //////    bbjetPT4 = thisEvent->getSelbJets()->at(3)->getp4()->Pt();
     //////    bbjetEta4 = thisEvent->getSelbJets()->at(3)->getp4()->Eta();
     //////    bbjetPhi4 = thisEvent->getSelbJets()->at(3)->getp4()->Phi();
@@ -1521,7 +1565,7 @@ void ttHHanalyzer_base::fillTree(event * thisEvent){
     //////    bbjetMinChiHiggsIndex4 = -6;
     //////}
     //////
-    //////if(thisEvent->getnSelbJet() > 4){
+    //////if(thisEvent->getnbJet() > 4){
     //////    bbjetPT5 = thisEvent->getSelbJets()->at(4)->getp4()->Pt();
     //////    bbjetEta5 = thisEvent->getSelbJets()->at(4)->getp4()->Eta();
     //////    bbjetPhi5 = thisEvent->getSelbJets()->at(4)->getp4()->Phi();
@@ -1539,7 +1583,7 @@ void ttHHanalyzer_base::fillTree(event * thisEvent){
     //////    bbjetMinChiHiggsIndex5 = -6;
     //////}
 
-    //////if(thisEvent->getnSelbJet() > 5){
+    //////if(thisEvent->getnbJet() > 5){
     //////    bbjetPT6 = thisEvent->getSelbJets()->at(5)->getp4()->Pt();
     //////    bbjetEta6 = thisEvent->getSelbJets()->at(5)->getp4()->Eta();
     //////    bbjetPhi6 = thisEvent->getSelbJets()->at(5)->getp4()->Phi();
@@ -1557,7 +1601,7 @@ void ttHHanalyzer_base::fillTree(event * thisEvent){
     //////    bbjetMinChiHiggsIndex6 = -6;
     //////}
 
-    //////if(thisEvent->getnSelbJet() > 6){
+    //////if(thisEvent->getnbJet() > 6){
     //////    bbjetPT7 = thisEvent->getSelbJets()->at(6)->getp4()->Pt();
     //////    bbjetEta7 = thisEvent->getSelbJets()->at(6)->getp4()->Eta();
     //////    bbjetPhi7 = thisEvent->getSelbJets()->at(6)->getp4()->Phi();
@@ -1574,7 +1618,7 @@ void ttHHanalyzer_base::fillTree(event * thisEvent){
     //////}
 
 
-    //////if(thisEvent->getnSelbJet() > 7){
+    //////if(thisEvent->getnbJet() > 7){
     //////    bbjetPT8 = thisEvent->getSelbJets()->at(7)->getp4()->Pt();
     //////    bbjetEta8 = thisEvent->getSelbJets()->at(7)->getp4()->Eta();
     //////    bbjetPhi8 = thisEvent->getSelbJets()->at(7)->getp4()->Phi();
@@ -1654,9 +1698,9 @@ void ttHHanalyzer_base::fillTree(event * thisEvent){
 
     //////bweight= _weight;
     //////bjetAverageMass = thisEvent->getSumSelJetMass()/thisEvent->getnSelJet();
-    //////bbJetAverageMass = thisEvent->getSumSelbJetMass()/thisEvent->getnSelbJet();
+    //////bbJetAverageMass = thisEvent->getSumSelbJetMass()/thisEvent->getnbJet();
     //////blightJetAverageMass = thisEvent->getSumSelLightJetMass()/thisEvent->getnLightJet();
-    //////bbJetAverageMassSqr = (thisEvent->getSumSelbJetMass()*thisEvent->getSumSelbJetMass())/thisEvent->getnSelbJet();
+    //////bbJetAverageMassSqr = (thisEvent->getSumSelbJetMass()*thisEvent->getSumSelbJetMass())/thisEvent->getnbJet();
     //////bmet = thisEvent->getMET()->getp4()->Pt();
     //////baverageDeltaRjj = jetStat.meandR;
     //////baverageDeltaRbb = bjetStat.meandR;
@@ -1701,7 +1745,7 @@ void ttHHanalyzer_base::fillTree(event * thisEvent){
     //////bbjetHT = thisEvent->getSumSelbJetScalarpT();
     //////blightjetHT = thisEvent->getSumSelLightJetScalarpT();
     //////bjetNumber = thisEvent->getnSelJet();
-    //////bbjetNumber = thisEvent->getnSelbJet();
+    //////bbjetNumber = thisEvent->getnbJet();
     //////blightjetNumber = thisEvent->getnLightJet();
     //////binvMassZ1 = _bbMassMin1Z; //ZZ
     //////binvMassZ2 = _bbMassMin2Z;
@@ -1780,7 +1824,7 @@ void ttHHanalyzer_base::fillTree(event * thisEvent){
     _inputTree->Fill();
 }
 
-void ttHHanalyzer_base::writeTree(){
+void ttHHanalyzer_unified::writeTree(){
     _of->file->cd();
     _treeDirs.at(0)->cd();
     _inputTree->Write();
@@ -1788,20 +1832,39 @@ void ttHHanalyzer_base::writeTree(){
     
 }
 
-//----------------------------------------------------------------------------
+// =============================================================================
+// [Section 5] main function - Mode argument parsing
+// =============================================================================
 int main(int argc, char** argv){
     commandLine cl(argc, argv);
     vector<string> filenames = fileNames(cl.filelist);
     double weight = cl.externalweight;   // Get global weight 
 
-    std::cout << "\n--------- Check arugments ---------------------------------------\n" << std::endl;
+    // =========================================================================
+    // [NEW] Parse analysis mode from command line
+    // =========================================================================
+    // Assuming you add "analysisMode" to commandLine class in tnm.cc
+    // Default is "main" if not specified
+    std::string modeStr = cl.analysisMode.empty() ? "main" : cl.analysisMode;
+    AnalysisMode mode;
+
+    try {
+        mode = parseAnalysisMode(modeStr);
+    }
+    catch (const std::invalid_argument& e) {
+        std::cerr << e.what() << std::endl;
+        std::cerr << "Valid modes: main, btagsf, trigsf" << std::endl;
+        return 1;
+    }
+
+    std::cout << "\n--------- Check arguments ---------------------------------------\n" << std::endl;
     std::cout << "  - [ output file name ] --> " << cl.outputfilename << std::endl;
     std::cout << "  - [ runYear -string- ] --> " << cl.runYear << std::endl;
     std::cout << "  - [ DataOrMC -string- ] --> " << cl.DataOrMC << std::endl;
     std::cout << "  - [ sampleName ] --> " << cl.sampleName << std::endl;
     std::cout << "  - [ eraName ] --> " << cl.eraName << std::endl;
-    std::cout << "\n--------- Check arugments ---------------------------------------\n" << std::endl;
-
+    std::cout << "  - [ analysisMode ] --> " << analysisModeName(mode) << std::endl;  // NEW
+    std::cout << "\n-----------------------------------------------------------------\n" << std::endl;
 
     // Create tree reader
     itreestream stream(filenames, "Events");
@@ -1817,8 +1880,22 @@ int main(int argc, char** argv){
 
     bool debugVerbose = false;
 
-    ttHHanalyzer_base analysis(cl.outputfilename, &ev, weight, true, cl.runYear, cl.DataOrMC, cl.sampleName, cl.eraName, debugVerbose);
-
+    // =========================================================================
+    // [NEW] Pass mode to analyzer constructor
+    // =========================================================================
+    ttHHanalyzer_unified analysis(
+        cl.outputfilename, 
+        &ev, 
+        weight, 
+        false, // Is Data (Anyway it will replace using DataOrMC in header)
+        cl.runYear, 
+        cl.DataOrMC, 
+        cl.sampleName, 
+        cl.eraName, 
+        debugVerbose,
+        mode  // NEW parameter
+    );
+    
     if(debugVerbose) std::cout<<"debug : Before [ performAnalysis ] in main() function"<<std::endl;
     analysis.performAnalysis();
     if(debugVerbose) std::cout<<"debug : After [ performAnalysis() ] and Before [ ev.close() ].. in main() function"<<std::endl;

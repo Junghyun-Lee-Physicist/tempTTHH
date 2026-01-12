@@ -419,7 +419,7 @@ class event{
 	return _selectGenParts.size(); 
     }
 
-    int getnbJet(){
+    int getnSelbJet(){
 	return _selectbJets.size(); 
     }
 
@@ -820,7 +820,7 @@ class event{
 
 	//	std::cout << "nJet: " << getnJet() << std::endl;//" jet scalar sum: " << _sumJetScalarpT << std::endl;
 	//std::cout << "nSelectedJet: " << getnSelJet() << " jet selected scalar sum: " << _sumSelJetScalarpT << std::endl;
-	//std::cout << "nbJet: " << getnbJet() << std::endl;
+	//std::cout << "nbJet: " << getnSelbJet() << std::endl;
     //	std::cout << "nElectron: "<< getnElectron() << " nMuon: " << getnMuon() << " nLepton: " << getnLepton() << std::endl;
     //	statObjects jetStat;
     //	getStats(getSelJets(), jetStat);
@@ -1191,7 +1191,7 @@ class ttHHanalyzer_base {
 
     std::vector<double> getbJetCSV(event *thisevent){
 	std::vector<double> bjetCSV;
-        for(int i = 0; i < thisevent->getnbJet(); i++){
+        for(int i = 0; i < thisevent->getnSelbJet(); i++){
             bjetCSV.push_back(thisevent->getSelbJets()->at(i)->bTagCSV);
 	}
         return bjetCSV;

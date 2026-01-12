@@ -23,8 +23,9 @@ void ttHHanalyzer_bTagSF::loop(sysName sysType, bool up){
     int nevents = _ev->size();
 ////    nevents = 1000;
 
-    std::cout<<"weight = "<<_weight<<std::endl;  
-    _SampleWeight = _weight;
+    //std::cout<<"weight = "<<_weight<<std::endl;  
+    std::cout << "Base Weight = " << _baseWeight << std::endl; // [¿¿]
+    _SampleWeight = _baseWeight; // Tree ¿¿¿¿ Base Weight¿ ¿¿ (¿¿ ¿¿¿ ¿¿ evtWeight ¿¿)
 
     cout<<endl;
     print("This analyzer commented out [ \"WTF\" log ] in the header, Please check if you want!!!", "magenta", "warning");
@@ -157,8 +158,8 @@ void ttHHanalyzer_bTagSF::createObjects(event * thisEvent, sysName sysType, bool
             passHadTrig = (group_JetHT && !group_BTagCSV);
         }
         else if (_sampleName.find("SingleMuon") != std::string::npos) {
-            // [Rule 3] Single muon for Trigger Study
-            // Handle the logic same as MC trigger path
+	    // [Rule 3] Single muon for Trigger Study
+	    // Handle the logic same as MC trigger path
             passHadTrig = (group_BTagCSV || group_JetHT);
         }
         else {
@@ -225,8 +226,7 @@ void ttHHanalyzer_bTagSF::createObjects(event * thisEvent, sysName sysType, bool
     // But FH channel don't need this..
     // We just use subleading lepton def for veto
     // update in 5th Jan, 2026
-////////////////////////////////////////
-// We need leptons for Trigger study
+// Lepton definition for BTagSF
     bool thereIsALeadLepton = false;
 
     for(int i = 0; i < muonT.size(); i++){
@@ -253,7 +253,6 @@ void ttHHanalyzer_bTagSF::createObjects(event * thisEvent, sysName sysType, bool
             }
         }
     }
-////////////////////////////////////////
 
     for(int i = 0; i < muonT.size(); i++){
         if(fabs(muonT[i].eta) < cut["muonEta"] && muonT[i].tightId == true && muonT[i].pfRelIso04_all  < cut["muonIso"]){
@@ -277,8 +276,6 @@ void ttHHanalyzer_bTagSF::createObjects(event * thisEvent, sysName sysType, bool
     // But FH channel don't need this..
     // We just use subleading lepton def for veto
     // update in 5th Jan, 2026
-////////////////////////////////////////
-// We need leptons for Trigger study/ 
      if(thereIsALeadLepton){ //we can add all leptons passing to the sublead selection to our containers
          for(int i = 0; i < muonT.size(); i++){
              if(fabs(muonT[i].eta) < cut["muonEta"] && muonT[i].tightId == true && muonT[i].pfRelIso04_all < cut["muonIso"]){
@@ -445,22 +442,17 @@ void ttHHanalyzer_bTagSF::createObjects(event * thisEvent, sysName sysType, bool
 
 bool ttHHanalyzer_bTagSF::selectObjects(event *thisEvent){
      
-    // [¿¿] Helper Lambda ¿¿ ¿¿
-    // ¿ ¿¿ ¿¿¿ "¿¿¿ + hCutFlow ¿¿¿ + ¿¿¿ ¿¿ ¿¿¿"¿ ¿¿
     auto processStep = [&](CutStep step, float wMassVal) {
         int idx = static_cast<int>(step);
         
-        // A. ¿¿ ¿¿¿ ¿¿
         if (idx < _cutFlowCount.size()) {
             _cutFlowCount[idx] += 1.0;
-            _cutFlowWeight[idx] += _weight;
+            _cutFlowWeight[idx] += _evtWeight; // [¿¿] _weight -> _evtWeight
         }
 
-        // B. CutFlow ¿¿¿¿¿ ¿¿¿ (¿¿¿ ¿¿ ¿¿¿ ¿¿ -> ¿¿)
         hCutFlow->Fill(idx); 
-        hCutFlow_w->Fill(idx, _weight);
+        hCutFlow_w->Fill(idx, _evtWeight);
 
-        // C. ¿¿¿ ¿¿¿ ¿¿ ¿¿¿ (¿¿ ¿¿ ¿¿¿)
         fillCutStepHist(step, thisEvent, wMassVal);
     };
 
@@ -470,43 +462,40 @@ bool ttHHanalyzer_bTagSF::selectObjects(event *thisEvent){
     // ----------------------------------------------------
 
     const float wMass = 80.377f;
-    float hadWMass = -1.00;
-// Below lines are deleted for Trigger SFs and B-tag SFs study
-////    float hadWMass = closestMassPair(
-////        thisEvent->getSelLightJets()->size() >= 2 ? thisEvent->getSelLightJets() : thisEvent->getSelJets(),
-////        wMass
-////    );
-////
-////    // Higgs Reconstruction (Histogram ¿¿¿¿)
-////    _minChi2Higgs = cLargeValue;
-////    _bbMassMin1Higgs = -1.0f;
-////    _bbMassMin2Higgs = -1.0f;
+    float hadWMass = closestMassPair(
+        thisEvent->getSelLightJets()->size() >= 2 ? thisEvent->getSelLightJets() : thisEvent->getSelJets(),
+        wMass
+    );
+
+    // Higgs Reconstruction (Histogram ¿¿¿¿)
+    _minChi2Higgs = cLargeValue;
+    _bbMassMin1Higgs = -1.0f;
+    _bbMassMin2Higgs = -1.0f;
 
 
-// Below lines are deleted for Trigger SFs and B-tag SFs study
-//    auto* bjets = thisEvent->getSelbJets();
-//    // ttHH(bb) Hadronic Channel ì—°êµ¬ì´ë¯€ë¡œ, Higgs -> bb ë¶•ê´´ë¥¼ ìž¬êµ¬ì„±í•˜ê¸° ìœ„í•´
-//    // ìµœì†Œ 4ê°œì˜ b-jetì´ ì¡´ìž¬í•´ì•¼ë§Œ Higgs Pair Candidateë¥¼ ìƒì„±í•  ìˆ˜ ìžˆìŒ.
-//    // ë”°ë¼ì„œ ì•„ëž˜ ì¡°ê±´ë¬¸(size >= 4)ì€ ë¶„ì„ì˜ í•„ìˆ˜ ì¡°ê±´ìž„.
-//    if (bjets->size() >= 4) {
-//        for (size_t i = 0; i < bjets->size() - 3; ++i) {
-//            for (size_t j = i + 1; j < bjets->size() - 2; ++j) {
-//                for (size_t k = j + 1; k < bjets->size() - 1; ++k) {
-//                    for (size_t l = k + 1; l < bjets->size(); ++l) {
-//                        diMotherReco(*bjets->at(i)->getp4(), *bjets->at(j)->getp4(),
-//                                     *bjets->at(k)->getp4(), *bjets->at(l)->getp4(),
-//                                     cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
-//                        diMotherReco(*bjets->at(i)->getp4(), *bjets->at(k)->getp4(),
-//                                     *bjets->at(j)->getp4(), *bjets->at(l)->getp4(),
-//                                     cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
-//                        diMotherReco(*bjets->at(i)->getp4(), *bjets->at(l)->getp4(),
-//                                     *bjets->at(j)->getp4(), *bjets->at(k)->getp4(),
-//                                     cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
-//                    }
-//                }
-//            }
-//        }
-//    }
+    auto* bjets = thisEvent->getSelbJets();
+    // ttHH(bb) Hadronic Channel ì—°êµ¬ì´ë¯€ë¡œ, Higgs -> bb ë¶•ê´´ë¥¼ ìž¬êµ¬ì„±í•˜ê¸° ìœ„í•´
+    // ìµœì†Œ 4ê°œì˜ b-jetì´ ì¡´ìž¬í•´ì•¼ë§Œ Higgs Pair Candidateë¥¼ ìƒì„±í•  ìˆ˜ ìžˆìŒ.
+    // ë”°ë¼ì„œ ì•„ëž˜ ì¡°ê±´ë¬¸(size >= 4)ì€ ë¶„ì„ì˜ í•„ìˆ˜ ì¡°ê±´ìž„.
+    if (bjets->size() >= 4) {
+        for (size_t i = 0; i < bjets->size() - 3; ++i) {
+            for (size_t j = i + 1; j < bjets->size() - 2; ++j) {
+                for (size_t k = j + 1; k < bjets->size() - 1; ++k) {
+                    for (size_t l = k + 1; l < bjets->size(); ++l) {
+                        diMotherReco(*bjets->at(i)->getp4(), *bjets->at(j)->getp4(),
+                                     *bjets->at(k)->getp4(), *bjets->at(l)->getp4(),
+                                     cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
+                        diMotherReco(*bjets->at(i)->getp4(), *bjets->at(k)->getp4(),
+                                     *bjets->at(j)->getp4(), *bjets->at(l)->getp4(),
+                                     cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
+                        diMotherReco(*bjets->at(i)->getp4(), *bjets->at(l)->getp4(),
+                                     *bjets->at(j)->getp4(), *bjets->at(k)->getp4(),
+                                     cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
+                    }
+                }
+            }
+        }
+    }
 
     // This is the logic of choosing single higgs mass
     // It could be right but we need to think about it..
@@ -522,7 +511,7 @@ bool ttHHanalyzer_bTagSF::selectObjects(event *thisEvent){
     processStep(CutStep::kNoCut, hadWMass);
 
     // Step 1: Trigger    
-// Below lines are deleted for Trigger SFs and B-tag SFs study
+// Commented out for BTagSF
 ////    if(cut["trigger"] > 0 && thisEvent->getHadTriggerAccept() == false){
 ////        return false;
 ////    }
@@ -562,10 +551,10 @@ bool ttHHanalyzer_bTagSF::selectObjects(event *thisEvent){
     processStep(CutStep::kSixthJetPt, hadWMass);
 
     // Step 6: Lepton Veto (nLepton == 0)
-// Below lines are deleted for Trigger SFs and B-tag SFs study
-//    if(!(thisEvent->getnVetoLepton() == cut["nLeptons"])){
-//        return false;
-//    }
+// Commented out for BTagSF
+////    if(!(thisEvent->getnVetoLepton() == cut["nLeptons"])){
+////        return false;
+////    }
     processStep(CutStep::kLeptonVeto, hadWMass);
 
     // (¿¿: ¿¿ ¿¿ ¿¿ ¿¿)
@@ -580,15 +569,15 @@ bool ttHHanalyzer_bTagSF::selectObjects(event *thisEvent){
 
 
     // Step 8: nbJets >= 4
-// Below lines are deleted for Trigger SFs and B-tag SFs study
-////    if(!(thisEvent->getnSelJet() >= cut["nbJets"] )){
+// Commented out for BTagSF
+////    if(!(thisEvent->getnSelbJet() >= cut["nbJets"] )){
 ////        return false;
 ////    }
     processStep(CutStep::kNumbJets, hadWMass);
 
 
-////    // Step 9: Hadronic W Mass
-// Below lines are deleted for Trigger SFs and B-tag SFs study
+    // Step 9: Hadronic W Mass
+// Commented out for BTagSF
 ////    if (hadWMass < 0.0f || hadWMass > 250.0f || hadWMass < 30.0f) {
 ////        return false;
 ////    }
@@ -720,7 +709,7 @@ void ttHHanalyzer_bTagSF::analyze(event *thisEvent){
 
     //////// HH & ZZ reco : 4 medium b jet case
 
-    //////if(thisEvent->getnbJet() >  3){
+    //////if(thisEvent->getnSelbJet() >  3){
     //////    for( int ibjet1 = 0; ibjet1 < bJetsInv->size(); ibjet1++){
     //////        for( int ibjet2 = ibjet1+1; ibjet2 < bJetsInv->size(); ibjet2++){
     //////    	if( ibjet1 == ibjet2) continue;
@@ -752,7 +741,7 @@ void ttHHanalyzer_bTagSF::analyze(event *thisEvent){
     //////    }
     //////    // HH & ZZ reco : 3 medium + 1 loose b jet case
     //////}
-    ////else if(thisEvent->getnbJet() == 3 && thisEvent->getnbLooseJet() > 3){
+    ////else if(thisEvent->getnSelbJet() == 3 && thisEvent->getnbLooseJet() > 3){
     ////    for( int ibjet1 = 0; ibjet1 < lbJetsInv->size(); ibjet1++){
     ////        for( int ibjet2 = 0; ibjet2 < bJetsInv->size(); ibjet2++){
     ////    	if( lbJetsInv->at(ibjet1) == bJetsInv->at(ibjet2)) continue;
@@ -794,7 +783,7 @@ void ttHHanalyzer_bTagSF::analyze(event *thisEvent){
     ////    }
     ////    // HH & ZZ reco : 3 medium b jet + 1 jet case 
     ////}
-    ////else if(thisEvent->getnbJet() == 3){
+    ////else if(thisEvent->getnSelbJet() == 3){
     ////    for( int ijet1 = 0; ijet1 < jetsInv->size(); ijet1++){
     ////        for( int ibjet2 = 0; ibjet2 < bJetsInv->size(); ibjet2++){
     ////    	if( jetsInv->at(ijet1) == bJetsInv->at(ibjet2)) continue;
@@ -838,6 +827,8 @@ void ttHHanalyzer_bTagSF::analyze(event *thisEvent){
 
 void ttHHanalyzer_bTagSF::process(event* thisEvent, sysName sysType, bool up){
 
+    _evtWeight = _baseWeight;
+
     // 1) Golden JSON filter for data
     _failGoldenJson = false;
     if (_DataOrMC == "Data") {
@@ -857,26 +848,28 @@ void ttHHanalyzer_bTagSF::process(event* thisEvent, sysName sysType, bool up){
         }
     }
 
+    if (debugCorrections) {
+	std::cout << "[process] : Current evtWeight="<< _evtWeight << std::endl;
+    }
+
     _PUWeight = 1.0;
     // 2) Pileup reweighting for MC
     if (_DataOrMC != "Data") {
         float nTrue = _ev->Pileup_nTrueInt;
-        double puW  = corrMgr->getPUWeight(nTrue, "nominal");
-        _PUWeight   *= puW;
+        _PUWeight = corrMgr->getPUWeight(nTrue, "nominal");
         if (debugCorrections) {
             std::cout << "[PU] nTrue=" << nTrue 
-                      << " weight=" << puW 
-                      << " -> evtWeight=" << _weight << std::endl;
+                      << " weight=" << _PUWeight;
         }
     }
 
     // 3) L1 pre-firing weight
     _L1PrefiringWeight = 1.0;
     if (_DataOrMC != "Data") {
-	float preFireWgt = _ev->L1PreFiringWeight_Nom;
-	_L1PrefiringWeight  *= preFireWgt;
+	_L1PrefiringWeight = _ev->L1PreFiringWeight_Nom;
+
         if (debugCorrections) {
-	    std::cout << "[L1PreFiring] weight=" << preFireWgt <<std::endl;
+	    std::cout << "[L1PreFiring] weight=" << _L1PrefiringWeight <<std::endl;
 	}
     }
 
@@ -884,17 +877,16 @@ void ttHHanalyzer_bTagSF::process(event* thisEvent, sysName sysType, bool up){
     // 4) gen weight
     _genWeight = 1.0;
     if (_DataOrMC != "Data") {
-        float genWgt = _ev->genWeight;
-        _genWeight *= genWgt;
+        _genWeight = _ev->genWeight;
 	if (debugCorrections) {
             std::cout << "[genWeight] weight=" << _genWeight <<std::endl;
         }
     }
 
     if (_DataOrMC != "Data") {
-        // [UPDATE] ëª¨ë“  ê°€ì¤‘ì¹˜ë¥¼ ë©”ì¸ _weight ë³€ìˆ˜ì— ë°˜ì˜ (cutflow/histì— ì ìš©)
-        _weight *= (_PUWeight * _L1PrefiringWeight * _genWeight);
-        // if(debugCorrections) std::cout << "Final Event Weight: " << _weight << std::endl;
+	
+        _evtWeight *= (_PUWeight * _L1PrefiringWeight * _genWeight);
+        if(debugCorrections) std::cout << "Final Event Weight: " << _evtWeight << std::endl;
     }
 
     // 5) Build physics objects in thisEvent from the raw buffer
@@ -963,14 +955,14 @@ void ttHHanalyzer_bTagSF::fillHistos(event * thisEvent){
 
    ////// hjetNumber->Fill(thisEvent->getnSelJet(),_weight*thisEvent->getbTagSys());
    ////// hHadronicHiggsNumber->Fill(thisEvent->getnHadronicHiggs(),_weight*thisEvent->getbTagSys());
-   ////// hBjetNumber->Fill(thisEvent->getnbJet(),_weight*thisEvent->getbTagSys());
+   ////// hBjetNumber->Fill(thisEvent->getnSelbJet(),_weight*thisEvent->getbTagSys());
    ////// hLightJetNumber->Fill(thisEvent->getnLightJet(),_weight*thisEvent->getbTagSys());
 
    ////// hjetAverageMass->Fill(thisEvent->getSumSelJetMass()/(float)thisEvent->getnSelJet(),_weight*thisEvent->getbTagSys());
    ////// hHadronicHiggsAverageMass->Fill(thisEvent->getSumSelHadronicHiggsMass()/(float)thisEvent->getnHadronicHiggs(),_weight*thisEvent->getbTagSys());
-   ////// hBjetAverageMass->Fill(thisEvent->getSumSelbJetMass()/(float)thisEvent->getnbJet(),_weight*thisEvent->getbTagSys());
+   ////// hBjetAverageMass->Fill(thisEvent->getSumSelbJetMass()/(float)thisEvent->getnSelbJet(),_weight*thisEvent->getbTagSys());
    ////// hLightJetAverageMass->Fill(thisEvent->getSumSelLightJetMass()/(float)thisEvent->getnLightJet(),_weight*thisEvent->getbTagSys());
-   ////// hBjetAverageMassSqr->Fill((thisEvent->getSumSelbJetMass()*thisEvent->getSumSelbJetMass())/(float)thisEvent->getnbJet(), _weight*thisEvent->getbTagSys());
+   ////// hBjetAverageMassSqr->Fill((thisEvent->getSumSelbJetMass()*thisEvent->getSumSelbJetMass())/(float)thisEvent->getnSelbJet(), _weight*thisEvent->getbTagSys());
 
    ////// if(thisEvent->getnHadronicHiggs() > 0){ 
    //////     hHadronicHiggsSoftDropMass1->Fill(thisEvent->getSelHadronicHiggses()->at(0)->softDropMass,_weight*thisEvent->getbTagSys());
@@ -1099,68 +1091,68 @@ void ttHHanalyzer_bTagSF::fillHistos(event * thisEvent){
      float Mass_DiffRatio = thisEvent->getSelJets()->at(ih)->mass_DiffRatio;
 
      // [ ì§ì ‘ JEC í•´ì²´ í›„ ìµœì‹  ë²„ì „ ìž¬ì ìš©í•œ JEC - NanoAOD orinigal Pt (NanoAODì˜ ê¸°ë³¸ JEC) ] / [ NanoAOD original Pt ]
-     h_JEC_DiffRatio.at(ih)->Fill(JEC_DiffRatio, _weight);
-     h_JEC_Mass_DiffRatio.at(ih)->Fill(Mass_DiffRatio, _weight);
+     h_JEC_DiffRatio.at(ih)->Fill(JEC_DiffRatio, _evtWeight);
+     h_JEC_Mass_DiffRatio.at(ih)->Fill(Mass_DiffRatio, _evtWeight);
    }
   
-   ////// for(int ih=0; ih < thisEvent->getnbJet() && ih < nHistsbJets; ih++){
-   //////     hbjetsPTs.at(ih)->Fill(thisEvent->getSelbJets()->at(ih)->getp4()->Pt(),_weight*thisEvent->getbTagSys());
-   //////     hbjetsEtas.at(ih)->Fill(thisEvent->getSelbJets()->at(ih)->getp4()->Eta(),_weight*thisEvent->getbTagSys());
-   //////     hbjetsBTagDisc.at(ih)->Fill(getbJetCSV(thisEvent).at(ih),_weight*thisEvent->getbTagSys());
+   ////// for(int ih=0; ih < thisEvent->getnSelbJet() && ih < nHistsbJets; ih++){
+   //////     hbjetsPTs.at(ih)->Fill(thisEvent->getSelbJets()->at(ih)->getp4()->Pt(),_evtWeight*thisEvent->getbTagSys());
+   //////     hbjetsEtas.at(ih)->Fill(thisEvent->getSelbJets()->at(ih)->getp4()->Eta(),_evtWeight*thisEvent->getbTagSys());
+   //////     hbjetsBTagDisc.at(ih)->Fill(getbJetCSV(thisEvent).at(ih),_evtWeight*thisEvent->getbTagSys());
    ////// }
 
 
    ////// for(int ih=0; ih < thisEvent->getnLightJet() && ih < nHistsLightJets; ih++){
-   //////     hLightJetsPTs.at(ih)->Fill(thisEvent->getSelLightJets()->at(ih)->getp4()->Pt(),_weight*thisEvent->getbTagSys());
-   //////     hLightJetsEtas.at(ih)->Fill(thisEvent->getSelLightJets()->at(ih)->getp4()->Eta(),_weight*thisEvent->getbTagSys());
-   //////     hLightJetsBTagDisc.at(ih)->Fill(getlightJetCSV(thisEvent).at(ih),_weight*thisEvent->getbTagSys());
+   //////     hLightJetsPTs.at(ih)->Fill(thisEvent->getSelLightJets()->at(ih)->getp4()->Pt(),_evtWeight*thisEvent->getbTagSys());
+   //////     hLightJetsEtas.at(ih)->Fill(thisEvent->getSelLightJets()->at(ih)->getp4()->Eta(),_evtWeight*thisEvent->getbTagSys());
+   //////     hLightJetsBTagDisc.at(ih)->Fill(getlightJetCSV(thisEvent).at(ih),_evtWeight*thisEvent->getbTagSys());
    ////// }
 
-    /*    hleptonNumber->Fill(thisEvent->getnSelLepton(),_weight*thisEvent->getbTagSys());
+    /*    hleptonNumber->Fill(thisEvent->getnSelLepton(),_evtWeight*thisEvent->getbTagSys());
 
 
     if(thisEvent->getnSelMuon() == 2){
-	hDiMuonMass->Fill(thisEvent->getSelMuonsMass(),_weight*thisEvent->getbTagSys());
-	hDiMuonPT->Fill(thisEvent->getSelMuonsPT(),_weight*thisEvent->getbTagSys());
-	hDiMuonEta->Fill(thisEvent->getSelMuonsEta(),_weight*thisEvent->getbTagSys());
+	hDiMuonMass->Fill(thisEvent->getSelMuonsMass(),_evtWeight*thisEvent->getbTagSys());
+	hDiMuonPT->Fill(thisEvent->getSelMuonsPT(),_evtWeight*thisEvent->getbTagSys());
+	hDiMuonEta->Fill(thisEvent->getSelMuonsEta(),_evtWeight*thisEvent->getbTagSys());
     }
 
     if(thisEvent->getnSelElectron() == 2){
-	hDiElectronMass->Fill(thisEvent->getSelElectronsMass(),_weight*thisEvent->getbTagSys());
-	hDiElectronPT->Fill(thisEvent->getSelElectronsPT(),_weight*thisEvent->getbTagSys());
-	hDiElectronEta->Fill(thisEvent->getSelElectronsEta(),_weight*thisEvent->getbTagSys());
+	hDiElectronMass->Fill(thisEvent->getSelElectronsMass(),_evtWeight*thisEvent->getbTagSys());
+	hDiElectronPT->Fill(thisEvent->getSelElectronsPT(),_evtWeight*thisEvent->getbTagSys());
+	hDiElectronEta->Fill(thisEvent->getSelElectronsEta(),_evtWeight*thisEvent->getbTagSys());
     }
 
-    hleptonHT->Fill(thisEvent->getSelLeptonHT(),_weight*thisEvent->getbTagSys());
-    hST->Fill(thisEvent->getSelLeptonST(),_weight*thisEvent->getbTagSys());
-    hLeptonPT1->Fill(thisEvent->getSelLeptons()->at(0)->getp4()->Pt(), _weight*thisEvent->getbTagSys());
-    hLeptonEta1->Fill(thisEvent->getSelLeptons()->at(0)->getp4()->Eta(), _weight*thisEvent->getbTagSys());
-    hLeptonPT2->Fill(thisEvent->getSelLeptons()->at(1)->getp4()->Pt(), _weight*thisEvent->getbTagSys());
-    hLeptonEta2->Fill(thisEvent->getSelLeptons()->at(1)->getp4()->Eta(), _weight*thisEvent->getbTagSys());
+    hleptonHT->Fill(thisEvent->getSelLeptonHT(),_evtWeight*thisEvent->getbTagSys());
+    hST->Fill(thisEvent->getSelLeptonST(),_evtWeight*thisEvent->getbTagSys());
+    hLeptonPT1->Fill(thisEvent->getSelLeptons()->at(0)->getp4()->Pt(), _evtWeight*thisEvent->getbTagSys());
+    hLeptonEta1->Fill(thisEvent->getSelLeptons()->at(0)->getp4()->Eta(), _evtWeight*thisEvent->getbTagSys());
+    hLeptonPT2->Fill(thisEvent->getSelLeptons()->at(1)->getp4()->Pt(), _evtWeight*thisEvent->getbTagSys());
+    hLeptonEta2->Fill(thisEvent->getSelLeptons()->at(1)->getp4()->Eta(), _evtWeight*thisEvent->getbTagSys());
 
 
     if(thisEvent->getnSelMuon() > 0){
-	hMuonPT1->Fill(thisEvent->getSelMuons()->at(0)->getp4()->Pt(), _weight*thisEvent->getbTagSys());
-	hMuonEta1->Fill(thisEvent->getSelMuons()->at(0)->getp4()->Eta(), _weight*thisEvent->getbTagSys());
+	hMuonPT1->Fill(thisEvent->getSelMuons()->at(0)->getp4()->Pt(), _evtWeight*thisEvent->getbTagSys());
+	hMuonEta1->Fill(thisEvent->getSelMuons()->at(0)->getp4()->Eta(), _evtWeight*thisEvent->getbTagSys());
     }
     
     if(thisEvent->getnSelElectron() > 0){
-	hElePT1->Fill(thisEvent->getSelElectrons()->at(0)->getp4()->Pt(), _weight*thisEvent->getbTagSys());
-	hEleEta1->Fill(thisEvent->getSelElectrons()->at(0)->getp4()->Eta(), _weight*thisEvent->getbTagSys());
+	hElePT1->Fill(thisEvent->getSelElectrons()->at(0)->getp4()->Pt(), _evtWeight*thisEvent->getbTagSys());
+	hEleEta1->Fill(thisEvent->getSelElectrons()->at(0)->getp4()->Eta(), _evtWeight*thisEvent->getbTagSys());
     }
     
     if(thisEvent->getnSelMuon() > 1){
-	hMuonPT2->Fill(thisEvent->getSelMuons()->at(1)->getp4()->Pt(), _weight*thisEvent->getbTagSys());
-	hMuonEta2->Fill(thisEvent->getSelMuons()->at(1)->getp4()->Eta(), _weight*thisEvent->getbTagSys());
+	hMuonPT2->Fill(thisEvent->getSelMuons()->at(1)->getp4()->Pt(), _evtWeight*thisEvent->getbTagSys());
+	hMuonEta2->Fill(thisEvent->getSelMuons()->at(1)->getp4()->Eta(), _evtWeight*thisEvent->getbTagSys());
     }
     
     if(thisEvent->getnSelElectron() > 1){
-	hElePT2->Fill(thisEvent->getSelElectrons()->at(1)->getp4()->Pt(), _weight*thisEvent->getbTagSys());
-	hEleEta2->Fill(thisEvent->getSelElectrons()->at(1)->getp4()->Eta(), _weight*thisEvent->getbTagSys());
+	hElePT2->Fill(thisEvent->getSelElectrons()->at(1)->getp4()->Pt(), _evtWeight*thisEvent->getbTagSys());
+	hEleEta2->Fill(thisEvent->getSelElectrons()->at(1)->getp4()->Eta(), _evtWeight*thisEvent->getbTagSys());
     } 
 
-    hLepCharge1->Fill(thisEvent->getSelLeptons()->at(0)->charge, _weight*thisEvent->getbTagSys());
-    hLepCharge2->Fill(thisEvent->getSelLeptons()->at(1)->charge, _weight*thisEvent->getbTagSys());
+    hLepCharge1->Fill(thisEvent->getSelLeptons()->at(0)->charge, _evtWeight*thisEvent->getbTagSys());
+    hLepCharge2->Fill(thisEvent->getSelLeptons()->at(1)->charge, _evtWeight*thisEvent->getbTagSys());
     */
 }
 
@@ -1365,7 +1357,7 @@ void ttHHanalyzer_bTagSF::fillTree(event * thisEvent){
     nMuons = thisEvent->getnSelMuon();
     nElecs = thisEvent->getnSelElectron();
     nJets = thisEvent->getnSelJet();
-    nbJets = thisEvent->getnbJet();
+    nbJets = thisEvent->getnSelbJet();
     HT = thisEvent->getSumSelJetScalarpT();
 
 
@@ -1516,7 +1508,7 @@ void ttHHanalyzer_bTagSF::fillTree(event * thisEvent){
     //////}
 
     //////// # b-jet
-    //////if(thisEvent->getnbJet() > 3){
+    //////if(thisEvent->getnSelbJet() > 3){
     //////    bbjetPT4 = thisEvent->getSelbJets()->at(3)->getp4()->Pt();
     //////    bbjetEta4 = thisEvent->getSelbJets()->at(3)->getp4()->Eta();
     //////    bbjetPhi4 = thisEvent->getSelbJets()->at(3)->getp4()->Phi();
@@ -1534,7 +1526,7 @@ void ttHHanalyzer_bTagSF::fillTree(event * thisEvent){
     //////    bbjetMinChiHiggsIndex4 = -6;
     //////}
     //////
-    //////if(thisEvent->getnbJet() > 4){
+    //////if(thisEvent->getnSelbJet() > 4){
     //////    bbjetPT5 = thisEvent->getSelbJets()->at(4)->getp4()->Pt();
     //////    bbjetEta5 = thisEvent->getSelbJets()->at(4)->getp4()->Eta();
     //////    bbjetPhi5 = thisEvent->getSelbJets()->at(4)->getp4()->Phi();
@@ -1552,7 +1544,7 @@ void ttHHanalyzer_bTagSF::fillTree(event * thisEvent){
     //////    bbjetMinChiHiggsIndex5 = -6;
     //////}
 
-    //////if(thisEvent->getnbJet() > 5){
+    //////if(thisEvent->getnSelbJet() > 5){
     //////    bbjetPT6 = thisEvent->getSelbJets()->at(5)->getp4()->Pt();
     //////    bbjetEta6 = thisEvent->getSelbJets()->at(5)->getp4()->Eta();
     //////    bbjetPhi6 = thisEvent->getSelbJets()->at(5)->getp4()->Phi();
@@ -1570,7 +1562,7 @@ void ttHHanalyzer_bTagSF::fillTree(event * thisEvent){
     //////    bbjetMinChiHiggsIndex6 = -6;
     //////}
 
-    //////if(thisEvent->getnbJet() > 6){
+    //////if(thisEvent->getnSelbJet() > 6){
     //////    bbjetPT7 = thisEvent->getSelbJets()->at(6)->getp4()->Pt();
     //////    bbjetEta7 = thisEvent->getSelbJets()->at(6)->getp4()->Eta();
     //////    bbjetPhi7 = thisEvent->getSelbJets()->at(6)->getp4()->Phi();
@@ -1587,7 +1579,7 @@ void ttHHanalyzer_bTagSF::fillTree(event * thisEvent){
     //////}
 
 
-    //////if(thisEvent->getnbJet() > 7){
+    //////if(thisEvent->getnSelbJet() > 7){
     //////    bbjetPT8 = thisEvent->getSelbJets()->at(7)->getp4()->Pt();
     //////    bbjetEta8 = thisEvent->getSelbJets()->at(7)->getp4()->Eta();
     //////    bbjetPhi8 = thisEvent->getSelbJets()->at(7)->getp4()->Phi();
@@ -1667,9 +1659,9 @@ void ttHHanalyzer_bTagSF::fillTree(event * thisEvent){
 
     //////bweight= _weight;
     //////bjetAverageMass = thisEvent->getSumSelJetMass()/thisEvent->getnSelJet();
-    //////bbJetAverageMass = thisEvent->getSumSelbJetMass()/thisEvent->getnbJet();
+    //////bbJetAverageMass = thisEvent->getSumSelbJetMass()/thisEvent->getnSelbJet();
     //////blightJetAverageMass = thisEvent->getSumSelLightJetMass()/thisEvent->getnLightJet();
-    //////bbJetAverageMassSqr = (thisEvent->getSumSelbJetMass()*thisEvent->getSumSelbJetMass())/thisEvent->getnbJet();
+    //////bbJetAverageMassSqr = (thisEvent->getSumSelbJetMass()*thisEvent->getSumSelbJetMass())/thisEvent->getnSelbJet();
     //////bmet = thisEvent->getMET()->getp4()->Pt();
     //////baverageDeltaRjj = jetStat.meandR;
     //////baverageDeltaRbb = bjetStat.meandR;
@@ -1714,7 +1706,7 @@ void ttHHanalyzer_bTagSF::fillTree(event * thisEvent){
     //////bbjetHT = thisEvent->getSumSelbJetScalarpT();
     //////blightjetHT = thisEvent->getSumSelLightJetScalarpT();
     //////bjetNumber = thisEvent->getnSelJet();
-    //////bbjetNumber = thisEvent->getnbJet();
+    //////bbjetNumber = thisEvent->getnSelbJet();
     //////blightjetNumber = thisEvent->getnLightJet();
     //////binvMassZ1 = _bbMassMin1Z; //ZZ
     //////binvMassZ2 = _bbMassMin2Z;
@@ -1822,7 +1814,7 @@ int main(int argc, char** argv){
 
     eventBuffer ev(stream);
     std::cout << " Output filename: " << cl.outputfilename << std::endl;
-    ////ttHHanalyzer_bTagSF analysis(cl.outputfilename, &ev, weight, true)
+    ////ttHHanalyzer_base analysis(cl.outputfilename, &ev, weight, true)
   
     // If you want to check or modify arguments,
     // Please check the [ src/tnm.cc ]

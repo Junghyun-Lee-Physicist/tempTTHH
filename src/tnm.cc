@@ -270,6 +270,27 @@ commandLine::decode(int argc, char** argv)
   else
       eraName = std::string(" ");
 
+//    // [NEW] Parse analysis mode argument
+//    // usage : --mode=value
+//    analysisMode = "";  // Default empty (will be "main")
+//    for (int i = 1; i < argc; ++i) {
+//        std::string arg = argv[i];
+//        if (arg == "-mode" || arg == "--mode") {
+//            if (i + 1 < argc) {
+//                analysisMode = argv[++i];
+//            }
+//        }
+//    }
+    
+    // Alternative: Support --mode=value syntax
+    // usage : -mode value or --mode value
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg.find("--mode=") == 0) {
+            analysisMode = arg.substr(7);  // Extract value after "="
+        }
+    }
+
   // Make sure extension is ".root"
   std::string name = outputfilename;
   if ( name.substr(name.size()-5, 5) != std::string(".root") )
