@@ -203,13 +203,13 @@ void EventLooper::Loop()
 
         if (!isData) {
 	    if (channel == "diLep"){   
-                weight = 0.1419595905 * L1PrefiringWeight * PUWeight;
+                weight = 0.0004761561474 * L1PrefiringWeight * PUWeight * genWeight;
 	    }
 	    else if (channel == "had"){
-                weight = 0.06745986328 * L1PrefiringWeight * PUWeight;
+                weight = 0.000214351205 * L1PrefiringWeight * PUWeight * genWeight;
 	    }
 	    else if (channel == "semiLep"){
-                weight = 0.01049544017 * L1PrefiringWeight * PUWeight;
+                weight = 0.0001455793461 * L1PrefiringWeight * PUWeight * genWeight;
 	    }
         } else {
             weight = 1.0;
@@ -294,7 +294,7 @@ void EventLooper::Loop()
 void EventLooper::Init()
 {
    // TTree 초기화 및 브랜치 설정
-   TString ntupleDir  = "/Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_260105_forSFs/";
+   TString ntupleDir  = "/Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/";
    //TString ntupleDir  = "/eos/user/j/junghyun/ttHH/Btag_el9/merged/";
    TString ntupleName = getInputName();
    TString ntuplePath = ntupleDir + ntupleName;
@@ -356,6 +356,7 @@ void EventLooper::Init()
    //fChain->SetBranchAddress("bTagScore", bTagScore, &b_bTagScore);
    //fChain->SetBranchAddress("eventNumber", &eventNumber, &b_eventNumber);
    //fChain->SetBranchAddress("runNumber", &runNumber, &b_runNumber);   
+   fChain->SetBranchAddress("genWeight", &genWeight, &b_genWeight);
    fChain->SetBranchAddress("PUWeight", &PUWeight, &b_PUWeight);
    fChain->SetBranchAddress("L1PrefiringWeight", &L1PrefiringWeight, &b_L1PrefiringWeight);
    fChain->SetBranchAddress("failGoldenJson", &failGoldenJson, &b_failGoldenJson);

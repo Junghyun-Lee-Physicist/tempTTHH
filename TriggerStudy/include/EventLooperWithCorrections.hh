@@ -34,6 +34,7 @@ class EventLooperWithCorrections {
        //Float_t         bTagScore[30];
        //UInt_t          eventNumber;
        //UInt_t          runNumber;
+       Float_t         genWeight;
        Float_t         PUWeight;
        Float_t         L1PrefiringWeight;
        Bool_t          failGoldenJson;
@@ -59,6 +60,7 @@ class EventLooperWithCorrections {
        //TBranch        *b_bTagScore;   //!
        //TBranch        *b_eventNumber;   //!
        //TBranch        *b_runNumber;   //!
+       TBranch        *b_genWeight;
        TBranch        *b_PUWeight;
        TBranch        *b_L1PrefiringWeight;
        TBranch        *b_failGoldenJson;

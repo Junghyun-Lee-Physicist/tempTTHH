@@ -38,6 +38,7 @@ class EventLooper {
 //       //UInt_t          runNumber;
        std::vector<float> *jetPt;
 
+       Float_t         genWeight;
        Float_t         PUWeight;
        Float_t         L1PrefiringWeight;
        Bool_t          failGoldenJson;
@@ -63,6 +64,7 @@ class EventLooper {
        //TBranch        *b_bTagScore;   //!
        //TBranch        *b_eventNumber;   //!
        //TBranch        *b_runNumber;   //!
+       TBranch        *b_genWeight;
        TBranch        *b_PUWeight;
        TBranch        *b_L1PrefiringWeight;
        TBranch        *b_failGoldenJson;
