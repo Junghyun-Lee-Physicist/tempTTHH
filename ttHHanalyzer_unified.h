@@ -50,7 +50,16 @@ enum class AnalysisMode {
 };
 
 inline AnalysisMode parseAnalysisMode(const std::string& modeStr) {
-    if (modeStr.empty() || modeStr == "main" || modeStr == "MainAnalysis") {
+
+    if (modeStr.empty()) {
+        throw std::invalid_argument(
+            "[ERROR] Analysis mode not specified!\n"
+            "        You MUST provide --mode argument.\n"
+            "        Valid modes: main, btagsf, trigsf"
+        );
+    }
+    
+    if (modeStr == "main" || modeStr == "MainAnalysis") {
         return AnalysisMode::kMainAnalysis;
     }
     else if (modeStr == "btagsf" || modeStr == "BTagSFDerivation") {
@@ -60,6 +69,7 @@ inline AnalysisMode parseAnalysisMode(const std::string& modeStr) {
         return AnalysisMode::kTriggerSFStudy;
     }
     throw std::invalid_argument("[ERROR] Unknown analysis mode: " + modeStr);
+
 }
 
 inline std::string analysisModeName(AnalysisMode mode) {
@@ -989,12 +999,12 @@ class ttHHanalyzer_unified {
     enum sysName { kJES, kJER, kbTag, noSys };
     ttHHanalyzer_unified(const std::string & cl, eventBuffer * ev, float weight = 1., bool systematics = false, 
     std::string runYear = "nothing", std::string DataOrMC = "nothing", std::string sampleName = "nothing", std::string era = "noInputEra", bool debug = "false",
-    AnalysisMode mode = AnalysisMode::kMainAnalysis
+    AnalysisMode mode
     ) :
-	    // Analysis Mode and Policy Initializer
-	    _analysisMode(mode),
-		_policy(SelectionPolicy::fromMode(mode))
-	{
+        // Analysis Mode and Policy Initializer
+        _analysisMode(mode),
+        _policy(SelectionPolicy::fromMode(mode))
+    {
 	//_weight = weight;
 	_baseWeight = weight; // 데이터셋 공통 상수 (CrossSection * Lumi / SumGenWeight)
 	_ev = ev;

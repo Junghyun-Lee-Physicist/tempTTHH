@@ -1795,14 +1795,26 @@ int main(int argc, char** argv){
     vector<string> filenames = fileNames(cl.filelist);
     double weight = cl.externalweight;   // Get global weight 
 
+    // ===========================================
+    // Parse and validate analysis mode
+    // ===========================================
+    AnalysisMode mode;
+    try {
+        mode = parseAnalysisMode(cl.analysisMode);
+    }
+    catch (const std::invalid_argument& e) {
+        std::cerr << e.what() << std::endl;
+        return 1;
+    }
+    // ===========================================
+
     std::cout << "\n--------- Check arugments ---------------------------------------\n" << std::endl;
     std::cout << "  - [ output file name ] --> " << cl.outputfilename << std::endl;
     std::cout << "  - [ runYear -string- ] --> " << cl.runYear << std::endl;
     std::cout << "  - [ DataOrMC -string- ] --> " << cl.DataOrMC << std::endl;
     std::cout << "  - [ sampleName ] --> " << cl.sampleName << std::endl;
     std::cout << "  - [ eraName ] --> " << cl.eraName << std::endl;
-    std::cout << "  - [ analysisMode ] --> " << cl.analysisMode << std::endl;  
-
+    std::cout << "  - [ analysisMode ] --> " << analysisModeName(mode) << std::endl;  
     std::cout << "\n--------- Check arugments ---------------------------------------\n" << std::endl;
 
 
@@ -1820,7 +1832,7 @@ int main(int argc, char** argv){
 
     bool debugVerbose = false;
 
-    ttHHanalyzer_unified analysis(cl.outputfilename, &ev, weight, true, cl.runYear, cl.DataOrMC, cl.sampleName, cl.eraName, debugVerbose);
+    ttHHanalyzer_unified analysis(cl.outputfilename, &ev, weight, true, cl.runYear, cl.DataOrMC, cl.sampleName, cl.eraName, debugVerbose, mode);
 
     if(debugVerbose) std::cout<<"debug : Before [ performAnalysis ] in main() function"<<std::endl;
     analysis.performAnalysis();
