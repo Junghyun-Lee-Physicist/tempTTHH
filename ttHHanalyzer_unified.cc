@@ -1801,6 +1801,8 @@ int main(int argc, char** argv){
     std::cout << "  - [ DataOrMC -string- ] --> " << cl.DataOrMC << std::endl;
     std::cout << "  - [ sampleName ] --> " << cl.sampleName << std::endl;
     std::cout << "  - [ eraName ] --> " << cl.eraName << std::endl;
+    std::cout << "  - [ analysisMode ] --> " << cl.analysisMode << std::endl;  
+
     std::cout << "\n--------- Check arugments ---------------------------------------\n" << std::endl;
 
 

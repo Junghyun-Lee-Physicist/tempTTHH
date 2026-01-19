@@ -256,13 +256,13 @@ class CondorJobManager:
                         f"--year {self.year} "
                         f"--dataOrMC {self.data_or_mc} "
                         f"--sample {self.sample_name} "
-                        f"--mode {self.analysis_mode}"
+                        f"--mode {self.analysis_mode} "
                     )
 
                     # Write the arguments using --key value format
                     era_arg = self.era if str(self.era).strip() else ""
                     if era_arg:
-                        args += f"--era {era_arg} "
+                        args += f" --era {era_arg} "
  
                     argout.write(args + "\n")
 
