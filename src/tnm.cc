@@ -217,84 +217,76 @@ void
 commandLine::decode(int argc, char** argv)
 {
   if ( argc <= 0 )
-    {
+  {  
       argc = gApplication->Argc();
       argv = gApplication->Argv();
-    }
+  }
 
   progname = nameonly(std::string(argv[0]));
   if ( progname == "Python" || progname == "python" )
-    progname = string("analyzer");
+  progname = string("analyzer");
 
-  // 1st (optional) argument
-  if ( argc > 1 )
-    filelist = std::string(argv[1]);
-  else
-    filelist = std::string("filelist.txt");
+  // Default values
+  filelist = "filelist.txt";
+  outputfilename = progname + "_histograms.root";
+  externalweight = 1.0;
+  runYear = "nothing";
+  DataOrMC = "nothing";
+  sampleName = "nothing";
+  eraName = "";       // Era can be empty
+  analysisMode = "";  // Mode can be empty
 
-  // 2nd (optional) command line argument
-  if ( argc > 2 ) 
-    outputfilename = std::string(argv[2]);
-  else
-    outputfilename = progname + std::string("_histograms");
+  // Argument Rule --> [ --key value ]
+  for (int i = 1; i < argc; ++i) {
+      std::string arg = argv[i];
 
-  // 3rd (optional) command line argument - Gamze
-  if ( argc > 3 )
-      externalweight = std::atof(argv[3]);
-  else
-      externalweight = 1.;
-
- // 4th (optional) command line argument - Gamze
-  if ( argc > 4 )
-      //      runYear = std::atof(argv[4]);
-      runYear = std::string(argv[4]);
-  else
-      //runYear = 2017;
-      runYear = std::string("nothing");
-
- // 5th (optional) command line argument - Gamze
-  if ( argc > 5 )
-      DataOrMC = std::string(argv[5]);
-  else
-      DataOrMC = std::string("nothing");
-
- // 6th (optional) command line argument - Gamze
-  if ( argc > 6 )
-      sampleName = std::string(argv[6]);
-  else
-      sampleName = std::string("nothing");
-
- // 6th (optional) command line argument - Gamze
-  if ( argc > 7 )
-      eraName = std::string(argv[7]);
-  else
-      eraName = std::string(" ");
-
-//    // [NEW] Parse analysis mode argument
-//    // usage : --mode=value
-//    analysisMode = "";  // Default empty (will be "main")
-//    for (int i = 1; i < argc; ++i) {
-//        std::string arg = argv[i];
-//        if (arg == "-mode" || arg == "--mode") {
-//            if (i + 1 < argc) {
-//                analysisMode = argv[++i];
-//            }
-//        }
-//    }
-    
-    // Alternative: Support --mode=value syntax
-    // usage : -mode value or --mode value
-    for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
-        if (arg.find("--mode=") == 0) {
-            analysisMode = arg.substr(7);  // Extract value after "="
-        }
-    }
+      if (i + 1 < argc) {
+          if (arg == "--filelist") {
+              filelist = argv[++i];
+          } 
+          else if (arg == "--output") {
+              outputfilename = argv[++i];
+          } 
+          else if (arg == "--weight") {
+              externalweight = std::atof(argv[++i]);
+          } 
+          else if (arg == "--year") {
+              runYear = argv[++i];
+          } 
+          else if (arg == "--dataOrMC" || arg == "--type") { // type alias 지원
+              DataOrMC = argv[++i];
+          } 
+          else if (arg == "--sample") {
+              sampleName = argv[++i];
+          } 
+          else if (arg == "--era") {
+              eraName = argv[++i];
+          } 
+          else if (arg == "--mode") {
+              analysisMode = argv[++i];
+          }
+      }
+  }
 
   // Make sure extension is ".root"
   std::string name = outputfilename;
-  if ( name.substr(name.size()-5, 5) != std::string(".root") )
-    outputfilename += std::string(".root");
+  if (name.size() < 5 || name.substr(name.size()-5, 5) != std::string(".root"))
+  outputfilename += std::string(".root");
+
+  std::cout << "\n==================================================" << std::endl;
+  std::cout << " [Info] Command Line Arguments Parsed (tnm.cc)" << std::endl;
+  std::cout << "==================================================" << std::endl;
+  std::cout << "  Program Name   : " << progname << std::endl;
+  std::cout << "  File List      : " << filelist << std::endl;
+  std::cout << "  Output File    : " << outputfilename << std::endl;
+  std::cout << "  Weight         : " << externalweight << std::endl;
+  std::cout << "  Run Year       : " << runYear << std::endl;
+  std::cout << "  Data/MC        : " << DataOrMC << std::endl;
+  std::cout << "  Sample Name    : " << sampleName << std::endl;
+  std::cout << "  Era Name       : " << (eraName.empty() ? "(empty)" : eraName) << std::endl;
+  std::cout << "  Analysis Mode  : " << (analysisMode.empty() ? "(default)" : analysisMode) << std::endl;
+  std::cout << "==================================================\n" << std::endl;
+
 }
 
 /// Read ntuple filenames from file list

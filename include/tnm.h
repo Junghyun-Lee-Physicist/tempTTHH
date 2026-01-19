@@ -1,6 +1,6 @@
 #ifndef TNM_H
 #define TNM_H
-//-----------------------------------------------------------------------------
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
@@ -10,6 +10,7 @@
 #include <sstream>
 #include <algorithm>
 #include <cmath>
+#include <map>
 
 #include "TROOT.h"
 #include "TFile.h"
@@ -21,12 +22,7 @@
 #include "TStyle.h"
 #include "TApplication.h"
 
-#ifdef PROJECT_NAME
-#include "PhysicsTools/TheNtupleMaker/interface/eventBuffer.h"
-#else
 #include "eventBuffer.h"
-#endif
-//-----------------------------------------------------------------------------
 
 struct outputFile
 {
@@ -138,5 +134,6 @@ void setStyle();
 
 ///
 std::string particleName(int pdgid);
+
 #endif
 

@@ -20,6 +20,47 @@
 ./ttHHanalyzer_base filelistTest/file_BTagCSVB_Tier3.txt output_BTagCSV_B.root 1.0 2017 Data BTagCSV_B B
 ./ttHHanalyzer_base filelistTest/file_SingleMuonD_Tier3.txt output_SingleMuon_D.root 1.0 2017 Data SingleMuon_D D
 
+# For New Parser Tier3 Test
+# 1. MC Sample (tt4b)
+./ttHHanalyzer_unified \
+  --filelist filelistTest/file_tt4b_Tier3.txt \
+  --output output_tt4b.root \
+  --weight 0.001299971501 \
+  --year 2017 \
+  --dataOrMC MC \
+  --sample tt4b \
+  --era 
+
+# 2. Data Sample (BTagCSV)
+./ttHHanalyzer_unified \
+  --filelist filelistTest/file_BTagCSVB_Tier3.txt \
+  --output output_BTagCSV_B.root \
+  --weight 1.0 \
+  --year 2017 \
+  --dataOrMC Data \
+  --sample BTagCSV_B \
+  --era B
+
+# 3. Data Sample (SingleMuon)
+./ttHHanalyzer_unified \
+  --filelist filelistTest/file_SingleMuonD_Tier3.txt \
+  --output output_SingleMuon_D.root \
+  --weight 1.0 \
+  --year 2017 \
+  --dataOrMC Data \
+  --sample SingleMuon_D \
+  --era D
+
+# For New Parser Local Test
+./ttHHanalyzer_unified \
+  --filelist filelistTest/file_tt4b_Tier3.txt \
+  --output output_tt4b.root \
+  --weight 0.001299971501 \
+  --year 2017 \
+  --dataOrMC MC \
+  --sample tt4b \
+  --era 
+
 
 no warning make
 --> 

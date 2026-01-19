@@ -1,18 +1,5 @@
-/**
- * @file ttHHanalyzer_unified.h
- * @brief Unified ttHH Analyzer with Mode-based Selection Logic
- * 
- * Analysis Modes:
- *   - kMainAnalysis:     Full selection for ttHH FH channel (original base.cc)
- *   - kBTagSFDerivation: Relaxed selection for b-tag SF derivation
- *   - kTriggerSFStudy:   Single muon selection for trigger SF derivation
- * 
- * @author [Junghyun Lee]
- * @date 12th January, 2026
- */
-
-#ifndef ttHHanalyzer_base_h
-#define ttHHanalyzer_base_h
+#ifndef ttHHanalyzer_unified_h
+#define ttHHanalyzer_unified_h
 #include "tnm.h"
 #include <cmath> 
 #include <algorithm>
@@ -34,6 +21,7 @@
 //#include "HypothesisCombinatorics.h"
 //#include "include/tthHypothesisCombinatorics.h"
 //#include "include/HypothesisCombinatorics.h"
+#include <stdexcept>
 
 //#include "fifo_map.hpp" // No need now, I'll update cutflow logic
 
@@ -46,31 +34,23 @@
 ////using nlohmann::fifo_map;
 using namespace std;
 
-// =============================================================================
-// [Section 1] Analysis Mode Definition
-// =============================================================================
+const float cLargeValue = 99999999999.;
+const float cEps = 0.000000001; 
+const float cHiggsMass = 125.38;
+const float cZMass = 91.;
 
-/**
- * @brief Analysis operation modes
- * 
- * Each mode determines which selection cuts are applied and which
- * objects are collected. This allows a single codebase to handle
- * multiple analysis workflows.
- */
+
+// =============================================================================
+// Analysis Mode Definition (Start)
+// =============================================================================
 enum class AnalysisMode {
-    kMainAnalysis,      ///< Full ttHH FH selection (Trigger, LeptonVeto, nbJets, HadWMass)
-    kBTagSFDerivation,  ///< b-tag SF derivation (no b-jet cuts, no lepton veto)
-    kTriggerSFStudy     ///< Trigger SF study (single muon, b-jet cuts applied)
+    kMainAnalysis,
+    kBTagSFDerivation,
+    kTriggerSFStudy
 };
 
-/**
- * @brief Convert string to AnalysisMode enum
- * @param modeStr String representation of mode
- * @return Corresponding AnalysisMode enum value
- * @throws std::invalid_argument if unknown mode
- */
 inline AnalysisMode parseAnalysisMode(const std::string& modeStr) {
-    if (modeStr == "main" || modeStr == "MainAnalysis") {
+    if (modeStr.empty() || modeStr == "main" || modeStr == "MainAnalysis") {
         return AnalysisMode::kMainAnalysis;
     }
     else if (modeStr == "btagsf" || modeStr == "BTagSFDerivation") {
@@ -82,9 +62,6 @@ inline AnalysisMode parseAnalysisMode(const std::string& modeStr) {
     throw std::invalid_argument("[ERROR] Unknown analysis mode: " + modeStr);
 }
 
-/**
- * @brief Get string representation of AnalysisMode
- */
 inline std::string analysisModeName(AnalysisMode mode) {
     switch (mode) {
         case AnalysisMode::kMainAnalysis:     return "MainAnalysis";
@@ -94,70 +71,31 @@ inline std::string analysisModeName(AnalysisMode mode) {
     }
 }
 
-// =============================================================================
-// [Section 2] Selection Policy (Mode-dependent behavior)
-// =============================================================================
-
-/**
- * @brief Selection policy that varies by analysis mode
- * 
- * This struct encapsulates all mode-dependent boolean flags.
- * Using a struct instead of scattered if-statements improves
- * readability and maintainability.
- */
 struct SelectionPolicy {
-    bool applyTriggerCut;      ///< Apply hadronic trigger requirement
-    bool applyLeptonVeto;      ///< Veto events with leptons
-    bool applyBJetCut;         ///< Apply nbJets >= 4 cut
-    bool applyHadWMassCut;     ///< Apply hadronic W mass window
-    bool collectLeptons;       ///< Collect lepton objects
-    bool doHiggsReconstruction;///< Perform Higgs pair reconstruction
-    bool requireSingleMuon;    ///< Require exactly 1 muon (for trigger SF)
+    bool applyTriggerCut;
+    bool applyLeptonVeto;
+    bool applyBJetCut;
+    bool applyHadWMassCut;
+    bool collectLeptons;
+    bool doHiggsReconstruction;
+    bool requireSingleMuon;
     
-    /**
-     * @brief Factory method: create policy from analysis mode
-     */
     static SelectionPolicy fromMode(AnalysisMode mode) {
-        SelectionPolicy policy;
-        
+        SelectionPolicy p;
         switch (mode) {
             case AnalysisMode::kMainAnalysis:
-                policy.applyTriggerCut       = true;
-                policy.applyLeptonVeto       = true;
-                policy.applyBJetCut          = true;
-                policy.applyHadWMassCut      = true;
-                policy.collectLeptons        = false;  // FH channel doesn't need leptons
-                policy.doHiggsReconstruction = true;
-                policy.requireSingleMuon     = false;
+                p = {true, true, true, true, false, true, false};
                 break;
-                
             case AnalysisMode::kBTagSFDerivation:
-                policy.applyTriggerCut       = false;  // No trigger bias for b-tag SF
-                policy.applyLeptonVeto       = false;  // Keep leptons for control
-                policy.applyBJetCut          = false;  // No b-jet cut (that's what we're measuring!)
-                policy.applyHadWMassCut      = false;  // Relaxed selection
-                policy.collectLeptons        = true;   // Need leptons for trigger SF later
-                policy.doHiggsReconstruction = false;  // Not needed
-                policy.requireSingleMuon     = false;
+                p = {false, false, false, false, true, false, false};
                 break;
-                
             case AnalysisMode::kTriggerSFStudy:
-                policy.applyTriggerCut       = false;  // We measure trigger efficiency!
-                policy.applyLeptonVeto       = false;  // Need the muon
-                policy.applyBJetCut          = true;   // b-jet selection is corrected
-                policy.applyHadWMassCut      = false;  // Relaxed for stats
-                policy.collectLeptons        = true;   // Need muon for tag-and-probe
-                policy.doHiggsReconstruction = false;  // Not needed
-                policy.requireSingleMuon     = true;   // Tag-and-probe with muon
+                p = {false, false, true, false, true, false, true};
                 break;
         }
-        
-        return policy;
+        return p;
     }
     
-    /**
-     * @brief Print policy summary for debugging
-     */
     void print() const {
         std::cout << "\n=== Selection Policy ===" << std::endl;
         std::cout << "  Trigger Cut:       " << (applyTriggerCut ? "ON" : "OFF") << std::endl;
@@ -170,12 +108,9 @@ struct SelectionPolicy {
         std::cout << "========================\n" << std::endl;
     }
 };
-
-
-const float cLargeValue = 99999999999.;
-const float cEps = 0.000000001; 
-const float cHiggsMass = 125.38;
-const float cZMass = 91.;
+// =============================================================================
+// Analysis Mode Definition (End)
+// =============================================================================
 
 
 std::map<std::string, float> cut { 
@@ -325,11 +260,6 @@ class objectLep:public objectPhysics {
     lFlavor flavor;
 };
 
-// =============================================================================
-// [Section 6] Event Class (unchanged from original, abbreviated)
-// =============================================================================
-// NOTE: Include full event class from original header
-// This section is abbreviated for clarity
 class event{
  public:
     event(){
@@ -563,7 +493,7 @@ class event{
 	return _selectGenParts.size(); 
     }
 
-    int getnbJet(){
+    int getnSelbJet(){
 	return _selectbJets.size(); 
     }
 
@@ -964,7 +894,7 @@ class event{
 
 	//	std::cout << "nJet: " << getnJet() << std::endl;//" jet scalar sum: " << _sumJetScalarpT << std::endl;
 	//std::cout << "nSelectedJet: " << getnSelJet() << " jet selected scalar sum: " << _sumSelJetScalarpT << std::endl;
-	//std::cout << "nbJet: " << getnbJet() << std::endl;
+	//std::cout << "nbJet: " << getnSelbJet() << std::endl;
     //	std::cout << "nElectron: "<< getnElectron() << " nMuon: " << getnMuon() << " nLepton: " << getnLepton() << std::endl;
     //	statObjects jetStat;
     //	getStats(getSelJets(), jetStat);
@@ -1024,18 +954,7 @@ class event{
 	return _pv;
     }
 
-    // Selection Policy를 event에서도 참조 가능하게
-    void setSelectionPolicy(const SelectionPolicy& policy) {
-        _policy = policy;
-    }
-    
-    const SelectionPolicy& getSelectionPolicy() const {
-        return _policy;
-    }
-
-
  private:
-    SelectionPolicy _policy;
     std::vector<objectGenPart*>  _selectGenParts; 
     std::vector<objectJet*>                _jets;
     std::vector<objectJet*>               _bjets;
@@ -1066,77 +985,77 @@ class event{
 };
 
 class ttHHanalyzer_unified {
-
  public:
     enum sysName { kJES, kJER, kbTag, noSys };
-    // Constructor with AnalysisMode
-    ttHHanalyzer_unified(
-        const std::string& outputFileName,
-        eventBuffer* ev,
-        double weight,
-        bool isData,
-        const std::string& runYear,
-        const std::string& DataOrMC,
-        const std::string& sampleName,
-        const std::string& eraName,
-        bool debugVerbose,
-        AnalysisMode mode  // NEW: Analysis mode parameter
-    ) : _ev(ev),
-        _baseWeight(weight),
-        _of(outputFileName);
-        _runYear(runYear),
-        _DataOrMC(DataOrMC),
-        _sampleName(sampleName),
-        _era(eraName),
-        debugCorrections(debugVerbose),
-	_analysisMode(mode),
-        _policy(SelectionPolicy::fromMode(mode))
+    ttHHanalyzer_unified(const std::string & cl, eventBuffer * ev, float weight = 1., bool systematics = false, 
+    std::string runYear = "nothing", std::string DataOrMC = "nothing", std::string sampleName = "nothing", std::string era = "noInputEra", bool debug = "false",
+    AnalysisMode mode = AnalysisMode::kMainAnalysis
+    ) :
+	    // Analysis Mode and Policy Initializer
+	    _analysisMode(mode),
+		_policy(SelectionPolicy::fromMode(mode))
+	{
+	//_weight = weight;
+	_baseWeight = weight; // 데이터셋 공통 상수 (CrossSection * Lumi / SumGenWeight)
+	_ev = ev;
+	_cl = cl;
+	_sys = systematics;
+	_of = new outputFile(_cl);
+	_runYear = runYear;
+	_DataOrMC = DataOrMC;
+	_sampleName = sampleName;
+	_era = trimWhitespace(era);
+    
+    std::cout << "\n========================================" << std::endl;
+    std::cout << "  Initializing ttHH Analyzer" << std::endl;
+    std::cout << "  Mode: " << analysisModeName(_analysisMode) << std::endl;
+    _policy.print();
 
-    {
-     
-        std::cout << "\n========================================" << std::endl;
-        std::cout << "  Initializing ttHH Unified Analyzer" << std::endl;
-        std::cout << "  Mode: " << analysisModeName(_analysisMode) << std::endl;
-        std::cout << "========================================" << std::endl;
-        _policy.print();
+	if (_era == "noEra" || _era == "-") {
+        _era.clear();
+    }
 
-        std::string sampleEra = extractEraFromSampleName(_sampleName);
-        if (_DataOrMC == "MC") {
-            if (!_era.empty()) {
-                std::cerr << "[ERROR] MC samples must not define an eraName. Provided eraName: " << _era << std::endl;
-                std::exit(EXIT_FAILURE);
-            }
-        } else if (_DataOrMC == "Data") {
-            if (_era.empty() || sampleEra.empty() || sampleEra != _era) {
-                std::cerr << "[ERROR] eraName mismatch between config and sampleName. "
-                          << "eraName: " << _era << ", sampleName: " << _sampleName << std::endl;
-                std::exit(EXIT_FAILURE);
-            }
+    std::string sampleEra = extractEraFromSampleName(_sampleName);
+    if (_DataOrMC == "MC") {
+        if (!_era.empty()) {
+            std::cerr << "[ERROR] MC samples must not define an eraName. Provided eraName: " << _era << std::endl;
+            std::exit(EXIT_FAILURE);
         }
+    } else if (_DataOrMC == "Data") {
+        if (_era.empty() || sampleEra.empty() || sampleEra != _era) {
+            std::cerr << "[ERROR] eraName mismatch between config and sampleName. "
+                      << "eraName: " << _era << ", sampleName: " << _sampleName << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+    }
 
-        std::string yearForCorr = "";
-	isData = false;
-        if(_runYear == "2017") yearForCorr = "2017_UL";
+    std::string yearForCorr = "";
+	bool isData = false;
+    if(_runYear == "2017") yearForCorr = "2017_UL";
 	if(_DataOrMC == "Data") isData = true;
-        corrMgr = new CorrectionsManager(yearForCorr, _era, isData);
+    corrMgr = new CorrectionsManager(yearForCorr, _era, isData);
 
-	////debugCorrections = debug;
+	debugCorrections = debug;
 
 	initHistograms();	
 	initTree();
 	////initSys();
        	std::string dummy = "";
 	////HypoComb = new tthHypothesisCombinatorics(std::string("data/blrbdtweights_80X_V4/weights_64.xml"), std::string(""));
+
+    std::cout << "========================================" << std::endl;
+    _policy.print();
+
     }
 
     ~ttHHanalyzer_unified() {
-        if(debugCorrections) std::cout<<"debug : Before [ delete corrMgr ] in the ~ttHHanalyzer_base()"<<std::endl;	    
+        if(debugCorrections) std::cout<<"debug : Before [ delete corrMgr ] in the ~ttHHanalyzer_unified()"<<std::endl;	    
 	delete corrMgr;
-        if(debugCorrections) std::cout<<"debug : After [ delete corrMgr ] in the ~ttHHanalyzer_base()"<<std::endl;	    
+        if(debugCorrections) std::cout<<"debug : After [ delete corrMgr ] in the ~ttHHanalyzer_unified()"<<std::endl;	    
     }
 
     void createObjects(event*,sysName,bool);
-    bool selectObjects(event* thisEvent);  // Uses _policy internally    
+    bool selectObjects(event*);
     void analyze(event*);
     void process(event*, sysName, bool);
     void loop(sysName, bool);
@@ -1167,10 +1086,6 @@ class ttHHanalyzer_unified {
 
 
  private: 
-    // Analysis mode and policy
-    AnalysisMode _analysisMode;
-    SelectionPolicy _policy;
-
     bool _sys;
     //float _weight;
     float _baseWeight; // [추가] 데이터셋 공통 상수 (CrossSection * Lumi / SumGenWeight)
@@ -1181,7 +1096,11 @@ class ttHHanalyzer_unified {
     float _genWeight;
     bool  _failGoldenJson;
     bool  _passMETFilters;
-    std::string _DataOrMC, _runYear, _sampleName, _era; 
+    std::string _DataOrMC, _runYear, _sampleName, _era;
+    // Analysis Mode Variable Declaration
+	AnalysisMode _analysisMode;
+    SelectionPolicy _policy;    
+
     TH1D * _hJES, * _hbJES, *_hbJetEff, *_hJetEff, *_hSysbTagM ;
 
     static const int nHistsJets = 12; // ideal # of final state --> 10
@@ -1291,14 +1210,8 @@ class ttHHanalyzer_unified {
     }
 
 
-    // Reconstruction helpers
-    void motherReco(const TLorentzVector& dPar1p4, const TLorentzVector& dPar2p4, 
-                    float mother1mass, float& _minChi2, float& _bbMassMin1);
-    void diMotherReco(const TLorentzVector& dPar1p4, const TLorentzVector& dPar2p4,
-                      const TLorentzVector& dPar3p4, const TLorentzVector& dPar4p4,
-                      float mother1mass, float mother2mass,
-                      float& _minChi2, float& _bbMassMin1, float& _bbMassMin2);
-
+    void diMotherReco(const TLorentzVector & dPar1p4,const TLorentzVector & dPar2p4,const TLorentzVector & dPar3p4,const TLorentzVector & dPar4p4, const float mother1mass, const float  mother2mass, float & _minChi2,float & _bbMassMin1, float & _bbMassMin2);
+    void motherReco(const TLorentzVector & dPar1p4,const TLorentzVector & dPar2p4, const float mother1mass, float & _minChi2,float & _bbMassMin1);
 
     float closestMassPair(const std::vector<objectJet*>* jets, float targetMass) const {
         if (!jets || jets->size() < 2) {
@@ -1372,7 +1285,7 @@ class ttHHanalyzer_unified {
 
     std::vector<double> getbJetCSV(event *thisevent){
 	std::vector<double> bjetCSV;
-        for(int i = 0; i < thisevent->getnbJet(); i++){
+        for(int i = 0; i < thisevent->getnSelbJet(); i++){
             bjetCSV.push_back(thisevent->getSelbJets()->at(i)->bTagCSV);
 	}
         return bjetCSV;
