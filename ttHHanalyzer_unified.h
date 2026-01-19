@@ -997,9 +997,17 @@ class event{
 class ttHHanalyzer_unified {
  public:
     enum sysName { kJES, kJER, kbTag, noSys };
-    ttHHanalyzer_unified(const std::string & cl, eventBuffer * ev, float weight = 1., bool systematics = false, 
-    std::string runYear = "nothing", std::string DataOrMC = "nothing", std::string sampleName = "nothing", std::string era = "noInputEra", bool debug = "false",
-    AnalysisMode mode
+    ttHHanalyzer_unified(
+        const std::string & cl, 
+        eventBuffer * ev, 
+        float weight,           
+        bool systematics,       
+        std::string runYear,    
+        std::string DataOrMC,   
+        std::string sampleName, 
+        std::string era,        
+        bool debug,             
+        AnalysisMode mode       
     ) :
         // Analysis Mode and Policy Initializer
         _analysisMode(mode),
@@ -1009,7 +1017,9 @@ class ttHHanalyzer_unified {
 	_baseWeight = weight; // 데이터셋 공통 상수 (CrossSection * Lumi / SumGenWeight)
 	_ev = ev;
 	_cl = cl;
-	_sys = systematics;
+	////_sys = systematics; // Currently we do not get systematic from argument
+	// We need to add in future
+	_sys = false;
 	_of = new outputFile(_cl);
 	_runYear = runYear;
 	_DataOrMC = DataOrMC;
