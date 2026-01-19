@@ -87,6 +87,7 @@ struct SelectionPolicy {
     bool applyBJetCut;
     bool applyHadWMassCut;
     bool collectLeptons;
+    bool requireLeadMuonOnly;
     bool doHiggsReconstruction;
     bool requireSingleMuon;
     
@@ -94,28 +95,30 @@ struct SelectionPolicy {
         SelectionPolicy p;
         switch (mode) {
             case AnalysisMode::kMainAnalysis:
-                p = {true, true, true, true, false, true, false};
+                //   Trig  LepV  bJet  HadW  CollLep leadMu HiggsReco Req1Mu
+                p = {true, true, true, true, false, false, true, false};
                 break;
             case AnalysisMode::kBTagSFDerivation:
-                p = {false, false, false, false, true, false, false};
+                p = {false, false, false, false, true, true, false, false};
                 break;
             case AnalysisMode::kTriggerSFStudy:
-                p = {false, false, true, false, true, false, true};
+                p = {false, false, true, false, true, true, false, true};
                 break;
         }
         return p;
     }
     
     void print() const {
-        std::cout << "\n=== Selection Policy ===" << std::endl;
-        std::cout << "  Trigger Cut:       " << (applyTriggerCut ? "ON" : "OFF") << std::endl;
-        std::cout << "  Lepton Veto:       " << (applyLeptonVeto ? "ON" : "OFF") << std::endl;
-        std::cout << "  b-Jet Cut:         " << (applyBJetCut ? "ON" : "OFF") << std::endl;
-        std::cout << "  HadW Mass Cut:     " << (applyHadWMassCut ? "ON" : "OFF") << std::endl;
-        std::cout << "  Collect Leptons:   " << (collectLeptons ? "YES" : "NO") << std::endl;
-        std::cout << "  Higgs Reco:        " << (doHiggsReconstruction ? "YES" : "NO") << std::endl;
-        std::cout << "  Require 1 Muon:    " << (requireSingleMuon ? "YES" : "NO") << std::endl;
-        std::cout << "========================\n" << std::endl;
+        std::cout << "\n=== Selection Policy =======================" << std::endl;
+        std::cout << "  Trigger Cut:                              " << (applyTriggerCut ? "ON" : "OFF") << std::endl;
+        std::cout << "  Lepton Veto:                              " << (applyLeptonVeto ? "ON" : "OFF") << std::endl;
+        std::cout << "  b-Jet Cut:                                " << (applyBJetCut ? "ON" : "OFF") << std::endl;
+        std::cout << "  HadW Mass Cut:                            " << (applyHadWMassCut ? "ON" : "OFF") << std::endl;
+        std::cout << "  Collect Leptons:                          " << (collectLeptons ? "YES" : "NO") << std::endl;
+        std::cout << "  Require Lead Muon only (Not Lead Elec):   " << (requireLeadMuonOnly ? "YES" : "NO") << std::endl;
+        std::cout << "  Higgs Reco:                               " << (doHiggsReconstruction ? "YES" : "NO") << std::endl;
+        std::cout << "  Require 1 Muon:                           " << (requireSingleMuon ? "YES" : "NO") << std::endl;
+        std::cout << "============================================\n" << std::endl;
     }
 };
 // =============================================================================
@@ -1064,8 +1067,6 @@ class ttHHanalyzer_unified {
 	////HypoComb = new tthHypothesisCombinatorics(std::string("data/blrbdtweights_80X_V4/weights_64.xml"), std::string(""));
 
     std::cout << "========================================" << std::endl;
-    _policy.print();
-
     }
 
     ~ttHHanalyzer_unified() {

@@ -29,7 +29,8 @@
   --year 2017 \
   --dataOrMC MC \
   --sample tt4b \
-  --era 
+  --era "" \
+  --mode main
 
 # 2. Data Sample (BTagCSV)
 ./ttHHanalyzer_unified \
@@ -39,7 +40,8 @@
   --year 2017 \
   --dataOrMC Data \
   --sample BTagCSV_B \
-  --era B
+  --era B \
+  --mode btagsf
 
 # 3. Data Sample (SingleMuon)
 ./ttHHanalyzer_unified \
@@ -49,17 +51,8 @@
   --year 2017 \
   --dataOrMC Data \
   --sample SingleMuon_D \
-  --era D
-
-# For New Parser Local Test
-./ttHHanalyzer_unified \
-  --filelist filelistTest/file_tt4b_Tier3.txt \
-  --output output_tt4b.root \
-  --weight 0.001299971501 \
-  --year 2017 \
-  --dataOrMC MC \
-  --sample tt4b \
-  --era 
+  --era D \
+  --mode trigsf
 
 
 no warning make

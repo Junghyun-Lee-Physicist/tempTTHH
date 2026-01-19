@@ -62,3 +62,53 @@ Based on these files, ```submit_job_FH_Trigger.py``` will split and submit jobs.
 python3 submit_job_FH_Trigger.py
 ```
 
+
+
+6. 확장 가이드
+6.1 새 모드 추가하기
+
+enum에 새 모드 추가:
+
+cppenum class AnalysisMode {
+    kMainAnalysis,
+    kBTagSFDerivation,
+    kTriggerSFStudy,
+    kNewMode  // NEW
+};
+
+parseAnalysisMode()에 파싱 추가:
+
+cppelse if (modeStr == "newmode") {
+    return AnalysisMode::kNewMode;
+}
+
+SelectionPolicy::fromMode()에 설정 추가:
+
+cppcase AnalysisMode::kNewMode:
+    policy.applyTriggerCut = true;
+    policy.applyLeptonVeto = false;
+    // ... 원하는 설정
+    break;
+6.2 새 Selection Flag 추가하기
+
+SelectionPolicy에 플래그 추가:
+
+cppstruct SelectionPolicy {
+    // ... existing flags ...
+    bool applyNewCut;  // NEW
+};
+
+각 모드에서 초기화:
+
+cppcase AnalysisMode::kMainAnalysis:
+    policy.applyNewCut = true;
+    break;
+
+selectObjects()에서 사용:
+
+cppif (_policy.applyNewCut) {
+    if (/* new cut condition */) {
+        return false;
+    }
+}
+

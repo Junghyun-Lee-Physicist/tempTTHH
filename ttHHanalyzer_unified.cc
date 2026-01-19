@@ -20,6 +20,7 @@ void ttHHanalyzer_unified::performAnalysis(){
 
 void ttHHanalyzer_unified::loop(sysName sysType, bool up){
 
+
     int nevents = _ev->size();
 ////    nevents = 1000;
 
@@ -198,7 +199,6 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
     objectJet * currentJet;
     objectLep * currentMuon;
     objectLep * currentEle;
-    int nVetoMuons = 0, nVetoEle = 0;
 ////    objectMET * MET = new objectMET(_ev->PuppiMET_pt, 0, _ev->PuppiMET_phi, 0);
     float e = 1., es  = 1., pe = 1., pes = 1.;
     float me = 1., mes = 1., pme = 1.,  pmes = 1.;   
@@ -253,57 +253,146 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
 ////        }
 ////    }
 
+
+// =============================================================
+// Lepton Object Definition   
+ 
+    // =============================================================
+    // STEP 1: Count VetoLeptons (Executed in all modes)
+    // Purpose: To determine lepton veto for the hadronic channel
+    // =============================================================
+    int nVetoMuons = 0, nVetoEle = 0;
+
     for(int i = 0; i < muonT.size(); i++){
-        if(fabs(muonT[i].eta) < cut["muonEta"] && muonT[i].tightId == true && muonT[i].pfRelIso04_all  < cut["muonIso"]){
-            if(muonT[i].pt > cut["subLeadMuonPt"]){
-                nVetoMuons += 1;
-            }
+        if(fabs(muonT[i].eta) < cut["muonEta"] && 
+           muonT[i].tightId == true && 
+           muonT[i].pfRelIso04_all < cut["muonIso"] &&
+           muonT[i].pt > cut["subLeadMuonPt"]) {
+            nVetoMuons++;
         }
     }
     for(int i = 0; i < ele.size(); i++){
-        if(fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660){  //Electrons tracked neither in the barrel nor in the endcap are discarded.
-            if(fabs(ele[i].eta) < cut["eleEta"] && ele[i].mvaFall17V2Iso_WP90 == true && ele[i].pfRelIso03_all  < cut["eleIso"]){ 
-                if(ele[i].pt > cut["subLeadElePt"]){
-                    nVetoEle += 1;
+        if((fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || 
+            fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660) &&
+           fabs(ele[i].eta) < cut["eleEta"] && 
+           ele[i].mvaFall17V2Iso_WP90 == true && 
+           ele[i].pfRelIso03_all < cut["eleIso"] &&
+           ele[i].pt > cut["subLeadElePt"]) {
+            nVetoEle++;
+        }
+    }
+    // Select all leptons which pass loose selection cut
+    thisEvent->setnVetoLepton(nVetoMuons + nVetoEle);
+ 
+   
+    // =============================================================
+    // STEP 2: Lepton Collection (Executed if collectLeptons is true)
+    // =============================================================
+    if (_policy.collectLeptons) {
+ 
+        // -------------------------------------------------------------------------
+        // 2a. Check Lead Lepton Gate
+        // Purpose: To save computing resources, we first check if there is at least 
+        //          one "Trigger-capable" (High pT, Tight) lepton in the event.
+ 	// -------------------------------------------------------------------------
+        bool hasLeadMuon = false;
+        for(int i = 0; i < muonT.size(); i++){
+            // Check for Lead Muon (High pT, Tight ID)
+            if(fabs(muonT[i].eta) < cut["muonEta"] && 
+               muonT[i].tightId == true && 
+               muonT[i].pfRelIso04_all < cut["muonIso"] &&
+               muonT[i].pt > cut["leadMuonPt"]) { 
+                hasLeadMuon = true;
+                break;
+            }
+        }
+        
+        // Check for Lead Electron
+        // (Calculation is done only if needed or generic, but passGate logic controls usage)
+        bool hasLeadElectron = false;
+        if (!_policy.requireLeadMuonOnly) { // Optimization: Skip if we only care about Muons
+            for(int i = 0; i < ele.size(); i++){
+                // Check for Lead Electron (High pT, Tight ID)
+                if((fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || 
+                    fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660) &&
+                   fabs(ele[i].eta) < cut["eleEta"] && 
+                   ele[i].mvaFall17V2Iso_WP90 == true && 
+                   ele[i].pfRelIso03_all < cut["eleIso"] &&
+                   ele[i].pt > cut["leadElePt"]) { 
+                    hasLeadElectron = true;
+                    break;
                 }
             }
         }
-    }
+        
+        // -------------------------------------------------------------------------
+        // Define PassGate Logic Explicitly
+        // -------------------------------------------------------------------------
+        bool passGate = false;
+    
+        if (_policy.requireLeadMuonOnly) {
+            // [TriggerSF / Single Muon Mode]
+            // STRICT REQUIREMENT: Must have at least one Leading Muon.
+            // We ignore Leading Electrons here because they cannot trigger the Muon HLT.
+	    // And Collect All Sublead Electron even event don't satify lead electron cut
+            passGate = hasLeadMuon;
+        } 
+        else {
+            // [Standard Mode, You can use this for Leptonic Channel]
+            // Requirement: Either a Leading Muon OR a Leading Electron exists.
+            passGate = hasLeadMuon || hasLeadElectron;
+        }
 
+        // -------------------------------------------------------------------------
+        // 2b. Actual Lepton Collection
+        // -------------------------------------------------------------------------
+        if (passGate) {
+        
+            // [Muon Collection]
+            // Collect ALL muons passing the Veto (Sub-lead) threshold.
+            // Even if TriggerSF requires a Lead Muon to pass the gate, 
+            // we collect softer muons here to check for Dilepton veto later.
+            for(int i = 0; i < muonT.size(); i++){
+                if(fabs(muonT[i].eta) < cut["muonEta"] && 
+                   muonT[i].tightId == true && 
+                   muonT[i].pfRelIso04_all < cut["muonIso"] &&
+                   muonT[i].pt > cut["subLeadMuonPt"]) { 
+                   
+                    currentMuon = new objectLep(muonT[i].pt, muonT[i].eta, muonT[i].phi, 0.);
+                    currentMuon->charge = muonT[i].charge;
+                    currentMuon->miniPFRelIso = muonT[i].miniPFRelIso_all;
+                    currentMuon->pfRelIso04 = muonT[i].pfRelIso04_all;
+                    thisEvent->selectMuon(currentMuon);
+                }
+            }
+            
+            // [Electron Collection]
+            // Always collect Veto Electrons (Sub-lead) to ensure 'nElectrons' is correct.
+            // This is crucial for vetoing dilepton events even in Single Muon analysis.
+            for(int i = 0; i < ele.size(); i++){
+                if((fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || 
+                    fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660) &&
+                   fabs(ele[i].eta) < cut["eleEta"] && 
+                   ele[i].mvaFall17V2Iso_WP90 == true && 
+                   ele[i].pfRelIso03_all < cut["eleIso"] &&
+                   ele[i].pt > cut["subLeadElePt"]) { 
+                   
+                    currentEle = new objectLep(ele[i].pt, ele[i].eta, ele[i].phi, 0.);
+                    currentEle->charge = ele[i].charge;
+                    currentEle->miniPFRelIso = ele[i].miniPFRelIso_all;
+                    currentEle->pfRelIso03 = ele[i].pfRelIso03_all;
+                    thisEvent->selectEle(currentEle);
+                }
+            }
+        
+        // Sort leptons by pT (Descending order)
+        thisEvent->orderLeptons();
+        }
+    
+    } // End of [ _policy.collectLeptons ] if statement
 
-    // Leading lepton def
-    // But FH channel don't need this..
-    // We just use subleading lepton def for veto
-    // update in 5th Jan, 2026
-////     if(thereIsALeadLepton){ //we can add all leptons passing to the sublead selection to our containers
-////         for(int i = 0; i < muonT.size(); i++){
-////             if(fabs(muonT[i].eta) < cut["muonEta"] && muonT[i].tightId == true && muonT[i].pfRelIso04_all < cut["muonIso"]){
-////             //	    if(fabs(muonT[i].eta) < cut["muonEta"] && muonT[i].mvaTTH > 0.15 && muonT[i].pfRelIso04_all  < cut["muonIso"]){	
-////         	if(muonT[i].pt > cut["subLeadMuonPt"]){
-////         	    currentMuon = new objectLep(muonT[i].pt, muonT[i].eta, muonT[i].phi, 0.);
-////         	    currentMuon->charge = muonT[i].charge;
-////         	    currentMuon->miniPFRelIso = muonT[i].miniPFRelIso_all;
-////         	    currentMuon->pfRelIso04 = muonT[i].pfRelIso04_all;
-////         	    thisEvent->selectMuon(currentMuon);
-////         	}
-////             }
-////         }
-////         for(int i = 0; i < ele.size(); i++){
-////             if(fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660){  //Electrons tracked neither in the barrel nor in the endcap are discarded.
-////         	      if(fabs(ele[i].eta) < cut["eleEta"] && ele[i].mvaFall17V2Iso_WP90 == true && ele[i].pfRelIso03_all  < cut["eleIso"]){ 
-////                  if(ele[i].pt > cut["subLeadElePt"]){
-////         		currentEle = new objectLep(ele[i].pt, ele[i].eta, ele[i].phi, 0.);	 
-////         		currentEle->charge = ele[i].charge;
-////         		currentEle->miniPFRelIso = ele[i].miniPFRelIso_all;
-////         		currentEle->pfRelIso03 = ele[i].pfRelIso03_all;
-////         		thisEvent->selectEle(currentEle);
-////         	      }
-////               }
-////         	}
-////         }
-////     }
-////    thisEvent->orderLeptons();
-    thisEvent->setnVetoLepton(nVetoMuons + nVetoEle);
+// End of Lepton Object Definition   
+// =============================================================
 
 
     float dR = 0., deltaEta = 0., deltaPhi = 0.;
@@ -476,20 +565,22 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
     // ttHH(bb) Hadronic Channel 연구이므로, Higgs -> bb 붕괴를 재구성하기 위해
     // 최소 4개의 b-jet이 존재해야만 Higgs Pair Candidate를 생성할 수 있음.
     // 따라서 아래 조건문(size >= 4)은 분석의 필수 조건임.
-    if (bjets->size() >= 4) {
-        for (size_t i = 0; i < bjets->size() - 3; ++i) {
-            for (size_t j = i + 1; j < bjets->size() - 2; ++j) {
-                for (size_t k = j + 1; k < bjets->size() - 1; ++k) {
-                    for (size_t l = k + 1; l < bjets->size(); ++l) {
-                        diMotherReco(*bjets->at(i)->getp4(), *bjets->at(j)->getp4(),
-                                     *bjets->at(k)->getp4(), *bjets->at(l)->getp4(),
-                                     cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
-                        diMotherReco(*bjets->at(i)->getp4(), *bjets->at(k)->getp4(),
-                                     *bjets->at(j)->getp4(), *bjets->at(l)->getp4(),
-                                     cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
-                        diMotherReco(*bjets->at(i)->getp4(), *bjets->at(l)->getp4(),
-                                     *bjets->at(j)->getp4(), *bjets->at(k)->getp4(),
-                                     cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
+    if(_policy.doHiggsReconstruction){
+        if (bjets->size() >= 4) {
+            for (size_t i = 0; i < bjets->size() - 3; ++i) {
+                for (size_t j = i + 1; j < bjets->size() - 2; ++j) {
+                    for (size_t k = j + 1; k < bjets->size() - 1; ++k) {
+                        for (size_t l = k + 1; l < bjets->size(); ++l) {
+                            diMotherReco(*bjets->at(i)->getp4(), *bjets->at(j)->getp4(),
+                                         *bjets->at(k)->getp4(), *bjets->at(l)->getp4(),
+                                         cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
+                            diMotherReco(*bjets->at(i)->getp4(), *bjets->at(k)->getp4(),
+                                         *bjets->at(j)->getp4(), *bjets->at(l)->getp4(),
+                                         cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
+                            diMotherReco(*bjets->at(i)->getp4(), *bjets->at(l)->getp4(),
+                                         *bjets->at(j)->getp4(), *bjets->at(k)->getp4(),
+                                         cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
+                        }
                     }
                 }
             }
@@ -509,9 +600,13 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
     // Step 0: No Cut
     processStep(CutStep::kNoCut, hadWMass);
 
-    // Step 1: Trigger    
-    if(cut["trigger"] > 0 && thisEvent->getHadTriggerAccept() == false){
-        return false;
+    // Step 1: Trigger
+    // For the Trigger Study and B-tag SF (It include Trigger Study), we need to remove trigger path
+    // To check total number of event (pass event + failed to pass event)
+    if (_policy.applyTriggerCut) { 
+        if(cut["trigger"] > 0 && thisEvent->getHadTriggerAccept() == false){
+            return false;
+        }
     }
     processStep(CutStep::kHadTrigger, hadWMass);
 
@@ -549,9 +644,19 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
     processStep(CutStep::kSixthJetPt, hadWMass);
 
     // Step 6: Lepton Veto (nLepton == 0)
-    if(!(thisEvent->getnVetoLepton() == cut["nLeptons"])){
-        return false;
+    if (_policy.requireSingleMuon) {
+        // TriggerSF: Require Exact 1 muon, 0 electron 
+        if (!(thisEvent->getnSelMuon() == 1 && thisEvent->getnSelElectron() == 0)) {
+            return false;
+        }
     }
+    else if (_policy.applyLeptonVeto) {
+        // MainAnalysis: lepton veto
+        if(!(thisEvent->getnVetoLepton() == cut["nLeptons"])){
+            return false;
+        }
+    }
+     
     processStep(CutStep::kLeptonVeto, hadWMass);
 
     // (��: �� �� �� ��)
@@ -566,15 +671,19 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
 
 
     // Step 8: nbJets >= 4
-    if(!(thisEvent->getnSelbJet() >= cut["nbJets"] )){
-        return false;
+    if (_policy.applyBJetCut) {
+        if(!(thisEvent->getnSelbJet() >= cut["nbJets"] )){
+            return false;
+        }
     }
     processStep(CutStep::kNumbJets, hadWMass);
 
 
     // Step 9: Hadronic W Mass
-    if (hadWMass < 0.0f || hadWMass > 250.0f || hadWMass < 30.0f) {
-        return false;
+    if (_policy.applyHadWMassCut) {
+        if (hadWMass < 0.0f || hadWMass > 250.0f || hadWMass < 30.0f) {
+            return false;
+        }
     }
     processStep(CutStep::kHadWMass, hadWMass);
 
@@ -1833,6 +1942,7 @@ int main(int argc, char** argv){
     bool debugVerbose = false;
 
     ttHHanalyzer_unified analysis(cl.outputfilename, &ev, weight, true, cl.runYear, cl.DataOrMC, cl.sampleName, cl.eraName, debugVerbose, mode);
+
 
     if(debugVerbose) std::cout<<"debug : Before [ performAnalysis ] in main() function"<<std::endl;
     analysis.performAnalysis();
