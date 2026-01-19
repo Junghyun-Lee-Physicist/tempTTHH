@@ -7,35 +7,33 @@
 
 int main(int argc, char** argv)
 {
+
     if (argc < 2) {
-        std::cerr << "Usage: ./exe_TrigStudy [SampleName] [UseCorrections (0 or 1)]" << std::endl;
+        std::cerr << "Usage: ./exe_TrigStudy [SampleName] [Mode (0=CalcEff, 1=ApplySF)]" << std::endl;
         return 1;
     }
 
     TString sampleName = argv[1];
-////    bool useEfficiencyDrawing = false;
+    
+    // Default mode: 0 (Efficiency Calculation)
     bool applySF = false;
     if (argc >= 3) {
        applySF = (std::stoi(argv[2]) != 0);
     }
 
     if (applySF) {
-	std::cout<<"Step 02 mode, apply SF is TRUE"<<std::endl;
-        // EventLooperWithCorrections 사용
-        EventLooperWithCorrections* looper = new EventLooperWithCorrections();
-        looper->setNtupleName(sampleName);
-        looper->Init();
-        looper->Loop();
-        delete looper;
+        std::cout << ">>> Running Step 02: Apply Scale Factors & Correction" << std::endl;
     } else {
-        // 기존의 EventLooper 사용
-	std::cout<<"Step 01 mode, get Trigger Eff"<<std::endl;
-        EventLooper* looper = new EventLooper();
-        looper->setNtupleName(sampleName);
-        looper->Init();
-        looper->Loop();
-        delete looper;
+        std::cout << ">>> Running Step 01: Calculate Trigger Efficiency" << std::endl;
     }
+
+    // Unified class usage
+    EventLooper* looper = new EventLooper(0, applySF);
+    looper->setNtupleName(sampleName);
+    looper->Init();
+    looper->Loop();
+    delete looper;
+
 
     return 0;
 }

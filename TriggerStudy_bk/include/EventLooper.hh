@@ -5,9 +5,8 @@
 #include <TChain.h>
 #include <TFile.h>
 #include <TH2D.h>
-#include <TH1D.h>
-#include <vector>
-#include <iostream>
+
+// Header file for the classes stored in the TTree if any.
 
 class EventLooper {
 
@@ -32,6 +31,11 @@ class EventLooper {
        //Int_t           nbJets;
        Float_t         HT;
 
+//       Float_t         jetPt[30];    // 30 is the maximum setted # of jets
+//       //Float_t         jetEta[30];
+//       //Float_t         bTagScore[30];
+//       //UInt_t          eventNumber;
+//       //UInt_t          runNumber;
        std::vector<float> *jetPt;
 
        Float_t         genWeight;
@@ -39,6 +43,7 @@ class EventLooper {
        Float_t         L1PrefiringWeight;
        Bool_t          failGoldenJson;
        Bool_t          passMETFilters;
+
 
        // List of branches
        TBranch        *b_passTrigger_HLT_IsoMu27;   //!
@@ -66,8 +71,7 @@ class EventLooper {
        TBranch        *b_passMETFilters;
 
 
-       // Constructor with Mode Flag
-       EventLooper(TTree *tree=0, bool applySF=false);
+       EventLooper(TTree *tree=0);
        virtual ~EventLooper();
        virtual Int_t    Cut(Long64_t entry);
        virtual Int_t    GetEntry(Long64_t entry);
@@ -84,19 +88,28 @@ class EventLooper {
     private:
 
        TString ntupleName = "notDefined";
-       bool applySFMode; // true: Apply SF & Save Tree, false: Calculate Eff (2D Hist)  
 
-       // --- Histograms for Step 1 (Efficiency Calculation) ---
-       TH2D* h_Total[1][1]; // Simplified to 1x1 as per your code
-       TH2D* h_Pass[1][1];
+       // 스케일 팩터 계산을 위한 변수들
+       Double_t HT_bins[7];
+       Int_t nBinsHT;
+       Double_t pT_bins[7];
+       Int_t nBinspT;
 
-       // --- Objects for Step 2 (SF Application) ---
-       TH2D* sfHist[1];      // Scale Factor maps
-       TH1D* h_HT_Total;     // Validation Hists
-       TH1D* h_HT_Pass;
-       TH1D* h_Jet6PT_Total;
-       TH1D* h_Jet6PT_Pass;
+       // Eta 분할을 켜고 끌 수 있는 스위치
+       bool useEtaBinning;
 
+       // Eta bins
+       Double_t eta_bins[9];
+       Int_t nEtaBins;
+
+       // Number of b-jets bins (범위로 설정)
+       Double_t nBjets_bins[3]; // 3, 4 ~ 12
+       Int_t nBjetBins;
+
+       // 히스토그램 배열
+       // Eta 분할을 사용할 경우 2차원 배열, 아니면 1차원 배열
+       TH2D* h_Total[9][4]; // 최대 크기로 선언
+       TH2D* h_Pass[9][4];
 
        // 데이터 여부 확인 변수
        bool isData;
@@ -106,7 +119,7 @@ class EventLooper {
 #endif
 
 #ifdef EventLooper_cxx
-EventLooper::EventLooper(TTree *tree, bool applySF) : fChain(0), applySFMode(applySF)
+EventLooper::EventLooper(TTree *tree) : fChain(0) 
 {
     jetPt = 0;
 }
@@ -141,11 +154,7 @@ TString EventLooper::getInputName(){
     return ntupleName + ".root";
 }
 TString EventLooper::getOutputName(){
-    if (applySFMode) {
-        return "corrected_" + ntupleName + ".root";
-    } else {
-        return "output_" + ntupleName + ".root";
-    }
+    return "output_" + ntupleName + ".root";
 }
 
 #endif // #ifdef EventLooper_cxx
