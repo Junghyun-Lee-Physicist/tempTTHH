@@ -227,46 +227,74 @@ commandLine::decode(int argc, char** argv)
   progname = string("analyzer");
 
   // Default values
-  filelist = "filelist.txt";
-  outputfilename = progname + "_histograms.root";
-  externalweight = 1.0;
-  runYear = "nothing";
-  DataOrMC = "nothing";
-  sampleName = "nothing";
-  eraName = "";       // Era can be empty
-  analysisMode = "";  // Mode can be empty
+  // Initialize mandatory variables to empty/invalid values to detect missing args
+  filelist = "";
+  outputfilename = "";
+  externalweight = -999.0; // Impossible weight to check initialization
+  runYear = "";
+  DataOrMC = "";
+  sampleName = "";
+  analysisMode = "";
+  // Era is conditional, initialize to empty (For data, It is madatory)
+  eraName = "";
+
 
   // Argument Rule --> [ --key value ]
   for (int i = 1; i < argc; ++i) {
       std::string arg = argv[i];
 
       if (i + 1 < argc) {
-          if (arg == "--filelist") {
-              filelist = argv[++i];
-          } 
-          else if (arg == "--output") {
-              outputfilename = argv[++i];
-          } 
-          else if (arg == "--weight") {
-              externalweight = std::atof(argv[++i]);
-          } 
-          else if (arg == "--year") {
-              runYear = argv[++i];
-          } 
-          else if (arg == "--dataOrMC" || arg == "--type") { // type alias 지원
-              DataOrMC = argv[++i];
-          } 
-          else if (arg == "--sample") {
-              sampleName = argv[++i];
-          } 
-          else if (arg == "--era") {
-              eraName = argv[++i];
-          } 
-          else if (arg == "--mode") {
-              analysisMode = argv[++i];
-          }
+          if      (arg == "--filelist")   filelist = argv[++i];
+          else if (arg == "--output")     outputfilename = argv[++i];
+          else if (arg == "--weight")     externalweight = std::atof(argv[++i]);
+          else if (arg == "--year")       runYear = argv[++i];
+          else if (arg == "--dataOrMC")   DataOrMC = argv[++i];
+          else if (arg == "--sample")     sampleName = argv[++i];
+          else if (arg == "--mode")       analysisMode = argv[++i];
+          else if (arg == "--era")        eraName = argv[++i];
       }
   }
+
+  // Strict Validation: Check Mandatory Arguments
+  std::vector<std::string> missingArgs;
+  
+  if (filelist.empty())       missingArgs.push_back("--filelist");
+  if (outputfilename.empty()) missingArgs.push_back("--output");
+  if (externalweight == -999.0) missingArgs.push_back("--weight");
+  if (runYear.empty())        missingArgs.push_back("--year");
+  if (DataOrMC.empty())       missingArgs.push_back("--dataOrMC");
+  if (sampleName.empty())     missingArgs.push_back("--sample");
+  if (analysisMode.empty())   missingArgs.push_back("--mode");
+
+  if (!missingArgs.empty()) {
+      std::cerr << " [Error] Missing mandatory arguments:" << std::endl;
+      for (const auto& arg : missingArgs) std::cerr << "    " << arg << std::endl;
+      exit(1);
+  }
+
+  // Strict Validation: Data vs MC Logic
+  if (DataOrMC == "Data") {
+      // Data MUST have an Era
+      if (eraName.empty()) {
+          std::cerr << " [Error] Argument '--era' is mandatory for Data samples!" << std::endl;
+          exit(1);
+      }
+  } 
+  else if (DataOrMC == "MC") {
+      // MC MUST NOT have an Era
+      if (!eraName.empty()) {
+          std::cerr << " [Error] Argument '--era' should NOT be provided for MC samples!" << std::endl;
+          std::cerr << "         (Current value: " << eraName << ")" << std::endl;
+          exit(1);
+      }
+  } 
+  else {
+      // Invalid Type
+      std::cerr << " [Error] Invalid value for --dataOrMC: " << DataOrMC << std::endl;
+      std::cerr << "         Allowed values are: 'Data' or 'MC'" << std::endl;
+      exit(1);
+  }
+
 
   // Make sure extension is ".root"
   std::string name = outputfilename;
@@ -281,10 +309,10 @@ commandLine::decode(int argc, char** argv)
   std::cout << "  Output File    : " << outputfilename << std::endl;
   std::cout << "  Weight         : " << externalweight << std::endl;
   std::cout << "  Run Year       : " << runYear << std::endl;
+  std::cout << "  Analysis Mode  : " << analysisMode << std::endl;
   std::cout << "  Data/MC        : " << DataOrMC << std::endl;
   std::cout << "  Sample Name    : " << sampleName << std::endl;
   std::cout << "  Era Name       : " << (eraName.empty() ? "(empty)" : eraName) << std::endl;
-  std::cout << "  Analysis Mode  : " << (analysisMode.empty() ? "(default)" : analysisMode) << std::endl;
   std::cout << "==================================================\n" << std::endl;
 
 }

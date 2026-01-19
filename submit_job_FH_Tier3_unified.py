@@ -79,24 +79,32 @@ class CondorJobManager:
 
 
     def parse_config_entry(self, entry, common):
-        required_keys = [
+
+        required_keys_inEntry = [
             "filelist",
             "output_dir",
             "weight",
             "data_or_mc",
-            "sample_name",
+            "sample_name"
         ]
-        missing_keys = [key for key in required_keys if key not in entry]
+
+        missing_keys = [key for key in required_keys_inEntry if key not in entry]
         if missing_keys:
-            raise ValueError(f"Invalid configuration entry (missing keys: {missing_keys}) : {entry}")
+            raise ValueError(f"Invalid configuration entry (missing keys in [samples class in config]: {missing_keys}) : {entry}")
 
         self.file_list_name = entry["filelist"]
         self.output_dir = entry["output_dir"]
         self.weight = entry["weight"]
-        self.year = entry.get("year", common.get("year", ""))
         self.data_or_mc = entry["data_or_mc"]
         self.sample_name = entry["sample_name"]
+
+        # 'era' is optional in YAML for MC, but mandatory for Data 
+        # If key is missing in entry, returns empty string(entry.get method)
         self.era = entry.get("era", "")
+
+        # Retrieve 'year' and 'analysis_mode' STRICTLY from 'common'.
+        self.year = common["year"]
+        self.analysis_mode = common["analysis_mode"]
 
         if self.data_or_mc == "MC" and str(self.era).strip():
             raise ValueError("MC samples must not define an eraName. Please leave era empty.")
@@ -236,12 +244,28 @@ class CondorJobManager:
                     with open(per_job_filelist_path, 'w') as per_job_filelist:
                         per_job_filelist.write(line + '\n')
 
-                    # Write the arguments for this job to the argument list file
-                    era_arg = self.era if str(self.era).strip() else "noEra"
-                    argout.write(
-                        f"{per_job_filelist_path} {self.output_dir}_{count}.root {self.weight} {self.year} "
-                        f"{self.data_or_mc} {self.sample_name} {era_arg}\n"
+                    # Output file Full Path Construction
+                    # C++ code expects just --output path/to/file.root
+                    full_output_path = f"{self.path_output}{self.output_dir}_{count}.root"
+
+                    # Construct the argument string
+                    args = (
+                        f"--filelist {per_job_filelist_path} "
+                        f"--output {full_output_path} "
+                        f"--weight {self.weight} "
+                        f"--year {self.year} "
+                        f"--dataOrMC {self.data_or_mc} "
+                        f"--sample {self.sample_name} "
+                        f"--mode {self.analysis_mode}"
                     )
+
+                    # Write the arguments using --key value format
+                    era_arg = self.era if str(self.era).strip() else ""
+                    if era_arg:
+                        args += f"--era {era_arg} "
+ 
+                    argout.write(args + "\n")
+
                     count += 1
 
     
@@ -276,10 +300,13 @@ class CondorJobManager:
             fout.write(f"source \"{self.analyzer_path}/setup.sh\"\n")
             # Prepare output directory in EOS
 ####            fout.write(f"eos root://eosuser.cern.ch mkdir -p {self.path_output}\n")
+            # Prepare output directory (Ensure directory exists)
             fout.write(f"mkdir -p {self.path_output}\n")
-            ##fout.write(f"eos root://eosuser.cern.ch chmod 777 {self.path_output}\n")
-##            fout.write(f"\"{self.analyzer_path}/{self.nameofExe}\" \"$1\" \"root://eosuser.cern.ch/{self.path_output}$2\" \"$3\" \"$4\" \"$5\" \"$6\" \"$7\"\n")
-            fout.write(f"\"{self.analyzer_path}/{self.nameofExe}\" \"$1\" \"{self.path_output}$2\" \"$3\" \"$4\" \"$5\" \"$6\" \"$7\" \"--mode={self.AnalyzerMode}\"\n")
+
+            # Execute Analyzer
+            # Changed: Use "$@" to pass all arguments (which are now flags) directly to C++
+            fout.write(f"\"{self.analyzer_path}/{self.nameofExe}\" \"$@\"\n") 
+
         subprocess.call(["chmod", "755", self.script_name])
 
 

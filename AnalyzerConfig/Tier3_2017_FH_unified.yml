@@ -1,7 +1,13 @@
 common:
   year: "2017"
+  # You can choose one of below analysis mode
+  # main, btagsf, trigsf
+  analysis_mode: "main" 
 
 samples:
+  # ---------------------------------------------------------
+  # Data (Weight = 1.0)
+  # ---------------------------------------------------------
   - filelist: "filelist_SingleMuon_B.txt"
     output_dir: "SingleMuon_B"
     weight: 1.0
@@ -92,6 +98,11 @@ samples:
     data_or_mc: "Data"
     sample_name: "JetHT_F"
     era: "F"
+
+  # ---------------------------------------------------------
+  # MC Samples (Updated Weights using Sum(Runs.genEventSumw))
+  # Formula: (Xsec * Lumi) / Sum(Runs.genEventSumw)
+  # ---------------------------------------------------------
   - filelist: "filelist_ttHH.txt"
     output_dir: "ttHH"
     weight: 0.00000109763773
@@ -100,37 +111,37 @@ samples:
     era: ""
   - filelist: "filelist_tt4b.txt"
     output_dir: "tt4b"
-    weight: 0.001299971501
+    weight: 0.001292157441
     data_or_mc: "MC"
     sample_name: "tt4b"
     era: ""
   - filelist: "filelist_ttHtobb.txt"
     output_dir: "ttHtobb"
-    weight: 0.001565558781
+    weight: 0.003125301546
     data_or_mc: "MC"
     sample_name: "ttHtobb"
     era: ""
   - filelist: "filelist_ttTohadronic.txt"
     output_dir: "ttTohadronic"
-    weight: 0.06745986328
+    weight: 0.000214351205
     data_or_mc: "MC"
     sample_name: "ttTohadronic"
     era: ""
   - filelist: "filelist_TTTo2L2Nu.txt"
     output_dir: "TTTo2L2Nu"
-    weight: 0.1419595905
+    weight: 0.0004761561474
     data_or_mc: "MC"
     sample_name: "TTTo2L2Nu"
     era: ""
   - filelist: "filelist_TTToSemiLeptonic.txt"
     output_dir: "TTToSemiLeptonic"
-    weight: 0.01049544017
+    weight: 0.0001455793461
     data_or_mc: "MC"
     sample_name: "TTToSemiLeptonic"
     era: ""
   - filelist: "filelist_tttt.txt"
     output_dir: "tttt"
-    weight: 0.00003242340643
+    weight: 0.00399317683
     data_or_mc: "MC"
     sample_name: "tttt"
     era: ""
@@ -160,19 +171,19 @@ samples:
     era: ""
   - filelist: "filelist_ttZHto4b.txt"
     output_dir: "ttZHto4b"
-    weight: 0.0000005563481144
+    weight: 0.00000111247369
     data_or_mc: "MC"
     sample_name: "ttZHto4b"
     era: ""
   - filelist: "filelist_ttZtobb.txt"
     output_dir: "ttZtobb"
-    weight: 0.0007399729432
+    weight: 0.006587820794
     data_or_mc: "MC"
     sample_name: "ttZtobb"
     era: ""
   - filelist: "filelist_ttZZto4b.txt"
     output_dir: "ttZZto4b"
-    weight: 0.0000001879509764
+    weight: 0.0000003824366722
     data_or_mc: "MC"
     sample_name: "ttZZto4b"
     era: ""
@@ -220,7 +231,7 @@ samples:
     era: ""
   - filelist: "filelist_ttbb.txt"
     output_dir: "ttbb"
-    weight: 0.007814764492
+    weight: 0.0005295497645
     data_or_mc: "MC"
     sample_name: "ttbb"
     era: ""
