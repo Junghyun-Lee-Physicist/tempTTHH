@@ -202,9 +202,6 @@ void CorrectionsManager::loadTrigger_() {
         return;
     }
 
-    // [히스토그램 가져오기]
-    // *주의*: EventLooper에서 만든 SF 히스토그램의 이름(Key)을 정확히 적어야 합니다.
-    // 보통 h_SF, h_ScaleFactor, 혹은 h_Pass / h_Total의 결과물 등입니다.
     std::string histName = "SF_Bjet0"; 
     
     hTrigSF_ = (TH2*)trigSFFile_->Get(histName.c_str());
@@ -214,8 +211,6 @@ void CorrectionsManager::loadTrigger_() {
         trigSFFile_->Close();
         trigSFFile_ = nullptr;
     } else {
-        // 소유권 문제 방지 (파일 닫혀도 유지하고 싶으면 SetDirectory(0) 필요하지만, 
-        // 여기선 파일을 계속 열어둘 것이므로 괜찮음)
         if (kVerbose) std::cout << "  -> Loaded Trigger SF Histogram: " << histName << "\n";
     }
 }

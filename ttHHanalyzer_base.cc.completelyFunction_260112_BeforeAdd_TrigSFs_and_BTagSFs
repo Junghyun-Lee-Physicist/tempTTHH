@@ -887,7 +887,6 @@ void ttHHanalyzer_base::process(event* thisEvent, sysName sysType, bool up){
     // 5) Build physics objects in thisEvent from the raw buffer
     createObjects(thisEvent, sysType, up);
 
-    // Object Selection and Cuts
     if(!selectObjects(thisEvent))  return;
 ////    selectObjects(thisEvent);
     _passMETFilters = false;
