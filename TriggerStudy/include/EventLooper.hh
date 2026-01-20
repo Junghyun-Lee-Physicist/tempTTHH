@@ -6,147 +6,101 @@
 #include <TFile.h>
 #include <TH2D.h>
 #include <TH1D.h>
+
 #include <vector>
+#include <map>
+#include <string>
+#include <memory>
 #include <iostream>
 
+// Wrapper class for TTree reading (your project-specific reader)
+#include "NtupleReader.hh"
+
+// correctionlib (SF provider)
+#include "correction.h"
+
 class EventLooper {
+public:
+    // ========================================================================
+    // Constructor & Destructor
+    // ========================================================================
+    // applySF = false -> Step 1: calculate efficiency maps
+    // applySF = true  -> Step 2: apply scale factors (correctionlib)
+    EventLooper(bool applySF = false);
+    virtual ~EventLooper();
 
-    public :
-       TTree          *fChain;   //!pointer to the analyzed TTree or TChain
-       Int_t           fCurrent; //!current Tree number in a TChain
-    
-       // Fixed size dimensions of array or collections stored in the TTree if any.
-    
-       // Declaration of leaf types
-       Bool_t          passTrigger_HLT_IsoMu27;
-       Bool_t          passTrigger_HLT_PFHT1050;
-       Bool_t          passTrigger_6J1T_B;
-       Bool_t          passTrigger_6J1T_CDEF;
-       Bool_t          passTrigger_6J2T_B;
-       Bool_t          passTrigger_6J2T_CDEF;
-       Bool_t          passTrigger_4J3T_B;
-       Bool_t          passTrigger_4J3T_CDEF;
-       Int_t           nMuons;
-       Int_t           nElecs;
-       Int_t           nJets;
-       //Int_t           nbJets;
-       Float_t         HT;
+    // ========================================================================
+    // Core Functions
+    // ========================================================================
+    // Init():
+    //   - Open input ROOT file
+    //   - Retrieve TTree
+    //   - Instantiate NtupleReader
+    virtual void Init();
 
-       std::vector<float> *jetPt;
+    // Loop():
+    //   - Build histogram/map objects using BinConfig
+    //   - Main event loop:
+    //       - selection
+    //       - compute weights
+    //       - trigger logic
+    //       - fill denominator / numerator
+    //       - optionally apply SF (Step 2)
+    virtual void Loop();
 
-       Float_t         genWeight;
-       Float_t         PUWeight;
-       Float_t         L1PrefiringWeight;
-       Bool_t          failGoldenJson;
-       Bool_t          passMETFilters;
+    // ========================================================================
+    // Helper functions for file naming
+    // ========================================================================
+    void setNtupleName(TString _name);
+    TString getInputName();
+    TString getOutputName();
 
-       // List of branches
-       TBranch        *b_passTrigger_HLT_IsoMu27;   //!
-       TBranch        *b_passTrigger_HLT_PFHT1050;   //!
-       TBranch        *b_passTrigger_6J1T_B;   //!
-       TBranch        *b_passTrigger_6J1T_CDEF;   //!
-       TBranch        *b_passTrigger_6J2T_B;   //!
-       TBranch        *b_passTrigger_6J2T_CDEF;   //!
-       TBranch        *b_passTrigger_4J3T_B;   //!
-       TBranch        *b_passTrigger_4J3T_CDEF;   //!
-       TBranch        *b_nMuons;   //!
-       TBranch        *b_nElecs;   //!
-       TBranch        *b_nJets;   //!
-       //TBranch        *b_nbJets;   //!
-       TBranch        *b_HT;   //!
-       TBranch        *b_jetPt;   //!
-       //TBranch        *b_jetEta;   //!
-       //TBranch        *b_bTagScore;   //!
-       //TBranch        *b_eventNumber;   //!
-       //TBranch        *b_runNumber;   //!
-       TBranch        *b_genWeight;
-       TBranch        *b_PUWeight;
-       TBranch        *b_L1PrefiringWeight;
-       TBranch        *b_failGoldenJson;
-       TBranch        *b_passMETFilters;
+private:
+    // ========================================================================
+    // Configuration
+    // ========================================================================
+    TString ntupleName = "notDefined";
+    bool applySFMode = false;
 
+    // ========================================================================
+    // Data / MC bookkeeping
+    // ========================================================================
+    bool isData = true;
 
-       // Constructor with Mode Flag
-       EventLooper(TTree *tree=0, bool applySF=false);
-       virtual ~EventLooper();
-       virtual Int_t    Cut(Long64_t entry);
-       virtual Int_t    GetEntry(Long64_t entry);
-       virtual Long64_t LoadTree(Long64_t entry);
-       virtual void     Init();
-       virtual void     Loop();
-       virtual bool     Notify();
-       virtual void     Show(Long64_t entry = -1);
+    // ========================================================================
+    // Input file / tree / reader
+    // ========================================================================
+    // Keep the input TFile alive during the entire run.
+    // If the file is deleted/closed, the TTree can become invalid.
+    TFile* inputFile = nullptr;
 
-       void setNtupleName(TString _name = "notDefined");
-       TString getInputName();
-       TString getOutputName();
+    // Raw pointer to TTree (owned by inputFile)
+    TTree* fChain = nullptr;
 
-    private:
+    // NtupleReader is a wrapper that does branch setup and provides getters.
+    NtupleReader* reader = nullptr;
 
-       TString ntupleName = "notDefined";
-       bool applySFMode; // true: Apply SF & Save Tree, false: Calculate Eff (2D Hist)  
+    // ========================================================================
+    // Histograms & Maps
+    // ========================================================================
+    // Step 1: Efficiency calculation maps (Denominator/Numerator)
+    std::map<TString, TH2D*> map_Total;
+    std::map<TString, TH2D*> map_Pass;
 
-       // --- Histograms for Step 1 (Efficiency Calculation) ---
-       TH2D* h_Total[1][1]; // Simplified to 1x1 as per your code
-       TH2D* h_Pass[1][1];
+    // Step 2: CorrectionLib objects for SF application
+    std::unique_ptr<correction::CorrectionSet> cset;
+    std::shared_ptr<const correction::Correction> sf_provider;
 
-       // --- Objects for Step 2 (SF Application) ---
-       TH2D* sfHist[1];      // Scale Factor maps
-       TH1D* h_HT_Total;     // Validation Hists
-       TH1D* h_HT_Pass;
-       TH1D* h_Jet6PT_Total;
-       TH1D* h_Jet6PT_Pass;
-
-
-       // 데이터 여부 확인 변수
-       bool isData;
-
+    // Step 2: Validation 1D histograms (for comparing Total vs Pass)
+    TH1D* h_HT_Total      = nullptr;
+    TH1D* h_HT_Pass       = nullptr;
+    TH1D* h_pT_Total      = nullptr;
+    TH1D* h_pT_Pass       = nullptr;
+    TH1D* h_Eta_Total     = nullptr;
+    TH1D* h_Eta_Pass      = nullptr;
+    TH1D* h_nbJets_Total  = nullptr;
+    TH1D* h_nbJets_Pass   = nullptr;
 };
 
 #endif
-
-#ifdef EventLooper_cxx
-EventLooper::EventLooper(TTree *tree, bool applySF) : fChain(0), applySFMode(applySF)
-{
-    jetPt = 0;
-}
-
-EventLooper::~EventLooper()
-{
-   if (!fChain) return;
-   delete fChain->GetCurrentFile();
-}
-
-Int_t EventLooper::GetEntry(Long64_t entry)
-{
-   if (!fChain) return 0;
-   return fChain->GetEntry(entry);
-}
-Long64_t EventLooper::LoadTree(Long64_t entry)
-{
-   if (!fChain) return -5;
-   Long64_t centry = fChain->LoadTree(entry);
-   if (centry < 0) return centry;
-   if (fChain->GetTreeNumber() != fCurrent) {
-      fCurrent = fChain->GetTreeNumber();
-      Notify();
-   }
-   return centry;
-}
-
-void EventLooper::setNtupleName(TString _name){
-    ntupleName = _name;
-}
-TString EventLooper::getInputName(){
-    return ntupleName + ".root";
-}
-TString EventLooper::getOutputName(){
-    if (applySFMode) {
-        return "corrected_" + ntupleName + ".root";
-    } else {
-        return "output_" + ntupleName + ".root";
-    }
-}
-
-#endif // #ifdef EventLooper_cxx
 

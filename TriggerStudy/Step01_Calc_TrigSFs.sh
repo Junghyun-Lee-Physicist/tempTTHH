@@ -7,18 +7,25 @@
 # Mode 0 = Calculate Trigger Efficiency (Output 2D Hists)
 # Mode 1 = Apply SF & Save Tree
 
+# [옵션 설정] 
+# 0 = false, 1 = true
+USE_NBJET=0
+USE_ETA=1
+
 echo ">>> Processing MC Samples..."
-./exe_TrigStudy ttJets 0 &       # (Optionally include if you have the inclusive sample)
-./exe_TrigStudy TTTo2L2Nu 0 &
-./exe_TrigStudy ttTohadronic 0 &
-./exe_TrigStudy TTToSemiLeptonic 0 &
+# ./exe_TrigStudy [Sample] [Mode=0] [nbJet=0] [Eta=0]
+# 0 0 0 --> Setting for derive Trigger SF before calculate b-jet SF
+# 0 1 0 --> Setting for derive normal Trigger SF
+./exe_TrigStudy TTTo2L2Nu 0 ${USE_NBJET} ${USE_ETA} &
+./exe_TrigStudy ttTohadronic 0 ${USE_NBJET} ${USE_ETA} &
+./exe_TrigStudy TTToSemiLeptonic 0 ${USE_NBJET} ${USE_ETA} &
 
 echo ">>> Processing Data Samples..."
-./exe_TrigStudy SingleMuon_B 0 &
-./exe_TrigStudy SingleMuon_C 0 &
-./exe_TrigStudy SingleMuon_D 0 &
-./exe_TrigStudy SingleMuon_E 0 & 
-./exe_TrigStudy SingleMuon_F 0 &
+./exe_TrigStudy SingleMuon_B 0 ${USE_NBJET} ${USE_ETA} &
+./exe_TrigStudy SingleMuon_C 0 ${USE_NBJET} ${USE_ETA} &
+./exe_TrigStudy SingleMuon_D 0 ${USE_NBJET} ${USE_ETA} &
+./exe_TrigStudy SingleMuon_E 0 ${USE_NBJET} ${USE_ETA} & 
+./exe_TrigStudy SingleMuon_F 0 ${USE_NBJET} ${USE_ETA} &
 
 wait
 echo ">>> Event Loop Finished."
@@ -27,8 +34,8 @@ echo ">>> Event Loop Finished."
 # Step 2: Merge & Calculate SF
 # ==========================================
 
-outputName="260105_Tier3"
-PlotterName="TriggerEfficiency.cpp"
+outputName="260119_Tier3"
+PlotterName="DeriveSF_Hist.cpp"
 
 mkdir -p output/${outputName}
 mv output_*.root output/${outputName}
@@ -40,7 +47,6 @@ echo ">>> Merging Data..."
 hadd -f Data.root output_SingleMuon_*.root
 
 echo ">>> Merging MC..."
-# ttJets가 inclusive 샘플이 없다면 3개 채널 합치기
 hadd -f output_ttJets.root output_TTToSemiLeptonic.root output_TTTo2L2Nu.root output_ttTohadronic.root
 cp output_ttJets.root ttJets.root
 
@@ -53,6 +59,15 @@ mv ${PlotterName} merger/
 cd merger || exit
 
 echo ">>> Calculating Scale Factors..."
-root -l -b -q ${PlotterName}
+
+# 1. 파일 이름에서 확장자(.cpp)를 제거하여 함수 이름 추출
+# 예: DeriveSF_Hist.cpp -> DeriveSF_Hist
+FuncName=${PlotterName%.cpp}
+
+# 2. 명확하게 분리해서 실행
+# -e ".L 파일명" : 파일을 로드함
+# -e "함수명(인자)" : 로드된 함수를 실행함
+root -l -b -q -e ".L ${PlotterName}" -e "${FuncName}(${USE_NBJET}, ${USE_ETA})"
+
 
 echo ">>> Done. Check 'ScaleFactors.root' in output/${outputName}/merger/"

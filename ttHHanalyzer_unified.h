@@ -1987,7 +1987,7 @@ class ttHHanalyzer_unified {
         _inputTree->Branch("nMuons", &nMuons, "nMuons/I");
         _inputTree->Branch("nElecs", &nElecs, "nElecs/I");
         _inputTree->Branch("nJets", &nJets, "nJets/I");
-        //_inputTree->Branch("nbJets", &nbJets, "nbJets/I");
+        _inputTree->Branch("nbJets", &nbJets, "nbJets/I");
         _inputTree->Branch("HT", &HT, "HT/F");
         _inputTree->Branch("jetPt", &jetPt);
         _inputTree->Branch("jetEta", &jetEta);

@@ -20,16 +20,16 @@ class CondorJobManager:
         # Variables for jobs, Please check before you run this script
         self.analyzer_path = f"{script_dir}"
         self.nameofExe = "ttHHanalyzer_unified" # Name of compiled execution file to run analyzer
-        self.AnalyzerMode = "main" # main, btagsf, trigsf
+        self.AnalyzerMode = "btagsf" # main, btagsf, trigsf
         ##self.path_output_base = "/eos/user/t/tom/<eos-storage or anywhere you want to store the outputs>"
         self.path_output_base = f"/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_{self.AnalyzerMode}"
         self.os_version = "el9"
         self.memorySize = "12 GB"
 ##        self.jobFlavour = "tomorrow"
 
-        self.config_file_path = os.path.join(self.analyzer_path, "AnalyzerConfig/Tier3_2017_FH_unified_{self.AnalyzerMode}.yml")
+        self.config_file_path = os.path.join(self.analyzer_path, f"AnalyzerConfig/Tier3_2017_FH_unified_{self.AnalyzerMode}.yml")
         self.proxy_path = os.path.join(self.analyzer_path, "proxy.cert")
-        self.condor_files_path = os.path.join(self.analyzer_path, "condor/filelistTier3_unified_{self.AnalyzerMode}")
+        self.condor_files_path = os.path.join(self.analyzer_path, f"condor/filelistTier3_unified_{self.AnalyzerMode}")
         self.sample_list_path = os.path.join(self.analyzer_path, "filelistTier3")
 
         self.make_directory(self.condor_files_path)

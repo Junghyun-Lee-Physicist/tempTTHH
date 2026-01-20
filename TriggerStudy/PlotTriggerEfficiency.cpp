@@ -1,207 +1,95 @@
 #include <TFile.h>
 #include <TH1D.h>
-#include <TGraphAsymmErrors.h>
 #include <TEfficiency.h>
 #include <TCanvas.h>
 #include <TLegend.h>
-#include <TPaveText.h>
-#include <TLine.h>
-#include <iostream>
+#include <TRatioPlot.h>
 #include <vector>
+#include <iostream>
+#include "include/BinConfig.hh"
 
-void PlotTriggerEfficiency()
-{
-    TH1::SetDefaultSumw2();
+void PlotTriggerEfficiency() {
+    // Config 로드 (타이틀이나 축 범위 등에 활용 가능)
+    BinConfig::Load("config.yaml");
 
-    // =========================================================
-    // 1. Configuration
-    // =========================================================
-    TString dataFileName = "corrected_Data.root";   
-    TString mcFileName   = "corrected_ttJets.root"; 
+    // 파일 열기
+    TFile* dataFile = TFile::Open("corrected_Data.root"); 
+    TFile* mcFile   = TFile::Open("corrected_ttJets.root"); 
 
-    std::vector<TString> variables = { "HT", "Jet6PT" };
-    std::vector<TString> xTitles   = { "HT [GeV]", "6th Jet p_{T} [GeV]" };
-
-    std::vector<TString> histNames_Total = { "h_HT_Total", "h_Jet6PT_Total" };
-    std::vector<TString> histNames_Pass  = { "h_HT_Pass",  "h_Jet6PT_Pass" };
-
-    // =========================================================
-    // 2. Load Files
-    // =========================================================
-    TFile* dataFile = TFile::Open(dataFileName);
-    if (!dataFile || dataFile->IsZombie()) {
-        std::cerr << "Cannot open data file: " << dataFileName << std::endl;
+    if(!dataFile || !mcFile) {
+        std::cerr << "Error: Corrected output files not found!" << std::endl;
+        std::cerr << "Did you run ./exe_TrigStudy [Sample] 1 ?" << std::endl;
         return;
     }
 
-    TFile* mcFile = TFile::Open(mcFileName);
-    if (!mcFile || mcFile->IsZombie()) {
-        std::cerr << "Cannot open MC file: " << mcFileName << std::endl;
-        return;
-    }
+    // 그릴 변수 목록 (EventLooper에서 저장한 이름과 일치해야 함)
+    std::vector<std::string> vars = {"HT", "pT", "Eta", "nbJets"};
+    
+    for(const auto& var : vars) {
+        // 히스토그램 가져오기
+        TH1D* h_data_pass  = (TH1D*)dataFile->Get(("h_"+var+"_Pass").c_str());
+        TH1D* h_data_total = (TH1D*)dataFile->Get(("h_"+var+"_Total").c_str());
+        TH1D* h_mc_pass    = (TH1D*)mcFile->Get(("h_"+var+"_Pass").c_str());
+        TH1D* h_mc_total   = (TH1D*)mcFile->Get(("h_"+var+"_Total").c_str());
 
-    // Output File
-    TFile* outputFile = new TFile("TriggerEfficiency_Output.root", "RECREATE");
-
-    // =========================================================
-    // 3. Plotting Loop
-    // =========================================================
-    for (size_t i = 0; i < variables.size(); ++i)
-    {
-        // Get Histograms
-        TH1D* h_Data_Total = (TH1D*)dataFile->Get(histNames_Total[i]);
-        TH1D* h_Data_Pass  = (TH1D*)dataFile->Get(histNames_Pass[i]);
-        TH1D* h_MC_Total   = (TH1D*)mcFile->Get(histNames_Total[i]);
-        TH1D* h_MC_Pass    = (TH1D*)mcFile->Get(histNames_Pass[i]);
-
-        if (!h_Data_Total || !h_Data_Pass || !h_MC_Total || !h_MC_Pass) {
-            std::cerr << "[Error] Missing histograms for " << variables[i] << std::endl;
+        // 히스토그램 존재 여부 확인 (Config에 따라 Eta/nbJets는 없을 수도 있음)
+        if(!h_data_pass || !h_mc_pass) {
+            std::cout << "[Info] Missing hists for var: " << var << " (Maybe disabled in config?)" << std::endl;
             continue;
         }
 
-        // ---------------------------------------------------------
-        // A. Data Efficiency (Use TEfficiency as strict check is fine for Data)
-        // ---------------------------------------------------------
-        TEfficiency* effData = new TEfficiency(*h_Data_Pass, *h_Data_Total);
-        effData->SetStatisticOption(TEfficiency::kBUniform);
+        // 1. Efficiency 계산 (RatioPlot용으로 TH1D 사용)
+        // Clone을 떠서 원본 보존
+        TH1D* eff_Data = (TH1D*)h_data_pass->Clone(("eff_Data_"+var).c_str());
+        eff_Data->Divide(h_data_pass, h_data_total, 1, 1, "B"); // "B" for Binomial errors
         
-        TGraphAsymmErrors* grEffData = effData->CreateGraph();
-        grEffData->SetMarkerStyle(20);
-        grEffData->SetMarkerColor(kBlack);
-        grEffData->SetLineColor(kBlack);
+        TH1D* eff_MC = (TH1D*)h_mc_pass->Clone(("eff_MC_"+var).c_str());
+        eff_MC->Divide(h_mc_pass, h_mc_total, 1, 1, "B");
 
-        // ---------------------------------------------------------
-        // B. MC Efficiency (Use TH1::Divide to handle SF > 1 cases)
-        // [수정됨] TEfficiency 대신 직접 나눗셈으로 계산
-        // ---------------------------------------------------------
-        TH1D* h_EffMC_Hist = (TH1D*)h_MC_Pass->Clone(Form("h_EffMC_%s", variables[i].Data()));
-        h_EffMC_Hist->Divide(h_MC_Total); // Pass / Total
+        // 스타일링
+        eff_Data->SetMarkerStyle(20);
+        eff_Data->SetMarkerColor(kBlack);
+        eff_Data->SetLineColor(kBlack);
+        eff_Data->SetTitle(var.c_str());
+        eff_Data->SetStats(0);
 
-        TGraphAsymmErrors* grEffMC = new TGraphAsymmErrors(h_EffMC_Hist);
-        grEffMC->SetMarkerStyle(21);
-        grEffMC->SetMarkerColor(kRed);
-        grEffMC->SetLineColor(kRed);
+        eff_MC->SetMarkerStyle(21);
+        eff_MC->SetMarkerColor(kRed);
+        eff_MC->SetLineColor(kRed);
+        eff_MC->SetStats(0);
 
-        // ---------------------------------------------------------
-        // C. Ratio (Data / MC)
-        // ---------------------------------------------------------
-        TGraphAsymmErrors* grRatio = new TGraphAsymmErrors();
-        int nPoints = grEffData->GetN();
-        int nRatioPoints = 0;
-
-        for (int j = 0; j < nPoints; ++j) {
-            double xData, yData, xMC, yMC;
-            
-            // Data Point
-            grEffData->GetPoint(j, xData, yData);
-            
-            // MC Point (from Histogram-based Graph)
-            // TGraphAsymmErrors from TH1 stores x-centers correctly
-            grEffMC->GetPoint(j, xMC, yMC); 
-
-            if (yMC == 0 || yData == 0) continue;
-
-            double ratio = yData / yMC;
-
-            // Error Propagation
-            double errYDataLow  = grEffData->GetErrorYlow(j);
-            double errYDataHigh = grEffData->GetErrorYhigh(j);
-            double errYMCLow    = grEffMC->GetErrorYlow(j);  // Statistical error from MC
-            double errYMCHigh   = grEffMC->GetErrorYhigh(j);
-
-            double errRatio_Low = ratio * sqrt(pow(errYDataLow / yData, 2) + pow(errYMCHigh / yMC, 2));
-            double errRatio_High = ratio * sqrt(pow(errYDataHigh / yData, 2) + pow(errYMCLow / yMC, 2));
-
-            double errXLow  = grEffData->GetErrorXlow(j);
-            double errXHigh = grEffData->GetErrorXhigh(j);
-
-            grRatio->SetPoint(nRatioPoints, xData, ratio);
-            grRatio->SetPointError(nRatioPoints, errXLow, errXHigh, errRatio_Low, errRatio_High);
-            nRatioPoints++;
-        }
-
-        grRatio->SetMarkerStyle(20);
-        grRatio->SetMarkerColor(kBlue);
-        grRatio->SetLineColor(kBlue);
-
-
-        // ---------------------------------------------------------
-        // D. Drawing
-        // ---------------------------------------------------------
-        TCanvas* c1 = new TCanvas(Form("c_eff_%s", variables[i].Data()), "", 800, 800);
+        // 2. 캔버스 생성 및 그리기
+        TCanvas* c = new TCanvas(("c_Val_"+var).c_str(), var.c_str(), 800, 800);
         
-        // Upper Pad
-        TPad *pad1 = new TPad("pad1", "pad1", 0, 0.3, 1, 1.0);
-        pad1->SetBottomMargin(0.02);
-        pad1->SetLeftMargin(0.15);
-        pad1->Draw();
-        pad1->cd();
+        // TRatioPlot (Top: Efficiencies, Bottom: Ratio)
+        TRatioPlot* rp = new TRatioPlot(eff_MC, eff_Data); // MC / Data ? Or Data / MC?
+        // 보통 Data/MC 비교에서는 Data 점을 MC 선/점 위에 그립니다.
+        // TRatioPlot(h1, h2) -> h1/h2 ratio를 그립니다.
+        // 우리는 Data/MC Ratio를 보고 싶다면 TRatioPlot(eff_Data, eff_MC)가 맞습니다.
+        // 하지만 여기선 Corrected MC가 Data와 얼마나 잘 맞는지를 보므로,
+        // 위쪽 패드에 둘 다 그리고, 아래쪽 패드에 Ratio를 그립니다.
+        
+        rp->SetH1DrawOpt("PE");
+        rp->SetH2DrawOpt("PE");
+        rp->Draw();
 
-        grEffData->SetTitle("");
-        grEffData->GetYaxis()->SetTitle("Efficiency");
-        grEffData->GetYaxis()->SetTitleSize(0.05);
-        grEffData->GetYaxis()->SetTitleOffset(1.1);
-        grEffData->GetYaxis()->SetRangeUser(0.0, 1.3); // Range를 조금 넉넉하게 (SF>1 고려)
-        grEffData->GetXaxis()->SetLabelSize(0); 
-
-        grEffData->Draw("AP");
-        grEffMC->Draw("P SAME");
-
-        TLegend* leg = new TLegend(0.65, 0.2, 0.9, 0.4);
-        leg->SetBorderSize(0);
-        leg->AddEntry(grEffData, "Data (with SF)", "p");
-        leg->AddEntry(grEffMC, "MC (Corrected)", "p");
+        // 축 및 타이틀 설정
+        rp->GetLowerRefGraph()->SetMinimum(0.5);
+        rp->GetLowerRefGraph()->SetMaximum(1.5);
+        rp->GetLowerRefYaxis()->SetTitle("MC / Data"); // 순서 주의 (생성자 인자 순서)
+        rp->GetUpperRefYaxis()->SetTitle("Trigger Efficiency");
+        
+        // Legend 추가
+        rp->GetUpperPad()->cd();
+        TLegend* leg = new TLegend(0.6, 0.2, 0.85, 0.4);
+        leg->AddEntry(eff_Data, "Data", "lp");
+        leg->AddEntry(eff_MC, "MC (SF Applied)", "lp");
         leg->Draw();
 
-        TPaveText* pt = new TPaveText(0.15, 0.92, 0.9, 0.98, "NDC");
-        pt->SetFillColor(0);
-        pt->SetBorderSize(0);
-        pt->AddText(Form("Trigger Verification: %s", variables[i].Data()));
-        pt->Draw();
-
-        // Lower Pad
-        c1->cd();
-        TPad *pad2 = new TPad("pad2", "pad2", 0, 0.0, 1, 0.3);
-        pad2->SetTopMargin(0.02);
-        pad2->SetBottomMargin(0.3);
-        pad2->SetLeftMargin(0.15);
-        pad2->Draw();
-        pad2->cd();
-
-        grRatio->SetTitle("");
-        grRatio->GetYaxis()->SetTitle("Data / MC");
-        grRatio->GetYaxis()->SetNdivisions(505);
-        grRatio->GetYaxis()->SetTitleSize(0.1);
-        grRatio->GetYaxis()->SetTitleOffset(0.4);
-        grRatio->GetYaxis()->SetLabelSize(0.08);
-        grRatio->GetYaxis()->SetRangeUser(0.5, 1.5);
-
-        grRatio->GetXaxis()->SetTitle(xTitles[i]);
-        grRatio->GetXaxis()->SetTitleSize(0.12);
-        grRatio->GetXaxis()->SetTitleOffset(1.0);
-        grRatio->GetXaxis()->SetLabelSize(0.1);
-
-        grRatio->Draw("AP");
-
-        TLine* line = new TLine(grRatio->GetXaxis()->GetXmin(), 1.0, grRatio->GetXaxis()->GetXmax(), 1.0);
-        line->SetLineStyle(2);
-        line->SetLineColor(kGray+1);
-        line->Draw("SAME");
-
-        c1->SaveAs(Form("TriggerEfficiencyAndRatio_%s.pdf", variables[i].Data()));
-
-        outputFile->cd();
-        grEffData->Write(Form("Efficiency_Data_%s", variables[i].Data()));
-        grEffMC->Write(Form("Efficiency_MC_%s", variables[i].Data()));
-        grRatio->Write(Form("RatioPlot_%s", variables[i].Data()));
-
-        delete c1;
-        delete effData;
-        // delete effMC; // TEfficiency 객체 삭제 대신 히스토그램 정리
-        delete h_EffMC_Hist;
+        // 저장
+        c->SaveAs(("Validation_Eff_" + var + ".pdf").c_str());
+        
+        delete c;
     }
-
-    dataFile->Close();
-    mcFile->Close();
-    outputFile->Close();
+    std::cout << ">>> All validation plots created." << std::endl;
 }
