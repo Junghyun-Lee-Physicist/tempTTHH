@@ -61,7 +61,7 @@ SAMPLES = [
     "ttHH",
     "ttHtobb",
     "ttJets",
-    "ttTohadronic",
+    "TTToHadronic",
     "tttt",
     "tttW",
     "ttWH",

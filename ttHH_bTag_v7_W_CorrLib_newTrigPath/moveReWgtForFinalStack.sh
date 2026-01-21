@@ -14,7 +14,7 @@ MC=(
   "ttHH"
   "ttHtobb"
 #  "ttJets"
-  "ttTohadronic"
+  "TTToHadronic"
   "TTTo2L2Nu"
   "TTToSemiLeptonic"
   "tttt"
@@ -59,7 +59,7 @@ done
 
 cd ${Dir}/MC
 rm -rf Validation_ttJets.root
-hadd Validation_ttJets.root Validation_ttTohadronic.root Validation_TTTo2L2Nu.root Validation_TTToSemiLeptonic.root
+hadd Validation_ttJets.root Validation_TTToHadronic.root Validation_TTTo2L2Nu.root Validation_TTToSemiLeptonic.root
 
 cd -
 cd ${Dir}/Data

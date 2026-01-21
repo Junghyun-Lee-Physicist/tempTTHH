@@ -2,7 +2,7 @@
 
 ##./exe_TrigStudy ttJets 1 &
 ./exe_TrigStudy TTTo2L2Nu 1 &
-./exe_TrigStudy ttTohadronic 1 &
+./exe_TrigStudy TTToHadronic 1 &
 ./exe_TrigStudy TTToSemiLeptonic 1 &
 
 ./exe_TrigStudy SingleMuon_B 1 &
@@ -33,7 +33,7 @@ cd "output/${outputName}"
 
 hadd corrected_Data.root corrected_SingleMuon_*.root
 ##hadd Data.root output_JetHT_*.root output_BTagCSV_*.root
-hadd corrected_ttJets.root corrected_TTToSemiLeptonic.root corrected_TTTo2L2Nu.root corrected_ttTohadronic.root
+hadd corrected_ttJets.root corrected_TTToSemiLeptonic.root corrected_TTTo2L2Nu.root corrected_TTToHadronic.root
 
 cp corrected_ttJets.root ttJets.root
 mkdir -p merger

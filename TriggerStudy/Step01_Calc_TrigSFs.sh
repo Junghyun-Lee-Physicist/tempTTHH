@@ -17,7 +17,7 @@ echo ">>> Processing MC Samples..."
 # 0 0 0 --> Setting for derive Trigger SF before calculate b-jet SF
 # 0 1 0 --> Setting for derive normal Trigger SF
 ./exe_TrigStudy TTTo2L2Nu 0 ${USE_NBJET} ${USE_ETA} &
-./exe_TrigStudy ttTohadronic 0 ${USE_NBJET} ${USE_ETA} &
+./exe_TrigStudy TTToHadronic 0 ${USE_NBJET} ${USE_ETA} &
 ./exe_TrigStudy TTToSemiLeptonic 0 ${USE_NBJET} ${USE_ETA} &
 
 echo ">>> Processing Data Samples..."
@@ -47,7 +47,7 @@ echo ">>> Merging Data..."
 hadd -f Data.root output_SingleMuon_*.root
 
 echo ">>> Merging MC..."
-hadd -f output_ttJets.root output_TTToSemiLeptonic.root output_TTTo2L2Nu.root output_ttTohadronic.root
+hadd -f output_ttJets.root output_TTToSemiLeptonic.root output_TTTo2L2Nu.root output_TTToHadronic.root
 cp output_ttJets.root ttJets.root
 
 # Prepare for Plotting

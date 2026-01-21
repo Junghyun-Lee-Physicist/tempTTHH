@@ -41,7 +41,7 @@ directories = [
 
 mc_name_mapping = {
     "TTTo2L2Nu": "TTTo2L2Nu",
-    "TTToHadronic": "ttTohadronic",
+    "TTToHadronic": "TTToHadronic",
     "TTToSemiLeptonic": "TTToSemiLeptonic",
     "TTHHTo4b": "ttHH",
     "TT4b": "tt4b",

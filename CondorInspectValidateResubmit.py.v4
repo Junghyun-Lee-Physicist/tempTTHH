@@ -52,7 +52,7 @@ SAMPLES = [
     "SingleMuon_B", "SingleMuon_C", "SingleMuon_D", "SingleMuon_E", "SingleMuon_F",
     "BTagCSV_B", "BTagCSV_C", "BTagCSV_D", "BTagCSV_E", "BTagCSV_F",
     "JetHT_B", "JetHT_C", "JetHT_D", "JetHT_E", "JetHT_F",
-    "tt4b", "ttbb", "ttHH", "ttHtobb", "ttJets", "ttTohadronic",
+    "tt4b", "ttbb", "ttHH", "ttHtobb", "ttJets", "TTToHadronic",
     "tttt", "tttW", "ttWH", "ttWW", "ttWZ", "ttZHto4b", "ttZtobb", "ttZZto4b",
 ]
 

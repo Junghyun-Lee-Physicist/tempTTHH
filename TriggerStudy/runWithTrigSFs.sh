@@ -24,7 +24,7 @@ fi
 echo ">>> Applying Scale Factors to MC..."
 #./exe_TrigStudy ttJets 1 &
 ./exe_TrigStudy TTTo2L2Nu 1 &
-./exe_TrigStudy ttTohadronic 1 &
+./exe_TrigStudy TTToHadronic 1 &
 ./exe_TrigStudy TTToSemiLeptonic 1 &
 
 echo ">>> Processing Data (Validation)..."
@@ -55,7 +55,7 @@ echo ">>> Merging Data..."
 hadd -f corrected_Data.root corrected_SingleMuon_*.root
 
 echo ">>> Merging MC..."
-hadd -f corrected_ttJets.root corrected_TTToSemiLeptonic.root corrected_TTTo2L2Nu.root corrected_ttTohadronic.root
+hadd -f corrected_ttJets.root corrected_TTToSemiLeptonic.root corrected_TTTo2L2Nu.root corrected_TTToHadronic.root
 
 # Prepare for Plotting
 mkdir -p merger

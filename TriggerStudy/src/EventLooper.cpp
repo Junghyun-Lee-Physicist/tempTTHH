@@ -207,7 +207,7 @@ void EventLooper::Loop()
     // 4) Determine if the sample is Data or MC, and parse dataset/era if Data
     //
     // Naming convention assumed:
-    //   - MC:   TTTo2L2Nu.root, TTToSemiLeptonic.root, ttTohadronic.root
+    //   - MC:   TTTo2L2Nu.root, TTToSemiLeptonic.root, TTToHadronic.root
     //   - Data: <DataSet>_<Era>.root   (e.g. SingleMuon_B.root, JetHT_D.root)
     // ------------------------------------------------------------------------
     TString sampleName = getInputName();
@@ -226,7 +226,7 @@ void EventLooper::Loop()
         isData  = false;
 	MC_weight = 0.0004761561474;
     }
-    else if (sampleName == "ttTohadronic") {
+    else if (sampleName == "TTToHadronic") {
         isData  = false;
         MC_weight = 0.000214351205;
     }

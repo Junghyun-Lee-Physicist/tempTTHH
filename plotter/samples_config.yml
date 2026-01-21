@@ -189,12 +189,12 @@ samples:
     - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_base/ttHtobb.root
     label: ttHtobb
     color: '#88CCEE'
-  ttTohadronic:
+  TTToHadronic:
     type: MC
     path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_base
     files:
-    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_base/ttTohadronic.root
-    label: ttTohadronic
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_base/TTToHadronic.root
+    label: TTToHadronic
     color: '#44AA99'
   ttWH:
     type: MC

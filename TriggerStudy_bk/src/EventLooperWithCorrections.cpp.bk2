@@ -33,10 +33,10 @@ void EventLooperWithCorrections::Loop()
         channel = "diLep";
         std::cout << "Current Sample: MC TTTo2L2Nu" << std::endl;
     }
-    else if(sampleName == "ttTohadronic"){
+    else if(sampleName == "TTToHadronic"){
         isData = false;
         channel = "had";
-        std::cout << "Current Sample: MC ttTohadronic" << std::endl;
+        std::cout << "Current Sample: MC TTToHadronic" << std::endl;
     }
     else if(sampleName == "TTToSemiLeptonic"){
         isData = false;

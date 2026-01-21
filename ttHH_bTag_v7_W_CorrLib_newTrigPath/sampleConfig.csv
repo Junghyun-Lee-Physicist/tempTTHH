@@ -25,7 +25,7 @@ JetHT_F                        : Data , 1.0
 ttHH                           : MC   , 0.00000109763773
 tt4b                           : MC   , 0.001292157441
 ttHtobb                        : MC   , 0.003125301546
-ttTohadronic                   : MC   , 0.000214351205
+TTToHadronic                   : MC   , 0.000214351205
 TTTo2L2Nu                      : MC   , 0.0004761561474
 TTToSemiLeptonic               : MC   , 0.0001455793461
 tttt                           : MC   , 0.00399317683

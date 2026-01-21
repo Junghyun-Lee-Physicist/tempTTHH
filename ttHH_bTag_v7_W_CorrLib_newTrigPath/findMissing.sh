@@ -31,7 +31,7 @@ SAMPLES=(
   "ttHH"
   "ttHtobb"
 #  "ttJets"
-  "ttTohadronic"
+  "TTToHadronic"
   "TTTo2L2Nu"
   "TTToSemiLeptonic"
   "tttt"

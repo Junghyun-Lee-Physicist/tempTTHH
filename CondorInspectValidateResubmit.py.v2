@@ -50,7 +50,7 @@ SAMPLES = [
 #    "QCD_HT1000to1500", "QCD_HT1500to2000", "QCD_HT2000toInf",
     "QCD_HT200to300", "QCD_HT300to500", "QCD_HT500to700", "QCD_HT700to1000",
 #    "SingleMuon_B", "SingleMuon_C", "SingleMuon_D", "SingleMuon_E", "SingleMuon_F",
-#    "tt4b", "ttbb", "ttHH", "ttHtobb", "ttJets", "ttTohadronic",
+#    "tt4b", "ttbb", "ttHH", "ttHtobb", "ttJets", "TTToHadronic",
 #    "tttt", "tttW", "ttWH", "ttWW", "ttWZ", "ttZHto4b", "ttZtobb", "ttZZto4b",
 ]
 
