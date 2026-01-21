@@ -37,7 +37,7 @@ echo ">>> [Step 2] Applying Corrections to MC..."
 wait
 
 echo ">>> [Step 2] Merging Corrected MC..."
-hadd -f corrected_ttJets.root corrected_TTTo*.root corrected_ttTo*.root
+hadd -f corrected_ttJets.root corrected_TTTo*.root corrected_TTTo*.root
 # Data는 SF 적용이 없지만 포맷 통일을 위해 복사 혹은 validation 용으로 돌림
 cp Data.root corrected_Data.root 
 
