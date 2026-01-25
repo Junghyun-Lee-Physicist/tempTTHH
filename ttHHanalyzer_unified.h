@@ -41,7 +41,8 @@ const float cZMass = 91.;
 
 
 // =============================================================================
-// Analysis Mode Definition (Start)
+// Analysis Mode Definition
+// 분석 목적에 따라 세 가지 모드 정의
 // =============================================================================
 enum class AnalysisMode {
     kMainAnalysis,
@@ -49,6 +50,7 @@ enum class AnalysisMode {
     kTriggerSFStudy
 };
 
+// Argument로 받는 문자열 → AnalysisMode class 변환 함수
 inline AnalysisMode parseAnalysisMode(const std::string& modeStr) {
 
     if (modeStr.empty()) {
@@ -81,6 +83,9 @@ inline std::string analysisModeName(AnalysisMode mode) {
     }
 }
 
+// =============================================================================
+// SelectionPolicy: 분석 모드에 따른 Cut 적용 여부 정의
+// =============================================================================
 struct SelectionPolicy {
     bool applyTriggerCut;
     bool applyLeptonVeto;

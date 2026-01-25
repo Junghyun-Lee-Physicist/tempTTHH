@@ -4,6 +4,8 @@
 # Full Trigger SF Analysis Pipeline (Config Driven)
 # ========================================================
 
+outputDirName="outputs"
+
 # 1. Step 1: Calculate Efficiency (Mode 0)
 echo ">>> [Step 1] Running EventLooper..."
 ./exe_TrigStudy TTTo2L2Nu 0 &
@@ -15,6 +17,8 @@ echo ">>> [Step 1] Running EventLooper..."
 ./exe_TrigStudy SingleMuon_E 0 &
 ./exe_TrigStudy SingleMuon_F 0 &
 wait
+
+mkdir -p outputs
 
 echo ">>> [Step 1] Merging Files..."
 hadd -f Data.root output_SingleMuon_*.root # Merge B,C,D,E,F period output

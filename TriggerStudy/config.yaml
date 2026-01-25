@@ -16,7 +16,7 @@ UseNBjets: false
 # UseEta:
 #   - true  -> include eta categories (Eta_Bins) in histogram/map keys
 #   - false -> run with inclusive eta category only ("Eta_Inc")
-UseEta: true
+UseEta: false
 
 # -----------------------------------------------------------------------------
 # Binning Definitions (edges)

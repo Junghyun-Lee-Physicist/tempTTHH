@@ -198,6 +198,9 @@ void EventLooper::Loop()
                 map_Pass[key]  = new TH2D("Pass_" + key, key,
                                           HT_Bins.size() - 1, HT_Bins.data(),
                                           PT_Bins.size() - 1, PT_Bins.data());
+
+		map_Total[key]->Sumw2();
+		map_Pass[key]->Sumw2();
             }
         }
     }
@@ -298,6 +301,8 @@ void EventLooper::Loop()
             FATAL_INVARIANT("|eta| > 2.4 for 6th jet (should have been rejected in skimming)", jentry);
         }
         
+        if (reader->GetNBJets() < 3) continue;
+
         if(isData) {
             // Analyzer output must be passed golden JSON
             if(reader->GetFailGoldenJson() == true){

@@ -79,7 +79,7 @@ NtupleReader::NtupleReader(TTree *tree) : fChain(tree) {
     fChain->SetBranchAddress("nMuons", &nMuons, &b_nMuons);
     fChain->SetBranchAddress("nElecs", &nElecs, &b_nElecs);
     fChain->SetBranchAddress("nJets", &nJets, &b_nJets);
-////    fChain->SetBranchAddress("nbJets", &nbJets, &b_nbJets);
+    fChain->SetBranchAddress("nbJets", &nbJets, &b_nbJets);
 
     // 3. Kinematics
     fChain->SetBranchAddress("HT", &HT, &b_HT);

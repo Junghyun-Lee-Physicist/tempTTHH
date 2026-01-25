@@ -352,7 +352,7 @@ double CorrectionsManager::getBTagSF(int hf,
                                      double disc,
                                      const std::string& sys) const
 {
-    if (!isData_) return 1.0;  // no SF applied for Data
+    if (isData_) return 1.0;  // no SF applied for Data
     if (hf!=5 && hf!=4) hf=0;  // light
     if (kVerbose) std::cout << "[getBTagSF] hf="<<hf
                             << " eta="<<eta

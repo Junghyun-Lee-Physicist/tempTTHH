@@ -997,28 +997,12 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
     createObjects(thisEvent, sysType, up);
 
     // Object Selection and Cuts
-    if(!selectObjects(thisEvent))  return;
-////    selectObjects(thisEvent);
+    if(!selectObjects(thisEvent)) return;
     _passMETFilters = false;
     _passMETFilters = thisEvent->getMETFilter();
-
     if(_passMETFilters != true){
-        std::cout<<"ERROR : filter is diff!!"<<std::endl;
+        std::cout<<"ERROR : MET filter class does not work properly.. It should reject all of events are not passed filters in [ selectObjects ].."<<std::endl;
         exit(555);
-    }
-
-    bool metFilters = _ev->Flag_goodVertices &&
-                         _ev->Flag_globalSuperTightHalo2016Filter &&
-                         _ev->Flag_HBHENoiseFilter &&
-                         _ev->Flag_HBHENoiseIsoFilter &&
-                         _ev->Flag_EcalDeadCellTriggerPrimitiveFilter &&
-                         _ev->Flag_BadPFMuonFilter &&
-                         _ev->Flag_BadPFMuonDzFilter &&
-                         _ev->Flag_eeBadScFilter &&
-                         _ev->Flag_ecalBadCalibFilter;
-    if(_passMETFilters != metFilters){
-	    std::cout<<"ERROR : filter is diff!!"<<std::endl;
-	    exit(555);
     }
 
     // 5) Final analysis steps: kinematics, histograms, tree
