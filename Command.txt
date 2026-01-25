@@ -41,7 +41,7 @@
   --dataOrMC Data \
   --sample BTagCSV_B \
   --era B \
-  --mode btagsf
+  --mode btagtrig
 
 # 3. Data Sample (SingleMuon)
 ./ttHHanalyzer_unified \

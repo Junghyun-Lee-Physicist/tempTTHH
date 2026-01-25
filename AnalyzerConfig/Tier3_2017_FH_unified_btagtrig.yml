@@ -1,8 +1,8 @@
 common:
   year: "2017"
   # You can choose one of below analysis mode
-  # main, btagsf, trigsf
-  analysis_mode: "btagsf" 
+  # main, btagtrig, trigsf
+  analysis_mode: "btagtrig" 
 
 samples:
   # ---------------------------------------------------------

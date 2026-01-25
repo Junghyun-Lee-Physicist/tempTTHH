@@ -46,7 +46,7 @@ const float cZMass = 91.;
 // =============================================================================
 enum class AnalysisMode {
     kMainAnalysis,
-    kBTagSFDerivation,
+    kBTagAndTriggerStudy,
     kTriggerSFStudy
 };
 
@@ -57,15 +57,15 @@ inline AnalysisMode parseAnalysisMode(const std::string& modeStr) {
         throw std::invalid_argument(
             "[ERROR] Analysis mode not specified!\n"
             "        You MUST provide --mode argument.\n"
-            "        Valid modes: main, btagsf, trigsf"
+            "        Valid modes: main, btagtrig, trigsf"
         );
     }
     
     if (modeStr == "main" || modeStr == "MainAnalysis") {
         return AnalysisMode::kMainAnalysis;
     }
-    else if (modeStr == "btagsf" || modeStr == "BTagSFDerivation") {
-        return AnalysisMode::kBTagSFDerivation;
+    else if (modeStr == "btagtrig" || modeStr == "BTagAndTriggerStudy") {
+        return AnalysisMode::kBTagAndTriggerStudy;
     }
     else if (modeStr == "trigsf" || modeStr == "TriggerSFStudy") {
         return AnalysisMode::kTriggerSFStudy;
@@ -76,9 +76,9 @@ inline AnalysisMode parseAnalysisMode(const std::string& modeStr) {
 
 inline std::string analysisModeName(AnalysisMode mode) {
     switch (mode) {
-        case AnalysisMode::kMainAnalysis:     return "MainAnalysis";
-        case AnalysisMode::kBTagSFDerivation: return "BTagSFDerivation";
-        case AnalysisMode::kTriggerSFStudy:   return "TriggerSFStudy";
+        case AnalysisMode::kMainAnalysis:        return "MainAnalysis";
+        case AnalysisMode::kBTagAndTriggerStudy: return "BTagAndTriggerStudy";
+        case AnalysisMode::kTriggerSFStudy:      return "TriggerSFStudy";
         default: return "Unknown";
     }
 }
@@ -103,7 +103,7 @@ struct SelectionPolicy {
                 //   Trig  LepV  bJet  HadW  CollLep leadMu HiggsReco Req1Mu
                 p = {true, true, true, true, false, false, true, false};
                 break;
-            case AnalysisMode::kBTagSFDerivation:
+            case AnalysisMode::kBTagAndTriggerStudy:
                 p = {false, false, false, false, true, true, false, false};
                 break;
             case AnalysisMode::kTriggerSFStudy:
@@ -132,7 +132,7 @@ struct SelectionPolicy {
 
 
 std::map<std::string, float> cut { 
-    {"nJets", 7} // nJets higher than 
+    {"nJets", 6} // nJets higher than 
     , {"nLeptons", 0} // nLepton equals to
     //, {"nVetoLeptons", 0} // nVetoLepton equals to
     , {"nbJets", 4}
@@ -141,8 +141,8 @@ std::map<std::string, float> cut {
     ////, {"leadMuonPt", 25} // leadMuon pT higher than
     ////, {"subLeadElePt", 15} // subLeadElectron pT higher than
     ////, {"subLeadMuonPt", 15} // subLeadMuon pT higher than
-    , {"leadElePt", 25}     //// New Def for leptons to veto at Hadronic channel 
-    , {"leadMuonPt", 25}    //// New Def for leptons to veto at Hadronic channel
+    , {"leadElePt", 30}     //// New Def for leptons to veto at Hadronic channel 
+    , {"leadMuonPt", 29}    //// New Def for leptons to veto at Hadronic channel
     , {"subLeadElePt", 15}  //// New Def for leptons to veto at Hadronic channel
     , {"subLeadMuonPt", 15} //// New Def for leptons to veto at Hadronic channel
     //    , {"vetoLepPt", 15} // lepton pT higher than
@@ -152,10 +152,10 @@ std::map<std::string, float> cut {
     , {"nlJets", 0} // light jet higher than
     , {"hadHiggsPt", 20} // hadronic Higgs pT higher than
     , {"jetEta", 2.4} // jet eta higher than
-    , {"eleEta", 2.4} // electron eta higher than
+    , {"eleEta", 2.5} // electron eta higher than
     , {"muonEta", 2.4} // muon eta higher than
     , {"boostedJetEta", 2.4} // boostedJet eta higher than
-    , {"muonIso", 0.2} // muon isolation less than
+    , {"muonIso", 0.15} // muon isolation less than
     , {"eleIso", 0.1}  // ele isolation less than
     , {"jetID", 6}   // pass tight and tightLepVeto ID
     , {"jetPUid", 4}   // pass loose cut fail tight and medium
@@ -1616,11 +1616,6 @@ class ttHHanalyzer_unified {
         TDirectory *cutflowDir = _of->file->mkdir("CutflowKinematics"+trail);
         tmpDirs.push_back(cutflowDir);
         cutflowDir->cd();
-
-        // 2. [추가] 카운터 벡터 초기화
-        size_t nSteps = _cutStepLabels.size();
-        _cutFlowCount.assign(nSteps, 0.0);
-        _cutFlowWeight.assign(nSteps, 0.0);
 
         const size_t cutStepCount = static_cast<size_t>(CutStep::kTotal) + 1;
         // [추가] 여기서 카운터 벡터 초기화 (0.0으로 채움)
