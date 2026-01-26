@@ -35,19 +35,60 @@ public:
                   double area,
 		  double rho) const;
 
+//    double smearJER(double corr_pt,
+//                    double gen_pt,
+//                    double eta,
+//                    double rho,
+//		    const std::string& syst = "nom") const;
     double smearJER(double corr_pt,
-                    double gen_pt,
                     double eta,
+                    double phi,
                     double rho,
-		    const std::string& syst = "nom") const;
+                    unsigned int run,
+                    unsigned int lumi,
+                    unsigned long long event,
+                    int jetIndex,
+                    double gen_pt = -1.0,
+                    double gen_eta = 0.0,
+                    double gen_phi = 0.0,
+                    const std::string& syst = "nom") const;
+
 
     double getTriggerSF(double ht, double jet6pt, double syst = 0.0) const;
 
-    double getBTagSF(int hf,
-                     double eta,
-                     double pt,
-                     double disc,
-                     const std::string& sys="central") const;
+    // ═══════════════════════════════════════════════════════════════════════
+    // B-tagging SF API
+    // ═══════════════════════════════════════════════════════════════════════
+    // Fixed WP 방식 (Medium WP 기준 pass/fail)
+    double getBTagSF_FixedWP(int hadFlav, double absEta, double pt,
+                             const std::string& wp = "M",
+                             const std::string& syst = "central") const;
+
+    // Shape Correction 방식 (continuous discriminant)
+    double getBTagSF_Shape(int hadFlav, double eta, double pt, double discr,
+                           const std::string& syst = "central") const;
+
+    // Event-level b-tag weight 계산 (모든 jet에 대해)
+    struct BTagWeightResult {
+        double central;
+        double up_hf;           // b/light: hf variation
+        double down_hf;
+        double up_lf;           // light: lf variation  
+        double down_lf;
+        double up_cferr1;       // c-jet: cferr variations
+        double down_cferr1;
+        double up_cferr2;
+        double down_cferr2;
+        double up_hfstats1;     // Statistical variations
+        double down_hfstats1;
+        double up_hfstats2;
+        double down_hfstats2;
+        double up_lfstats1;
+        double down_lfstats1;
+        double up_lfstats2;
+        double down_lfstats2;
+    };
+    // ═══════════════════════════════════════════════════════════════════════
 
     bool   passGoldenJSON(int run, int lumi) const;
 
@@ -75,8 +116,11 @@ private:
     std::shared_ptr<const correction::Correction>         jerRes_;
     std::shared_ptr<const correction::Correction>         jerSF_;
     std::shared_ptr<const correction::Correction>         puCorr_;
-    std::shared_ptr<const correction::Correction>         btagCorr_;
     std::shared_ptr<const correction::Correction>         jec_Unc_;
+    // B-tag correction objects
+    std::shared_ptr<const correction::Correction> btagCorr_shape_;    // deepJet_shape
+    std::shared_ptr<const correction::Correction> btagCorr_bc_;       // deepJet_comb (b/c jets)
+    std::shared_ptr<const correction::Correction> btagCorr_light_;    // deepJet_incl (light jets)
 
     TFile* trigSFFile_ = nullptr;
     TH2* hTrigSF_    = nullptr; // TH2F 혹은 TH2D

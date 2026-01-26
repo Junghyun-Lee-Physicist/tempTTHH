@@ -135,15 +135,25 @@ void CorrectionsManager::loadPU_() {
 // 3) b-tag SF  (typically only for MC)
 //--------------------------------------------------------------------------------------------------
 void CorrectionsManager::loadBTag_() {
-    if (!isData_) {
-        const std::string file = jsonPath + "/POG/BTV/" + runYear_ + "/btagging.json.gz";
-        if (kVerbose) std::cout << "[loadBTag] Loading BTag from " << file << "\n";
-        auto set = correction::CorrectionSet::from_file(file);
 
-        const char* key = "deepJet_shape";
-        btagCorr_ = set->at(key);
-        if (kVerbose) std::cout << "  -> BTag key  : " << key << "\n";
+    if (isData_) return; // b-tag SF apply MC only
+
+    const std::string file = jsonPath + "/POG/BTV/" + runYear_ + "/btagging.json.gz";
+    if (kVerbose) std::cout << "[loadBTag] Loading from " << file << "\n";
+    
+    auto cset = correction::CorrectionSet::from_file(file);
+    
+    // Shape correction (continuous discriminant 사용)
+    btagCorr_shape_ = cset->at("deepJet_shape");
+    
+    // Fixed WP corrections
+    btagCorr_bc_    = cset->at("deepJet_comb");   // b/c jets
+    btagCorr_light_ = cset->at("deepJet_incl");   // light jets
+    
+    if (kVerbose) {
+        std::cout << "  -> Loaded: deepJet_shape, deepJet_comb, deepJet_incl\n";
     }
+
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -274,61 +284,158 @@ double CorrectionsManager::getJEC(
     return corr->evaluate({ area, eta, raw_pt, rho});
 }
 
+
+// --- Helpers (put in CorrectionsManager.cc top or anonymous namespace) ---
+static inline double wrapPhi(double x) {
+    while (x >  M_PI) x -= 2.0*M_PI;
+    while (x <= -M_PI) x += 2.0*M_PI;
+    return x;
+}
+
+// splitmix64 for deterministic mixing (good quality + fast)
+static inline uint64_t splitmix64(uint64_t x) {
+    x += 0x9e3779b97f4a7c15ULL;
+    x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ULL;
+    x = (x ^ (x >> 27)) * 0x94d049bb133111ebULL;
+    return x ^ (x >> 31);
+}
+
+static inline uint32_t makeJetSeed(unsigned int run,
+                                  unsigned int lumi,
+                                  unsigned long long event,
+                                  int jetIndex) {
+    uint64_t x = 0;
+    x ^= splitmix64(static_cast<uint64_t>(run));
+    x ^= splitmix64(static_cast<uint64_t>(lumi) << 1);
+    x ^= splitmix64(static_cast<uint64_t>(event) << 2);
+    x ^= splitmix64(static_cast<uint64_t>(static_cast<uint32_t>(jetIndex)) << 3);
+    return static_cast<uint32_t>(x & 0xFFFFFFFFu);
+}
+
+
+// ============================================================================
+//  Preferred API (CMS-like): good-match scaling else stochastic (SF>1 only),
+//  with per-jet deterministic seed (run,lumi,event,jetIndex)
+// ============================================================================
 double CorrectionsManager::smearJER(double corr_pt,
-                                    double gen_pt,
-                                    double eta,
-                                    double rho,
-				    unsigned int eventID,
-                                    const std::string& syst) const
+                                   double eta,
+                                   double phi,
+                                   double rho,
+                                   unsigned int run,
+                                   unsigned int lumi,
+                                   unsigned long long event,
+                                   int jetIndex,
+                                   double gen_pt,
+                                   double gen_eta,
+                                   double gen_phi,
+                                   const std::string& syst) const
 {
+    if (isData_) return corr_pt;
+    if (corr_pt <= 0.0) return corr_pt;
 
-    if(isData_) return corr_pt;
+    // (Optional) if your JER JSON uses abseta axis, switch to std::abs(eta)
+    const double etaIn = eta;
 
-    double sf = 0, res = 0;
+    double sf = 1.0, res = 0.0;
+
     // 1) JER scale factor
     try {
-      // 1) JER scale factor: now pass both inputs (eta, systematic)
-      if (kVerbose) std::cout << "[smearJER] calling jerSF_->evaluate({eta, syst}) -> {"
-                         << eta << ", " << syst << "}\n";
-      sf = jerSF_->evaluate({eta, syst});
-      if (kVerbose) std::cout << "[smearJER] jerSF returned " << sf << "\n";
-    }
-    catch (const std::exception &e) {
-      std::cerr << "[smearJER] ERROR in jerSF_->evaluate: " << e.what() << "\n";
-      throw;
+        if (kVerbose) std::cout << "[smearJER] jerSF_->evaluate({eta, syst}) -> {"
+                                << etaIn << ", " << syst << "}\n";
+        sf = jerSF_->evaluate({etaIn, syst});
+        if (kVerbose) std::cout << "[smearJER] jerSF returned " << sf << "\n";
+    } catch (const std::exception& e) {
+        std::cerr << "[smearJER] ERROR in jerSF_->evaluate: " << e.what() << "\n";
+        throw;
     }
 
     // 2) JER resolution
     try {
-      if (kVerbose) std::cout << "[smearJER] calling jerRes_->evaluate({eta, corr_pt, rho})\n";
-      res = jerRes_->evaluate({eta, corr_pt, rho});
-      if (kVerbose) std::cout << "[smearJER] jerRes returned " << res << "\n";
-    }
-    catch (const std::exception &e) {
-      std::cerr << "[smearJER] ERROR in jerRes_->evaluate: " << e.what() << "\n";
-      throw;
+        if (kVerbose) std::cout << "[smearJER] jerRes_->evaluate({eta, corr_pt, rho}) -> {"
+                                << etaIn << ", " << corr_pt << ", " << rho << "}\n";
+        res = jerRes_->evaluate({etaIn, corr_pt, rho});
+        if (kVerbose) std::cout << "[smearJER] jerRes returned " << res << "\n";
+    } catch (const std::exception& e) {
+        std::cerr << "[smearJER] ERROR in jerRes_->evaluate: " << e.what() << "\n";
+        throw;
     }
 
-    if (kVerbose) std::cout << "[smearJER] corr_pt="<<corr_pt
-                            << " gen_pt="<<gen_pt
-                            << " eta="<<eta
-                            << " rho="<<rho
-                            << " sf="<<sf
-                            << " res="<<res<<"\n";
-    if (gen_pt >= 0) {
-	// Scaling method (GenJet matching)
-        double smear = 1.0 + (sf - 1.0) * (corr_pt - gen_pt) / corr_pt;
-        return std::max(0.0, corr_pt * smear);
+    if (kVerbose) {
+        std::cout << "[smearJER] corr_pt=" << corr_pt
+                  << " eta=" << eta << " phi=" << phi
+                  << " rho=" << rho
+                  << " gen_pt=" << gen_pt
+                  << " gen_eta=" << gen_eta
+                  << " gen_phi=" << gen_phi
+                  << " sf=" << sf
+                  << " res=" << res << "\n";
+    }
+
+    // ---- Decide scaling vs stochastic using "good match" criteria ----
+    bool goodMatch = false;
+    if (gen_pt > 0.0) {
+        const double dEta = eta - gen_eta;
+        const double dPhi = wrapPhi(phi - gen_phi);
+        const double dR2  = dEta*dEta + dPhi*dPhi;
+
+        // CMS-like: dR < 0.2 AND |pt - genPt| < 3 * res * pt
+        if (dR2 < (0.2 * 0.2) && std::abs(corr_pt - gen_pt) < 3.0 * res * corr_pt) {
+            goodMatch = true;
+        }
+    }
+
+    double smearFactor = 1.0;
+
+    if (goodMatch) {
+        // Scaling method
+        smearFactor = 1.0 + (sf - 1.0) * (corr_pt - gen_pt) / corr_pt;
+    } else if (sf > 1.0) {
+        // Stochastic method (only if sf > 1)
+        const uint32_t seed = makeJetSeed(run, lumi, event, jetIndex);
+        TRandom3 rng(seed);
+
+        const double sigma = res * std::sqrt(std::max(sf*sf - 1.0, 0.0));
+        smearFactor = 1.0 + rng.Gaus(0.0, sigma);
     } else {
-	// Stochastic method (No GenJet)
-        // Use deterministic seed
-        TRandom3 rng(eventID); // using EventID as seed
-
-	double sigma = res * std::sqrt(std::max(sf*sf - 1.0, 0.0));
-	double smear = 1.0 + rng.Gaus(0, sigma);
-	return std::max(0.0, corr_pt * smear);
+        smearFactor = 1.0; // no smearing if sf <= 1 and no good gen match
     }
+
+    // Protect against negative/too small factor (avoid pathological jets)
+    const double minPt = 1e-2;
+    const double ptSmeared = corr_pt * smearFactor;
+    return std::max(minPt, ptSmeared);
 }
+
+
+// ============================================================================
+//  Backward-compatible wrapper (no phi/gen-eta/gen-phi/jetIndex info available)
+//  -> cannot do proper dR matching; uses gen_pt>0 as "matched" flag.
+//  (Recommend migrating call sites to the preferred API above.)
+// ============================================================================
+double CorrectionsManager::smearJER(double corr_pt,
+                                   double gen_pt,
+                                   double eta,
+                                   double rho,
+                                   unsigned int eventID,
+                                   const std::string& syst) const
+{
+    // Use eventID only + jetIndex=0 (not ideal); treat as "unknown match quality"
+    // Here, set gen_eta/gen_phi = 0 and phi = 0 so dR check will likely fail,
+    // forcing stochastic unless gen_pt<=0 (or you can bypass dR in this wrapper).
+    return smearJER(corr_pt,
+                    eta,
+                    /*phi=*/0.0,
+                    rho,
+                    /*run=*/0u,
+                    /*lumi=*/0u,
+                    /*event=*/static_cast<unsigned long long>(eventID),
+                    /*jetIndex=*/0,
+                    /*gen_pt=*/gen_pt,
+                    /*gen_eta=*/0.0,
+                    /*gen_phi=*/0.0,
+                    syst);
+}
+
 
 double CorrectionsManager::getTriggerSF(double ht, double jet6pt, double syst) const {
     
@@ -353,21 +460,88 @@ double CorrectionsManager::getTriggerSF(double ht, double jet6pt, double syst) c
     return sf;
 }
 
-double CorrectionsManager::getBTagSF(int hf,
-                                     double eta,
-                                     double pt,
-                                     double disc,
-                                     const std::string& sys) const
-{
-    if (isData_) return 1.0;  // no SF applied for Data
-    if (hf!=5 && hf!=4) hf=0;  // light
-    if (kVerbose) std::cout << "[getBTagSF] hf="<<hf
-                            << " eta="<<eta
-                            << " pt="<<pt
-                            << " disc="<<disc
-                            << " sys="<<sys<<"\n";
-    return btagCorr_->evaluate({sys, hf, std::fabs(eta), pt, disc});
+// ───────────────────────────────────────────────────────────────────────────
+// Fixed WP 방식: pass/fail 기준
+// ───────────────────────────────────────────────────────────────────────────
+double CorrectionsManager::getBTagSF_FixedWP(int hadFlav, double absEta, double pt,
+                                              const std::string& wp,
+                                              const std::string& syst) const {
+    if (isData_) return 1.0;
+    
+    // Flavor 정규화: 5=b, 4=c, 나머지=0(light)
+    int flav = hadFlav;
+    if (flav != 5 && flav != 4) flav = 0;
+    
+    // pT 범위 제한 (POG 권장)
+    double pt_clamped = std::clamp(pt, 20.0, 1000.0);
+    double absEta_clamped = std::clamp(absEta, 0.0, 2.4999);
+    
+    try {
+        if (flav == 5 || flav == 4) {
+            // b/c jets: deepJet_comb
+            // evaluate(systematic, working_point, flavor, abseta, pt)
+            return btagCorr_bc_->evaluate({syst, wp, flav, absEta_clamped, pt_clamped});
+        } else {
+            // light jets: deepJet_incl
+            return btagCorr_light_->evaluate({syst, wp, flav, absEta_clamped, pt_clamped});
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "[getBTagSF_FixedWP] Error: " << e.what() 
+                  << " flav=" << flav << " eta=" << absEta_clamped 
+                  << " pt=" << pt_clamped << std::endl;
+        return 1.0;
+    }
 }
+
+// ───────────────────────────────────────────────────────────────────────────
+// Shape Correction 방식: continuous discriminant
+// ───────────────────────────────────────────────────────────────────────────
+double CorrectionsManager::getBTagSF_Shape(int hadFlav, double eta, double pt, 
+                                            double discr, const std::string& syst) const {
+    if (isData_) return 1.0;
+    if (!btagCorr_shape_) return 1.0;
+    
+    // Flavor 정규화
+    int flav = hadFlav;
+    if (flav != 5 && flav != 4) flav = 0;
+    
+    // 범위 제한
+    double pt_clamped = std::clamp(pt, 20.0, 1000.0);
+    double eta_clamped = std::clamp(std::fabs(eta), 0.0, 2.4999);
+    double discr_clamped = std::clamp(discr, 0.0, 1.0);
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // 중요: c-jet과 b/light jet의 systematic 이름이 다름!
+    // ═══════════════════════════════════════════════════════════════════════
+    std::string actual_syst = syst;
+    
+    // c-jet 전용 systematic 처리
+    if (flav == 4) {
+        // c-jet은 cferr1, cferr2만 사용 가능
+        // 다른 systematic 요청 시 central 반환
+        if (syst.find("cferr") == std::string::npos && syst != "central") {
+            actual_syst = "central";
+        }
+    } else {
+        // b/light jet은 cferr 사용 불가
+        if (syst.find("cferr") != std::string::npos) {
+            actual_syst = "central";
+        }
+    }
+    
+    try {
+        // evaluate(systematic, flavor, eta, pt, discriminator)
+        return btagCorr_shape_->evaluate({actual_syst, flav, eta_clamped, 
+                                          pt_clamped, discr_clamped});
+    } catch (const std::exception& e) {
+        std::cerr << "[getBTagSF_Shape] Error: " << e.what()
+                  << " syst=" << actual_syst << " flav=" << flav 
+                  << " eta=" << eta_clamped << " pt=" << pt_clamped 
+                  << " discr=" << discr_clamped << std::endl;
+        return 1.0;
+    }
+}
+
 
 bool CorrectionsManager::passGoldenJSON(int run, int lumi) const {
     if (!isData_) return true; // MC always “passes”

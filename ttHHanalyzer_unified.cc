@@ -12,6 +12,96 @@
 #include "Logger.h"
 using namespace Logger;
  
+// ───────────────────────────────────────────────────────────────────────────
+// B-tag Event Weight 계산 (Shape Correction 방식)
+// ───────────────────────────────────────────────────────────────────────────
+void ttHHanalyzer_unified::computeBTagWeight(event* thisEvent) {
+    
+    // 초기화
+    bTagWeight_central_ = 1.0;
+    bTagWeight_up_hf_ = 1.0;
+    bTagWeight_down_hf_ = 1.0;
+    bTagWeight_up_lf_ = 1.0;
+    bTagWeight_down_lf_ = 1.0;
+    bTagWeight_up_cferr1_ = 1.0;
+    bTagWeight_down_cferr1_ = 1.0;
+    bTagWeight_up_cferr2_ = 1.0;
+    bTagWeight_down_cferr2_ = 1.0;
+    
+    // Data는 SF 적용하지 않음
+    if (_DataOrMC == "Data") return;
+    
+    // 선택된 모든 jet에 대해 SF 계산
+    const auto* jets = thisEvent->getSelJets();
+    
+    for (const auto* jet : *jets) {
+        double pt   = jet->getp4()->Pt();
+        double eta  = jet->getp4()->Eta();
+        double disc = jet->bTagCSV;  // btagDeepFlavB
+        int flav    = jet->hadFlav;  // hadronFlavour
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // Central value
+        // ═══════════════════════════════════════════════════════════════════
+        double sf_central = corrMgr->getBTagSF_Shape(flav, eta, pt, disc, "central");
+        bTagWeight_central_ *= sf_central;
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // Systematic variations
+        // ═══════════════════════════════════════════════════════════════════
+        
+        // b/light jet systematics (c-jet에는 central 적용됨)
+        if (flav == 5 || flav == 0) {
+            // Heavy flavor (b)
+            if (flav == 5) {
+                bTagWeight_up_hf_   *= corrMgr->getBTagSF_Shape(flav, eta, pt, disc, "up_hf");
+                bTagWeight_down_hf_ *= corrMgr->getBTagSF_Shape(flav, eta, pt, disc, "down_hf");
+            } else {
+                bTagWeight_up_hf_   *= sf_central;
+                bTagWeight_down_hf_ *= sf_central;
+            }
+            
+            // Light flavor
+            if (flav == 0) {
+                bTagWeight_up_lf_   *= corrMgr->getBTagSF_Shape(flav, eta, pt, disc, "up_lf");
+                bTagWeight_down_lf_ *= corrMgr->getBTagSF_Shape(flav, eta, pt, disc, "down_lf");
+            } else {
+                bTagWeight_up_lf_   *= sf_central;
+                bTagWeight_down_lf_ *= sf_central;
+            }
+            
+            // c-jet variations에는 central
+            bTagWeight_up_cferr1_   *= sf_central;
+            bTagWeight_down_cferr1_ *= sf_central;
+            bTagWeight_up_cferr2_   *= sf_central;
+            bTagWeight_down_cferr2_ *= sf_central;
+        }
+        // c-jet systematics
+        else if (flav == 4) {
+            // c-jet은 cferr만 사용
+            bTagWeight_up_cferr1_   *= corrMgr->getBTagSF_Shape(flav, eta, pt, disc, "up_cferr1");
+            bTagWeight_down_cferr1_ *= corrMgr->getBTagSF_Shape(flav, eta, pt, disc, "down_cferr1");
+            bTagWeight_up_cferr2_   *= corrMgr->getBTagSF_Shape(flav, eta, pt, disc, "up_cferr2");
+            bTagWeight_down_cferr2_ *= corrMgr->getBTagSF_Shape(flav, eta, pt, disc, "down_cferr2");
+            
+            // hf/lf variations에는 central
+            bTagWeight_up_hf_   *= sf_central;
+            bTagWeight_down_hf_ *= sf_central;
+            bTagWeight_up_lf_   *= sf_central;
+            bTagWeight_down_lf_ *= sf_central;
+        }
+    }
+    
+    if (debugCorrections) {
+        std::cout << "[BTagWeight] central=" << bTagWeight_central_
+                  << " up_hf=" << bTagWeight_up_hf_
+                  << " down_hf=" << bTagWeight_down_hf_
+                  << " up_lf=" << bTagWeight_up_lf_
+                  << " down_lf=" << bTagWeight_down_lf_
+                  << std::endl;
+    }
+}
+
 void ttHHanalyzer_unified::performAnalysis(){
 
     loop(noSys, false);
@@ -395,7 +485,7 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
 // =============================================================
 
 
-    float dR = 0., deltaEta = 0., deltaPhi = 0.;
+    loat dR = 0., deltaEta = 0., deltaPhi = 0.;
     bool passPuId = false;
     float rho = _ev->fixedGridRhoFastjetAll;
     for (int i = 0; i < (int)jet.size(); ++i) {
@@ -431,13 +521,23 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
             }
         
             // --- B) Apply JER ---
-            float genPt = -1.f;
+	    double genPt=-1.f, genEta=0.0, genPhi=0.0;
             if (jetRaw.genJetIdx >= 0 && jetRaw.genJetIdx < (int)genJet.size()) {
-                genPt = genJet[jetRaw.genJetIdx].pt;
+                const auto& g = genJet[jetRaw.genJetIdx];
+                genPt=g.pt; genEta=g.eta; genPhi=g.phi;
             }
+            unsigned int run=_ev->run, lumi=_ev->luminosityBlock;
+            unsigned long long event=_ev->event;
+            int currentJetIdx = i;
 
-            unsigned int eventID = static_cast<unsigned int>(_ev->event); // For random seed
-            double smearedPt = corrMgr->smearJER(ptJEC, genPt, jetRaw.eta, rho, eventID, "nom");
+            ////double smearedPt = corrMgr->smearJER(ptJEC, genPt, jetRaw.eta, rho,
+	    ////                                      _ev->run, _ev->event, _ev->luminosityBlock, "nom");
+            const double smearedPt = corrMgr->smearJER(ptJEC, jetRaw.eta, jetRaw.phi, rho,
+                                          run, lumi, event, currentJetIdx,
+                                          genPt, genEta, genPhi, "nom");
+
+	    const double jerFactor = (ptJEC>0.0) ? (smearedPt/ptJEC) : 1.0;
+	    const double massJECJER = massJEC * jerFactor;
 
         // 3. Final Cuts (on Smeared pT)
         if (smearedPt < cut["jetPt"]) continue;
@@ -453,7 +553,7 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
             smearedPt,
             jetRaw.eta,
             jetRaw.phi,
-            massJEC
+            massJECJER
         );
 
         // 메타데이터 저장
@@ -986,21 +1086,29 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
         }
     }
 
+    // 5) Build physics objects in thisEvent from the raw buffer
+    // Event cleaning, Trigger set (Here, event are not rejected, just define filter, trig, etc...
+    // and object definitions
+    // ═══════════════════════════════════════════════════════════════════════
+    // Step: 물리 객체 생성 (JEC/JER 적용됨)
+    // ═══════════════════════════════════════════════════════════════════════
+    createObjects(thisEvent, sysType, up);
 
-    // 5) Calculate Event Weight
+    // 6) Calculate Event Weight
     _evtWeight = _baseWeight; // base weights are got from json config
     if (_DataOrMC != "Data") {
 	_evtWeight *= _PUWeight;
 	_evtWeight *= _L1PrefiringWeight;
 	_evtWeight *= _genWeight;
+	////_evtWeight *= bTagWeight_central_;
         if(debugCorrections) std::cout << "Final Event Weight: " << _evtWeight << std::endl;
     }
 
-
-    // 6) Build physics objects in thisEvent from the raw buffer
-    // Event cleaning, Trigger set (Here, event are not rejected, just define filter, trig, etc...
-    // and object definitions
-    createObjects(thisEvent, sysType, up);
+    // ═══════════════════════════════════════════════════════════════════════
+    // Step: B-tag Weight 계산 (object 단계, selection 전)
+    // JEC/JER이 적용된 jet kinematics를 사용
+    // ═══════════════════════════════════════════════════════════════════════
+    computeBTagWeight(thisEvent);
 
 
     // 7) Baseline selection + event cleaning, apply trigger path, reconstruct higher objects
@@ -1481,6 +1589,7 @@ void ttHHanalyzer_unified::fillTree(event * thisEvent){
     PUWeight = _PUWeight;
     L1PrefiringWeight = _L1PrefiringWeight;
     genWeight = _genWeight;
+    bTagWeight = bTagWeight_central_;
     failGoldenJson = _failGoldenJson;
     passMETFilters = _passMETFilters;
     passHadTrig = thisEvent->getHadTriggerAccept();

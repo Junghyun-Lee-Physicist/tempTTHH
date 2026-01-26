@@ -137,10 +137,6 @@ std::map<std::string, float> cut {
     //, {"nVetoLeptons", 0} // nVetoLepton equals to
     , {"nbJets", 4}
     , {"jetPt", 30} // jet pT higher than
-    ////, {"leadElePt", 25} // leadElectron pT higher than
-    ////, {"leadMuonPt", 25} // leadMuon pT higher than
-    ////, {"subLeadElePt", 15} // subLeadElectron pT higher than
-    ////, {"subLeadMuonPt", 15} // subLeadMuon pT higher than
     , {"leadElePt", 30}     //// New Def for leptons to veto at Hadronic channel 
     , {"leadMuonPt", 29}    //// New Def for leptons to veto at Hadronic channel
     , {"subLeadElePt", 15}  //// New Def for leptons to veto at Hadronic channel
@@ -156,7 +152,7 @@ std::map<std::string, float> cut {
     , {"muonEta", 2.4} // muon eta higher than
     , {"boostedJetEta", 2.4} // boostedJet eta higher than
     , {"muonIso", 0.15} // muon isolation less than
-    , {"eleIso", 0.1}  // ele isolation less than
+////    , {"eleIso", 0.1}  // ele isolation less than
     , {"jetID", 6}   // pass tight and tightLepVeto ID
     , {"jetPUid", 4}   // pass loose cut fail tight and medium
     , {"bTagDisc", 0.80}
@@ -1146,6 +1142,20 @@ class ttHHanalyzer_unified {
     bool debugCorrections;         
     //////////////////////////////////
 
+    // B-tag weight 저장용 (Tree branch)
+    float bTagWeight_central_;
+    float bTagWeight_up_hf_;
+    float bTagWeight_down_hf_;
+    float bTagWeight_up_lf_;
+    float bTagWeight_down_lf_;
+    float bTagWeight_up_cferr1_;
+    float bTagWeight_down_cferr1_;
+    float bTagWeight_up_cferr2_;
+    float bTagWeight_down_cferr2_;
+    // B-tag weight 계산 함수
+    void computeBTagWeight(event* thisEvent);
+
+
     outputFile * _of;
     float _bbMassMinSHiggsNotMatched, _bbMassMinSHiggsMatched, _minChi2SHiggsNotMatched = 999999999. , _minChi2SHiggsMatched = 999999999.; 
     float _bbMassMinHH1NotMatched, _bbMassMinHH1Matched,_bbMassMinHH2NotMatched, _bbMassMinHH2Matched, _minChi2HHNotMatched = 999999999. , _minChi2HHMatched = 999999999.; 
@@ -1736,6 +1746,7 @@ class ttHHanalyzer_unified {
     float PUWeight;
     float L1PrefiringWeight;
     float genWeight;
+    float bTagWeight;
     bool  failGoldenJson;
     bool  passMETFilters;
     bool  passHadTrig;
@@ -2009,6 +2020,7 @@ class ttHHanalyzer_unified {
 	_inputTree->Branch("PUWeight", &PUWeight, "PUWeight/F");
 	_inputTree->Branch("L1PrefiringWeight", &L1PrefiringWeight, "L1PrefiringWeight/F");
 	_inputTree->Branch("genWeight", &genWeight, "genWeight/F");
+	_inputTree->Branch("bTagWeight", &bTagWeight_central_, "bTagWeight/F");
 	_inputTree->Branch("failGoldenJson", &failGoldenJson, "failGoldenJson/O");
 	_inputTree->Branch("passMETFilters", &passMETFilters, "passMETFilters/O");
 	_inputTree->Branch("passHadTrig", &passHadTrig, "passHadTrig/O");
