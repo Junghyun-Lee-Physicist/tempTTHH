@@ -278,6 +278,7 @@ double CorrectionsManager::smearJER(double corr_pt,
                                     double gen_pt,
                                     double eta,
                                     double rho,
+				    unsigned int eventID,
                                     const std::string& syst) const
 {
 
@@ -315,11 +316,17 @@ double CorrectionsManager::smearJER(double corr_pt,
                             << " sf="<<sf
                             << " res="<<res<<"\n";
     if (gen_pt >= 0) {
-        return std::max(0.0, gen_pt + sf*(corr_pt - gen_pt));
+	// Scaling method (GenJet matching)
+        double smear = 1.0 + (sf - 1.0) * (corr_pt - gen_pt) / corr_pt;
+        return std::max(0.0, corr_pt * smear);
     } else {
-        double gaus   = TRandom3().Gaus(0,1);
-        double factor = 1.0 + std::sqrt(sf*sf - 1.0)*res*gaus;
-        return std::max(0.0, corr_pt * factor);
+	// Stochastic method (No GenJet)
+        // Use deterministic seed
+        TRandom3 rng(eventID); // using EventID as seed
+
+	double sigma = res * std::sqrt(std::max(sf*sf - 1.0, 0.0));
+	double smear = 1.0 + rng.Gaus(0, sigma);
+	return std::max(0.0, corr_pt * smear);
     }
 }
 

@@ -1114,6 +1114,7 @@ class ttHHanalyzer_unified {
  private: 
     bool _sys;
     //float _weight;
+    float _evtWeight;
     float _baseWeight; // [추가] 데이터셋 공통 상수 (CrossSection * Lumi / SumGenWeight)
     float _evtWeight;  // [추가] 이벤트별 최종 가중치 (매 이벤트 리셋)    
     float _SampleWeight;
@@ -1730,12 +1731,14 @@ class ttHHanalyzer_unified {
     unsigned int eventNumber;
     unsigned int runNumber;
      
+    float evtWeight;
     float SampleWeight;
     float PUWeight;
     float L1PrefiringWeight;
     float genWeight;
     bool  failGoldenJson;
     bool  passMETFilters;
+    bool  passHadTrig;
 
 ////////////////////////////////////////////////////////////////////////////////////////    
 
@@ -2001,12 +2004,14 @@ class ttHHanalyzer_unified {
 	_inputTree->Branch("eventNumber", &eventNumber, "eventNumber/i");
         _inputTree->Branch("runNumber", &runNumber, "runNumber/i");
 
+	_inputTree->Branch("evtWeight", &evtWeight, "evtWeight/F");
 	_inputTree->Branch("SampleWeight", &SampleWeight, "SampleWeight/F");
 	_inputTree->Branch("PUWeight", &PUWeight, "PUWeight/F");
 	_inputTree->Branch("L1PrefiringWeight", &L1PrefiringWeight, "L1PrefiringWeight/F");
 	_inputTree->Branch("genWeight", &genWeight, "genWeight/F");
 	_inputTree->Branch("failGoldenJson", &failGoldenJson, "failGoldenJson/O");
 	_inputTree->Branch("passMETFilters", &passMETFilters, "passMETFilters/O");
+	_inputTree->Branch("passHadTrig", &passHadTrig, "passHadTrig/O");
 
 	_treeDirs = tmpDirs;
     }

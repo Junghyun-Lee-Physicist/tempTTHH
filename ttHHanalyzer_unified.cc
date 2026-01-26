@@ -276,7 +276,7 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
             fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660) &&
            fabs(ele[i].eta) < cut["eleEta"] && 
            ele[i].mvaFall17V2Iso_WP90 == true && 
-           ele[i].pfRelIso03_all < cut["eleIso"] &&
+           //ele[i].pfRelIso03_all < cut["eleIso"] && // We don't need Iso, It's already in ID
            ele[i].pt > cut["subLeadElePt"]) {
             nVetoEle++;
         }
@@ -317,7 +317,7 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
                     fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660) &&
                    fabs(ele[i].eta) < cut["eleEta"] && 
                    ele[i].mvaFall17V2Iso_WP90 == true && 
-                   ele[i].pfRelIso03_all < cut["eleIso"] &&
+                   //ele[i].pfRelIso03_all < cut["eleIso"] && // We don't need Iso, It's already in ID
                    ele[i].pt > cut["leadElePt"]) { 
                     hasLeadElectron = true;
                     break;
@@ -374,7 +374,7 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
                     fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660) &&
                    fabs(ele[i].eta) < cut["eleEta"] && 
                    ele[i].mvaFall17V2Iso_WP90 == true && 
-                   ele[i].pfRelIso03_all < cut["eleIso"] &&
+                   //ele[i].pfRelIso03_all < cut["eleIso"] && // We don't need Iso, It's already in ID
                    ele[i].pt > cut["subLeadElePt"]) { 
                    
                     currentEle = new objectLep(ele[i].pt, ele[i].eta, ele[i].phi, 0.);
@@ -436,7 +436,8 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
                 genPt = genJet[jetRaw.genJetIdx].pt;
             }
 
-            double smearedPt = corrMgr->smearJER(ptJEC, genPt, jetRaw.eta, rho, "nom");
+            unsigned int eventID = static_cast<unsigned int>(_ev->event); // For random seed
+            double smearedPt = corrMgr->smearJER(ptJEC, genPt, jetRaw.eta, rho, eventID, "nom");
 
         // 3. Final Cuts (on Smeared pT)
         if (smearedPt < cut["jetPt"]) continue;
@@ -931,8 +932,6 @@ void ttHHanalyzer_unified::analyze(event *thisEvent){
 
 void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
 
-    _evtWeight = _baseWeight;
-
     // 1) Golden JSON filter for data
     _failGoldenJson = false;
     if (_DataOrMC == "Data") {
@@ -987,23 +986,31 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
         }
     }
 
+
+    // 5) Calculate Event Weight
+    _evtWeight = _baseWeight; // base weights are got from json config
     if (_DataOrMC != "Data") {
-	
-        _evtWeight *= (_PUWeight * _L1PrefiringWeight * _genWeight);
+	_evtWeight *= _PUWeight;
+	_evtWeight *= _L1PrefiringWeight;
+	_evtWeight *= _genWeight;
         if(debugCorrections) std::cout << "Final Event Weight: " << _evtWeight << std::endl;
     }
 
-    // 5) Build physics objects in thisEvent from the raw buffer
+
+    // 6) Build physics objects in thisEvent from the raw buffer
+    // Event cleaning, Trigger set (Here, event are not rejected, just define filter, trig, etc...
+    // and object definitions
     createObjects(thisEvent, sysType, up);
 
-    // Object Selection and Cuts
+
+    // 7) Baseline selection + event cleaning, apply trigger path, reconstruct higher objects
     if(!selectObjects(thisEvent)) return;
     _passMETFilters = false;
     _passMETFilters = thisEvent->getMETFilter();
-    if(_passMETFilters != true){
-        std::cout<<"ERROR : MET filter class does not work properly.. It should reject all of events are not passed filters in [ selectObjects ].."<<std::endl;
-        exit(555);
-    }
+    //if(_passMETFilters != true){
+    //    std::cout<<"ERROR : MET filter class does not work properly.. It should reject all of events are not passed filters in [ selectObjects ].."<<std::endl;
+    //    exit(555);
+    //}
 
     // 5) Final analysis steps: kinematics, histograms, tree
     analyze(thisEvent);
@@ -1469,12 +1476,14 @@ void ttHHanalyzer_unified::fillTree(event * thisEvent){
     eventNumber = _ev->event;
     runNumber = _ev->run;
  
+    evtWeight    = _evtWeight;
     SampleWeight = _SampleWeight;
     PUWeight = _PUWeight;
     L1PrefiringWeight = _L1PrefiringWeight;
     genWeight = _genWeight;
     failGoldenJson = _failGoldenJson;
     passMETFilters = _passMETFilters;
+    passHadTrig = thisEvent->getHadTriggerAccept();
 
 ////////////////////////////////////////////////////////////////////////////////////////
    
@@ -1822,7 +1831,6 @@ void ttHHanalyzer_unified::fillTree(event * thisEvent){
     //////bbtransSphericity = thisEvent->eventShapeBjet->getTransSphericity();
     //////bbcValue = thisEvent->eventShapeBjet->getC();
     //////bbdValue = thisEvent->eventShapeBjet->getD();
-    //////////passHadTrig = thisEvent->getHadTriggerAccept();
 
     ///////*    bleptonPT1 = thisEvent->getSelLeptons()->at(0)->getp4()->Pt();
     //////bleptonPT2 = thisEvent->getSelLeptons()->at(1)->getp4()->Pt();
