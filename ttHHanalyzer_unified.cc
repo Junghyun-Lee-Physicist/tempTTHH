@@ -485,7 +485,7 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
 // =============================================================
 
 
-    loat dR = 0., deltaEta = 0., deltaPhi = 0.;
+    float dR = 0., deltaEta = 0., deltaPhi = 0.;
     bool passPuId = false;
     float rho = _ev->fixedGridRhoFastjetAll;
     for (int i = 0; i < (int)jet.size(); ++i) {

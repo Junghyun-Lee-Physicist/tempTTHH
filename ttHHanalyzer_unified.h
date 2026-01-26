@@ -170,6 +170,10 @@ class objectPhysics {
     TLorentzVector * getp4(){
 	return &_p4;
     }
+    const TLorentzVector * getp4() const {
+	return &_p4;
+    }
+
     objectPhysics(){};
     void scale(float JES, bool up = true){
 	_pxOffset = JES * _p4.Px();
@@ -1112,7 +1116,6 @@ class ttHHanalyzer_unified {
     //float _weight;
     float _evtWeight;
     float _baseWeight; // [추가] 데이터셋 공통 상수 (CrossSection * Lumi / SumGenWeight)
-    float _evtWeight;  // [추가] 이벤트별 최종 가중치 (매 이벤트 리셋)    
     float _SampleWeight;
     float _PUWeight;
     float _L1PrefiringWeight;

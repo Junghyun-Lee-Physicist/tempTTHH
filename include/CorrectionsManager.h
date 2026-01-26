@@ -35,11 +35,14 @@ public:
                   double area,
 		  double rho) const;
 
-//    double smearJER(double corr_pt,
-//                    double gen_pt,
-//                    double eta,
-//                    double rho,
-//		    const std::string& syst = "nom") const;
+    // Backward-compatible JER smearing API (old call sites)
+    double smearJER(double corr_pt,
+                    double gen_pt,
+                    double eta,
+                    double rho,
+                    unsigned int eventID,
+                    const std::string& syst = "nom") const;
+    
     double smearJER(double corr_pt,
                     double eta,
                     double phi,
