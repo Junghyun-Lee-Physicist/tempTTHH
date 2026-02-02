@@ -84,9 +84,12 @@ int main(int argc, char** argv)
     std::cout << "  Output        : " << Config::btagReweightJSON << "\n";
     std::cout << "╚══════════════════════════════════════════════════════════════╝\n\n";
 
-    // ── Build nJets edges: [0, 1, 2, ..., maxBin+1] ──
+    // ── Build nJets edges: [0.0, 1.0, 2.0, ..., maxBin+1.0] ──
+    // [중요] correctionlib Binning/MultiBinning은 edge를 반드시 float로 요구.
+    //        int를 넣으면 JSON에서 0, 1, 2 (소수점 없음)로 직렬화되어
+    //        "Invalid edge type" 에러가 발생한다.
     json nJetsEdges = json::array();
-    for (int b = 0; b <= maxBin + 1; ++b) nJetsEdges.push_back(b);
+    for (int b = 0; b <= maxBin + 1; ++b) nJetsEdges.push_back(static_cast<double>(b));
 
     // ── Build HT edges (only used in 2D mode) ──
     json htEdgesJSON = json::array();
