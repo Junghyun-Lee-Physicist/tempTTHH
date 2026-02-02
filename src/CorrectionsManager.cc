@@ -39,8 +39,8 @@ CorrectionsManager::CorrectionsManager(const std::string& runYear,
     goldenJsonPath = "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/GoldenJson"; // Tier3
 
 ////    trigSFPath = "/Users/jhlee/tempTTHH/Correction/TriggerSF"; // Local
-    trigSFPath = "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/Correction/TriggerSF"; // Tier3
-
+    trigSFPath = "DerivedCorr/TriggerSF/trigger_sf.json.gz" // Tier3
+    
     // [NEW] b-tag normalization reweight JSON 경로
     // makeReweightJSON이 생성한 파일. 상대경로 또는 절대경로 사용 가능.
     btagReweightPath = "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/Correction/BTagReweight/btagNormReweight.json"; // Tier3
