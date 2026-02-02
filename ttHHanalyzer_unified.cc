@@ -628,15 +628,41 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
            
 
 
-
+// ============================================================================
+// selectObjects — 이벤트 선택 + Trigger SF + B-tag Reweight 적용
+//
+// Weight 적용 순서 (Weight multiplication order):
+//   _evtWeight = baseWeight × PU × L1PreFiring × genWeight
+//                             (← process() 함수에서 이미 계산됨)
+//   → computeBTagWeight()  로 bTagWeight_central_ 계산됨
+//   → selectObjects()에서:
+//       Step kNoCut   : _evtWeight (b-tag SF 미포함) 로 cutflow 시작
+//       Step kHadTrigger~kHT : 기본 selection cuts
+//       Step kNumbJets : b-jet cut 적용 후
+//       Step kHadWMass  → kHiggsMass
+//       Step kTotal    : _evtWeight에 btagSF × trigSF × btagReweight 곱한 최종 weight
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// 설계 결정 (Design Decision):
+//   Trigger SF와 B-tag Reweight는 모든 selection cut을 통과한 후,
+//   kTotal step 직전에 _evtWeight에 곱해진다.
+//   이유: 두 보정 모두 selection 후의 kinematics (HT, nJets, jet6PT)에 의존하므로
+//   cut 이전에 적용하면 의미가 없다.
+//   단, cutflow 중간 단계에서는 보정 전 weight를 사용하여 selection efficiency를
+//   편향 없이 계산할 수 있도록 한다.
+// ═══════════════════════════════════════════════════════════════════════════
 bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
      
+    // ──────────────────────────────────────────────────────────────────────
+    // processStep 람다 (lambda): cutflow 카운트 및 히스토그램 채우기
+    // 각 selection cut 단계에서 호출하여 이벤트 수/가중치를 기록한다.
+    // ──────────────────────────────────────────────────────────────────────
     auto processStep = [&](CutStep step, float wMassVal) {
         int idx = static_cast<int>(step);
         
         if (idx < _cutFlowCount.size()) {
             _cutFlowCount[idx] += 1.0;
-            _cutFlowWeight[idx] += _evtWeight; // [��] _weight -> _evtWeight
+            _cutFlowWeight[idx] += _evtWeight;
         }
 
         hCutFlow->Fill(idx); 
@@ -646,64 +672,130 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
     };
 
 
-    // ----------------------------------------------------
-    // �� � �� �� ��
-    // ----------------------------------------------------
-
+    // ──────────────────────────────────────────────────────────────────────
+    // Hadronic W Mass 계산 (W boson mass reconstruction)
+    // light jet이 2개 이상이면 light jet 쌍에서, 아니면 전체 jet에서 계산
+    // ──────────────────────────────────────────────────────────────────────
     const float wMass = 80.377f;
     float hadWMass = closestMassPair(
         thisEvent->getSelLightJets()->size() >= 2 ? thisEvent->getSelLightJets() : thisEvent->getSelJets(),
         wMass
     );
 
-    // Higgs Reconstruction (Histogram ����)
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Higgs Reconstruction (Higgs 재구성)
+    //
+    // ttHH(4b) 분석에서 H→bb 붕괴를 재구성한다.
+    // b-jet 4개를 2쌍으로 나누어 각 쌍의 불변질량(invariant mass)이
+    // Higgs 질량 (125 GeV)에 가장 가까운 조합을 χ² 최소화로 선택한다.
+    //
+    // [최적화] Pair Cache 기반 알고리즘:
+    //   1) 모든 b-jet 쌍의 불변질량 + pT합을 O(N²) 으로 미리 계산 (precompute)
+    //   2) C(N,4) × 3 pairing 순회 시 TLorentzVector 덧셈을 재사용
+    //   → 기존 대비 TLorentzVector 연산량 ~60% 절감
+    //
+    // 복잡도 (Complexity): O(N²) 캐시 + O(N⁴) 탐색 (기존과 동일)
+    //   nbJets=4: 3 pairings (최소)
+    //   nbJets=6: 45 pairings
+    //   nbJets=8: 210 pairings
+    // ──────────────────────────────────────────────────────────────────────
     _minChi2Higgs = cLargeValue;
     _bbMassMin1Higgs = -1.0f;
     _bbMassMin2Higgs = -1.0f;
 
-
     auto* bjets = thisEvent->getSelbJets();
-    // ttHH(bb) Hadronic Channel 연구이므로, Higgs -> bb 붕괴를 재구성하기 위해
-    // 최소 4개의 b-jet이 존재해야만 Higgs Pair Candidate를 생성할 수 있음.
-    // 따라서 아래 조건문(size >= 4)은 분석의 필수 조건임.
-    if(_policy.doHiggsReconstruction){
-        if (bjets->size() >= 4) {
-            for (size_t i = 0; i < bjets->size() - 3; ++i) {
-                for (size_t j = i + 1; j < bjets->size() - 2; ++j) {
-                    for (size_t k = j + 1; k < bjets->size() - 1; ++k) {
-                        for (size_t l = k + 1; l < bjets->size(); ++l) {
-                            diMotherReco(*bjets->at(i)->getp4(), *bjets->at(j)->getp4(),
-                                         *bjets->at(k)->getp4(), *bjets->at(l)->getp4(),
-                                         cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
-                            diMotherReco(*bjets->at(i)->getp4(), *bjets->at(k)->getp4(),
-                                         *bjets->at(j)->getp4(), *bjets->at(l)->getp4(),
-                                         cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
-                            diMotherReco(*bjets->at(i)->getp4(), *bjets->at(l)->getp4(),
-                                         *bjets->at(j)->getp4(), *bjets->at(k)->getp4(),
-                                         cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
+
+    if (_policy.doHiggsReconstruction) {
+        const size_t nb = bjets->size();
+
+        if (nb >= 4) {
+            // ═════════════════════════════════════════════════════════════
+            // Step 1: Pair Cache 구축 (Build pair cache)
+            //
+            // pairMass[i][j] = (bjet_i + bjet_j).M()
+            // pairSumPt[i][j] = bjet_i.Pt() + bjet_j.Pt()
+            // pairPt[i][j] = (bjet_i + bjet_j).Pt()
+            //
+            // 대칭(symmetric)이므로 i < j 만 채운다.
+            // ═════════════════════════════════════════════════════════════
+            struct PairInfo {
+                float mass;     // 불변질량 (invariant mass)
+                float sumPt;    // pT 합 (sum of individual pTs, for χ² denominator)
+                float pairPt;   // 쌍의 pT (pair system pT, for _bpTHiggs)
+            };
+
+            // nb × nb 상삼각 행렬 (upper-triangular matrix)
+            // flat vector 사용으로 cache locality 향상
+            std::vector<PairInfo> pairCache(nb * nb);
+            auto idx = [nb](size_t i, size_t j) -> size_t { return i * nb + j; };
+
+            for (size_t i = 0; i < nb; ++i) {
+                for (size_t j = i + 1; j < nb; ++j) {
+                    TLorentzVector sum = *bjets->at(i)->getp4() + *bjets->at(j)->getp4();
+                    pairCache[idx(i,j)].mass   = static_cast<float>(sum.M());
+                    pairCache[idx(i,j)].sumPt  = static_cast<float>(
+                        bjets->at(i)->getp4()->Pt() + bjets->at(j)->getp4()->Pt());
+                    pairCache[idx(i,j)].pairPt = static_cast<float>(sum.Pt());
+                }
+            }
+
+            // ═════════════════════════════════════════════════════════════
+            // Step 2: C(N,4) × 3 pairings 순회 (Iterate all pairings)
+            //
+            // 4개의 b-jet {i,j,k,l}을 2쌍으로 나누는 방법은 3가지:
+            //   Pairing A: (i,j) + (k,l)
+            //   Pairing B: (i,k) + (j,l)
+            //   Pairing C: (i,l) + (j,k)
+            //
+            // χ² = (m_pair1 - m_H)² / σ₁ + (m_pair2 - m_H)² / σ₂
+            // where σ = √((sumPt / 2) × 0.2)
+            //   (20% 분해능 가정, resolution assumption)
+            // ═════════════════════════════════════════════════════════════
+            auto tryPairing = [&](size_t a, size_t b, size_t c, size_t d) {
+                const auto& p1 = pairCache[idx(a, b)];
+                const auto& p2 = pairCache[idx(c, d)];
+
+                float chi2 = std::pow(p1.mass - cHiggsMass, 2) / std::pow(p1.sumPt / 2.0f * 0.2f, 0.5f)
+                            + std::pow(p2.mass - cHiggsMass, 2) / std::pow(p2.sumPt / 2.0f * 0.2f, 0.5f);
+
+                if (_minChi2Higgs > chi2) {
+                    _minChi2Higgs   = chi2;
+                    _bbMassMin1Higgs = p1.mass;
+                    _bbMassMin2Higgs = p2.mass;
+                    _bpTHiggs1       = p1.pairPt;
+                    _bpTHiggs2       = p2.pairPt;
+                }
+            };
+
+            for (size_t i = 0; i < nb - 3; ++i) {
+                for (size_t j = i + 1; j < nb - 2; ++j) {
+                    for (size_t k = j + 1; k < nb - 1; ++k) {
+                        for (size_t l = k + 1; l < nb; ++l) {
+                            // 3가지 pairing 시도
+                            tryPairing(i, j, k, l);   // (i,j) + (k,l)
+                            tryPairing(i, k, j, l);   // (i,k) + (j,l)
+                            tryPairing(i, l, j, k);   // (i,l) + (j,k)
                         }
                     }
                 }
             }
-        }
-    }
+        } // end if (nb >= 4)
+    } // end if doHiggsReconstruction
 
-    // This is the logic of choosing single higgs mass
-    // It could be right but we need to think about it..
-    // in 5th Jan 2026
-////    float higgsMass = -1.0f;
-////    if (_bbMassMin1Higgs > 0.0f && _bbMassMin2Higgs > 0.0f) {
-////        higgsMass = (std::fabs(_bbMassMin1Higgs - cHiggsMass) < std::fabs(_bbMassMin2Higgs - cHiggsMass))
-////                        ? _bbMassMin1Higgs
-////                        : _bbMassMin2Higgs;
-////    }
 
-    // Step 0: No Cut
+    // ══════════════════════════════════════════════════════════════════════
+    // Selection Cuts (이벤트 선택 조건)
+    //
+    // 각 단계에서 조건을 충족하지 못하면 false를 반환하여 이벤트를 버린다.
+    // processStep()으로 cutflow를 기록한다.
+    // ══════════════════════════════════════════════════════════════════════
+
+    // Step 0: No Cut — 모든 이벤트 카운트
     processStep(CutStep::kNoCut, hadWMass);
 
-    // Step 1: Trigger
-    // For the Trigger Study and B-tag SF (It include Trigger Study), we need to remove trigger path
-    // To check total number of event (pass event + failed to pass event)
+    // Step 1: Trigger — Hadronic trigger path 통과 여부
+    // Trigger Study와 B-tag SF 도출 시에는 trigger cut을 끌 수 있음 (policy 제어)
     if (_policy.applyTriggerCut) { 
         if(cut["trigger"] > 0 && thisEvent->getHadTriggerAccept() == false){
             return false;
@@ -711,67 +803,56 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
     }
     processStep(CutStep::kHadTrigger, hadWMass);
 
-    // Step 2: Noise Filter
+    // Step 2: Noise Filter — MET noise filter 통과 여부
     if(cut["filter"] > 0 && thisEvent->getMETFilter() == false){
         return false;
     }
     processStep(CutStep::kNoiseFilter, hadWMass);
 
-    ////////if(cut["trigger"] > 0 && thisEvent->getMuonTriggerAccept() == false)
-    ////////{
-    ////////    return false;
-    ////////}
-    ////////cutflow["MuonTrigger"]+=1;                 
-    ////////hCutFlow->Fill("MuonTrigger",1);
-    ////////hCutFlow_w->Fill("MuonTrigger",_weight);
-
-    // Step 3: Primary Vertex
+    // Step 3: Primary Vertex — 유효한 primary vertex 존재 여부
     if(cut["pv"] > 0 && thisEvent->getPVvalue() == false){
         return false;
     }
     processStep(CutStep::kPrimaryVertex, hadWMass);
 
-
-    // Step 4: nJets >= 7
+    // Step 4: nJets >= 7 (또는 설정값) — 최소 jet 수 요구
     if(!(thisEvent->getnSelJet() >= cut["nJets"] )){
         return false;
     }
     processStep(CutStep::kNumJets, hadWMass);
 
-    // Step 5: 6th Jet Pt > 40
+    // Step 5: 6th Jet Pt > 40 — 6번째 jet의 pT 하한
     if(!(thisEvent->getSelJets()->at(5)->getp4()->Pt() > cut["6thJetsPT"])){
         return false;
     }
     processStep(CutStep::kSixthJetPt, hadWMass);
 
-    // Step 6: Lepton Veto (nLepton == 0)
+    // Step 6: Lepton Veto (nLepton == 0) — 렙톤 거부 조건
     if (_policy.requireSingleMuon) {
-        // TriggerSF: Require Exact 1 muon, 0 electron 
+        // TriggerSF 도출 모드: 정확히 muon 1개, electron 0개 요구
         if (!(thisEvent->getnSelMuon() == 1 && thisEvent->getnSelElectron() == 0)) {
             return false;
         }
     }
     else if (_policy.applyLeptonVeto) {
-        // MainAnalysis: lepton veto
+        // Main Analysis 모드: lepton veto (nLepton == 0)
         if(!(thisEvent->getnVetoLepton() == cut["nLeptons"])){
             return false;
         }
     }
-     
     processStep(CutStep::kLeptonVeto, hadWMass);
 
-    // (��: �� �� �� ��)
+    // (보조 통계 계산: lepton-jet statistics, b-jet-lepton statistics)
     thisEvent->getStatsComb(thisEvent->getSelJets(), thisEvent->getSelLeptons(), ljetStat);
     thisEvent->getStatsComb(thisEvent->getSelbJets(), thisEvent->getSelLeptons(), lbjetStat);
 
-    // Step 7: HT > 500
+    // Step 7: HT > 500 — Scalar pT sum 하한
     if(!(thisEvent->getSumSelJetScalarpT() > cut["HT"])){
         return false;
     }
     processStep(CutStep::kHT, hadWMass);
 
-
-    // Step 8: nbJets >= 4
+    // Step 8: nbJets >= 4 — 최소 b-jet 수 요구
     if (_policy.applyBJetCut) {
         if(!(thisEvent->getnSelbJet() >= cut["nbJets"] )){
             return false;
@@ -779,8 +860,7 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
     }
     processStep(CutStep::kNumbJets, hadWMass);
 
-
-    // Step 9: Hadronic W Mass
+    // Step 9: Hadronic W Mass — W boson 질량 윈도우
     if (_policy.applyHadWMassCut) {
         if (hadWMass < 0.0f || hadWMass > 250.0f || hadWMass < 30.0f) {
             return false;
@@ -788,25 +868,74 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
     }
     processStep(CutStep::kHadWMass, hadWMass);
 
-
-    // Step 10: Higgs Mass Window (�� ���� � ���� pass)
-    // We do not use higgs window right now.. in 05th Jan 2026
-////    const float higgsMassMin = 90.0f;
-////    const float higgsMassMax = 160.0f;
-////    if (_bbMassMin1Higgs < higgsMassMin || _bbMassMin1Higgs > higgsMassMax ||
-////        _bbMassMin2Higgs < higgsMassMin || _bbMassMin2Higgs > higgsMassMax) {
-////        return false;
-////    }
-////    cutflow["HiggsMassWindow"]+=1;
-////    hCutFlow->Fill("HiggsMassWindow",1);
-////    hCutFlow_w->Fill("HiggsMassWindow",_weight);
-////    fillCutStepHist(CutStep::kHiggsMass, thisEvent, hadWMass);
+    // Step 10: Higgs Mass Window (현재 사용하지 않음, 05 Jan 2026)
     processStep(CutStep::kHiggsMass, hadWMass);
 
-    
-    // Step 11: Total
+
+    // ══════════════════════════════════════════════════════════════════════
+    // [NEW] 이벤트-레벨 보정 적용 (Event-level corrections)
+    //
+    // 모든 selection cut을 통과한 이벤트에 대해서만 적용한다.
+    //
+    // 적용 순서:
+    //   1) B-tag event weight (bTagWeight_central_)
+    //      → computeBTagWeight()에서 이미 계산됨 (per-jet SF의 곱)
+    //   2) Trigger SF
+    //      → HT × jet6PT 의존, 2D 히스토그램 lookup
+    //   3) B-tag normalization reweight
+    //      → nJets [× HT] 의존, correctionlib JSON lookup
+    //
+    // 이 보정들은 kTotal step 직전에 _evtWeight에 곱해진다.
+    // 따라서 cutflow의 중간 단계(kNoCut ~ kHiggsMass)는
+    // 보정 전 weight로 기록되어 selection efficiency를 순수하게 반영한다.
+    // ══════════════════════════════════════════════════════════════════════
+    triggerSF_        = 1.0f;
+    triggerSF_up_     = 1.0f;
+    triggerSF_down_   = 1.0f;
+    btagNormReweight_ = 1.0f;
+
+    if (_DataOrMC != "Data") {
+
+        // ── (1) B-tag event weight ──
+        // process()에서 computeBTagWeight()가 이미 호출되었으므로
+        // bTagWeight_central_ 에 값이 들어있다.
+        _evtWeight *= bTagWeight_central_;
+
+        // ── (2) Trigger SF ──
+        // HT와 6번째 jet의 pT에 의존하는 2D scale factor.
+        // selection 을 통과한 이벤트에서만 의미 있는 kinematics이므로
+        // 여기서 적용하는 것이 올바르다.
+        double ht     = thisEvent->getSumSelJetScalarpT();
+        double jet6pt = thisEvent->getSelJets()->at(5)->getp4()->Pt();
+
+        triggerSF_      = static_cast<float>(corrMgr->getTriggerSF(ht, jet6pt, 0.0));   // central
+        triggerSF_up_   = static_cast<float>(corrMgr->getTriggerSF(ht, jet6pt, +1.0));  // +1σ
+        triggerSF_down_ = static_cast<float>(corrMgr->getTriggerSF(ht, jet6pt, -1.0));  // -1σ
+
+        _evtWeight *= triggerSF_;
+
+        // ── (3) B-tag normalization reweight ──
+        // b-tag shape SF 적용 후 yield가 변하지 않도록 보정하는 정규화 비율.
+        // nJets [× HT] 의존, correctionlib JSON에서 lookup.
+        int nJets = thisEvent->getnSelJet();
+        btagNormReweight_ = static_cast<float>(
+            corrMgr->getBTagReweight("central", nJets, ht));
+
+        _evtWeight *= btagNormReweight_;
+
+        if (debugCorrections) {
+            std::cout << "[selectObjects] Corrections applied:"
+                      << " btagSF=" << bTagWeight_central_
+                      << " trigSF=" << triggerSF_
+                      << " btagReweight=" << btagNormReweight_
+                      << " finalWeight=" << _evtWeight
+                      << std::endl;
+        }
+    }
+
+    // Step 11: Total — 최종 이벤트 (모든 cut + 모든 보정 적용)
     processStep(CutStep::kTotal, hadWMass);
-	
+
    
     return true;
 }

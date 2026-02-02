@@ -1058,10 +1058,14 @@ class ttHHanalyzer_unified {
     }
 
     std::string yearForCorr = "";
-	bool isData = false;
+    bool isData = false;
     if(_runYear == "2017") yearForCorr = "2017_UL";
 	if(_DataOrMC == "Data") isData = true;
-    corrMgr = new CorrectionsManager(yearForCorr, _era, isData);
+    // [변경 전]
+    // corrMgr = new CorrectionsManager(yearForCorr, _era, isData);
+
+    // [변경 후] — sampleName을 4번째 인자로 전달
+    corrMgr = new CorrectionsManager(yearForCorr, _era, isData, _sampleName);
 
 	debugCorrections = debug;
 
@@ -1155,6 +1159,17 @@ class ttHHanalyzer_unified {
     float bTagWeight_down_cferr1_;
     float bTagWeight_up_cferr2_;
     float bTagWeight_down_cferr2_;
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // [NEW] Trigger SF & B-tag Normalization Reweight
+    // selectObjects() 내에서 계산되어 저장됨.
+    // Tree branch로 출력하여 downstream에서 weight 분리 가능.
+    // ═══════════════════════════════════════════════════════════════════════
+    float triggerSF_          = 1.0f;   // Trigger Scale Factor (HT × jet6PT 기반)
+    float triggerSF_up_       = 1.0f;   // Trigger SF +1σ variation
+    float triggerSF_down_     = 1.0f;   // Trigger SF -1σ variation
+    float btagNormReweight_   = 1.0f;   // B-tag 정규화 비율 (normalization ratio)
+
     // B-tag weight 계산 함수
     void computeBTagWeight(event* thisEvent);
 
@@ -2027,6 +2042,17 @@ class ttHHanalyzer_unified {
 	_inputTree->Branch("failGoldenJson", &failGoldenJson, "failGoldenJson/O");
 	_inputTree->Branch("passMETFilters", &passMETFilters, "passMETFilters/O");
 	_inputTree->Branch("passHadTrig", &passHadTrig, "passHadTrig/O");
+
+        // ──────────────────────────────────────────────────────────────────────────
+        // 1-C) fillTree() 에 새 branch 추가
+        //      위치: _inputTree->Branch(...) 호출들이 있는 곳
+        // ──────────────────────────────────────────────────────────────────────────
+        
+        // [추가할 Branch 선언들] (initTree 또는 해당 위치에 추가)
+        _inputTree->Branch("triggerSF",          &triggerSF_,          "triggerSF/F");
+        _inputTree->Branch("triggerSF_up",       &triggerSF_up_,       "triggerSF_up/F");
+        _inputTree->Branch("triggerSF_down",     &triggerSF_down_,     "triggerSF_down/F");
+        _inputTree->Branch("btagNormReweight",   &btagNormReweight_,   "btagNormReweight/F");
 
 	_treeDirs = tmpDirs;
     }

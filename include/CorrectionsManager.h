@@ -1,4 +1,22 @@
+// ============================================================================
 // CorrectionsManager.h
+//
+// 중앙 보정 관리자 (Central Corrections Manager)
+// 모든 이벤트 단위 보정을 한 곳에서 로드/평가한다.
+//
+// 지원 보정 목록 (Supported corrections):
+//   1) JEC/JER       — Jet Energy Correction / Resolution
+//   2) Pileup        — Pileup reweighting
+//   3) B-tag SF      — Shape + Fixed WP (per-jet)
+//   4) Golden JSON   — Data only luminosity mask
+//   5) Trigger SF    — Hadronic trigger SF (2D: HT × jet6PT)
+//   6) JEC Unc       — JEC Total Uncertainty
+//   7) B-tag Norm Reweight — 정규화 보정 (normalization ratio)
+//                          1D (nJets) or 2D (nJets × HT)
+//                          correctionlib JSON produced by makeReweightJSON
+//
+// Author: Junghyun Lee
+// ============================================================================
 #pragma once
 
 #include <string>
@@ -16,24 +34,39 @@
 
 class CorrectionsManager {
 public:
+    // ═══════════════════════════════════════════════════════════════════════
+    // 생성자 / 소멸자 (Constructor / Destructor)
+    // ═══════════════════════════════════════════════════════════════════════
+    //
     // runYear: "2016PreVFP_UL", "2016PostVFP_UL", "2017_UL", "2018_UL"
     // dataEra: "B", "C", ..., "F" (only meaningful if isData==true)
     // isData: true->Data, false->MC
+    // sampleName: MC 프로세스 이름 (e.g. "TTToHadronic"), b-tag reweight lookup에 사용
+    //             Data일 경우 빈 문자열 허용
     CorrectionsManager(const std::string& runYear,
                        const std::string& dataEra,
-                       bool isData);
+                       bool isData,
+                       const std::string& sampleName = "");
     ~CorrectionsManager(); // [추가] 소멸자 (ROOT 파일 닫기 위해 필요)
 
-    // API
+    // ═══════════════════════════════════════════════════════════════════════
+    // Pileup Weight API
+    // ═══════════════════════════════════════════════════════════════════════
     double getPUWeight(double nTrueInt,
                        const std::string& var="nominal") const;
 
-//    double getJEC(int run,
+    // ═══════════════════════════════════════════════════════════════════════
+    // JEC API
+    // ═══════════════════════════════════════════════════════════════════════
     double getJEC(
                   double eta,
                   double raw_pt,
                   double area,
 		  double rho) const;
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // JER Smearing API (두 가지 오버로드)
+    // ═══════════════════════════════════════════════════════════════════════
 
     // Backward-compatible JER smearing API (old call sites)
     double smearJER(double corr_pt,
@@ -43,6 +76,7 @@ public:
                     unsigned int eventID,
                     const std::string& syst = "nom") const;
     
+    // Preferred API: 결정론적 시드 (deterministic seed) 사용 (run, lumi, event, jetIndex)
     double smearJER(double corr_pt,
                     double eta,
                     double phi,
@@ -56,7 +90,12 @@ public:
                     double gen_phi = 0.0,
                     const std::string& syst = "nom") const;
 
-
+    // ═══════════════════════════════════════════════════════════════════════
+    // Trigger SF API
+    //
+    // HT × jet6PT 2D 히스토그램 기반 scale factor.
+    // syst: 0.0 = central, +1.0 = +1σ, -1.0 = -1σ
+    // ═══════════════════════════════════════════════════════════════════════
     double getTriggerSF(double ht, double jet6pt, double syst = 0.0) const;
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -71,7 +110,7 @@ public:
     double getBTagSF_Shape(int hadFlav, double eta, double pt, double discr,
                            const std::string& syst = "central") const;
 
-    // Event-level b-tag weight 계산 (모든 jet에 대해)
+    // Event-level b-tag weight 계산 결과 구조체 (모든 jet에 대한 곱)
     struct BTagWeightResult {
         double central;
         double up_hf;           // b/light: hf variation
@@ -91,43 +130,82 @@ public:
         double up_lfstats2;
         double down_lfstats2;
     };
-    // ═══════════════════════════════════════════════════════════════════════
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // B-tag Normalization Reweight API  [NEW]
+    //
+    // b-tag shape SF 적용 후 yield 보존을 위한 정규화 비율 (normalization ratio).
+    // makeReweightJSON이 생성한 correctionlib JSON에서 로드.
+    //
+    // JSON 스키마 (correctionlib v2):
+    //   correction name = "btagNormReweight"
+    //   inputs: systematic (string), process (string), nJets (int), [HT (real)]
+    //   output: normalization ratio (real)
+    //
+    // 사용법 (Usage):
+    //   double r = corrMgr->getBTagReweight("central", 8, 750.0);  // 2D
+    //   double r = corrMgr->getBTagReweight("central", 8);          // 1D
+    //
+    // sampleName은 생성자에서 설정됨 (process 인자로 자동 전달)
+    // ═══════════════════════════════════════════════════════════════════════
+    double getBTagReweight(const std::string& systematic,
+                           int nJets,
+                           double HT = -1.0) const;
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Golden JSON API (Data only)
+    // ═══════════════════════════════════════════════════════════════════════
     bool   passGoldenJSON(int run, int lumi) const;
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // JEC Uncertainty API
+    // ═══════════════════════════════════════════════════════════════════════
     double getJECUncertainty(double eta, double pt, double area = 0.0, double rho = 0.0) const;
 
 private:
+    // ─── 로딩 함수 (Loading functions) ───
     void loadJME_();
     void loadPU_();
     void loadBTag_();
     void loadGoldenJSON_();
     void loadJECUncertainty_();
-    void loadTrigger_(); // ROOT 파일 로드 함수
+    void loadTrigger_();            // ROOT 파일에서 trigger SF 히스토그램 로드
+    void loadBTagReweight_();       // [NEW] correctionlib JSON에서 정규화 비율 로드
 
-    // configuration
+    // ─── 설정 변수 (Configuration) ───
     std::string jsonPath;
     std::string goldenJsonPath;
     std::string trigSFPath;
+    std::string btagReweightPath;   // [NEW] b-tag reweight JSON 경로
     std::string runYear_;
     std::string dataEra_;
+    std::string sampleName_;        // [NEW] MC 프로세스 이름 (process key for reweight lookup)
     bool        isData_;
 
-    // corrections
+    // ─── correctionlib 객체 (Correction objects) ───
     std::shared_ptr<const correction::CompoundCorrection> jec_MC_;
     std::shared_ptr<const correction::CompoundCorrection> jec_Data_;
     std::shared_ptr<const correction::Correction>         jerRes_;
     std::shared_ptr<const correction::Correction>         jerSF_;
     std::shared_ptr<const correction::Correction>         puCorr_;
     std::shared_ptr<const correction::Correction>         jec_Unc_;
-    // B-tag correction objects
+
+    // B-tag correction objects (POG correctionlib)
     std::shared_ptr<const correction::Correction> btagCorr_shape_;    // deepJet_shape
     std::shared_ptr<const correction::Correction> btagCorr_bc_;       // deepJet_comb (b/c jets)
     std::shared_ptr<const correction::Correction> btagCorr_light_;    // deepJet_incl (light jets)
 
+    // [NEW] B-tag normalization reweight (user-derived correctionlib JSON)
+    // JSON 파일을 CorrectionSet으로 로드한 후, "btagNormReweight" correction을 참조.
+    // CorrectionSet은 unique_ptr로 소유하고, Correction은 shared_ptr 참조.
+    std::unique_ptr<correction::CorrectionSet>    btagReweightCSet_;
+    std::shared_ptr<const correction::Correction> btagReweight_;
+    bool btagReweightIs2D_ = false;  // JSON이 2D (nJets × HT)인지 1D (nJets only)인지
+
+    // Trigger SF (ROOT TH2 histogram)
     TFile* trigSFFile_ = nullptr;
     TH2* hTrigSF_    = nullptr; // TH2F 혹은 TH2D
 
     // golden JSON mask: run -> list of (lumi_start, lumi_end)
     std::map<int,std::vector<std::pair<int,int>>> goldenMask_;
-};
+};;
