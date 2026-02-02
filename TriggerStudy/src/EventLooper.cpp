@@ -73,6 +73,7 @@ void EventLooper::Loop()
     // ========================================================================
     // [Phase 1] Configuration & Initialization
     // ========================================================================
+    TH1::SetDefaultSumw2(true);
     Config::Dump();
 
     const std::vector<double>& HT_Bins = Config::HT_Bins();
@@ -100,14 +101,14 @@ void EventLooper::Loop()
     h_nbJets_Pass = nullptr;
 
     // Step 2 specific histograms (SF applied)
-    TH1D* h_HT_Total_SF = nullptr;
-    TH1D* h_HT_Pass_SF = nullptr;
-    TH1D* h_pT_Total_SF = nullptr;
-    TH1D* h_pT_Pass_SF = nullptr;
-    TH1D* h_Eta_Total_SF = nullptr;
-    TH1D* h_Eta_Pass_SF = nullptr;
-    TH1D* h_nbJets_Total_SF = nullptr;
-    TH1D* h_nbJets_Pass_SF = nullptr;
+    h_HT_Total_SF = nullptr;
+    h_HT_Pass_SF = nullptr;
+    h_pT_Total_SF = nullptr;
+    h_pT_Pass_SF = nullptr;
+    h_Eta_Total_SF = nullptr;
+    h_Eta_Pass_SF = nullptr;
+    h_nbJets_Total_SF = nullptr;
+    h_nbJets_Pass_SF = nullptr;
 
     // ------------------------------------------------------------------------
     // Create histograms based on mode
@@ -323,54 +324,88 @@ void EventLooper::Loop()
     //   - MC:   TTTo2L2Nu.root, TTToSemiLeptonic.root, TTToHadronic.root
     //   - Data: <DataSet>_<Era>.root   (e.g. SingleMuon_B.root, JetHT_D.root)
     // ------------------------------------------------------------------------
+//    TString sampleName = getInputName();
+//    sampleName.ReplaceAll(".root", "");   // strip extension safely for this convention
+//    std::cout << "Sample Name: " << sampleName << std::endl;
+//
+//    // Default: treat as Data unless it matches known MC names
+//    isData = true;
+//
+//    TString dataSet = "default";
+//    TString era     = "default";
+//
+//    // --- Explicit MC identification (same policy as your original code) ---
+//    double MC_weight = -9999999.9; // (Xsec * Lumi) / Sum(Runs.genEventSumw)
+//    if (sampleName == "TTTo2L2Nu") {
+//        isData  = false;
+//        MC_weight = 0.0004761561474;
+//    }
+//    else if (sampleName == "TTToHadronic") {
+//        isData  = false;
+//        MC_weight = 0.000214351205;
+//    }
+//    else if (sampleName == "TTToSemiLeptonic") {
+//        isData  = false;
+//        MC_weight = 0.0001455793461;
+//    }
+//    else {
+//        std::cout << "Current Sample: Data\n";
+//    }
+//
+//
+//    // --- If Data, parse "<DataSet>_<Era>" ---
+//    if (isData) {
+//        Ssiz_t underscorePos = sampleName.Index("_");
+//        if (underscorePos == kNPOS) {
+//            std::cerr
+//                << "[EventLooper::Loop][ERROR] Data sample name must contain '_' : "
+//                << sampleName << "\n"
+//                << "  Expected pattern: <DataSet>_<Era> (e.g. SingleMuon_B, JetHT_D)\n";
+//            std::exit(1);
+//        }
+//
+//        dataSet = sampleName(0, underscorePos);
+//        era     = sampleName(underscorePos + 1, sampleName.Length() - underscorePos - 1);
+//
+//        std::cout
+//            << "  [EventLooper::Loop] DataSet=" << dataSet
+//            << ", Era=" << era << std::endl;
+//    }
+
+    // 교체 코드:
     TString sampleName = getInputName();
-    sampleName.ReplaceAll(".root", "");   // strip extension safely for this convention
+    sampleName.ReplaceAll(".root", "");
     std::cout << "Sample Name: " << sampleName << std::endl;
-
-    // Default: treat as Data unless it matches known MC names
-    isData = true;
-
+    
+    const auto* sampleInfo = Config::GetSampleInfo(sampleName.Data());
+    if (!sampleInfo) {
+        std::cerr << "[EventLooper][FATAL] Unknown sample: " << sampleName << "\n"
+                  << "  Register it in Config::SampleRegistry()\n";
+        std::exit(1);
+    }
+    
+    isData = sampleInfo->isData;
+    double MC_weight = sampleInfo->weight;
+    
     TString dataSet = "default";
     TString era     = "default";
-
-    // --- Explicit MC identification (same policy as your original code) ---
-    double MC_weight = -9999999.9; // (Xsec * Lumi) / Sum(Runs.genEventSumw)
-    if (sampleName == "TTTo2L2Nu") {
-        isData  = false;
-        MC_weight = 0.0004761561474;
-    }
-    else if (sampleName == "TTToHadronic") {
-        isData  = false;
-        MC_weight = 0.000214351205;
-    }
-    else if (sampleName == "TTToSemiLeptonic") {
-        isData  = false;
-        MC_weight = 0.0001455793461;
-    }
-    else {
-        std::cout << "Current Sample: Data\n";
-    }
-
-
-    // --- If Data, parse "<DataSet>_<Era>" ---
+    
     if (isData) {
         Ssiz_t underscorePos = sampleName.Index("_");
         if (underscorePos == kNPOS) {
-            std::cerr
-                << "[EventLooper::Loop][ERROR] Data sample name must contain '_' : "
-                << sampleName << "\n"
-                << "  Expected pattern: <DataSet>_<Era> (e.g. SingleMuon_B, JetHT_D)\n";
+            std::cerr << "[EventLooper][ERROR] Data sample name must contain '_' : "
+                      << sampleName << "\n"
+                      << "  Expected pattern: <DataSet>_<Era> (e.g. SingleMuon_B)\n";
             std::exit(1);
         }
-
         dataSet = sampleName(0, underscorePos);
         era     = sampleName(underscorePos + 1, sampleName.Length() - underscorePos - 1);
-
-        std::cout
-            << "  [EventLooper::Loop] DataSet=" << dataSet
-            << ", Era=" << era << std::endl;
+    
+        std::cout << "  [EventLooper] DataSet=" << dataSet << ", Era=" << era << std::endl;
+    } else {
+        std::cout << "  [EventLooper] MC, weight=" << MC_weight << std::endl;
     }
-
+ 
     // ========================================================================
     // [Phase 4] Main Event Loop
     // ========================================================================
@@ -530,8 +565,16 @@ void EventLooper::Loop()
                         static_cast<double>(currentHT),
                         static_cast<double>(Jet6PT)
                     });
-                } catch (...) {
-                    sf = 1.0;
+                //} catch (...) {
+		} catch (const std::exception& e) {
+                    //sf = 1.0;
+		    std::cerr << "\n[FATAL] SF evaluate failed at entry " << jentry << "\n"
+                              << "  nbJets=" << currentNBJets
+                              << " eta=" << Jet6Eta
+                              << " HT=" << currentHT
+                              << " pT=" << Jet6PT << "\n"
+                              << "  exception: " << e.what() << "\n";
+                    std::exit(57);
                 }
             }
         }

@@ -1,0 +1,94 @@
+>>> [main] B-Tag Reweight: QCD_HT300to500
+
+  [BTagSFProcessor] b-tag JSON: /Users/jhlee/correctionLib/corrections/jsonpog-integration/POG/BTV/2017_UL/btagging.json.gz
+  [BTagSFProcessor] deepJet_shape inputs (5): systematic flavor abseta pt discriminant 
+  [BTagSFProcessor] trigger SF JSON: ../DerivedCorr/TriggerSF/trigger_sf.json.gz
+  [BTagSFProcessor] Init complete.
+
+
+╔══════════════════════════════════════════════════════════════╗
+║          B-Tag Reweight Configuration                        ║
+╠══════════════════════════════════════════════════════════════╣
+║ [Section 1] Path & I/O                                       ║
+╟──────────────────────────────────────────────────────────────╢
+  Input base dir : /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/
+  Tree path      : Tree/Tree
+  Trigger SF JSON: ../DerivedCorr/TriggerSF/trigger_sf.json.gz
+╟──────────────────────────────────────────────────────────────╢
+║ [Section 1-C] B-Tag Reweight                                 ║
+╟──────────────────────────────────────────────────────────────╢
+  btagCorrectionName    : deepJet_shape
+  btagReweightJSON      : btagNormReweight.json
+  btagOutPrefix         : bTagReweight_
+  btagMaxNJetsBin       : 25
+  btagMaxJetsForPerJet  : 12
+  btagSystematics       : 19 variations
+  btagJSONPaths         :
+    /cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/Run2-2017-UL-NanoAODv9/latest/btagging.json.gz
+    /Users/jhlee/correctionLib/corrections/jsonpog-integration/POG/BTV/2017_UL/btagging.json.gz
+╟──────────────────────────────────────────────────────────────╢
+║ Reweight Axis                                                ║
+╟──────────────────────────────────────────────────────────────╢
+  useHTForReweight      : TRUE (2D: nJets × HT)
+  reweightHT_edges      : [500, 550, 600, 700, 800, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 2100, 2500]
+  nHTBins               : 15
+  totalReweightBins     : 390
+╟──────────────────────────────────────────────────────────────╢
+║ [Section 2] Analysis Flags                                   ║
+╟──────────────────────────────────────────────────────────────╢
+  minNJets         : 6
+  verbose          : false
+  progressInterval : 10000000
+╟──────────────────────────────────────────────────────────────╢
+║ [Section 3] Histogram Definitions                            ║
+╟──────────────────────────────────────────────────────────────╢
+  nJets  : 20 bins [5.5, 25.5]
+  HT     : 50 bins [0, 2500] GeV
+  nbJets : 10 bins [-0.5, 9.5]
+  jetPt  : 50 bins [0, 600] GeV
+  bTag   : 50 bins [0, 1]
+╚══════════════════════════════════════════════════════════════╝
+
+Sample Name: QCD_HT300to500
+  Type   : MC
+  Weight : 243.181
+
+>>> Total entries: 51727
+
+  Reweight mode  : 2D (nJets × HT)
+  Total flat bins: 390
+  nHTBins        : 15
+
+╔══════════════════════════════════════════════════════════════╗
+║  Pass 1: Computing Normalization Ratios                      ║
+╚══════════════════════════════════════════════════════════════╝
+    [Pass 1] 0 / 51727 (0.0%)
+
+  Normalization ratios (central):
+  nJets \ HT  |         [500.0,550.0)         [550.0,600.0)         [600.0,700.0)         [700.0,800.0)         [800.0,1000.0)         [1000.0,1100.0)         [1100.0,1200.0)         [1200.0,1300.0)         [1300.0,1400.0)         [1400.0,1500.0)         [1500.0,1600.0)         [1600.0,1700.0)         [1700.0,1800.0)         [1800.0,2100.0)         [2100.0,2500.0)
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------
+      6        |   0.90558   0.90780   0.91693   0.81014   0.79314   0.54801   0.67694   0.54558   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000
+      7        |   0.88459   0.89894   0.88698   0.82806   0.68288   0.64853   0.69547   0.68407   0.50873   0.27221   1.00000   0.37352   1.00000   1.00000   1.00000
+      8        |   0.83669   0.86372   0.86345   0.82293   0.76490   0.40340   0.59336   1.00000   0.60760   0.33698   1.00000   1.00000   1.00000   1.00000   1.00000
+      9        |   0.84118   0.78494   0.86890   0.91374   0.85873   0.44096   0.34323   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000
+     10        |   0.90851   0.75727   0.96053   0.85923   0.40707   0.50773   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000
+     11        |   1.00000   1.00000   0.91396   1.19639   1.23452   1.00000   1.00000   0.90969   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000
+
+╔══════════════════════════════════════════════════════════════╗
+║  Pass 2: Applying B-Tag Reweight & Filling Histograms        ║
+╚══════════════════════════════════════════════════════════════╝
+    [Pass 2] 0 / 51727 (0.0%)
+
+╔══════════════════════════════════════════════════════════════╗
+║  B-Tag Reweight Summary                                      ║
+╠══════════════════════════════════════════════════════════════╣
+  Events processed : 51727
+  Events passed    : 9550
+  Σ weight (noSF)      : 1480678.2455
+  Σ weight (withSF)    : 1674079.7684
+  Σ weight (reweighted): 1480678.2455
+  Deviation: 0.0000 %  [OK]
+╚══════════════════════════════════════════════════════════════╝
+
+>>> Writing output to: bTagReweight_QCD_HT300to500.root
+>>> Done.

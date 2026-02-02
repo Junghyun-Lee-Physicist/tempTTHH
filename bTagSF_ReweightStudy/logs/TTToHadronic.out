@@ -1,0 +1,97 @@
+>>> [main] B-Tag Reweight: TTToHadronic
+
+  [BTagSFProcessor] b-tag JSON: /Users/jhlee/correctionLib/corrections/jsonpog-integration/POG/BTV/2017_UL/btagging.json.gz
+  [BTagSFProcessor] deepJet_shape inputs (5): systematic flavor abseta pt discriminant 
+  [BTagSFProcessor] trigger SF JSON: ../DerivedCorr/TriggerSF/trigger_sf.json.gz
+  [BTagSFProcessor] Init complete.
+
+
+╔══════════════════════════════════════════════════════════════╗
+║          B-Tag Reweight Configuration                        ║
+╠══════════════════════════════════════════════════════════════╣
+║ [Section 1] Path & I/O                                       ║
+╟──────────────────────────────────────────────────────────────╢
+  Input base dir : /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/
+  Tree path      : Tree/Tree
+  Trigger SF JSON: ../DerivedCorr/TriggerSF/trigger_sf.json.gz
+╟──────────────────────────────────────────────────────────────╢
+║ [Section 1-C] B-Tag Reweight                                 ║
+╟──────────────────────────────────────────────────────────────╢
+  btagCorrectionName    : deepJet_shape
+  btagReweightJSON      : btagNormReweight.json
+  btagOutPrefix         : bTagReweight_
+  btagMaxNJetsBin       : 25
+  btagMaxJetsForPerJet  : 12
+  btagSystematics       : 19 variations
+  btagJSONPaths         :
+    /cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/Run2-2017-UL-NanoAODv9/latest/btagging.json.gz
+    /Users/jhlee/correctionLib/corrections/jsonpog-integration/POG/BTV/2017_UL/btagging.json.gz
+╟──────────────────────────────────────────────────────────────╢
+║ Reweight Axis                                                ║
+╟──────────────────────────────────────────────────────────────╢
+  useHTForReweight      : TRUE (2D: nJets × HT)
+  reweightHT_edges      : [500, 550, 600, 700, 800, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 2100, 2500]
+  nHTBins               : 15
+  totalReweightBins     : 390
+╟──────────────────────────────────────────────────────────────╢
+║ [Section 2] Analysis Flags                                   ║
+╟──────────────────────────────────────────────────────────────╢
+  minNJets         : 6
+  verbose          : false
+  progressInterval : 10000000
+╟──────────────────────────────────────────────────────────────╢
+║ [Section 3] Histogram Definitions                            ║
+╟──────────────────────────────────────────────────────────────╢
+  nJets  : 20 bins [5.5, 25.5]
+  HT     : 50 bins [0, 2500] GeV
+  nbJets : 10 bins [-0.5, 9.5]
+  jetPt  : 50 bins [0, 600] GeV
+  bTag   : 50 bins [0, 1]
+╚══════════════════════════════════════════════════════════════╝
+
+Sample Name: TTToHadronic
+  Type   : MC
+  Weight : 0.000214351
+
+>>> Total entries: 17858878
+
+  Reweight mode  : 2D (nJets × HT)
+  Total flat bins: 390
+  nHTBins        : 15
+
+╔══════════════════════════════════════════════════════════════╗
+║  Pass 1: Computing Normalization Ratios                      ║
+╚══════════════════════════════════════════════════════════════╝
+    [Pass 1] 0 / 17858878 (0.0%)
+    [Pass 1] 10000000 / 17858878 (56.0%)
+
+  Normalization ratios (central):
+  nJets \ HT  |         [500.0,550.0)         [550.0,600.0)         [600.0,700.0)         [700.0,800.0)         [800.0,1000.0)         [1000.0,1100.0)         [1100.0,1200.0)         [1200.0,1300.0)         [1300.0,1400.0)         [1400.0,1500.0)         [1500.0,1600.0)         [1600.0,1700.0)         [1700.0,1800.0)         [1800.0,2100.0)         [2100.0,2500.0)
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------
+      6        |   0.99425   0.98918   0.98288   0.97123   0.95101   0.91591   0.88081   0.86385   0.85197   0.84001   0.82630   0.80786   0.79324   0.77922   0.72470
+      7        |   0.98294   0.97648   0.96940   0.95925   0.94046   0.90882   0.87803   0.86103   0.84751   0.83306   0.81813   0.80395   0.79287   0.77182   0.71919
+      8        |   0.96907   0.96065   0.95399   0.94476   0.92811   0.90150   0.87537   0.85679   0.84079   0.82712   0.81105   0.79989   0.78494   0.76380   0.71256
+      9        |   0.95443   0.94247   0.93583   0.92735   0.91548   0.89133   0.86664   0.84849   0.83673   0.81669   0.80258   0.79016   0.78268   0.76087   0.70582
+     10        |   0.93545   0.92446   0.91484   0.91132   0.89611   0.88021   0.85802   0.84196   0.82869   0.80889   0.79458   0.78141   0.77580   0.74863   0.68786
+     11        |   0.90914   0.88336   0.88329   0.88509   0.87807   0.86241   0.85416   0.83350   0.81224   0.80673   0.79885   0.78260   0.76732   0.74842   0.68529
+     12        |   1.06066   0.99745   0.86767   0.86621   0.86128   0.85518   0.82910   0.80664   0.81894   0.80427   0.79129   0.78853   0.73304   0.73965   0.65537
+
+╔══════════════════════════════════════════════════════════════╗
+║  Pass 2: Applying B-Tag Reweight & Filling Histograms        ║
+╚══════════════════════════════════════════════════════════════╝
+    [Pass 2] 0 / 17858878 (0.0%)
+    [Pass 2] 10000000 / 17858878 (56.0%)
+
+╔══════════════════════════════════════════════════════════════╗
+║  B-Tag Reweight Summary                                      ║
+╠══════════════════════════════════════════════════════════════╣
+  Events processed : 17858878
+  Events passed    : 13682619
+  Σ weight (noSF)      : 650525.7102
+  Σ weight (withSF)    : 692004.4680
+  Σ weight (reweighted): 650525.7102
+  Deviation: 0.0000 %  [OK]
+╚══════════════════════════════════════════════════════════════╝
+
+>>> Writing output to: bTagReweight_TTToHadronic.root
+>>> Done.

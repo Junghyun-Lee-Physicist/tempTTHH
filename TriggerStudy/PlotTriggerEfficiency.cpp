@@ -37,30 +37,56 @@
 // ============================================================================
 // Helper: Compute efficiency histogram with proper errors
 // ============================================================================
-TH1D* ComputeEfficiency(TH1D* hPass, TH1D* hTotal, const char* name)
+TH1D* ComputeEfficiency(TH1D* hPass, TH1D* hTotal, const char* name, bool isData = true)
 {
     if (!hPass || !hTotal) return nullptr;
     
     TH1D* hEff = static_cast<TH1D*>(hPass->Clone(name));
     hEff->Reset();
     
+////    int nBins = hPass->GetNbinsX();
+////    for (int i = 1; i <= nBins; ++i) {
+////        double pass = hPass->GetBinContent(i);
+////        double total = hTotal->GetBinContent(i);
+////        
+////        if (total > 0) {
+////            double eff = pass / total;
+////            // Binomial error: sqrt(eff * (1-eff) / N)
+////            double err = std::sqrt(eff * (1.0 - eff) / total);
+////            hEff->SetBinContent(i, eff);
+////            hEff->SetBinError(i, err);
+////        } else {
+////            hEff->SetBinContent(i, 0);
+////            hEff->SetBinError(i, 0);
+////        }
+////    }
     int nBins = hPass->GetNbinsX();
     for (int i = 1; i <= nBins; ++i) {
-        double pass = hPass->GetBinContent(i);
+        double pass  = hPass->GetBinContent(i);
         double total = hTotal->GetBinContent(i);
         
         if (total > 0) {
             double eff = pass / total;
-            // Binomial error: sqrt(eff * (1-eff) / N)
-            double err = std::sqrt(eff * (1.0 - eff) / total);
+            double err = 0.0;
+            
+            if (isData) {
+                // Data: unweighted → 단순 이항 오차
+                err = std::sqrt(eff * (1.0 - eff) / total);
+            } else {
+                // MC: weighted → N_eff 기반
+                double totalErr = hTotal->GetBinError(i);
+                if (totalErr > 0.0) {
+                    double neff = (total * total) / (totalErr * totalErr);
+                    err = std::sqrt(eff * (1.0 - eff) / neff);
+                }
+            }
+            
             hEff->SetBinContent(i, eff);
             hEff->SetBinError(i, err);
-        } else {
-            hEff->SetBinContent(i, 0);
-            hEff->SetBinError(i, 0);
         }
     }
-    
+
+
     return hEff;
 }
 
@@ -136,9 +162,9 @@ void PlotVariable(TFile* dataFile, TFile* mcFile,
     // ------------------------------------------------------------------------
     // Compute efficiencies
     // ------------------------------------------------------------------------
-    TH1D* eff_data    = ComputeEfficiency(h_data_pass, h_data_total, ("eff_data_" + var).c_str());
-    TH1D* eff_mc_noSF = ComputeEfficiency(h_mc_pass_noSF, h_mc_total_noSF, ("eff_mc_noSF_" + var).c_str());
-    TH1D* eff_mc_SF   = ComputeEfficiency(h_mc_pass_SF, h_mc_total_SF, ("eff_mc_SF_" + var).c_str());
+    TH1D* eff_data    = ComputeEfficiency(h_data_pass, h_data_total, ("eff_data_" + var).c_str(), true);
+    TH1D* eff_mc_noSF = ComputeEfficiency(h_mc_pass_noSF, h_mc_total_noSF, ("eff_mc_noSF_" + var).c_str(), false);
+    TH1D* eff_mc_SF   = ComputeEfficiency(h_mc_pass_SF, h_mc_total_SF, ("eff_mc_SF_" + var).c_str(), false);
     
     if (!eff_data || !eff_mc_noSF || !eff_mc_SF) {
         std::cout << "[Error] Failed to compute efficiencies for " << var << "\n";
@@ -300,6 +326,7 @@ void PlotTriggerEfficiency()
     gROOT->SetBatch(kTRUE);
     
     // Print config
+    TH1::SetDefaultSumw2(true);
     Config::Dump();
     
     // ------------------------------------------------------------------------

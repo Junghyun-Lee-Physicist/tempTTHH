@@ -1,0 +1,64 @@
+>>> [main] B-Tag Reweight: BTagCSV_B
+
+  [BTagSFProcessor] b-tag JSON: /Users/jhlee/correctionLib/corrections/jsonpog-integration/POG/BTV/2017_UL/btagging.json.gz
+  [BTagSFProcessor] deepJet_shape inputs (5): systematic flavor abseta pt discriminant 
+  [BTagSFProcessor] trigger SF JSON: ../DerivedCorr/TriggerSF/trigger_sf.json.gz
+  [BTagSFProcessor] Init complete.
+
+
+╔══════════════════════════════════════════════════════════════╗
+║          B-Tag Reweight Configuration                        ║
+╠══════════════════════════════════════════════════════════════╣
+║ [Section 1] Path & I/O                                       ║
+╟──────────────────────────────────────────────────────────────╢
+  Input base dir : /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/
+  Tree path      : Tree/Tree
+  Trigger SF JSON: ../DerivedCorr/TriggerSF/trigger_sf.json.gz
+╟──────────────────────────────────────────────────────────────╢
+║ [Section 1-C] B-Tag Reweight                                 ║
+╟──────────────────────────────────────────────────────────────╢
+  btagCorrectionName    : deepJet_shape
+  btagOutPrefix         : bTagReweight_
+  btagMaxNJetsBin       : 25
+  btagMaxJetsForPerJet  : 12
+  btagSystematics       : 19 variations
+  btagJSONPaths         :
+    /cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/Run2-2017-UL-NanoAODv9/latest/btagging.json.gz
+    /Users/jhlee/correctionLib/corrections/jsonpog-integration/POG/BTV/2017_UL/btagging.json.gz
+╟──────────────────────────────────────────────────────────────╢
+║ [Section 2] Analysis Flags                                   ║
+╟──────────────────────────────────────────────────────────────╢
+  minNJets         : 6
+  verbose          : false
+  progressInterval : 10000000
+╟──────────────────────────────────────────────────────────────╢
+║ [Section 3] Histogram Definitions                            ║
+╟──────────────────────────────────────────────────────────────╢
+  nJets  : 20 bins [5.5, 25.5]
+  HT     : 50 bins [0, 2500] GeV
+  nbJets : 10 bins [-0.5, 9.5]
+  jetPt  : 50 bins [0, 600] GeV
+  bTag   : 50 bins [0, 1]
+╚══════════════════════════════════════════════════════════════╝
+
+Sample Name: BTagCSV_B
+  Type   : Data
+  Weight : 1
+  DataSet: BTagCSV, Era: B
+
+>>> Total entries: 128954
+
+╔══════════════════════════════════════════════════════════════╗
+║  Pass 2: Applying B-Tag Reweight & Filling Histograms        ║
+╚══════════════════════════════════════════════════════════════╝
+    [Pass 2] 0 / 128954 (0.0%)
+
+╔══════════════════════════════════════════════════════════════╗
+║  B-Tag Reweight Summary                                      ║
+╠══════════════════════════════════════════════════════════════╣
+  Events processed : 128954
+  Events passed    : 90916
+╚══════════════════════════════════════════════════════════════╝
+
+>>> Writing output to: bTagReweight_BTagCSV_B.root
+>>> Done.

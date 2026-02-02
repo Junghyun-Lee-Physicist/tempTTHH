@@ -125,13 +125,25 @@ EffResult computeEfficiency(bool isData,
     }
 
     // MC error propagation
-    if (!isFinite(passErr) || !isFinite(totalErr) || passW <= 0.0) return r;
-
-    double relPass = (passErr > 0.0) ? (passErr / passW) : 0.0;
-    double relTot = (totalErr > 0.0) ? (totalErr / totalW) : 0.0;
-    r.err = r.eff * std::sqrt(relPass * relPass + relTot * relTot);
+////    if (!isFinite(passErr) || !isFinite(totalErr) || passW <= 0.0) return r;
+////
+////    double relPass = (passErr > 0.0) ? (passErr / passW) : 0.0;
+////    double relTot = (totalErr > 0.0) ? (totalErr / totalW) : 0.0;
+////    r.err = r.eff * std::sqrt(relPass * relPass + relTot * relTot);
+////    r.ok = isFinite(r.err);
+////    return r;
+    // MC: N_eff 기반 이항 오차
+    // N_eff = (Σw)² / Σ(w²), 여기서 totalErr = √(Σw²)
+    if (!isFinite(totalErr) || totalErr <= 0.0) return r;
+    
+    double neff = (totalW * totalW) / (totalErr * totalErr);
+    if (neff <= 0.0) return r;
+    
+    r.err = std::sqrt(r.eff * (1.0 - r.eff) / neff);
     r.ok = isFinite(r.err);
     return r;
+
+
 }
 
 // ============================================================================
@@ -263,6 +275,34 @@ bool fillByNeighbors(int i, int j, TH2D* h, double& val, double& unc)
         val = sumV / sumW;
         unc = std::sqrt(sumE2) / sumW;
         return true;
+    }
+    return false;
+}
+
+// ============================================================================
+// Nearest Neighbor Extrapolation (Flat)
+// ============================================================================
+bool fillByNearestExtrapolation(int i, int j, TH2D* hFilled, double& val, double& unc)
+{
+    // Try to take value from the bin below (Same HT, lower pT)
+    if (j > 1) {
+        double v = hFilled->GetBinContent(i, j - 1);
+        double e = hFilled->GetBinError(i, j - 1);
+        if (v > 0.0 && isFinite(v)) {
+            val = v;
+            unc = e;
+            return true;
+        }
+    }
+    // Try to take value from the bin to the left (Lower HT, same pT)
+    if (i > 1) {
+        double v = hFilled->GetBinContent(i - 1, j);
+        double e = hFilled->GetBinError(i - 1, j);
+        if (v > 0.0 && isFinite(v)) {
+            val = v;
+            unc = e;
+            return true;
+        }
     }
     return false;
 }
@@ -546,6 +586,7 @@ bool WriteGzipJSON(const json& j, const std::string& filename)
 
 void DeriveSF()
 {
+    TH1::SetDefaultSumw2(true);
     Config::Dump();
 
     // ------------------------------------------------------------------------
@@ -585,9 +626,6 @@ void DeriveSF()
     const auto& PT_Edges = Config::PT_Bins();
     auto nbLabels = Config::NB_Labels();
     auto etaLabels = Config::Eta_Labels();
-
-    const double kMinPassData = 20.0;
-    const double kMinNeffMC = 20.0;
 
     std::map<std::string, TH2D*> sfMapForJSON;
 
@@ -657,8 +695,8 @@ void DeriveSF()
                         hEffMC->SetBinError(i, j, effM.err);
                     }
 
-                    bool lowStatData = (dPass < kMinPassData);
-                    bool lowStatMC = (effM.neff_pass < kMinNeffMC);
+                    bool lowStatData = (dPass < Config::kMinPassData);
+                    bool lowStatMC = (effM.neff_pass < Config::kMinNeffMC);
 
                     if (!effD.ok || !effM.ok || lowStatData || lowStatMC ||
                         effD.eff <= 0.0 || effM.eff <= 0.0) continue;
@@ -694,39 +732,56 @@ void DeriveSF()
                         continue;
                     }
 
-                    double ht = hDataPass->GetXaxis()->GetBinCenter(i);
-                    double pt = hDataPass->GetYaxis()->GetBinCenter(j);
+                    if (Config::useFitInterpolation) {
+                        double ht = hDataPass->GetXaxis()->GetBinCenter(i);
+                        double pt = hDataPass->GetYaxis()->GetBinCenter(j);
 
-                    if (fit.ok) {
-                        double g = fit.evalLog(ht, pt);
-                        double sg = fit.evalLogUnc(ht, pt);
-                        if (isFinite(g)) {
-                            double pred = std::exp(g);
-                            double unc = pred * std::max(sg, relErrFloor);
-                            if (isFinite(pred) && pred > 0.0) {
-                                hSFFill->SetBinContent(i, j, pred);
-                                hSFFill->SetBinError(i, j, unc);
-                                hSFErr->SetBinContent(i, j, unc);
-                                ++nFit;
-                                continue;
+                        if (fit.ok) {
+                            double g = fit.evalLog(ht, pt);
+                            double sg = fit.evalLogUnc(ht, pt);
+                            if (isFinite(g)) {
+                                double pred = std::exp(g);
+                                double unc = pred * std::max(sg, relErrFloor);
+                                if (isFinite(pred) && pred > 0.0) {
+                                    hSFFill->SetBinContent(i, j, pred);
+                                    hSFFill->SetBinError(i, j, unc);
+                                    hSFErr->SetBinContent(i, j, unc);
+                                    ++nFit;
+                                    continue;
+                                }
                             }
                         }
-                    }
 
-                    double predN = 0.0, uncN = 0.0;
-                    if (fillByNeighbors(i, j, hSFMeas, predN, uncN)) {
-                        uncN = std::max(uncN, relErrFloor * predN);
-                        hSFFill->SetBinContent(i, j, predN);
-                        hSFFill->SetBinError(i, j, uncN);
-                        hSFErr->SetBinContent(i, j, uncN);
-                        ++nNeighbor;
-                        continue;
-                    }
+                        double predN = 0.0, uncN = 0.0;
+                        if (fillByNeighbors(i, j, hSFMeas, predN, uncN)) {
+                            uncN = std::max(uncN, relErrFloor * predN);
+                            hSFFill->SetBinContent(i, j, predN);
+                            hSFFill->SetBinError(i, j, uncN);
+                            hSFErr->SetBinContent(i, j, uncN);
+                            ++nNeighbor;
+                            continue;
+                        }
 
-                    hSFFill->SetBinContent(i, j, 1.0);
-                    hSFFill->SetBinError(i, j, 0.5);
-                    hSFErr->SetBinContent(i, j, 0.5);
-                    ++nFallback;
+                        hSFFill->SetBinContent(i, j, 1.0);
+                        hSFFill->SetBinError(i, j, 0.5);
+                        hSFErr->SetBinContent(i, j, 0.5);
+                        ++nFallback;
+                    } else {
+                        double predE = 0.0, uncE = 0.0;
+                        //if (fillByNearestExtrapolation(i, j, hSFFill, predE, uncE)) {
+                            if (fillByNearestExtrapolation(i, j, hSFMeas, predE, uncE)) {
+                            uncE = std::max(uncE, relErrFloor * predE);  // 최소 오차 보장
+                            hSFFill->SetBinContent(i, j, predE);
+                            hSFFill->SetBinError(i, j, uncE);
+                            hSFErr->SetBinContent(i, j, uncE);
+                            ++nNeighbor;
+                        } else {
+                            hSFFill->SetBinContent(i, j, 1.0);
+                            hSFFill->SetBinError(i, j, 0.5);
+                            hSFErr->SetBinContent(i, j, 0.5);
+                            ++nFallback;
+                        }
+                    }
                 }
             }
 
@@ -818,4 +873,3 @@ void DeriveSF()
 }
 
 void DeriveSF_main() { DeriveSF(); }
-

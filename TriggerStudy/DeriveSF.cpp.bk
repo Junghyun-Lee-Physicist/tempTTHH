@@ -403,14 +403,17 @@ json MakeMultiBinning(TH2D* hSF,
         };
     }
 
-    int nx = hSF->GetNbinsX();
-    int ny = hSF->GetNbinsY();
+    int nx = hSF->GetNbinsX(); // HT bin
+    int ny = hSF->GetNbinsY(); // pT bin
 
     std::vector<double> content;
     content.reserve(nx * ny);
 
-    for (int j = 1; j <= ny; ++j) {
-        for (int i = 1; i <= nx; ++i) {
+    // correctionlib MultiBinning: last input axis varies fastest (row-major)
+    // inputs = ["ht", "pt"] → pt varies fastest
+    // Order: (HT0,PT0), (HT0,PT1), ..., (HT0,PTn), (HT1,PT0), ...
+    for (int i = 1; i <= nx; ++i) {      // HT (outer loop = slow)
+        for (int j = 1; j <= ny; ++j) {  // pT (inner loop = fast)
             double sf = hSF->GetBinContent(i, j);
             if (!isFinite(sf) || sf <= 0.0) sf = 1.0;
             content.push_back(sf);
@@ -441,24 +444,12 @@ json MakeEtaNode(const std::map<std::string, TH2D*>& sfMap,
     const auto& etaEdges = Config::Eta_Bins();
     auto etaLabels = Config::Eta_Labels();
 
+    // For flow="clamp", content size = edges size - 1
+    // No need to add extra underflow/overflow bins
     std::vector<json> content;
-
-    {
-        std::string key = nbLabel + "_" + etaLabels.front();
-        auto it = sfMap.find(key);
-        TH2D* h = (it != sfMap.end()) ? it->second : nullptr;
-        content.push_back(MakeMultiBinning(h, htEdges, ptEdges));
-    }
 
     for (const auto& etaLabel : etaLabels) {
         std::string key = nbLabel + "_" + etaLabel;
-        auto it = sfMap.find(key);
-        TH2D* h = (it != sfMap.end()) ? it->second : nullptr;
-        content.push_back(MakeMultiBinning(h, htEdges, ptEdges));
-    }
-
-    {
-        std::string key = nbLabel + "_" + etaLabels.back();
         auto it = sfMap.find(key);
         TH2D* h = (it != sfMap.end()) ? it->second : nullptr;
         content.push_back(MakeMultiBinning(h, htEdges, ptEdges));
@@ -484,15 +475,13 @@ json MakeNBNode(const std::map<std::string, TH2D*>& sfMap,
     auto nbLabels = Config::NB_Labels();
     auto nbEdges = Config::MakeNBEdges();
 
+    // For flow="clamp", content size = edges size - 1
+    // No need to add extra underflow/overflow bins
     std::vector<json> content;
-
-    content.push_back(MakeEtaNode(sfMap, nbLabels.front(), htEdges, ptEdges));
 
     for (const auto& nbLabel : nbLabels) {
         content.push_back(MakeEtaNode(sfMap, nbLabel, htEdges, ptEdges));
     }
-
-    content.push_back(MakeEtaNode(sfMap, nbLabels.back(), htEdges, ptEdges));
 
     return {
         {"nodetype", "binning"},
@@ -829,3 +818,4 @@ void DeriveSF()
 }
 
 void DeriveSF_main() { DeriveSF(); }
+

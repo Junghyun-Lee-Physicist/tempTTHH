@@ -1,0 +1,28 @@
+# ============================================
+# Step 0: 빌드
+# ============================================
+make clean && make
+
+# ============================================
+# Step 1: 전 샘플 b-tag SF 적용 → ROOT 파일 생성
+#         bTagReweight_<sample>.root (32개)
+# ============================================
+python3 run_all.py -j 6              # 병렬 6개 (메모리 여유 시 -j 10 등)
+
+# ============================================
+# Step 2: normalization reweight JSON 생성
+#         모든 MC ROOT에서 NormRatio 추출 → 단일 JSON
+# ============================================
+./exe_MakeJSON                        # → btagNormReweight.json
+
+# ============================================
+# Step 3: 검증 플롯 생성
+# ============================================
+# 3-a) ROOT 기반 PDF + JSON 데이터 덤프
+root -l -b -q 'PlotBTagReweight.C("all")'
+#   → plots/<sample>_<var>.pdf
+#   → plotdata/<sample>.json
+
+# 3-b) Python(matplotlib) 기반 PNG
+python3 plot_btag.py all
+#   → plots_py/<sample>_<var>.png
