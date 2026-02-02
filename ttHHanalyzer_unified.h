@@ -22,6 +22,7 @@
 //#include "include/tthHypothesisCombinatorics.h"
 //#include "include/HypothesisCombinatorics.h"
 #include <stdexcept>
+#include <array>
 
 //#include "fifo_map.hpp" // No need now, I'll update cutflow logic
 
@@ -1061,10 +1062,8 @@ class ttHHanalyzer_unified {
     bool isData = false;
     if(_runYear == "2017") yearForCorr = "2017_UL";
 	if(_DataOrMC == "Data") isData = true;
-    // [변경 전]
-    // corrMgr = new CorrectionsManager(yearForCorr, _era, isData);
 
-    // [변경 후] — sampleName을 4번째 인자로 전달
+    // [변경] sampleName을 4번째 인자로 전달 → process별 b-tag reweight 조회용
     corrMgr = new CorrectionsManager(yearForCorr, _era, isData, _sampleName);
 
 	debugCorrections = debug;
@@ -1159,6 +1158,8 @@ class ttHHanalyzer_unified {
     float bTagWeight_down_cferr1_;
     float bTagWeight_up_cferr2_;
     float bTagWeight_down_cferr2_;
+    // B-tag weight 계산 함수
+    void computeBTagWeight(event* thisEvent);
 
     // ═══════════════════════════════════════════════════════════════════════
     // [NEW] Trigger SF & B-tag Normalization Reweight
@@ -1169,9 +1170,6 @@ class ttHHanalyzer_unified {
     float triggerSF_up_       = 1.0f;   // Trigger SF +1σ variation
     float triggerSF_down_     = 1.0f;   // Trigger SF -1σ variation
     float btagNormReweight_   = 1.0f;   // B-tag 정규화 비율 (normalization ratio)
-
-    // B-tag weight 계산 함수
-    void computeBTagWeight(event* thisEvent);
 
 
     outputFile * _of;
@@ -1218,11 +1216,16 @@ class ttHHanalyzer_unified {
 
     // [수정] 라벨 벡터는 const static 혹은 생성자에서 초기화하도록 변경 권장하나,
     // 기존 구조를 존중하여 멤버 변수로 유지하되 초기화 방식만 바꿉니다.
-    std::vector<TH1F*> _cutStepJetPt;
-    std::vector<TH1F*> _cutStepJetEta;
-    std::vector<TH1F*> _cutStepJetPhi;
+    // [수정] cutStep별 상위 6개 jet kinematics 히스토그램
+    // 기존: vector<TH1F*>  (leading jet만)
+    // 변경: vector<array<TH1F*, 6>>  (상위 6개 jet)
+    static constexpr size_t kNJetsForCutStep = 6;
+
+    std::vector<std::array<TH1F*, kNJetsForCutStep>> _cutStepJetPt;
+    std::vector<std::array<TH1F*, kNJetsForCutStep>> _cutStepJetEta;
+    std::vector<std::array<TH1F*, kNJetsForCutStep>> _cutStepJetPhi;
     std::vector<TH1F*> _cutStepHT;
-    std::vector<TH1F*> _cutStepBTag;
+    std::vector<std::array<TH1F*, kNJetsForCutStep>> _cutStepBTag;
     std::vector<TH1F*> _cutStepHadWMass;
     std::vector<TH1F*> _cutStepHiggsMass01;
     std::vector<TH1F*> _cutStepHiggsMass02;
@@ -1298,10 +1301,15 @@ class ttHHanalyzer_unified {
         float weight = _evtWeight * thisEvent->getbTagSys();
 
         if (!jets->empty()) {
-            _cutStepJetPt.at(idx)->Fill(jets->at(0)->getp4()->Pt(), weight);
-            _cutStepJetEta.at(idx)->Fill(jets->at(0)->getp4()->Eta(), weight);
-            _cutStepJetPhi.at(idx)->Fill(jets->at(0)->getp4()->Phi(), weight);
-            _cutStepBTag.at(idx)->Fill(jets->at(0)->bTagCSV, weight);
+            // [수정] 상위 6개 jet의 kinematics를 각각 채움
+            //        jet이 6개 미만이면 있는 만큼만 채움
+            const size_t nFill = std::min(jets->size(), kNJetsForCutStep);
+            for (size_t j = 0; j < nFill; ++j) {
+                _cutStepJetPt.at(idx).at(j)->Fill(jets->at(j)->getp4()->Pt(), weight);
+                _cutStepJetEta.at(idx).at(j)->Fill(jets->at(j)->getp4()->Eta(), weight);
+                _cutStepJetPhi.at(idx).at(j)->Fill(jets->at(j)->getp4()->Phi(), weight);
+                _cutStepBTag.at(idx).at(j)->Fill(jets->at(j)->bTagCSV, weight);
+            }
         }
 
         _cutStepHT.at(idx)->Fill(thisEvent->getSumSelJetScalarpT(), weight);
@@ -1651,12 +1659,16 @@ class ttHHanalyzer_unified {
         // resize 대신 assign을 쓰면 크기 변경과 동시에 값 초기화가 보장됩니다.
         _cutFlowCount.assign(cutStepCount, 0.0);
         _cutFlowWeight.assign(cutStepCount, 0.0);
-	// 히스토그램 벡터 리사이즈 (기존 코드)
-        _cutStepJetPt.resize(cutStepCount);
-        _cutStepJetEta.resize(cutStepCount);
-        _cutStepJetPhi.resize(cutStepCount);
+	// 히스토그램 벡터 리사이즈
+        // [수정] array<TH1F*, 6>의 각 원소를 nullptr로 초기화
+        {
+            std::array<TH1F*, kNJetsForCutStep> nullArr{};  // value-init → nullptr
+            _cutStepJetPt.assign(cutStepCount, nullArr);
+            _cutStepJetEta.assign(cutStepCount, nullArr);
+            _cutStepJetPhi.assign(cutStepCount, nullArr);
+            _cutStepBTag.assign(cutStepCount, nullArr);
+        }
         _cutStepHT.resize(cutStepCount);
-        _cutStepBTag.resize(cutStepCount);
         _cutStepHadWMass.resize(cutStepCount);
         _cutStepHiggsMass01.resize(cutStepCount);
         _cutStepHiggsMass02.resize(cutStepCount);
@@ -1668,16 +1680,32 @@ class ttHHanalyzer_unified {
 
         for (size_t i = 0; i < cutStepCount; ++i) {
             const TString titleSuffix = TString::Format(" (%s)", _cutStepLabels.at(i).c_str());
-            _cutStepJetPt.at(i) = new TH1F(TString::Format("cutStep_%zu_jetPt", i),
-                                           "Leading jet p_{T} [GeV]"+titleSuffix, 50, 0, 2000);
-            _cutStepJetEta.at(i) = new TH1F(TString::Format("cutStep_%zu_jetEta", i),
-                                            "Leading jet #eta"+titleSuffix, 50, -3, 3);
-            _cutStepJetPhi.at(i) = new TH1F(TString::Format("cutStep_%zu_jetPhi", i),
-                                            "Leading jet #phi"+titleSuffix, 50, -3.2, 3.2);
+
+            // [수정] 상위 6개 jet에 대해 pT, eta, phi, bTag 히스토그램 생성
+            for (size_t j = 0; j < kNJetsForCutStep; ++j) {
+                const TString jetLabel = TString::Format("jet%zu", j + 1);  // jet1 ~ jet6
+                const TString jetTitle = TString::Format("jet_{%zu}", j + 1);
+
+                _cutStepJetPt.at(i).at(j) = new TH1F(
+                    TString::Format("cutStep_%zu_%s_Pt", i, jetLabel.Data()),
+                    jetTitle + " p_{T} [GeV]" + titleSuffix, 50, 0, 2000);
+
+                _cutStepJetEta.at(i).at(j) = new TH1F(
+                    TString::Format("cutStep_%zu_%s_Eta", i, jetLabel.Data()),
+                    jetTitle + " #eta" + titleSuffix, 50, -3, 3);
+
+                _cutStepJetPhi.at(i).at(j) = new TH1F(
+                    TString::Format("cutStep_%zu_%s_Phi", i, jetLabel.Data()),
+                    jetTitle + " #phi" + titleSuffix, 50, -3.2, 3.2);
+
+                _cutStepBTag.at(i).at(j) = new TH1F(
+                    TString::Format("cutStep_%zu_%s_BTag", i, jetLabel.Data()),
+                    jetTitle + " b-tag disc." + titleSuffix, 50, 0, 1);
+            }
+
+            // HT, hadW, Higgs mass는 이벤트 단위 → 기존대로 1개
             _cutStepHT.at(i) = new TH1F(TString::Format("cutStep_%zu_ht", i),
                                         "H_{T} [GeV]"+titleSuffix, 50, 0, 4000);
-            _cutStepBTag.at(i) = new TH1F(TString::Format("cutStep_%zu_btag", i),
-                                          "Leading b-tag discriminant"+titleSuffix, 50, 0, 1);
             _cutStepHadWMass.at(i) = new TH1F(TString::Format("cutStep_%zu_hadW", i),
                                               "m_{W,had} [GeV]"+titleSuffix, 50, 0, 300);
             _cutStepHiggsMass01.at(i) = new TH1F(TString::Format("cutStep_%zu_higgs can01", i),
@@ -2044,11 +2072,8 @@ class ttHHanalyzer_unified {
 	_inputTree->Branch("passHadTrig", &passHadTrig, "passHadTrig/O");
 
         // ──────────────────────────────────────────────────────────────────────────
-        // 1-C) fillTree() 에 새 branch 추가
-        //      위치: _inputTree->Branch(...) 호출들이 있는 곳
+        // [NEW] Trigger SF & B-tag Normalization Reweight branches
         // ──────────────────────────────────────────────────────────────────────────
-        
-        // [추가할 Branch 선언들] (initTree 또는 해당 위치에 추가)
         _inputTree->Branch("triggerSF",          &triggerSF_,          "triggerSF/F");
         _inputTree->Branch("triggerSF_up",       &triggerSF_up_,       "triggerSF_up/F");
         _inputTree->Branch("triggerSF_down",     &triggerSF_down_,     "triggerSF_down/F");
