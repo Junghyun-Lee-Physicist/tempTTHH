@@ -20,7 +20,7 @@ class CondorJobManager:
         # Variables for jobs, Please check before you run this script
         self.analyzer_path = f"{script_dir}"
         self.nameofExe = "ttHHanalyzer_unified" # Name of compiled execution file to run analyzer
-        self.AnalyzerMode = "btagtrig" # main, btagtrig, trigsf
+        self.AnalyzerMode = "main" # main, btagtrig, trigsf
         ##self.path_output_base = "/eos/user/t/tom/<eos-storage or anywhere you want to store the outputs>"
         self.path_output_base = f"/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_{self.AnalyzerMode}"
         self.os_version = "el9"
