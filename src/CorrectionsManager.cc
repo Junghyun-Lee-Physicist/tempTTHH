@@ -250,27 +250,46 @@ void CorrectionsManager::loadTrigger_() {
     if (isData_) return; // 데이터는 SF 적용 안 함
 
     // [경로 설정] ScaleFactors.root 위치 지정
-    std::string fileName = trigSFPath + "/ScaleFactors_" + runYear_ + ".root"; 
+    //std::string fileName = trigSFPath + "/ScaleFactors_" + runYear_ + ".root"; 
+    std::string fileName = trigSFPath + "/trigger_sf.json.gz"; 
+
     
     if (kVerbose) std::cout << "[loadTrigger] Opening " << fileName << "\n";
 
-    trigSFFile_ = TFile::Open(fileName.c_str(), "READ");
-    if (!trigSFFile_ || trigSFFile_->IsZombie()) {
-        std::cerr << "[CorrectionsManager] ERROR: Cannot open " << fileName << std::endl;
-        return;
+    //trigSFFile_ = TFile::Open(fileName.c_str(), "READ");
+    auto cset = correction::CorrectionSet::from_file(fileName);
+
+    //if (!trigSFFile_ || trigSFFile_->IsZombie()) {
+    //    std::cerr << "[CorrectionsManager] ERROR: Cannot open " << fileName << std::endl;
+    //    return;
+    //}
+    if (kVerbose) {
+        // compound()가 반환하는 map의 key들(= correction 이름)을 찍어봅니다.
+        std::cout << "[loadTrigger] available corrections:\n";
+        for (const auto &kv : cset->compound()) {
+            std::cout << "  - " << kv.first << "\n";
+        }
     }
 
-    std::string histName = "SF_Bjet0"; 
-    
-    hTrigSF_ = (TH2*)trigSFFile_->Get(histName.c_str());
-    if (!hTrigSF_) {
-        std::cerr << "[CorrectionsManager] ERROR: Histogram '" << histName 
-                  << "' not found in " << fileName << std::endl;
-        trigSFFile_->Close();
-        trigSFFile_ = nullptr;
-    } else {
-        if (kVerbose) std::cout << "  -> Loaded Trigger SF Histogram: " << histName << "\n";
+    //std::string histName = "SF_Bjet0";
+
+    try {
+        trigSF_ = cset->at("triggerSF");
+    } catch (std::exception& e) {
+        std::cerr << "[EventLooper][ERROR] Failed to load SF JSON: " 
+        << e.what() << std::endl;
+        std::exit(1);
     }
+    
+    //hTrigSF_ = (TH2*)trigSFFile_->Get(histName.c_str());
+    //if (!hTrigSF_) {
+    //    std::cerr << "[CorrectionsManager] ERROR: Histogram '" << histName 
+    //              << "' not found in " << fileName << std::endl;
+    //    trigSFFile_->Close();
+    //    trigSFFile_ = nullptr;
+    //} else {
+    //    if (kVerbose) std::cout << "  -> Loaded Trigger SF Histogram: " << histName << "\n";
+    //}
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -524,24 +543,45 @@ double CorrectionsManager::smearJER(double corr_pt,
 // HT(X축), Jet6Pt(Y축) 가정.
 // syst: 0.0 = central, +1.0 = +1σ, -1.0 = -1σ
 // ============================================================================
-double CorrectionsManager::getTriggerSF(double ht, double jet6pt, double syst) const {
+double CorrectionsManager::getTriggerSF(int nbjet, double jet6eta, double ht, double jet6pt, double syst) const {
     
-    if (isData_ || !hTrigSF_) return 1.0;
+//    if (isData_ || !hTrigSF_) return 1.0;
+//
+//    // 1) Bin 찾기
+//    int bin = hTrigSF_->FindBin(ht, jet6pt);
+//
+//    // 2) 값 가져오기
+//    double sf = hTrigSF_->GetBinContent(bin);
+//    double err = hTrigSF_->GetBinError(bin);
+//
+//    // 3) Systematic 적용 (syst = 1.0이면 +1sigma, -1.0이면 -1sigma)
+//    if (syst != 0.0) {
+//        sf += (syst * err);
+//    }
+//
+//    // 4) 안전장치 (SF가 0이거나 음수면 1.0 처리)
+//    if (sf <= 0) return 1.0; 
 
-    // 1) Bin 찾기
-    int bin = hTrigSF_->FindBin(ht, jet6pt);
+     double sf = 1.0;
 
-    // 2) 값 가져오기
-    double sf = hTrigSF_->GetBinContent(bin);
-    double err = hTrigSF_->GetBinError(bin);
-
-    // 3) Systematic 적용 (syst = 1.0이면 +1sigma, -1.0이면 -1sigma)
-    if (syst != 0.0) {
-        sf += (syst * err);
+     try {
+         sf = trigSF_->evaluate({
+                        static_cast<int>(nbjet),
+                        static_cast<double>(jet6eta),
+                        static_cast<double>(ht),
+                        static_cast<double>(jet6pt)
+              });
+     } catch (const std::exception& e) {
+                    //sf = 1.0;
+		    std::cerr << "\n[FATAL] SF evaluate\n"
+                              << "  nbJets=" << nbjet
+                              << " eta=" << jet6eta
+                              << " HT=" << ht
+                              << " pT=" << jet6pt << "\n"
+                              << "  exception: " << e.what() << "\n";
+                    std::exit(57);
     }
 
-    // 4) 안전장치 (SF가 0이거나 음수면 1.0 처리)
-    if (sf <= 0) return 1.0; 
 
     return sf;
 }

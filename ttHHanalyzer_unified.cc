@@ -905,12 +905,16 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
         // HT와 6번째 jet의 pT에 의존하는 2D scale factor.
         // selection 을 통과한 이벤트에서만 의미 있는 kinematics이므로
         // 여기서 적용하는 것이 올바르다.
+	int nbjet     = thisEvent->getnSelbJet();
         double ht     = thisEvent->getSumSelJetScalarpT();
         double jet6pt = thisEvent->getSelJets()->at(5)->getp4()->Pt();
+	double jet6eta =  thisEvent->getSelJets()->at(5)->getp4()->Eta();
 
-        triggerSF_      = static_cast<float>(corrMgr->getTriggerSF(ht, jet6pt, 0.0));   // central
-        triggerSF_up_   = static_cast<float>(corrMgr->getTriggerSF(ht, jet6pt, +1.0));  // +1σ
-        triggerSF_down_ = static_cast<float>(corrMgr->getTriggerSF(ht, jet6pt, -1.0));  // -1σ
+        
+
+        triggerSF_      = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt, 0.0));   // central
+        triggerSF_up_   = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt, +1.0));  // +1σ
+        triggerSF_down_ = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt, -1.0));  // -1σ
 
         _evtWeight *= triggerSF_;
 

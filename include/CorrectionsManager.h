@@ -96,7 +96,7 @@ public:
     // HT × jet6PT 2D 히스토그램 기반 scale factor.
     // syst: 0.0 = central, +1.0 = +1σ, -1.0 = -1σ
     // ═══════════════════════════════════════════════════════════════════════
-    double getTriggerSF(double ht, double jet6pt, double syst = 0.0) const;
+    double getTriggerSF(int nbjet, double jet6eta, double ht, double jet6pt, double syst = 0.0) const;
 
     // ═══════════════════════════════════════════════════════════════════════
     // B-tagging SF API
@@ -189,6 +189,9 @@ private:
     std::shared_ptr<const correction::Correction>         jerSF_;
     std::shared_ptr<const correction::Correction>         puCorr_;
     std::shared_ptr<const correction::Correction>         jec_Unc_;
+
+    // Trigger SF
+    std::shared_ptr<const correction::Correction> trigSF_;
 
     // B-tag correction objects (POG correctionlib)
     std::shared_ptr<const correction::Correction> btagCorr_shape_;    // deepJet_shape
