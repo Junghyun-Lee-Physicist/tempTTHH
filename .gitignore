@@ -5,3 +5,5 @@ proxy.cert
 ttHHanalyzer_base
 tmp
 .DS_Store
+*.root
+*.pdf
