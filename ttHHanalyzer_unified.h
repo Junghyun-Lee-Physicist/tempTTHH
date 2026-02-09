@@ -133,7 +133,7 @@ struct SelectionPolicy {
 
 
 std::map<std::string, float> cut { 
-    {"nJets", 6} // nJets higher than 
+    {"nJets", 8} // nJets higher than 
     , {"nLeptons", 0} // nLepton equals to
     //, {"nVetoLeptons", 0} // nVetoLepton equals to
     , {"nbJets", 4}

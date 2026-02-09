@@ -25,7 +25,7 @@ import sys
 # User Configuration (Hardcoded)
 # ==========================================
 # Pick ONE representative file to scan structure (e.g., one tttt file)
-INPUT_FILE = "/Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_base/TTToHadronic.root"
+INPUT_FILE = "/Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTToHadronic.root"
 
 # Output YAML filename
 OUTPUT_FILE = "structure_info.yml"

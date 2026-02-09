@@ -484,7 +484,7 @@ structure:
     type: Tree
     classname: TTree
     key_path: ()/Tree/Tree
-    num_entries: 200577
+    num_entries: 225532
     branches:
     - passTrigger_HLT_IsoMu27
     - passTrigger_HLT_PFHT1050
@@ -497,6 +497,7 @@ structure:
     - nMuons
     - nElecs
     - nJets
+    - nbJets
     - HT
     - jetPt
     - jetEta
@@ -506,12 +507,19 @@ structure:
     - partonFlavs
     - eventNumber
     - runNumber
+    - evtWeight
     - SampleWeight
     - PUWeight
     - L1PrefiringWeight
     - genWeight
+    - bTagWeight
     - failGoldenJson
     - passMETFilters
+    - passHadTrig
+    - triggerSF
+    - triggerSF_up
+    - triggerSF_down
+    - btagNormReweight
   Tree/cutflow:
     type: Histogram
     classname: TH1F

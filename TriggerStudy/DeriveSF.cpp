@@ -532,14 +532,27 @@ json MakeNBNode(const std::map<std::string, TH2D*>& sfMap,
     };
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// [변경 1] BuildCorrectionSet 함수 교체
+//
+// 위치: JSONBuilder namespace 내부 (기존 BuildCorrectionSet 함수를 아래로 교체)
+//
+// 변경 내용:
+//   - sfErrMap 파라미터 추가 (SF error 히스토그램 맵)
+//   - "triggerSF_err" correction을 JSON에 추가
+//   - 기존 "triggerSF" correction은 그대로 유지
+// ══════════════════════════════════════════════════════════════════════════════
+
 json BuildCorrectionSet(const std::map<std::string, TH2D*>& sfMap,
+                        const std::map<std::string, TH2D*>& sfErrMap,  // [NEW] error map
                         const std::vector<double>& htEdges,
                         const std::vector<double>& ptEdges)
 {
-    json correction = {
+    // (1) Central SF correction (기존과 동일)
+    json correction_sf = {
         {"name", "triggerSF"},
         {"version", 1},
-        {"description", "Hadronic trigger scale factors"},
+        {"description", "Hadronic trigger scale factors (central value)"},
         {"inputs", {
             {{"name", "nbJets"}, {"type", "int"}, {"description", "Number of b-jets"}},
             {{"name", "eta"}, {"type", "real"}, {"description", "6th jet eta"}},
@@ -550,12 +563,33 @@ json BuildCorrectionSet(const std::map<std::string, TH2D*>& sfMap,
         {"data", MakeNBNode(sfMap, htEdges, ptEdges)}
     };
 
+    // (2) SF Error correction [NEW]
+    //     동일한 binning 구조를 사용하되, content가 SF error 값.
+    //     이를 통해 CorrectionsManager에서:
+    //       sf_up   = sf + err
+    //       sf_down = sf - err
+    //     으로 systematic variation을 계산할 수 있다.
+    json correction_err = {
+        {"name", "triggerSF_err"},
+        {"version", 1},
+        {"description", "Hadronic trigger SF uncertainty (error for ±1σ)"},
+        {"inputs", {
+            {{"name", "nbJets"}, {"type", "int"}, {"description", "Number of b-jets"}},
+            {{"name", "eta"}, {"type", "real"}, {"description", "6th jet eta"}},
+            {{"name", "ht"}, {"type", "real"}, {"description", "HT [GeV]"}},
+            {{"name", "pt"}, {"type", "real"}, {"description", "6th jet pT [GeV]"}}
+        }},
+        {"output", {{"name", "error"}, {"type", "real"}, {"description", "SF absolute uncertainty"}}},
+        {"data", MakeNBNode(sfErrMap, htEdges, ptEdges)}
+    };
+
     return {
         {"schema_version", 2},
-        {"description", "Trigger SF for ttHH analysis"},
-        {"corrections", {correction}}
+        {"description", "Trigger SF for ttHH analysis (central + error)"},
+        {"corrections", {correction_sf, correction_err}}  // 두 개의 correction 포함
     };
 }
+
 
 bool WriteGzipJSON(const json& j, const std::string& filename)
 {

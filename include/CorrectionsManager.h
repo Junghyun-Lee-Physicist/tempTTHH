@@ -9,7 +9,9 @@
 //   2) Pileup        — Pileup reweighting
 //   3) B-tag SF      — Shape + Fixed WP (per-jet)
 //   4) Golden JSON   — Data only luminosity mask
-//   5) Trigger SF    — Hadronic trigger SF (2D: HT × jet6PT)
+//   5) Trigger SF    — Hadronic trigger SF (correctionlib JSON)
+//                      4D: nbJets × |η| × HT × jet6pT
+//                      [UPDATED] ROOT TH2 → correctionlib JSON
 //   6) JEC Unc       — JEC Total Uncertainty
 //   7) B-tag Norm Reweight — 정규화 보정 (normalization ratio)
 //                          1D (nJets) or 2D (nJets × HT)
@@ -29,7 +31,7 @@
 #include <TFile.h>
 #include <TH2.h> 
 
-// correctionlib (기존 JEC/JER용)
+// correctionlib
 #include "correction.h"
 
 class CorrectionsManager {
@@ -47,7 +49,7 @@ public:
                        const std::string& dataEra,
                        bool isData,
                        const std::string& sampleName = "");
-    ~CorrectionsManager(); // [추가] 소멸자 (ROOT 파일 닫기 위해 필요)
+    ~CorrectionsManager();
 
     // ═══════════════════════════════════════════════════════════════════════
     // Pileup Weight API
@@ -91,12 +93,29 @@ public:
                     const std::string& syst = "nom") const;
 
     // ═══════════════════════════════════════════════════════════════════════
-    // Trigger SF API
+    // Trigger SF API  [UPDATED: ROOT TH2 → correctionlib JSON]
     //
-    // HT × jet6PT 2D 히스토그램 기반 scale factor.
+    // DeriveSF.cpp가 생성한 trigger_sf.json.gz에서 로드.
+    //
+    // correctionlib JSON 스키마:
+    //   correction "triggerSF"     → central SF value
+    //   correction "triggerSF_err" → SF uncertainty (error)
+    //
+    // inputs (correction의 evaluate에 넘기는 인자 순서):
+    //   nbJets (int)  : b-tagged jet 개수
+    //   eta    (real) : 6th jet |η|
+    //   ht     (real) : scalar HT [GeV]
+    //   pt     (real) : 6th jet pT [GeV]
+    //
     // syst: 0.0 = central, +1.0 = +1σ, -1.0 = -1σ
+    //
+    // 사용법 (Usage):
+    //   double sf   = corrMgr->getTriggerSF(nBJet, jet6Eta, HT, jet6Pt);       // central
+    //   double sfUp = corrMgr->getTriggerSF(nBJet, jet6Eta, HT, jet6Pt, +1.0); // +1σ
+    //   double sfDn = corrMgr->getTriggerSF(nBJet, jet6Eta, HT, jet6Pt, -1.0); // -1σ
     // ═══════════════════════════════════════════════════════════════════════
-    double getTriggerSF(int nbjet, double jet6eta, double ht, double jet6pt, double syst = 0.0) const;
+    double getTriggerSF(int nbJets, double eta, double ht, double pt,
+                        double syst = 0.0) const;
 
     // ═══════════════════════════════════════════════════════════════════════
     // B-tagging SF API
@@ -132,7 +151,7 @@ public:
     };
 
     // ═══════════════════════════════════════════════════════════════════════
-    // B-tag Normalization Reweight API  [NEW]
+    // B-tag Normalization Reweight API
     //
     // b-tag shape SF 적용 후 yield 보존을 위한 정규화 비율 (normalization ratio).
     // makeReweightJSON이 생성한 correctionlib JSON에서 로드.
@@ -169,17 +188,17 @@ private:
     void loadBTag_();
     void loadGoldenJSON_();
     void loadJECUncertainty_();
-    void loadTrigger_();            // ROOT 파일에서 trigger SF 히스토그램 로드
-    void loadBTagReweight_();       // [NEW] correctionlib JSON에서 정규화 비율 로드
+    void loadTrigger_();            // [UPDATED] correctionlib JSON에서 trigger SF 로드
+    void loadBTagReweight_();       // correctionlib JSON에서 정규화 비율 로드
 
     // ─── 설정 변수 (Configuration) ───
     std::string jsonPath;
     std::string goldenJsonPath;
-    std::string trigSFPath;
-    std::string btagReweightPath;   // [NEW] b-tag reweight JSON 경로
+    std::string trigSFPath;         // trigger_sf.json.gz가 위치한 디렉토리 경로
+    std::string btagReweightPath;   // b-tag reweight JSON 전체 파일 경로
     std::string runYear_;
     std::string dataEra_;
-    std::string sampleName_;        // [NEW] MC 프로세스 이름 (process key for reweight lookup)
+    std::string sampleName_;        // MC 프로세스 이름 (process key for reweight lookup)
     bool        isData_;
 
     // ─── correctionlib 객체 (Correction objects) ───
@@ -190,25 +209,28 @@ private:
     std::shared_ptr<const correction::Correction>         puCorr_;
     std::shared_ptr<const correction::Correction>         jec_Unc_;
 
-    // Trigger SF
-    std::shared_ptr<const correction::Correction> trigSF_;
-
     // B-tag correction objects (POG correctionlib)
     std::shared_ptr<const correction::Correction> btagCorr_shape_;    // deepJet_shape
     std::shared_ptr<const correction::Correction> btagCorr_bc_;       // deepJet_comb (b/c jets)
     std::shared_ptr<const correction::Correction> btagCorr_light_;    // deepJet_incl (light jets)
 
-    // [NEW] B-tag normalization reweight (user-derived correctionlib JSON)
-    // JSON 파일을 CorrectionSet으로 로드한 후, "btagNormReweight" correction을 참조.
-    // CorrectionSet은 unique_ptr로 소유하고, Correction은 shared_ptr 참조.
+    // B-tag normalization reweight (user-derived correctionlib JSON)
     std::unique_ptr<correction::CorrectionSet>    btagReweightCSet_;
     std::shared_ptr<const correction::Correction> btagReweight_;
     bool btagReweightIs2D_ = false;  // JSON이 2D (nJets × HT)인지 1D (nJets only)인지
 
-    // Trigger SF (ROOT TH2 histogram)
-    TFile* trigSFFile_ = nullptr;
-    TH2* hTrigSF_    = nullptr; // TH2F 혹은 TH2D
+    // ─── Trigger SF (correctionlib JSON) [UPDATED from ROOT TH2] ───
+    //
+    // trigger_sf.json.gz를 CorrectionSet으로 로드한 후:
+    //   "triggerSF"     → central SF 값을 담은 correction
+    //   "triggerSF_err" → SF error 값을 담은 correction (optional)
+    //
+    // CorrectionSet은 unique_ptr가 소유하고,
+    // 개별 Correction은 shared_ptr로 참조한다.
+    std::unique_ptr<correction::CorrectionSet>    trigSFCSet_;
+    std::shared_ptr<const correction::Correction> trigSFCorr_;       // central SF
+    std::shared_ptr<const correction::Correction> trigSFErrCorr_;    // SF error (±1σ용, optional)
 
     // golden JSON mask: run -> list of (lumi_start, lumi_end)
     std::map<int,std::vector<std::pair<int,int>>> goldenMask_;
-};;
+};

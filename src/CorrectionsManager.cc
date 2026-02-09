@@ -4,16 +4,17 @@
 // 구현부 (Implementation).
 // 각 load 함수는 생성자에서 호출되며, API 함수는 이벤트 루프에서 호출된다.
 //
-// [NEW] 추가 사항:
-//   - loadBTagReweight_(): btagNormReweight.json (correctionlib) 로드
-//   - getBTagReweight():   정규화 비율 평가 (1D 또는 2D)
+// [UPDATED] 변경 사항:
+//   - loadTrigger_():   ROOT TH2 → correctionlib JSON (trigger_sf.json.gz)
+//   - getTriggerSF():   (ht, jet6pt, syst) → (nbJets, eta, ht, pt, syst)
+//   - 소멸자:           ROOT 파일 닫기 로직 제거
 //
 // Author: Junghyun Lee
 // ============================================================================
 #include "CorrectionsManager.h"
 #include <fstream>
 #include <iostream>
-#include <filesystem>   // [NEW] JSON 파일 존재 확인용
+#include <filesystem>   // JSON 파일 존재 확인용
 #include <TRandom3.h>
 
 // static flag for verbose logging:
@@ -29,7 +30,7 @@ CorrectionsManager::CorrectionsManager(const std::string& runYear,
   : runYear_(runYear)
   , dataEra_(dataEra)
   , isData_(isData)
-  , sampleName_(sampleName)          // [NEW] MC 프로세스 이름 저장
+  , sampleName_(sampleName)
 {
 ////    jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration"; // lxplus
 ////    goldenJsonPath = "/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/GoldenJson"; // lxplus
@@ -39,11 +40,11 @@ CorrectionsManager::CorrectionsManager(const std::string& runYear,
     goldenJsonPath = "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/GoldenJson"; // Tier3
 
 ////    trigSFPath = "/Users/jhlee/tempTTHH/Correction/TriggerSF"; // Local
-    trigSFPath = "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/DerivedCorr/TriggerSF/trigger_sf.json.gz"; // Tier3
+    trigSFPath = "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/Correction/TriggerSF"; // Tier3
 
-    // [NEW] b-tag normalization reweight JSON 경로
+    // b-tag normalization reweight JSON 경로
     // makeReweightJSON이 생성한 파일. 상대경로 또는 절대경로 사용 가능.
-    btagReweightPath = "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/DerivedCorr/bTagReweight/btagNormReweight.json"; // Tier3
+    btagReweightPath = "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/Correction/BTagReweight/btagNormReweight.json"; // Tier3
 
     std::cout<<"[CorrectionsManager] json library path : "<<jsonPath<<std::endl;
 
@@ -52,21 +53,24 @@ CorrectionsManager::CorrectionsManager(const std::string& runYear,
     loadBTag_();         // MC-only b-tag SF (or Data if you wish)
     loadGoldenJSON_();   // only Data
 
-    // [중요] Trigger SF 로드
+    // [UPDATED] Trigger SF 로드 (correctionlib JSON)
     loadTrigger_();
 
-    // [NEW] B-tag normalization reweight 로드 (MC only)
+    // B-tag normalization reweight 로드 (MC only)
     loadBTagReweight_();
 }
 
 // ============================================================================
-// 소멸자 (Destructor) — ROOT 파일 닫기
+// 소멸자 (Destructor)
+//
+// [UPDATED] ROOT 파일 닫기 로직 제거됨.
+// 이전에는 trigSFFile_ (TFile*)를 닫아야 했으나,
+// correctionlib JSON으로 전환하면서 CorrectionSet이 unique_ptr로
+// 관리되므로 자동 해제된다.
 // ============================================================================
 CorrectionsManager::~CorrectionsManager() {
-    if (trigSFFile_) {
-        trigSFFile_->Close();
-        delete trigSFFile_;
-    }
+    // unique_ptr<CorrectionSet> 은 자동으로 해제됨
+    // (trigSFCSet_, btagReweightCSet_)
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -243,53 +247,89 @@ void CorrectionsManager::loadGoldenJSON_() {
     }
 }
 
-//--------------------------------------------------------------------------------------------------
-// 5) Trigger SF (ROOT TH2 histogram)
-//--------------------------------------------------------------------------------------------------
+// ═══════════════════════════════════════════════════════════════════════════════
+// 5) Trigger SF  [UPDATED: ROOT TH2 → correctionlib JSON]
+//
+// DeriveSF.cpp가 생성한 trigger_sf.json.gz를 correctionlib으로 로드한다.
+//
+// JSON 내 correction 목록:
+//   "triggerSF"     → central SF 값 (필수)
+//   "triggerSF_err" → SF error 값 (optional, systematic ±1σ 계산용)
+//
+// inputs (evaluate에 넘기는 순서):
+//   nbJets (int)  : b-tagged jet 개수
+//   eta    (real) : 6th jet |η|  (Config::useEta가 false면 사용되지 않지만 인자는 존재)
+//   ht     (real) : scalar HT [GeV]
+//   pt     (real) : 6th jet pT [GeV]
+//
+// [이전 방식과의 차이점]
+//   이전: ScaleFactors_YEAR.root에서 TH2 한 장 로드 (HT × jet6pt, nBjets/eta 구분 없음)
+//   현재: trigger_sf.json.gz에서 correctionlib 로드 (nbJets × eta × HT × pt, 4D 지원)
+//         error 값도 별도 correction으로 포함되어 systematic variation 가능
+// ═══════════════════════════════════════════════════════════════════════════════
 void CorrectionsManager::loadTrigger_() {
-    if (isData_) return; // 데이터는 SF 적용 안 함
+    if (isData_) return; // Data에는 trigger SF 적용하지 않음
 
-    // [경로 설정] ScaleFactors.root 위치 지정
-    //std::string fileName = trigSFPath + "/ScaleFactors_" + runYear_ + ".root"; 
-    std::string fileName = trigSFPath; 
+    // [파일 경로] trigSFPath 디렉토리 아래의 trigger_sf.json.gz
+    // DeriveSF.cpp의 출력 파일명은 Config::sfOutputJSON (= "trigger_sf.json.gz")
+    std::string fileName = trigSFPath + "/trigger_sf.json.gz";
 
-    
-    if (kVerbose) std::cout << "[loadTrigger] Opening " << fileName << "\n";
+    if (kVerbose) std::cout << "[loadTrigger] Loading from " << fileName << "\n";
 
-    //trigSFFile_ = TFile::Open(fileName.c_str(), "READ");
-    auto cset = correction::CorrectionSet::from_file(fileName);
-
-    //if (!trigSFFile_ || trigSFFile_->IsZombie()) {
-    //    std::cerr << "[CorrectionsManager] ERROR: Cannot open " << fileName << std::endl;
-    //    return;
-    //}
-    if (kVerbose) {
-        // compound()가 반환하는 map의 key들(= correction 이름)을 찍어봅니다.
-        std::cout << "[loadTrigger] available corrections:\n";
-        for (const auto &kv : cset->compound()) {
-            std::cout << "  - " << kv.first << "\n";
-        }
+    // 파일 존재 확인 (filesystem)
+    namespace fs = std::filesystem;
+    if (!fs::exists(fileName)) {
+        std::cerr << "[CorrectionsManager][WARN] Trigger SF JSON not found: "
+                  << fileName << "\n"
+                  << "  -> Trigger SF will NOT be applied.\n"
+                  << "  -> Run DeriveSF first to generate this file.\n";
+        return;
     }
-
-    //std::string histName = "SF_Bjet0";
 
     try {
-        trigSF_ = cset->at("triggerSF");
-    } catch (std::exception& e) {
-        std::cerr << "[EventLooper][ERROR] Failed to load SF JSON: " 
-        << e.what() << std::endl;
-        std::exit(1);
+        // correctionlib은 .json과 .json.gz 모두 지원
+        trigSFCSet_ = correction::CorrectionSet::from_file(fileName);
+
+        // (1) Central SF correction (필수)
+        trigSFCorr_ = trigSFCSet_->at("triggerSF");
+
+        // (2) SF error correction (optional)
+        //     JSON에 "triggerSF_err"이 포함되어 있으면 로드.
+        //     없으면 trigSFErrCorr_는 nullptr로 유지되고,
+        //     getTriggerSF()에서 syst != 0 요청 시 경고를 출력한다.
+        try {
+            trigSFErrCorr_ = trigSFCSet_->at("triggerSF_err");
+        } catch (const std::exception&) {
+            trigSFErrCorr_ = nullptr;
+            std::cerr << "[CorrectionsManager][WARN] 'triggerSF_err' correction not found in JSON.\n"
+                      << "  -> Systematic variations (±1σ) will NOT be available.\n"
+                      << "  -> Update DeriveSF to include error correction in JSON.\n";
+        }
+
+        // 로드 성공 로그
+        std::cout << "[CorrectionsManager] Loaded trigger SF JSON: " << fileName << "\n"
+                  << "  -> 'triggerSF' correction loaded (central SF)\n";
+        if (trigSFErrCorr_) {
+            std::cout << "  -> 'triggerSF_err' correction loaded (SF error for ±1σ)\n";
+        }
+
+        // inputs 목록 출력 (디버깅용)
+        if (kVerbose) {
+            const auto& inputs = trigSFCorr_->inputs();
+            std::cout << "  -> inputs (" << inputs.size() << "): ";
+            for (const auto& inp : inputs) {
+                std::cout << inp.name() << " ";
+            }
+            std::cout << "\n";
+        }
+
+    } catch (const std::exception& e) {
+        std::cerr << "[CorrectionsManager][ERROR] Failed to load trigger SF JSON: "
+                  << e.what() << "\n"
+                  << "  -> Trigger SF will NOT be applied.\n";
+        trigSFCorr_.reset();
+        trigSFErrCorr_.reset();
     }
-    
-    //hTrigSF_ = (TH2*)trigSFFile_->Get(histName.c_str());
-    //if (!hTrigSF_) {
-    //    std::cerr << "[CorrectionsManager] ERROR: Histogram '" << histName 
-    //              << "' not found in " << fileName << std::endl;
-    //    trigSFFile_->Close();
-    //    trigSFFile_ = nullptr;
-    //} else {
-    //    if (kVerbose) std::cout << "  -> Loaded Trigger SF Histogram: " << histName << "\n";
-    //}
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -309,18 +349,19 @@ void CorrectionsManager::loadJECUncertainty_() {
         key_unc = "Summer19UL17_V5_MC_Total_AK4PFchs";
     } else if (runYear_ == "2018_UL") {
         key_unc = "Summer19UL18_V5_MC_Total_AK4PFchs";
+    } else {
+        throw std::runtime_error("Unsupported runYear for JEC Unc: " + runYear_);
     }
 
-    try {
-        jec_Unc_ = cset->at(key_unc);
-        if (kVerbose) std::cout << "  -> JEC_Unc key : " << key_unc << "\n";
-    } catch (const std::exception& e) {
-        std::cerr << "[CorrectionsManager] Error loading JEC Uncertainty: " << e.what() << std::endl;
+    jec_Unc_ = cset->at(key_unc);
+
+    if (kVerbose) {
+        std::cout << "[loadJECUnc] key: " << key_unc << "\n";
     }
 }
 
 //--------------------------------------------------------------------------------------------------
-// 7) B-tag Normalization Reweight  [NEW]
+// 7) B-tag Normalization Reweight
 //
 // makeReweightJSON이 생성한 correctionlib-schema-v2 JSON을 로드한다.
 // JSON 내부 correction 이름: "btagNormReweight"
@@ -537,54 +578,67 @@ double CorrectionsManager::smearJER(double corr_pt,
 }
 
 
-// ============================================================================
-// Trigger SF — ROOT TH2 기반
+// ═══════════════════════════════════════════════════════════════════════════════
+// Trigger SF  [UPDATED: correctionlib JSON 기반]
 //
-// HT(X축), Jet6Pt(Y축) 가정.
-// syst: 0.0 = central, +1.0 = +1σ, -1.0 = -1σ
-// ============================================================================
-double CorrectionsManager::getTriggerSF(int nbjet, double jet6eta, double ht, double jet6pt, double syst) const {
-    
-//    if (isData_ || !hTrigSF_) return 1.0;
+// DeriveSF.cpp가 생성한 trigger_sf.json.gz에서 SF를 평가한다.
 //
-//    // 1) Bin 찾기
-//    int bin = hTrigSF_->FindBin(ht, jet6pt);
+// JSON correction 스키마:
+//   "triggerSF"     → evaluate({nbJets, eta, ht, pt}) → central SF
+//   "triggerSF_err" → evaluate({nbJets, eta, ht, pt}) → SF error
 //
-//    // 2) 값 가져오기
-//    double sf = hTrigSF_->GetBinContent(bin);
-//    double err = hTrigSF_->GetBinError(bin);
+// syst = 0.0: central (SF 그대로)
+// syst = +1.0: SF + error (상방 변동)
+// syst = -1.0: SF - error (하방 변동)
 //
-//    // 3) Systematic 적용 (syst = 1.0이면 +1sigma, -1.0이면 -1sigma)
-//    if (syst != 0.0) {
-//        sf += (syst * err);
-//    }
+// correctionlib 내부에서 flow="clamp" 설정이 되어 있으므로,
+// edge 바깥의 값은 가장 가까운 edge의 값으로 자동 clamping된다.
+// 따라서 별도의 범위 검사는 필요 없다.
 //
-//    // 4) 안전장치 (SF가 0이거나 음수면 1.0 처리)
-//    if (sf <= 0) return 1.0; 
+// [이전 API와의 차이]
+//   이전: getTriggerSF(double ht, double jet6pt, double syst)
+//   현재: getTriggerSF(int nbJets, double eta, double ht, double pt, double syst)
+//         → nbJets와 eta가 추가됨 (4D binning 지원)
+// ═══════════════════════════════════════════════════════════════════════════════
+double CorrectionsManager::getTriggerSF(int nbJets, double eta, double ht, double pt,
+                                        double syst) const {
+    // Data이거나 correction이 로드되지 않았으면 1.0 반환
+    if (isData_ || !trigSFCorr_) return 1.0;
 
-     double sf = 1.0;
+    try {
+        // (1) Central SF 평가
+        //     inputs 순서: nbJets (int), eta (real), ht (real), pt (real)
+        //     이 순서는 DeriveSF.cpp의 BuildCorrectionSet에서 정의한 inputs 배열과 일치해야 함.
+        double sf = trigSFCorr_->evaluate({nbJets, eta, ht, pt});
 
-     try {
-         sf = trigSF_->evaluate({
-                        static_cast<int>(nbjet),
-                        static_cast<double>(jet6eta),
-                        static_cast<double>(ht),
-                        static_cast<double>(jet6pt)
-              });
-     } catch (const std::exception& e) {
-                    //sf = 1.0;
-		    std::cerr << "\n[FATAL] SF evaluate\n"
-                              << "  nbJets=" << nbjet
-                              << " eta=" << jet6eta
-                              << " HT=" << ht
-                              << " pT=" << jet6pt << "\n"
-                              << "  exception: " << e.what() << "\n";
-                    std::exit(57);
+        // (2) Systematic variation (±1σ)
+        //     syst != 0이면 error correction에서 uncertainty를 가져온다.
+        if (syst != 0.0 && trigSFErrCorr_) {
+            double err = trigSFErrCorr_->evaluate({nbJets, eta, ht, pt});
+            sf += syst * err;
+        }
+
+        // (3) 안전장치: SF가 0 이하면 1.0 처리
+        //     물리적으로 trigger SF는 항상 양수여야 한다.
+        if (sf <= 0.0) return 1.0;
+
+        return sf;
+
+    } catch (const std::exception& e) {
+        // 첫 수회 에러만 출력 (스팸 방지)
+        static int errCount = 0;
+        if (errCount++ < 5) {
+            std::cerr << "[getTriggerSF] Error: " << e.what()
+                      << " nbJets=" << nbJets
+                      << " eta=" << eta
+                      << " ht=" << ht
+                      << " pt=" << pt
+                      << " syst=" << syst << std::endl;
+        }
+        return 1.0;
     }
-
-
-    return sf;
 }
+
 
 // ───────────────────────────────────────────────────────────────────────────
 // Fixed WP 방식: pass/fail 기준
@@ -608,12 +662,13 @@ double CorrectionsManager::getBTagSF_FixedWP(int hadFlav, double absEta, double 
             return btagCorr_bc_->evaluate({syst, wp, flav, absEta_clamped, pt_clamped});
         } else {
             // light jets: deepJet_incl
-            return btagCorr_light_->evaluate({syst, wp, flav, absEta_clamped, pt_clamped});
+            return btagCorr_light_->evaluate({syst, wp, absEta_clamped, pt_clamped});
         }
     } catch (const std::exception& e) {
-        std::cerr << "[getBTagSF_FixedWP] Error: " << e.what() 
-                  << " flav=" << flav << " eta=" << absEta_clamped 
-                  << " pt=" << pt_clamped << std::endl;
+        std::cerr << "[getBTagSF_FixedWP] Error: " << e.what()
+                  << " flav=" << flav << " absEta=" << absEta_clamped
+                  << " pt=" << pt_clamped << " wp=" << wp
+                  << " syst=" << syst << std::endl;
         return 1.0;
     }
 }
@@ -621,22 +676,30 @@ double CorrectionsManager::getBTagSF_FixedWP(int hadFlav, double absEta, double 
 // ───────────────────────────────────────────────────────────────────────────
 // Shape Correction 방식: continuous discriminant
 // ───────────────────────────────────────────────────────────────────────────
-double CorrectionsManager::getBTagSF_Shape(int hadFlav, double eta, double pt, 
-                                            double discr, const std::string& syst) const {
+double CorrectionsManager::getBTagSF_Shape(int hadFlav, double eta, double pt, double discr,
+                                            const std::string& syst) const {
     if (isData_) return 1.0;
-    if (!btagCorr_shape_) return 1.0;
     
-    // Flavor 정규화
+    // Flavor 정규화: 5=b, 4=c, 나머지=0(light)
     int flav = hadFlav;
     if (flav != 5 && flav != 4) flav = 0;
     
-    // 범위 제한
-    double pt_clamped = std::clamp(pt, 20.0, 1000.0);
-    double eta_clamped = std::clamp(std::fabs(eta), 0.0, 2.4999);
+    // 값 범위 제한 (POG 권장)
+    double eta_clamped = std::clamp(eta, -2.4999, 2.4999);
+    double pt_clamped  = std::clamp(pt, 20.0, 1000.0);
     double discr_clamped = std::clamp(discr, 0.0, 1.0);
     
     // ═══════════════════════════════════════════════════════════════════════
-    // 중요: c-jet과 b/light jet의 systematic 이름이 다름!
+    // Systematic flavor 제약 (Systematic flavor constraints)
+    //
+    // Shape correction에서 각 flavor는 특정 systematic만 사용 가능:
+    //   b-jet (5): central, up_hf, down_hf, up_hfstats1, down_hfstats1, 
+    //              up_hfstats2, down_hfstats2, up_lfstats1, down_lfstats1,
+    //              up_lfstats2, down_lfstats2, up_lf, down_lf
+    //   c-jet (4): central, up_cferr1, down_cferr1, up_cferr2, down_cferr2
+    //   light (0): b-jet과 동일
+    //
+    // 잘못된 조합이 들어오면 "central"로 대체 (fallback)
     // ═══════════════════════════════════════════════════════════════════════
     std::string actual_syst = syst;
     
@@ -668,7 +731,7 @@ double CorrectionsManager::getBTagSF_Shape(int hadFlav, double eta, double pt,
 
 
 // ───────────────────────────────────────────────────────────────────────────
-// B-tag Normalization Reweight  [NEW]
+// B-tag Normalization Reweight
 //
 // correctionlib JSON에서 정규화 비율을 조회한다.
 //
@@ -739,4 +802,3 @@ double CorrectionsManager::getJECUncertainty(double eta, double pt, double area,
     if(isData_) return 0.0;
     return jec_Unc_->evaluate({eta, pt}); 
 }
-

@@ -1,13 +1,7 @@
 /**
- * CMS Stack Plotter (Smart Color & Label Edition)
- *
- * Features:
- *   - QCD: red gradient by HT bin (light → dark)
- *   - TTbar: hadronic = blue, semi = teal, 2l = green
- *   - Smart legend: QCD grouped into one entry, short LaTeX labels
- *   - Signal/rare BG: distinct, muted colors
- *
- * [ Usage ]
+ * CMS Stack Plotter (Fixed: Empty Histogram Crash)
+ * * [ Usage ]
+ * Run with compilation mode (+) for speed and proper debugging:
  * $ root -l -b -q stack_plotter.C+
  */
 
@@ -16,10 +10,9 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <set>
 #include <algorithm>
 #include <sstream>
-#include <iomanip>
+#include <iomanip> 
 
 // ROOT Headers
 #include "TFile.h"
@@ -33,24 +26,24 @@
 #include "TColor.h"
 #include "TSystem.h"
 #include "TROOT.h"
-#include "TError.h"
-#include "TString.h"
+#include "TError.h"  
+#include "TString.h" 
 
 // ============================================================================
 // 1. DATA STRUCTURES
 // ============================================================================
 
 struct SampleInfo {
-    std::string name;
-    std::string type;
-    std::string label;
-    std::string colorHex;
-    std::vector<std::string> files;
+    std::string name;       
+    std::string type;       
+    std::string label;      
+    std::string colorHex;   
+    std::vector<std::string> files; 
 };
 
 struct HistInfo {
-    std::string key_path;
-    std::string clean_name;
+    std::string key_path;   
+    std::string clean_name; 
 };
 
 // ============================================================================
@@ -72,7 +65,7 @@ std::vector<SampleInfo> ParseSampleConfig(std::string filename) {
     Log("Parsing SAMPLE config: " + filename);
     std::vector<SampleInfo> samples;
     std::ifstream file(filename);
-
+    
     if (!file.is_open()) {
         std::cerr << "   [Error] Cannot open config file: " << filename << std::endl;
         return samples;
@@ -88,7 +81,7 @@ std::vector<SampleInfo> ParseSampleConfig(std::string filename) {
         if (line.find("color:") == std::string::npos && commentPos != std::string::npos) {
              line = line.substr(0, commentPos);
         }
-
+        
         std::string raw = trim(line);
         if (raw.empty()) continue;
 
@@ -125,7 +118,7 @@ std::vector<SampleInfo> ParseSampleConfig(std::string filename) {
         }
     }
     if (!currentSample.name.empty()) samples.push_back(currentSample);
-
+    
     std::cout << "   -> Successfully parsed " << samples.size() << " samples." << std::endl;
     return samples;
 }
@@ -134,7 +127,7 @@ std::vector<HistInfo> ParseStructureConfig(std::string filename) {
     Log("Parsing STRUCTURE config: " + filename);
     std::vector<HistInfo> hists;
     std::ifstream file(filename);
-
+    
     if (!file.is_open()) {
         std::cerr << "   [Error] Cannot open config file: " << filename << std::endl;
         return hists;
@@ -146,7 +139,7 @@ std::vector<HistInfo> ParseStructureConfig(std::string filename) {
         if (raw.rfind("key_path:", 0) == 0) {
             std::string path = trim(raw.substr(9));
             size_t bracketPos = path.find("()/");
-            if (bracketPos != std::string::npos) path.replace(bracketPos, 3, "");
+            if (bracketPos != std::string::npos) path.replace(bracketPos, 3, ""); 
             if (path.find("Tree") != std::string::npos || path.find("cutflow") != std::string::npos) continue;
 
             HistInfo hi;
@@ -159,150 +152,6 @@ std::vector<HistInfo> ParseStructureConfig(std::string filename) {
     }
     std::cout << "   -> Found " << hists.size() << " target histograms." << std::endl;
     return hists;
-}
-
-// ============================================================================
-// 2.5  SMART COLOR & LABEL FUNCTIONS
-// ============================================================================
-
-/**
- * QCD 샘플 이름에서 HT 하한값 추출.
- *   "QCD_HT700to1000" → 700,  "QCD_HT-200to300" → 200
- */
-int GetQCDHTValue(const std::string& name) {
-    size_t pos = name.find("HT");
-    if (pos == std::string::npos) pos = name.find("Pt");
-    if (pos == std::string::npos) return 0;
-    pos += 2;
-    while (pos < name.size() && !isdigit(name[pos])) pos++;
-    std::string numStr;
-    while (pos < name.size() && isdigit(name[pos])) numStr += name[pos++];
-    return numStr.empty() ? 0 : std::stoi(numStr);
-}
-
-/**
- * 샘플 이름 기반 자동 색상 결정.
- *   QCD  → 빨간 계열 그라데이션 (HT 낮을수록 연함)
- *   TTbar → hadronic=파랑, semi=청록, 2l=녹색
- *   Signal/Rare → 각각 구별되는 색
- */
-int GetSmartColor(const std::string& name) {
-
-    // ── QCD: red gradient (light→dark by HT) ───────────────────────────
-    if (name.find("QCD") != std::string::npos) {
-        int ht = GetQCDHTValue(name);
-        if (ht >= 2000) return TColor::GetColor("#440000");
-        if (ht >= 1500) return TColor::GetColor("#660000");
-        if (ht >= 1000) return TColor::GetColor("#880000");
-        if (ht >= 700)  return TColor::GetColor("#BB0000");
-        if (ht >= 500)  return TColor::GetColor("#DD1111");
-        if (ht >= 300)  return TColor::GetColor("#FF4444");
-        if (ht >= 200)  return TColor::GetColor("#FF7777");
-        if (ht >= 100)  return TColor::GetColor("#FFAAAA");
-        if (ht >= 50)   return TColor::GetColor("#FFCCCC");
-        return TColor::GetColor("#FF0000");
-    }
-
-    // ── TTbar ───────────────────────────────────────────────────────────
-    if (name.find("TTTo") != std::string::npos || name.find("TTto") != std::string::npos) {
-        if (name.find("Hadronic") != std::string::npos || name.find("hadronic") != std::string::npos)
-            return TColor::GetColor("#3366CC");   // blue
-        if (name.find("SemiLep")  != std::string::npos || name.find("semilep") != std::string::npos)
-            return TColor::GetColor("#44BBBB");   // teal
-        if (name.find("2L2Nu")    != std::string::npos || name.find("2l2nu") != std::string::npos)
-            return TColor::GetColor("#66AA66");   // green
-        return TColor::GetColor("#6699CC");       // generic TT
-    }
-
-    // ── Signals (구체적 패턴 먼저 검사) ─────────────────────────────────
-    if (name.find("ttHH") != std::string::npos || name.find("TTHH") != std::string::npos)
-        return TColor::GetColor("#FF8C00");   // dark orange
-    if (name.find("tttt") != std::string::npos || name.find("TTTT") != std::string::npos)
-        return TColor::GetColor("#9B59B6");   // purple
-    if (name.find("ttH")  != std::string::npos || name.find("TTH") != std::string::npos)
-        return TColor::GetColor("#F1C40F");   // gold
-
-    // ── Rare backgrounds ────────────────────────────────────────────────
-    if (name.find("TTZ") != std::string::npos || name.find("ttZ") != std::string::npos)
-        return TColor::GetColor("#27AE60");   // emerald
-    if (name.find("TTW") != std::string::npos || name.find("ttW") != std::string::npos)
-        return TColor::GetColor("#D4A03C");   // mustard
-    if (name.find("WJets") != std::string::npos)
-        return TColor::GetColor("#1ABC9C");   // turquoise
-    if (name.find("DYJets") != std::string::npos || name.find("DY") != std::string::npos)
-        return TColor::GetColor("#E67E22");   // carrot
-    if (name.find("SingleTop") != std::string::npos || name.find("ST_") != std::string::npos)
-        return TColor::GetColor("#95A5A6");   // concrete
-    if (name.find("ZZ") != std::string::npos || name.find("WZ") != std::string::npos ||
-        name.find("WW") != std::string::npos || name.find("VV") != std::string::npos)
-        return TColor::GetColor("#85C1E9");   // pastel blue
-
-    return TColor::GetColor("#BDC3C7");       // default: silver
-}
-
-/**
- * CMS 접두어 제거 (TuneCP5, 13TeV, powheg 등).
- */
-std::string StripCMSSuffix(const std::string& raw) {
-    std::string s = raw;
-    const char* suffixes[] = {"_TuneCP5", "_13TeV", "_powheg", "_pythia8",
-                              "_madgraph", "_amcatnlo", "_MLM", "_FxFx",
-                              "_PSweights", "_hdamp", "_ext"};
-    for (const char* suf : suffixes) {
-        size_t p = s.find(suf);
-        if (p != std::string::npos) s = s.substr(0, p);
-    }
-    return s;
-}
-
-/**
- * Legend용 짧은 라벨 생성.
- *   QCD 전체    → "QCD"  (그룹화)
- *   TTToHadronic → "t#bar{t} (had)"
- *   ttHH         → "t#bar{t}HH"
- *   길이 초과    → 앞 18자 자르기
- */
-std::string ShortenLabel(const std::string& rawName) {
-    std::string name = StripCMSSuffix(rawName);
-
-    // ── QCD: 그룹화 → 하나의 legend entry ──
-    if (name.find("QCD") != std::string::npos) return "QCD";
-
-    // ── TTbar ──
-    if (name.find("TTTo") != std::string::npos || name.find("TTto") != std::string::npos) {
-        if (name.find("Hadronic") != std::string::npos || name.find("hadronic") != std::string::npos)
-            return "t#bar{t} (had)";
-        if (name.find("SemiLep")  != std::string::npos || name.find("semilep") != std::string::npos)
-            return "t#bar{t} (SL)";
-        if (name.find("2L2Nu")    != std::string::npos || name.find("2l2nu") != std::string::npos)
-            return "t#bar{t} (2l)";
-        return "t#bar{t}";
-    }
-
-    // ── Signals (구체적 패턴 먼저) ──
-    if (name.find("ttHH") != std::string::npos || name.find("TTHH") != std::string::npos)
-        return "t#bar{t}HH";
-    if (name.find("tttt") != std::string::npos || name.find("TTTT") != std::string::npos)
-        return "t#bar{t}t#bar{t}";
-    if (name.find("ttH")  != std::string::npos || name.find("TTH") != std::string::npos)
-        return "t#bar{t}H";
-
-    // ── Rare backgrounds ──
-    if (name.find("TTZ")  != std::string::npos || name.find("ttZ") != std::string::npos)
-        return "t#bar{t}Z";
-    if (name.find("TTW")  != std::string::npos || name.find("ttW") != std::string::npos)
-        return "t#bar{t}W";
-    if (name.find("WJets")     != std::string::npos) return "W+jets";
-    if (name.find("DYJets")    != std::string::npos) return "DY+jets";
-    if (name.find("SingleTop") != std::string::npos || name.find("ST_") != std::string::npos)
-        return "Single t";
-    if (name.find("ZZ") != std::string::npos || name.find("WZ") != std::string::npos ||
-        name.find("WW") != std::string::npos || name.find("VV") != std::string::npos)
-        return "VV";
-
-    // ── Fallback: 너무 길면 자름 ──
-    if (name.length() > 18) return name.substr(0, 18);
-    return name;
 }
 
 // ============================================================================
@@ -322,7 +171,7 @@ void DrawCMSLabel(double lumi) {
 
 TH1F* GetSummedHist(const SampleInfo& sample, const std::string& histPath) {
     TH1F* hTotal = nullptr;
-    gErrorIgnoreLevel = kError;
+    gErrorIgnoreLevel = kError; 
 
     for (const auto& fname : sample.files) {
         TFile* f = TFile::Open(fname.c_str(), "READ");
@@ -334,20 +183,21 @@ TH1F* GetSummedHist(const SampleInfo& sample, const std::string& histPath) {
         if (h) {
             if (!hTotal) {
                 hTotal = (TH1F*)h->Clone();
-                hTotal->SetDirectory(0);
+                hTotal->SetDirectory(0); 
             } else {
                 hTotal->Add(h);
             }
         }
-        delete f;
+        delete f; 
     }
-
-    // Data: 기존 스타일 유지.  MC: 색은 여기서 안 건드림 → main loop에서 override
+    
     if (hTotal) {
         if (sample.type == "DATA") {
             hTotal->SetMarkerStyle(20); hTotal->SetMarkerSize(1.0); hTotal->SetLineColor(kBlack);
         } else {
-            hTotal->SetLineColor(kBlack); hTotal->SetLineWidth(1);
+            int color = kGray; 
+            if (!sample.colorHex.empty()) { color = TColor::GetColor(sample.colorHex.c_str()); }
+            hTotal->SetFillColor(color); hTotal->SetLineColor(kBlack); hTotal->SetLineWidth(1);
         }
     }
     return hTotal;
@@ -365,10 +215,10 @@ void stack_plotter() {
 
     double LUMI = 41.48;  // Lumi for 2017 UL
     std::string outDir = "plots";
-
+    
     gStyle->SetOptStat(0);
     gStyle->SetOptTitle(0);
-    gROOT->SetBatch(kTRUE);
+    gROOT->SetBatch(kTRUE); 
 
     if (gSystem->AccessPathName(outDir.c_str())) {
         gSystem->mkdir(outDir.c_str(), kTRUE);
@@ -380,65 +230,47 @@ void stack_plotter() {
     if (hists.empty()) return;
 
     Log("Starting Plotting Loop...");
-
+    
     int total = hists.size();
     int count = 0;
 
     for (const auto& hInfo : hists) {
         count++;
-        std::cout << "\r[Processing " << count << "/" << total << "] "
+        std::cout << "\r[Processing " << count << "/" << total << "] " 
                   << std::left << std::setw(60) << hInfo.key_path << std::flush;
 
         THStack* hs = new THStack("hs", "");
         TH1F* hData = nullptr;
-        TH1F* hMcSum = nullptr;
-
-        // ── Legend: 기존보다 넓게, 폰트 키움 ──
-        TLegend* leg = new TLegend(0.48, 0.58, 0.93, 0.89);
-        leg->SetBorderSize(0);
-        leg->SetFillStyle(0);
-        leg->SetTextSize(0.038);
-        leg->SetTextFont(42);
-        leg->SetNColumns(2);
+        TH1F* hMcSum = nullptr; 
+        
+        TLegend* leg = new TLegend(0.60, 0.60, 0.93, 0.89);
+        leg->SetBorderSize(0); leg->SetFillStyle(0); leg->SetTextSize(0.035); leg->SetNColumns(2); 
 
         bool hasData = false;
         bool hasMC = false;
 
-        // QCD/TTZ/TTW 등 같은 라벨끼리 legend에 한 번만 추가
-        std::set<std::string> legendAdded;
-
         for (const auto& sample : samples) {
             TH1F* h = GetSummedHist(sample, hInfo.key_path);
-            if (!h) continue;
+            if (!h) continue; 
 
             if (sample.type == "DATA") {
                 if (!hData) { hData = (TH1F*)h->Clone("hData"); hData->SetDirectory(0); }
                 else hData->Add(h);
-                hasData = true; delete h;
-            }
-            else {
-                // ── Smart color override (YAML 색상 무시, 이름 기반 결정) ──
-                int smartColor = GetSmartColor(sample.name);
-                h->SetFillColor(smartColor);
-
-                hs->Add(h);
-
-                // ── Short label + 중복 그룹은 한 번만 legend 추가 ──
-                std::string shortLabel = ShortenLabel(sample.name);
-                if (legendAdded.find(shortLabel) == legendAdded.end()) {
-                    leg->AddEntry(h, shortLabel.c_str(), "f");
-                    legendAdded.insert(shortLabel);
-                }
-
+                hasData = true; delete h; 
+            } 
+            else { 
+                hs->Add(h); 
+                leg->AddEntry(h, sample.label.c_str(), "f");
                 if (!hMcSum) { hMcSum = (TH1F*)h->Clone("hMcSum"); hMcSum->SetDirectory(0); }
                 else hMcSum->Add(h);
                 hasMC = true;
             }
         }
-
+        
         if (hasData) leg->AddEntry(hData, "Data", "lp");
 
         if (!hasMC) {
+            // Cleanup and skip
             delete hs; delete leg; if(hData) delete hData; if(hMcSum) delete hMcSum;
             std::cout << " -> [Skip] No MC." << std::endl;
             continue;
@@ -457,33 +289,35 @@ void stack_plotter() {
 
         // --- Draw ---
         TCanvas* c = new TCanvas("c", "", 800, 800);
-
+        
         TPad* pad1 = new TPad("pad1", "pad1", 0, 0.3, 1, 1.0);
-        pad1->SetBottomMargin(0.02); pad1->SetTopMargin(0.08);
+        pad1->SetBottomMargin(0.02); pad1->SetTopMargin(0.08); 
         pad1->SetLeftMargin(0.15); pad1->SetRightMargin(0.05);
         pad1->Draw();
-
+        
         TPad* pad2 = new TPad("pad2", "pad2", 0, 0.0, 1, 0.3);
-        pad2->SetTopMargin(0.02); pad2->SetBottomMargin(0.35);
+        pad2->SetTopMargin(0.02); pad2->SetBottomMargin(0.35); 
         pad2->SetLeftMargin(0.15); pad2->SetRightMargin(0.05);
         pad2->Draw();
 
-        pad1->cd();
-        pad1->SetLogy(kTRUE);
+        pad1->cd(); 
+        pad1->SetLogy(kTRUE); // Safe now because we checked Max > 0
 
-        hs->SetMinimum(0.1);
-        hs->SetMaximum(globalMax * 500.0);
+        // [Fix] Set Minimum BEFORE Draw to allow Log scale to work properly
+        hs->SetMinimum(0.1); 
+        hs->SetMaximum(globalMax * 500.0); // More margin for Log
 
         hs->Draw("HIST");
-
+        
+        // [Fix] Check pointer validity before accessing axes
         if (hs->GetYaxis()) {
-            hs->GetYaxis()->SetTitle("Events");
+            hs->GetYaxis()->SetTitle("Events"); 
             hs->GetYaxis()->SetTitleSize(0.06); hs->GetYaxis()->SetTitleOffset(1.1); hs->GetYaxis()->SetLabelSize(0.05);
         }
         if (hs->GetXaxis()) {
             hs->GetXaxis()->SetLabelSize(0);
         }
-
+        
         if (hasData) hData->Draw("SAME EP");
         leg->Draw(); DrawCMSLabel(LUMI);
 
@@ -491,23 +325,23 @@ void stack_plotter() {
         if (hasData && hMcSum) {
             TH1F* hRatio = (TH1F*)hData->Clone("hRatio");
             hRatio->Divide(hMcSum);
-
+            
             hRatio->SetTitle(""); hRatio->SetMarkerStyle(20); hRatio->SetMarkerSize(0.8);
-
+            
             hRatio->GetYaxis()->SetTitle("Data / Pred."); hRatio->GetYaxis()->SetNdivisions(505);
-            hRatio->GetYaxis()->SetTitleSize(0.12); hRatio->GetYaxis()->SetTitleOffset(0.5); hRatio->GetYaxis()->SetLabelSize(0.1);
+            hRatio->GetYaxis()->SetTitleSize(0.12); hRatio->GetYaxis()->SetTitleOffset(0.5); hRatio->GetYaxis()->SetLabelSize(0.1); 
             hRatio->GetYaxis()->SetRangeUser(0.0, 2.0);
-
-            hRatio->GetXaxis()->SetTitle(hInfo.key_path.c_str());
+            
+            hRatio->GetXaxis()->SetTitle(hInfo.key_path.c_str()); 
             hRatio->GetXaxis()->SetTitleSize(0.14); hRatio->GetXaxis()->SetTitleOffset(1.0); hRatio->GetXaxis()->SetLabelSize(0.12);
-
+            
             hRatio->Draw("EP");
             TLine* line = new TLine(hRatio->GetXaxis()->GetXmin(), 1, hRatio->GetXaxis()->GetXmax(), 1);
             line->SetLineStyle(2); line->SetLineColor(kRed); line->Draw();
         }
 
         c->SaveAs(Form("%s/%s.png", outDir.c_str(), hInfo.clean_name.c_str()));
-
+        
         delete c; delete hMcSum; if(hData) delete hData;
     }
 

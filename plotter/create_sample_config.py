@@ -27,7 +27,7 @@ from itertools import cycle
 # User Configuration
 # ==========================================
 # Directory where your merged .root files are located
-TARGET_DIR = "/Users/jhlee/ttHH/ntuple/skimmed/gen_tier3_base"
+TARGET_DIR = "/Users/jhlee/ttHH/ntuple/skimmed/gen_tier3"
 
 # Output YAML filename
 OUTPUT_FILENAME = "samples_config.yml"
