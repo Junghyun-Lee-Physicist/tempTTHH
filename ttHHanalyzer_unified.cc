@@ -1659,11 +1659,13 @@ void ttHHanalyzer_unified::writeHistos(){
 
     _histoDirs.at(2)->cd();
     for (size_t i = 0; i < _cutStepJetPt.size(); ++i) {
-        _cutStepJetPt.at(i)->Write();
-        _cutStepJetEta.at(i)->Write();
-        _cutStepJetPhi.at(i)->Write();
+        for (size_t j = 0; j < kNJetsForCutStep; ++j) {
+            _cutStepJetPt.at(i).at(j)->Write();
+            _cutStepJetEta.at(i).at(j)->Write();
+            _cutStepJetPhi.at(i).at(j)->Write();
+            _cutStepBTag.at(i).at(j)->Write();
+        }
         _cutStepHT.at(i)->Write();
-        _cutStepBTag.at(i)->Write();
         _cutStepHadWMass.at(i)->Write();
         _cutStepHiggsMass01.at(i)->Write();
         _cutStepHiggsMass02.at(i)->Write();
