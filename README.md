@@ -64,6 +64,50 @@ python3 submit_job_FH_Trigger.py
 
 
 
+---
+
+## tt+jets Event Categorization Validation (NEW)
+
+The analyzer now includes built-in tt+jets event categorization logic that mirrors the NtupleForge `TTbarJetCategorizer` Python module. This enables event-by-event validation against the pre-computed ntuple branches (`ttCat_LF`, `ttCat_cc`, `ttCat_b`, `ttCat_2b`, `ttCat_bb`, `ttCat_bbb`, `ttCat_4b`, `ttCat_noTTJets`).
+
+### Categories
+Following CMS AN-2022/122 and AN-19-094:
+| Category   | Definition                                                       |
+|------------|------------------------------------------------------------------|
+| `tt+LF`    | No additional heavy-flavour jets                                 |
+| `tt+cc`    | Additional charm jet(s), no additional b-jets                    |
+| `tt+b`     | 1 additional b-jet from a single B hadron                        |
+| `tt+2b`    | 1 additional b-jet from ≥2 overlapping B hadrons                 |
+| `tt+bb`    | Exactly 2 additional b-jets                                      |
+| `tt+bbb`   | Exactly 3 additional b-jets (ttHH-specific)                      |
+| `tt+4b`    | ≥4 additional b-jets (ttHH-specific)                             |
+| `noTTJets` | Non-tt events (no tt pair found)                                 |
+
+### Output Histograms (in `TtCatValidation/` directory)
+These histograms are written to each condor job output ROOT file under the `TtCatValidation/` directory:
+
+1. **`ttCatValidation`** (TH2F, 8×8): X-axis = ntuple ttCat branch category, Y-axis = analyzer-recomputed category. Diagonal entries indicate agreement. Off-diagonal entries reveal mismatches.
+
+2. **`ttCatFinalState`** (TH2F, 8×9): X-axis = ntuple ttCat category, Y-axis = actual number of additional b-jets from gen-level B-hadron ancestry tracing (-1 to 7+). This shows, for each assigned category, how the true gen-level final state is distributed (e.g., events categorized as `tt+bb` but having 3 actual additional b-jets).
+
+### Algorithm
+The categorization uses:
+- `genTtbarId % 100` for standard categories (LF, cc, b, 2b)
+- For events with genTtbarId 53-56 (≥2 additional b-jets), performs B-hadron ancestry tracing in `GenPart` and ΔR matching to `GenJet` (pT > 20 GeV, |η| < 2.4) to determine the exact additional b-jet count
+
+### Important Notes
+- Categorization runs on **ALL events** (pre-selection), not just selected events
+- The categorization labels are applied blindly to all MC samples; the downstream analysis must use sample names to determine which categories are physically meaningful
+- Data events are always classified as `noTTJets`
+
+---
+
+## Bug Fixes Applied
+- **Memory leak in `event` class**: Added destructor to clean up heap-allocated physics objects (`objectJet`, `objectLep`, `objectGenPart`, etc.) that were previously leaked on every event
+- **Arrow operator on `std::array`**: Fixed `writeHistos()` where `->Write()` was called on `std::array<TH1F*, 6>` instead of individual elements
+
+---
+
 6. 확장 가이드
 6.1 새 모드 추가하기
 

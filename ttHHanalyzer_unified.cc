@@ -1243,6 +1243,25 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
     // ═══════════════════════════════════════════════════════════════════════
     computeBTagWeight(thisEvent);
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // [NEW] tt+jets categorization validation (runs on ALL events, pre-selection)
+    // Compares ntuple-level ttCat branches with analyzer-recomputed category.
+    // Also records the actual gen-level additional b-jet count per category.
+    // ═══════════════════════════════════════════════════════════════════════
+    if (_DataOrMC != "Data") {
+        int ntupleCat = ntupleTtCatIndex();
+        TtCat analyzerCat = computeTtCategory();
+        int analyzerIdx = static_cast<int>(analyzerCat);
+
+        _hTtCatValidation->Fill(ntupleCat, analyzerIdx);
+
+        // For the final-state breakdown, compute the raw additional b-jet count
+        int nAddB = countAdditionalBJets();
+        int fillB = std::min(nAddB, 7); // overflow into 7+ bin
+        // For non-tt events, fill -1
+        if (analyzerCat == TtCat::kNoTTJets) fillB = -1;
+        _hTtCatFinalState->Fill(ntupleCat, fillB);
+    }
 
     // 7) Baseline selection + event cleaning, apply trigger path, reconstruct higher objects
     if(!selectObjects(thisEvent)) return;
@@ -1670,6 +1689,11 @@ void ttHHanalyzer_unified::writeHistos(){
         _cutStepHiggsMass01.at(i)->Write();
         _cutStepHiggsMass02.at(i)->Write();
     }
+
+    // [NEW] tt+jets categorization validation histograms
+    _histoDirs.at(3)->cd();  // TtCatValidation directory
+    _hTtCatValidation->Write();
+    _hTtCatFinalState->Write();
 }
 void ttHHanalyzer_unified::fillTree(event * thisEvent){
 

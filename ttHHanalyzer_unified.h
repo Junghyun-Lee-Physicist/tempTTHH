@@ -7,6 +7,7 @@
 #include <vector>
 #include "TVector3.h"
 #include "TH1F.h"
+#include "TH2F.h"
 #include "TFile.h"
 #include <iterator>
 #include <string>
@@ -23,6 +24,7 @@
 //#include "include/HypothesisCombinatorics.h"
 #include <stdexcept>
 #include <array>
+#include <set>
 
 //#include "fifo_map.hpp" // No need now, I'll update cutflow logic
 
@@ -282,6 +284,20 @@ class objectLep:public objectPhysics {
 class event{
  public:
     event(){
+    }
+
+    ~event(){
+        // Delete owned objects to prevent memory leaks.
+        // _selectJets owns all jet objects; _selectbJets/_selectLightJets/_loosebJets
+        // are non-owning subsets of the same pointers.
+        for (auto* p : _selectJets) delete p;
+        // _selectLeptons owns all lepton objects; _selectMuons/_selectElectrons
+        // are non-owning subsets of the same pointers.
+        for (auto* p : _selectLeptons) delete p;
+        for (auto* p : _selectGenParts) delete p;
+        for (auto* p : _selectHadronicHiggses) delete p;
+        for (auto* p : _selectBoostedJets) delete p;
+        delete _MET;
     }
 
 
@@ -977,7 +993,7 @@ class event{
     std::vector<objectGenPart*>  _selectGenParts; 
     std::vector<objectJet*>                _jets;
     std::vector<objectJet*>               _bjets;
-    objectMET*                              _MET;
+    objectMET*                              _MET = nullptr;
     std::vector<objectLep*>               _muons;
     std::vector<objectLep*>           _electrons; 
     std::vector<objectJet*>          _selectJets;
@@ -1233,6 +1249,150 @@ class ttHHanalyzer_unified {
     std::vector<double> _cutFlowCount;  // 갯수 (No Weight)
     std::vector<double> _cutFlowWeight; // 가중치 적용 (Weight)
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // [NEW] tt+jets Event Categorization (analyzer-level)
+    // Reproduces NtupleForge TTbarJetCategorizer logic in C++ for validation.
+    // ═══════════════════════════════════════════════════════════════════════
+    enum class TtCat {
+        kLF = 0, kCC, kB, k2B, kBB, kBBB, k4B, kNoTTJets, kNCategories
+    };
+
+    static constexpr int kNTtCat = static_cast<int>(TtCat::kNCategories);
+
+    static const char* ttCatName(int idx) {
+        static const char* names[] = {
+            "tt+LF", "tt+cc", "tt+b", "tt+2b", "tt+bb", "tt+bbb", "tt+4b", "noTTJets"
+        };
+        if (idx >= 0 && idx < kNTtCat) return names[idx];
+        return "unknown";
+    }
+
+    // --- helper: is PDG ID a B hadron? ---
+    static bool isBHadron(int pdgId) {
+        int aid = std::abs(pdgId);
+        if (aid < 100) return false;
+        if (aid < 1000) return (aid / 100) == 5;
+        if (aid < 10000) return (aid / 1000) == 5;
+        int base = aid % 10000;
+        if (base >= 100 && base < 1000) return (base / 100) == 5;
+        if (base >= 1000 && base < 10000) return (base / 1000) == 5;
+        return false;
+    }
+
+    // --- helper: deltaR^2 ---
+    static float deltaR2(float eta1, float phi1, float eta2, float phi2) {
+        float deta = eta1 - eta2;
+        float dphi = phi1 - phi2;
+        while (dphi > M_PI)  dphi -= 2.0f * M_PI;
+        while (dphi < -M_PI) dphi += 2.0f * M_PI;
+        return deta * deta + dphi * dphi;
+    }
+
+    // --- helper: check top ancestor in GenPart chain ---
+    bool hasTopAncestor(int idx) const {
+        int cur = idx;
+        for (int d = 0; d < 30; ++d) {
+            int mother = _ev->GenPart_genPartIdxMother[cur];
+            if (mother < 0 || mother >= _ev->nGenPart) return false;
+            if (std::abs(_ev->GenPart_pdgId[mother]) == 6) return true;
+            cur = mother;
+        }
+        return false;
+    }
+
+    // --- helper: event has tt-bar pair? ---
+    bool eventHasTTPair() const {
+        bool found_t = false, found_tbar = false;
+        for (int i = 0; i < _ev->nGenPart; ++i) {
+            if (!(((_ev->GenPart_statusFlags[i]) >> 13) & 1)) continue; // isLastCopy
+            int pid = _ev->GenPart_pdgId[i];
+            if (pid == 6) found_t = true;
+            else if (pid == -6) found_tbar = true;
+            if (found_t && found_tbar) return true;
+        }
+        return false;
+    }
+
+    // --- count additional b-jets (not from top decay) ---
+    int countAdditionalBJets() const {
+        static constexpr float GEN_JET_PT_MIN  = 20.0f;
+        static constexpr float GEN_JET_ETA_MAX = 2.4f;
+        static constexpr float DR_MATCH_MAX2   = 0.4f * 0.4f;
+
+        // Step 1: collect additional (non-top-ancestor) last-copy B hadrons
+        std::vector<std::pair<float,float>> addBH; // (eta, phi)
+        for (int i = 0; i < _ev->nGenPart; ++i) {
+            if (!isBHadron(_ev->GenPart_pdgId[i])) continue;
+            if (!((_ev->GenPart_statusFlags[i] >> 13) & 1)) continue; // isLastCopy
+            if (hasTopAncestor(i)) continue;
+            addBH.emplace_back(_ev->GenPart_eta[i], _ev->GenPart_phi[i]);
+        }
+        if (addBH.empty()) return 0;
+
+        // Step 2: gen b-jets in acceptance
+        std::vector<int> bjetIdx;
+        for (int j = 0; j < _ev->nGenJet; ++j) {
+            if (_ev->GenJet_hadronFlavour[j] != 5) continue;
+            if (_ev->GenJet_pt[j] < GEN_JET_PT_MIN) continue;
+            if (std::fabs(_ev->GenJet_eta[j]) > GEN_JET_ETA_MAX) continue;
+            bjetIdx.push_back(j);
+        }
+        if (bjetIdx.empty()) return 0;
+
+        // Step 3 & 4: DR matching
+        std::set<int> matched;
+        for (auto& [bh_eta, bh_phi] : addBH) {
+            float bestDR2 = DR_MATCH_MAX2;
+            int bestJ = -1;
+            for (int j : bjetIdx) {
+                float dr2 = deltaR2(bh_eta, bh_phi,
+                                    _ev->GenJet_eta[j], _ev->GenJet_phi[j]);
+                if (dr2 < bestDR2) { bestDR2 = dr2; bestJ = j; }
+            }
+            if (bestJ >= 0) matched.insert(bestJ);
+        }
+        return static_cast<int>(matched.size());
+    }
+
+    // --- main categorization function ---
+    TtCat computeTtCategory() const {
+        if (_DataOrMC == "Data") return TtCat::kNoTTJets;
+        int catId = _ev->genTtbarId % 100;
+
+        if (catId >= 41 && catId <= 49) return TtCat::kCC;
+        if (catId == 51) return TtCat::kB;
+        if (catId == 52) return TtCat::k2B;
+        if (catId >= 53 && catId <= 56) {
+            int n = countAdditionalBJets();
+            if (n < 2) n = 2; // genTtbarId guarantees >= 2
+            if (n >= 4) return TtCat::k4B;
+            if (n == 3) return TtCat::kBBB;
+            return TtCat::kBB;
+        }
+        if (catId == 0) {
+            if (eventHasTTPair()) return TtCat::kLF;
+            return TtCat::kNoTTJets;
+        }
+        return TtCat::kNoTTJets;
+    }
+
+    // --- convert ntuple ttCat branches to enum index ---
+    int ntupleTtCatIndex() const {
+        if (_ev->ttCat_LF)       return static_cast<int>(TtCat::kLF);
+        if (_ev->ttCat_cc)       return static_cast<int>(TtCat::kCC);
+        if (_ev->ttCat_b)        return static_cast<int>(TtCat::kB);
+        if (_ev->ttCat_2b)       return static_cast<int>(TtCat::k2B);
+        if (_ev->ttCat_bb)       return static_cast<int>(TtCat::kBB);
+        if (_ev->ttCat_bbb)      return static_cast<int>(TtCat::kBBB);
+        if (_ev->ttCat_4b)       return static_cast<int>(TtCat::k4B);
+        if (_ev->ttCat_noTTJets) return static_cast<int>(TtCat::kNoTTJets);
+        return static_cast<int>(TtCat::kNoTTJets); // no branch set
+    }
+
+    // --- Validation histogram: ntuple vs analyzer category (2D) ---
+    TH2F* _hTtCatValidation = nullptr;
+    // --- Final-state breakdown: for each ntuple category, actual additional b-jet count ---
+    TH2F* _hTtCatFinalState = nullptr;
 
     // L1 prefiring 보정
     const correction::Correction *prefireJetCorr = nullptr;
@@ -1720,11 +1880,36 @@ class ttHHanalyzer_unified {
             }
 
         }
-	
+
+        // ═══════════════════════════════════════════════════════════════
+        // [NEW] tt+jets categorization validation & final-state histograms
+        // ═══════════════════════════════════════════════════════════════
+        _of->file->cd();
+        TDirectory *ttCatDir = _of->file->mkdir("TtCatValidation"+trail);
+        tmpDirs.push_back(ttCatDir);
+        ttCatDir->cd();
+
+        _hTtCatValidation = new TH2F("ttCatValidation",
+            "tt+jets category: Ntuple vs Analyzer;Ntuple category;Analyzer category",
+            kNTtCat, 0, kNTtCat, kNTtCat, 0, kNTtCat);
+        for (int i = 0; i < kNTtCat; ++i) {
+            _hTtCatValidation->GetXaxis()->SetBinLabel(i+1, ttCatName(i));
+            _hTtCatValidation->GetYaxis()->SetBinLabel(i+1, ttCatName(i));
+        }
+
+        // X = ntuple category, Y = actual additional b-jet count from gen info
+        // Y range: -1 (non-tt) to 7+ → 9 bins: -1,0,1,2,3,4,5,6,7+
+        _hTtCatFinalState = new TH2F("ttCatFinalState",
+            "tt+jets category vs actual gen additional b-jets;Ntuple category;N additional b-jets (gen)",
+            kNTtCat, 0, kNTtCat, 9, -1.5, 7.5);
+        for (int i = 0; i < kNTtCat; ++i) {
+            _hTtCatFinalState->GetXaxis()->SetBinLabel(i+1, ttCatName(i));
+        }
+
 	_histoDirs = tmpDirs;
     }
 
-    
+
     TTree * _inputTree;
     float bjetPT1, bjetPT2, bjetPT3, bjetPT4, bjetPT5, bjetPT6, bjetPT7, bjetPT8, bjetPT9, bjetPT10, bjetPT11, bjetPT12;
     float bbjetPT1, bbjetPT2, bbjetPT3, bbjetPT4, bbjetPT5, bbjetPT6, bbjetPT7, bbjetPT8;
