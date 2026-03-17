@@ -181,12 +181,12 @@ samples:
     data_or_mc: "MC"
     sample_name: "ttZtobb"
     era: ""
-      #  - filelist: "filelist_ttZZto4b.txt"
-      #    output_dir: "ttZZto4b"
-      #    weight: 0.0000003824366722
-      #    data_or_mc: "MC"
-      #    sample_name: "ttZZto4b"
-      #    era: ""
+  - filelist: "filelist_ttZZto4b.txt"
+    output_dir: "ttZZto4b"
+    weight: 0.0000003824366722
+    data_or_mc: "MC"
+    sample_name: "ttZZto4b"
+    era: ""
   - filelist: "filelist_QCD_HT200to300.txt"
     output_dir: "QCD_HT200to300"
     weight: 1071.943332
