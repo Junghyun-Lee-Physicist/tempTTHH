@@ -1304,7 +1304,6 @@ class ttHHanalyzer_unified {
     bool eventHasTTPair() const {
         bool found_t = false, found_tbar = false;
         for (int i = 0; i < _ev->nGenPart; ++i) {
-            if (!(((_ev->GenPart_statusFlags[i]) >> 13) & 1)) continue; // isLastCopy
             int pid = _ev->GenPart_pdgId[i];
             if (pid == 6) found_t = true;
             else if (pid == -6) found_tbar = true;

@@ -1255,10 +1255,12 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
 
         _hTtCatValidation->Fill(ntupleCat, analyzerIdx);
 
-        // For the final-state breakdown, compute the raw additional b-jet count
-        int nAddB = countAdditionalBJets();
-        int fillB = std::min(nAddB, 7); // overflow into 7+ bin
-        // For non-tt events, fill -1
+        // Use analyzer-computed additional b-jet count (requires GenJet_hadronFlavour)
+        // Falls back to ntuple branch if analyzer count is 0 and ntuple has nonzero value
+        int nAddB_analyzer = countAdditionalBJets();
+        int nAddB_ntuple   = _ev->nAdditionalBJets;
+        int nAddB = (nAddB_analyzer > 0) ? nAddB_analyzer : nAddB_ntuple;
+        int fillB = std::min(nAddB, 7);
         if (analyzerCat == TtCat::kNoTTJets) fillB = -1;
         _hTtCatFinalState->Fill(ntupleCat, fillB);
     }
