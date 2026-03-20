@@ -1253,6 +1253,34 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
         TtCat analyzerCat = computeTtCategory();
         int analyzerIdx = static_cast<int>(analyzerCat);
 
+        // ── Debug: log first 20 events + all ntuple/analyzer disagreements ──
+        static int dbgCount = 0;
+        static int dbgMismatch = 0;
+        bool mismatch = (ntupleCat != analyzerIdx);
+        if (dbgCount < 20 || (mismatch && dbgMismatch < 50)) {
+            std::cout << "[ttCatDebug] evt=" << _ev->event
+                      << " genTtbarId=" << _ev->genTtbarId
+                      << " (mod100=" << (_ev->genTtbarId % 100) << ")"
+                      << " nGenPart=" << _ev->nGenPart
+                      << " hasTTPair=" << eventHasTTPair()
+                      << " countAddB=" << countAdditionalBJets()
+                      << " | ntupleBools: LF=" << _ev->ttCat_LF
+                      << " cc=" << _ev->ttCat_cc
+                      << " b=" << _ev->ttCat_b
+                      << " 2b=" << _ev->ttCat_2b
+                      << " bb=" << _ev->ttCat_bb
+                      << " bbb=" << _ev->ttCat_bbb
+                      << " 4b=" << _ev->ttCat_4b
+                      << " noTT=" << _ev->ttCat_noTTJets
+                      << " | ntupleCat=" << ntupleCat << "(" << ttCatName(ntupleCat) << ")"
+                      << " analyzerCat=" << analyzerIdx << "(" << ttCatName(analyzerIdx) << ")"
+                      << (mismatch ? " *** MISMATCH ***" : "")
+                      << std::endl;
+            if (mismatch) ++dbgMismatch;
+            ++dbgCount;
+        }
+        // ── End debug ──
+
         // Fill at bin centers (+0.5) because SetBinLabel makes axes
         // alphanumeric; ROOT rejects edge values with "Index below bounds".
         _hTtCatValidation->Fill(ntupleCat + 0.5, analyzerIdx + 0.5);
@@ -1698,6 +1726,34 @@ void ttHHanalyzer_unified::writeHistos(){
     _histoDirs.at(3)->cd();  // TtCatValidation directory
     _hTtCatValidation->Write();
     _hTtCatFinalState->Write();
+
+    // ── Debug: print category summary from validation histogram ──
+    std::cout << "\n[ttCatSummary] ═══════════════════════════════════════════════" << std::endl;
+    std::cout << "[ttCatSummary] Total entries: " << _hTtCatValidation->GetEntries() << std::endl;
+    std::cout << "[ttCatSummary] Ntuple category breakdown:" << std::endl;
+    for (int ix = 1; ix <= kNTtCat; ++ix) {
+        double sum = 0;
+        for (int iy = 1; iy <= kNTtCat; ++iy) sum += _hTtCatValidation->GetBinContent(ix, iy);
+        if (sum > 0) std::cout << "  " << ttCatName(ix-1) << ": " << sum << std::endl;
+    }
+    std::cout << "[ttCatSummary] Analyzer category breakdown:" << std::endl;
+    for (int iy = 1; iy <= kNTtCat; ++iy) {
+        double sum = 0;
+        for (int ix = 1; ix <= kNTtCat; ++ix) sum += _hTtCatValidation->GetBinContent(ix, iy);
+        if (sum > 0) std::cout << "  " << ttCatName(iy-1) << ": " << sum << std::endl;
+    }
+    std::cout << "[ttCatSummary] Diagonal (agree) / Off-diagonal (mismatch):" << std::endl;
+    double diag = 0, offdiag = 0;
+    for (int ix = 1; ix <= kNTtCat; ++ix)
+        for (int iy = 1; iy <= kNTtCat; ++iy) {
+            double c = _hTtCatValidation->GetBinContent(ix, iy);
+            if (ix == iy) diag += c; else if (c > 0) {
+                offdiag += c;
+                std::cout << "  OFF-DIAG: " << ttCatName(ix-1) << " vs " << ttCatName(iy-1) << " = " << c << std::endl;
+            }
+        }
+    std::cout << "[ttCatSummary] Agree: " << diag << "  Mismatch: " << offdiag << std::endl;
+    std::cout << "[ttCatSummary] ═══════════════════════════════════════════════\n" << std::endl;
 }
 void ttHHanalyzer_unified::fillTree(event * thisEvent){
 
