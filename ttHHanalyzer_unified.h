@@ -1412,12 +1412,25 @@ class ttHHanalyzer_unified {
         return static_cast<int>(matched.size());
     }
 
-    // --- main categorization function (fully GenPart-based) ---
-    // Works for ALL samples: inclusive tt+jets, TT4b, ttHH, signal, etc.
-    // Does NOT depend on genTtbarId — traces B/C hadron ancestry directly.
+    // --- genTtbarId-based categorization (fallback when GenPart is absent) ---
+    TtCat computeTtCategoryFromGenTtbarId() const {
+        int catId = _ev->genTtbarId % 100;
+        if (catId >= 41 && catId <= 49) return TtCat::kCC;
+        if (catId == 51) return TtCat::kB;
+        if (catId == 52) return TtCat::k2B;
+        if (catId >= 53 && catId <= 56) return TtCat::kBB; // no GenJet → can't refine
+        if (catId == 0) return TtCat::kLF;
+        return TtCat::kNoTTJets;
+    }
+
+    // --- main categorization function ---
+    // Strategy:
+    //   1) If GenPart is available (nGenPart > 0): full GenPart-based categorization
+    //      — works for ALL samples (inclusive tt, TT4b, ttHH, signal, etc.)
+    //   2) If GenPart is absent (ntuple without GenPart arrays): fall back to genTtbarId
     //
-    // Logic:
-    //   1) No tt pair in GenPart → kNoTTJets
+    // GenPart-based logic:
+    //   1) No tt pair → kNoTTJets
     //   2) Count additional b-jets (non-top-ancestor B hadrons matched to GenJets)
     //      >=4 → k4B,  3 → kBBB,  2 → kBB
     //      1 jet + >=2 B hadrons → k2B,  1 jet + 1 B hadron → kB
@@ -1425,6 +1438,10 @@ class ttHHanalyzer_unified {
     //   4) Otherwise → kLF
     TtCat computeTtCategory() const {
         if (_DataOrMC == "Data") return TtCat::kNoTTJets;
+
+        // If GenPart arrays are absent, fall back to genTtbarId
+        if (_ev->nGenPart <= 0) return computeTtCategoryFromGenTtbarId();
+
         if (!eventHasTTPair()) return TtCat::kNoTTJets;
 
         auto [nBJets, nBHadrons] = countAdditionalBJetsDetailed();

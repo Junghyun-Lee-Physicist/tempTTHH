@@ -1257,17 +1257,22 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
         static int dbgCount = 0;
         static int dbgMismatch = 0;
         bool mismatch = (ntupleCat != analyzerIdx);
+        bool usedFallback = (_ev->nGenPart <= 0);
         if (dbgCount < 20 || (mismatch && dbgMismatch < 50)) {
-            auto [nBJ, nBH] = countAdditionalBJetsDetailed();
-            int nCJ = countAdditionalCJets();
             std::cout << "[ttCatDebug] evt=" << _ev->event
                       << " genTtbarId=" << _ev->genTtbarId
                       << " (mod100=" << (_ev->genTtbarId % 100) << ")"
-                      << " nGenPart=" << _ev->nGenPart
-                      << " hasTTPair=" << eventHasTTPair()
-                      << " addBJets=" << nBJ << " addBHadrons=" << nBH
-                      << " addCJets=" << nCJ
-                      << " | ntupleBools: LF=" << _ev->ttCat_LF
+                      << " nGenPart=" << _ev->nGenPart;
+            if (usedFallback) {
+                std::cout << " [FALLBACK:genTtbarId]";
+            } else {
+                auto [nBJ, nBH] = countAdditionalBJetsDetailed();
+                int nCJ = countAdditionalCJets();
+                std::cout << " hasTTPair=" << eventHasTTPair()
+                          << " addBJets=" << nBJ << " addBHadrons=" << nBH
+                          << " addCJets=" << nCJ;
+            }
+            std::cout << " | ntupleBools: LF=" << _ev->ttCat_LF
                       << " cc=" << _ev->ttCat_cc
                       << " b=" << _ev->ttCat_b
                       << " 2b=" << _ev->ttCat_2b
