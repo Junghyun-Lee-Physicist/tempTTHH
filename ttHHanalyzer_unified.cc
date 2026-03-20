@@ -1253,16 +1253,18 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
         TtCat analyzerCat = computeTtCategory();
         int analyzerIdx = static_cast<int>(analyzerCat);
 
-        _hTtCatValidation->Fill(ntupleCat, analyzerIdx);
+        // Fill at bin centers (+0.5) because SetBinLabel makes axes
+        // alphanumeric; ROOT rejects edge values with "Index below bounds".
+        _hTtCatValidation->Fill(ntupleCat + 0.5, analyzerIdx + 0.5);
 
         // Use analyzer-computed additional b-jet count (requires GenJet_hadronFlavour)
         // Falls back to ntuple branch if analyzer count is 0 and ntuple has nonzero value
         int nAddB_analyzer = countAdditionalBJets();
         int nAddB_ntuple   = _ev->nAdditionalBJets;
         int nAddB = (nAddB_analyzer > 0) ? nAddB_analyzer : nAddB_ntuple;
-        int fillB = std::min(nAddB, 7);
+        int fillB = std::max(-1, std::min(nAddB, 7));
         if (analyzerCat == TtCat::kNoTTJets) fillB = -1;
-        _hTtCatFinalState->Fill(ntupleCat, fillB);
+        _hTtCatFinalState->Fill(ntupleCat + 0.5, fillB);
     }
 
     // 7) Baseline selection + event cleaning, apply trigger path, reconstruct higher objects
