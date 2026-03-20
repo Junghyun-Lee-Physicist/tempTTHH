@@ -1279,6 +1279,19 @@ class ttHHanalyzer_unified {
         return false;
     }
 
+    // --- helper: is PDG ID a C hadron (D meson / charm baryon)? ---
+    static bool isCHadron(int pdgId) {
+        if (isBHadron(pdgId)) return false; // B hadrons with c content don't count
+        int aid = std::abs(pdgId);
+        if (aid < 100) return false;
+        if (aid < 1000) return (aid / 100) == 4;
+        if (aid < 10000) return (aid / 1000) == 4;
+        int base = aid % 10000;
+        if (base >= 100 && base < 1000) return (base / 100) == 4;
+        if (base >= 1000 && base < 10000) return (base / 1000) == 4;
+        return false;
+    }
+
     // --- helper: deltaR^2 ---
     static float deltaR2(float eta1, float phi1, float eta2, float phi2) {
         float deta = eta1 - eta2;
@@ -1313,7 +1326,10 @@ class ttHHanalyzer_unified {
     }
 
     // --- count additional b-jets (not from top decay) ---
-    int countAdditionalBJets() const {
+    // Returns {nUniqueJets, nBHadrons} for b/2b distinction
+    struct AddBJetResult { int nJets; int nHadrons; };
+
+    AddBJetResult countAdditionalBJetsDetailed() const {
         static constexpr float GEN_JET_PT_MIN  = 20.0f;
         static constexpr float GEN_JET_ETA_MAX = 2.4f;
         static constexpr float DR_MATCH_MAX2   = 0.4f * 0.4f;
@@ -1326,7 +1342,7 @@ class ttHHanalyzer_unified {
             if (hasTopAncestor(i)) continue;
             addBH.emplace_back(_ev->GenPart_eta[i], _ev->GenPart_phi[i]);
         }
-        if (addBH.empty()) return 0;
+        if (addBH.empty()) return {0, 0};
 
         // Step 2: gen b-jets in acceptance
         std::vector<int> bjetIdx;
@@ -1336,9 +1352,9 @@ class ttHHanalyzer_unified {
             if (std::fabs(_ev->GenJet_eta[j]) > GEN_JET_ETA_MAX) continue;
             bjetIdx.push_back(j);
         }
-        if (bjetIdx.empty()) return 0;
+        if (bjetIdx.empty()) return {0, static_cast<int>(addBH.size())};
 
-        // Step 3 & 4: DR matching
+        // Step 3 & 4: DR matching — each B hadron to closest GenJet
         std::set<int> matched;
         for (auto& [bh_eta, bh_phi] : addBH) {
             float bestDR2 = DR_MATCH_MAX2;
@@ -1350,29 +1366,81 @@ class ttHHanalyzer_unified {
             }
             if (bestJ >= 0) matched.insert(bestJ);
         }
+        return {static_cast<int>(matched.size()), static_cast<int>(addBH.size())};
+    }
+
+    int countAdditionalBJets() const { return countAdditionalBJetsDetailed().nJets; }
+
+    // --- count additional c-jets (not from top decay, no overlap with b-jets) ---
+    int countAdditionalCJets() const {
+        static constexpr float GEN_JET_PT_MIN  = 20.0f;
+        static constexpr float GEN_JET_ETA_MAX = 2.4f;
+        static constexpr float DR_MATCH_MAX2   = 0.4f * 0.4f;
+
+        // Collect additional (non-top-ancestor) last-copy C hadrons
+        std::vector<std::pair<float,float>> addCH; // (eta, phi)
+        for (int i = 0; i < _ev->nGenPart; ++i) {
+            if (!isCHadron(_ev->GenPart_pdgId[i])) continue;
+            if (!((_ev->GenPart_statusFlags[i] >> 13) & 1)) continue; // isLastCopy
+            if (hasTopAncestor(i)) continue;
+            addCH.emplace_back(_ev->GenPart_eta[i], _ev->GenPart_phi[i]);
+        }
+        if (addCH.empty()) return 0;
+
+        // Gen c-jets in acceptance (hadronFlavour == 4)
+        std::vector<int> cjetIdx;
+        for (int j = 0; j < _ev->nGenJet; ++j) {
+            if (_ev->GenJet_hadronFlavour[j] != 4) continue;
+            if (_ev->GenJet_pt[j] < GEN_JET_PT_MIN) continue;
+            if (std::fabs(_ev->GenJet_eta[j]) > GEN_JET_ETA_MAX) continue;
+            cjetIdx.push_back(j);
+        }
+        if (cjetIdx.empty()) return 0;
+
+        // DR matching
+        std::set<int> matched;
+        for (auto& [ch_eta, ch_phi] : addCH) {
+            float bestDR2 = DR_MATCH_MAX2;
+            int bestJ = -1;
+            for (int j : cjetIdx) {
+                float dr2 = deltaR2(ch_eta, ch_phi,
+                                    _ev->GenJet_eta[j], _ev->GenJet_phi[j]);
+                if (dr2 < bestDR2) { bestDR2 = dr2; bestJ = j; }
+            }
+            if (bestJ >= 0) matched.insert(bestJ);
+        }
         return static_cast<int>(matched.size());
     }
 
-    // --- main categorization function ---
+    // --- main categorization function (fully GenPart-based) ---
+    // Works for ALL samples: inclusive tt+jets, TT4b, ttHH, signal, etc.
+    // Does NOT depend on genTtbarId — traces B/C hadron ancestry directly.
+    //
+    // Logic:
+    //   1) No tt pair in GenPart → kNoTTJets
+    //   2) Count additional b-jets (non-top-ancestor B hadrons matched to GenJets)
+    //      >=4 → k4B,  3 → kBBB,  2 → kBB
+    //      1 jet + >=2 B hadrons → k2B,  1 jet + 1 B hadron → kB
+    //   3) No add. b-jets, but add. c-jets → kCC
+    //   4) Otherwise → kLF
     TtCat computeTtCategory() const {
         if (_DataOrMC == "Data") return TtCat::kNoTTJets;
-        int catId = _ev->genTtbarId % 100;
+        if (!eventHasTTPair()) return TtCat::kNoTTJets;
 
-        if (catId >= 41 && catId <= 49) return TtCat::kCC;
-        if (catId == 51) return TtCat::kB;
-        if (catId == 52) return TtCat::k2B;
-        if (catId >= 53 && catId <= 56) {
-            int n = countAdditionalBJets();
-            if (n < 2) n = 2; // genTtbarId guarantees >= 2
-            if (n >= 4) return TtCat::k4B;
-            if (n == 3) return TtCat::kBBB;
-            return TtCat::kBB;
+        auto [nBJets, nBHadrons] = countAdditionalBJetsDetailed();
+
+        if (nBJets >= 4)  return TtCat::k4B;
+        if (nBJets == 3)  return TtCat::kBBB;
+        if (nBJets == 2)  return TtCat::kBB;
+        if (nBJets == 1) {
+            // k2B: 1 jet with >=2 B hadrons merged; kB: 1 jet with 1 B hadron
+            return (nBHadrons >= 2) ? TtCat::k2B : TtCat::kB;
         }
-        if (catId == 0) {
-            if (eventHasTTPair()) return TtCat::kLF;
-            return TtCat::kNoTTJets;
-        }
-        return TtCat::kNoTTJets;
+
+        // No additional b-jets; check for additional c-jets
+        if (countAdditionalCJets() > 0) return TtCat::kCC;
+
+        return TtCat::kLF;
     }
 
     // --- convert ntuple ttCat branches to enum index ---

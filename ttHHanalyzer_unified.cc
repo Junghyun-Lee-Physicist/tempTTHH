@@ -1253,17 +1253,20 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
         TtCat analyzerCat = computeTtCategory();
         int analyzerIdx = static_cast<int>(analyzerCat);
 
-        // ── Debug: log first 20 events + all ntuple/analyzer disagreements ──
+        // ── Debug: log first 20 events + up to 50 ntuple/analyzer disagreements ──
         static int dbgCount = 0;
         static int dbgMismatch = 0;
         bool mismatch = (ntupleCat != analyzerIdx);
         if (dbgCount < 20 || (mismatch && dbgMismatch < 50)) {
+            auto [nBJ, nBH] = countAdditionalBJetsDetailed();
+            int nCJ = countAdditionalCJets();
             std::cout << "[ttCatDebug] evt=" << _ev->event
                       << " genTtbarId=" << _ev->genTtbarId
                       << " (mod100=" << (_ev->genTtbarId % 100) << ")"
                       << " nGenPart=" << _ev->nGenPart
                       << " hasTTPair=" << eventHasTTPair()
-                      << " countAddB=" << countAdditionalBJets()
+                      << " addBJets=" << nBJ << " addBHadrons=" << nBH
+                      << " addCJets=" << nCJ
                       << " | ntupleBools: LF=" << _ev->ttCat_LF
                       << " cc=" << _ev->ttCat_cc
                       << " b=" << _ev->ttCat_b
