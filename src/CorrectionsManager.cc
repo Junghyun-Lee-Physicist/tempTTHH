@@ -685,7 +685,8 @@ double CorrectionsManager::getBTagSF_Shape(int hadFlav, double eta, double pt, d
     if (flav != 5 && flav != 4) flav = 0;
     
     // 값 범위 제한 (POG 권장)
-    double eta_clamped = std::clamp(eta, -2.4999, 2.4999);
+    // deepJet_shape expects abseta (|eta|), not signed eta
+    double abseta_clamped = std::clamp(std::abs(eta), 0.0, 2.4999);
     double pt_clamped  = std::clamp(pt, 20.0, 1000.0);
     double discr_clamped = std::clamp(discr, 0.0, 1.0);
     
@@ -718,12 +719,12 @@ double CorrectionsManager::getBTagSF_Shape(int hadFlav, double eta, double pt, d
     
     try {
         // evaluate(systematic, flavor, eta, pt, discriminator)
-        return btagCorr_shape_->evaluate({actual_syst, flav, eta_clamped, 
+        return btagCorr_shape_->evaluate({actual_syst, flav, abseta_clamped,
                                           pt_clamped, discr_clamped});
     } catch (const std::exception& e) {
         std::cerr << "[getBTagSF_Shape] Error: " << e.what()
-                  << " syst=" << actual_syst << " flav=" << flav 
-                  << " eta=" << eta_clamped << " pt=" << pt_clamped 
+                  << " syst=" << actual_syst << " flav=" << flav
+                  << " abseta=" << abseta_clamped << " pt=" << pt_clamped
                   << " discr=" << discr_clamped << std::endl;
         return 1.0;
     }
