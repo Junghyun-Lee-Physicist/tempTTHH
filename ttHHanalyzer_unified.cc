@@ -1244,16 +1244,18 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
     computeBTagWeight(thisEvent);
 
     // ═══════════════════════════════════════════════════════════════════════
-    // [NEW] tt+jets categorization validation (runs on ALL events, pre-selection)
+    // tt+jets categorization validation (runs on ALL MC events, pre-selection)
+    //
     // Compares ntuple-level ttCat branches with analyzer-recomputed category.
-    // Also records the actual gen-level additional b-jet count per category.
+    // Fills validation histograms to confirm the decision tree implementation
+    // matches between NtupleForge and this analyzer.
     // ═══════════════════════════════════════════════════════════════════════
     if (_DataOrMC != "Data") {
         int ntupleCat = ntupleTtCatIndex();
         TtCat analyzerCat = computeTtCategory();
         int analyzerIdx = static_cast<int>(analyzerCat);
 
-        // ── Debug: log first 20 events + up to 50 ntuple/analyzer disagreements ──
+        // ── Debug: log first 20 events + up to 50 mismatches ──
         static int dbgCount = 0;
         static int dbgMismatch = 0;
         bool mismatch = (ntupleCat != analyzerIdx);
@@ -1262,9 +1264,13 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
             std::cout << "[ttCatDebug] evt=" << _ev->event
                       << " genTtbarId=" << _ev->genTtbarId
                       << " (mod100=" << (_ev->genTtbarId % 100) << ")"
-                      << " nGenPart=" << _ev->nGenPart;
+                      << " nGenPart=" << _ev->nGenPart
+                      << " nGenJet=" << _ev->nGenJet;
             if (usedFallback) {
-                std::cout << " [FALLBACK:genTtbarId]";
+                std::cout << " [FALLBACK:genTtbarId]"
+                          << " nAddB_ntuple=" << _ev->nAdditionalBJets
+                          << " nAddBH_ntuple=" << _ev->nAdditionalBHadrons
+                          << " nAddC_ntuple=" << _ev->nAdditionalCJets;
             } else {
                 auto [nBJ, nBH] = countAdditionalBJetsDetailed();
                 int nCJ = countAdditionalCJets();
@@ -1287,20 +1293,33 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
             if (mismatch) ++dbgMismatch;
             ++dbgCount;
         }
-        // ── End debug ──
 
-        // Fill at bin centers (+0.5) because SetBinLabel makes axes
-        // alphanumeric; ROOT rejects edge values with "Index below bounds".
+        // ── Fill validation histograms ──
+        // 1) Ntuple vs Analyzer category (should be diagonal)
         _hTtCatValidation->Fill(ntupleCat + 0.5, analyzerIdx + 0.5);
 
-        // Use analyzer-computed additional b-jet count (requires GenJet_hadronFlavour)
-        // Falls back to ntuple branch if analyzer count is 0 and ntuple has nonzero value
-        int nAddB_analyzer = countAdditionalBJets();
-        int nAddB_ntuple   = _ev->nAdditionalBJets;
-        int nAddB = (nAddB_analyzer > 0) ? nAddB_analyzer : nAddB_ntuple;
+        // 2) Ntuple category vs best additional b-jet count
+        int nAddB = getBestAdditionalBJetCount();
         int fillB = std::max(-1, std::min(nAddB, 7));
         if (analyzerCat == TtCat::kNoTTJets) fillB = -1;
         _hTtCatFinalState->Fill(ntupleCat + 0.5, fillB);
+
+        // 3) genTtbarId % 100 vs analyzer category
+        int genCatId = _ev->genTtbarId % 100;
+        _hTtCatGenTtbarId->Fill(genCatId, analyzerIdx + 0.5);
+
+        // 4) 1D counts per analyzer category
+        _hTtCatCounts->Fill(analyzerIdx + 0.5);
+
+        // 5) Analyzer category vs additional B hadron count
+        int nBH = getBestAdditionalBHadronCount();
+        int fillBH = std::max(-1, std::min(nBH, 8));
+        _hTtCatBHadrons->Fill(analyzerIdx + 0.5, fillBH);
+
+        // 6) nAdditionalBJets: ntuple vs analyzer
+        int nAddB_ana = (_ev->nGenPart > 0) ? countAdditionalBJets() : -1;
+        int nAddB_ntu = _ev->nAdditionalBJets;
+        _hTtCatAddBNtupleVsAna->Fill(nAddB_ntu, nAddB_ana);
     }
 
     // 7) Baseline selection + event cleaning, apply trigger path, reconstruct higher objects
@@ -1730,26 +1749,33 @@ void ttHHanalyzer_unified::writeHistos(){
         _cutStepHiggsMass02.at(i)->Write();
     }
 
-    // [NEW] tt+jets categorization validation histograms
-    _histoDirs.at(3)->cd();  // TtCatValidation directory
+    // tt+jets categorization validation histograms
+    _histoDirs.at(3)->cd();
     _hTtCatValidation->Write();
     _hTtCatFinalState->Write();
+    _hTtCatGenTtbarId->Write();
+    _hTtCatCounts->Write();
+    _hTtCatBHadrons->Write();
+    _hTtCatAddBNtupleVsAna->Write();
 
-    // ── Debug: print category summary from validation histogram ──
+    // ── Print category summary ──
     std::cout << "\n[ttCatSummary] ═══════════════════════════════════════════════" << std::endl;
     std::cout << "[ttCatSummary] Total entries: " << _hTtCatValidation->GetEntries() << std::endl;
+
     std::cout << "[ttCatSummary] Ntuple category breakdown:" << std::endl;
     for (int ix = 1; ix <= kNTtCat; ++ix) {
         double sum = 0;
         for (int iy = 1; iy <= kNTtCat; ++iy) sum += _hTtCatValidation->GetBinContent(ix, iy);
-        if (sum > 0) std::cout << "  " << ttCatName(ix-1) << ": " << sum << std::endl;
+        if (sum > 0) std::cout << "  " << ttCatName(ix-1) << ": " << (int)sum << std::endl;
     }
+
     std::cout << "[ttCatSummary] Analyzer category breakdown:" << std::endl;
     for (int iy = 1; iy <= kNTtCat; ++iy) {
         double sum = 0;
         for (int ix = 1; ix <= kNTtCat; ++ix) sum += _hTtCatValidation->GetBinContent(ix, iy);
-        if (sum > 0) std::cout << "  " << ttCatName(iy-1) << ": " << sum << std::endl;
+        if (sum > 0) std::cout << "  " << ttCatName(iy-1) << ": " << (int)sum << std::endl;
     }
+
     std::cout << "[ttCatSummary] Diagonal (agree) / Off-diagonal (mismatch):" << std::endl;
     double diag = 0, offdiag = 0;
     for (int ix = 1; ix <= kNTtCat; ++ix)
@@ -1757,10 +1783,37 @@ void ttHHanalyzer_unified::writeHistos(){
             double c = _hTtCatValidation->GetBinContent(ix, iy);
             if (ix == iy) diag += c; else if (c > 0) {
                 offdiag += c;
-                std::cout << "  OFF-DIAG: " << ttCatName(ix-1) << " vs " << ttCatName(iy-1) << " = " << c << std::endl;
+                std::cout << "  OFF-DIAG: " << ttCatName(ix-1) << " vs " << ttCatName(iy-1) << " = " << (int)c << std::endl;
             }
         }
-    std::cout << "[ttCatSummary] Agree: " << diag << "  Mismatch: " << offdiag << std::endl;
+    std::cout << "[ttCatSummary] Agree: " << (int)diag << "  Mismatch: " << (int)offdiag << std::endl;
+
+    // Print additional b-jet count distribution per category
+    std::cout << "[ttCatSummary] Additional b-jet count per analyzer category:" << std::endl;
+    for (int iy = 1; iy <= kNTtCat; ++iy) {
+        double total = 0;
+        for (int ix = 1; ix <= _hTtCatFinalState->GetNbinsX(); ++ix)
+            total += _hTtCatFinalState->GetBinContent(ix, iy);
+        // skip empty
+    }
+    // Per-category b-jet breakdown
+    for (int ix = 1; ix <= kNTtCat; ++ix) {
+        std::string catName = ttCatName(ix-1);
+        double catTotal = 0;
+        for (int iy = 1; iy <= _hTtCatFinalState->GetNbinsY(); ++iy)
+            catTotal += _hTtCatFinalState->GetBinContent(ix, iy);
+        if (catTotal <= 0) continue;
+        std::cout << "  " << catName << " (n=" << (int)catTotal << "): nAddB=";
+        for (int iy = 1; iy <= _hTtCatFinalState->GetNbinsY(); ++iy) {
+            double c = _hTtCatFinalState->GetBinContent(ix, iy);
+            if (c > 0) {
+                int bval = (int)(_hTtCatFinalState->GetYaxis()->GetBinCenter(iy));
+                std::cout << bval << ":" << (int)c << " ";
+            }
+        }
+        std::cout << std::endl;
+    }
+
     std::cout << "[ttCatSummary] ═══════════════════════════════════════════════\n" << std::endl;
 }
 void ttHHanalyzer_unified::fillTree(event * thisEvent){

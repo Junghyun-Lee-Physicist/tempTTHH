@@ -427,6 +427,8 @@ struct eventBuffer
   float	genWeight;
   unsigned int	luminosityBlock;
   int	nAdditionalBJets;
+  int	nAdditionalBHadrons;
+  int	nAdditionalCJets;
   unsigned int	run;
   bool	ttCat_2b;
   bool	ttCat_4b;
@@ -1472,6 +1474,8 @@ struct eventBuffer
     choose["Events/genWeight"]	= DEFAULT;
     choose["Events/luminosityBlock"]	= DEFAULT;
     choose["Events/nAdditionalBJets"]	= DEFAULT;
+    choose["Events/nAdditionalBHadrons"]	= DEFAULT;
+    choose["Events/nAdditionalCJets"]	= DEFAULT;
     choose["Events/run"]	= DEFAULT;
     choose["Events/ttCat_2b"]	= DEFAULT;
     choose["Events/ttCat_4b"]	= DEFAULT;
@@ -2301,6 +2305,10 @@ struct eventBuffer
       if (input->present("Events/luminosityBlock")) { input->select("Events/luminosityBlock", luminosityBlock); successBranches.push_back("Events/luminosityBlock"); } else { missingBranches.push_back("Events/luminosityBlock"); }
     if ( choose["Events/nAdditionalBJets"] )
       if (input->present("Events/nAdditionalBJets")) { input->select("Events/nAdditionalBJets", nAdditionalBJets); successBranches.push_back("Events/nAdditionalBJets"); } else { missingBranches.push_back("Events/nAdditionalBJets"); }
+    if ( choose["Events/nAdditionalBHadrons"] )
+      if (input->present("Events/nAdditionalBHadrons")) { input->select("Events/nAdditionalBHadrons", nAdditionalBHadrons); successBranches.push_back("Events/nAdditionalBHadrons"); } else { missingBranches.push_back("Events/nAdditionalBHadrons"); }
+    if ( choose["Events/nAdditionalCJets"] )
+      if (input->present("Events/nAdditionalCJets")) { input->select("Events/nAdditionalCJets", nAdditionalCJets); successBranches.push_back("Events/nAdditionalCJets"); } else { missingBranches.push_back("Events/nAdditionalCJets"); }
     if ( choose["Events/run"] )
       if (input->present("Events/run")) { input->select("Events/run", run); successBranches.push_back("Events/run"); } else { missingBranches.push_back("Events/run"); }
     if ( choose["Events/ttCat_2b"] )
@@ -2945,6 +2953,8 @@ struct eventBuffer
     output->add("Events/genWeight", 	genWeight);
     output->add("Events/luminosityBlock", 	luminosityBlock);
     output->add("Events/nAdditionalBJets", 	nAdditionalBJets);
+    output->add("Events/nAdditionalBHadrons", 	nAdditionalBHadrons);
+    output->add("Events/nAdditionalCJets", 	nAdditionalCJets);
     output->add("Events/run", 	run);
     output->add("Events/ttCat_2b", 	ttCat_2b);
     output->add("Events/ttCat_4b", 	ttCat_4b);
@@ -3251,6 +3261,8 @@ struct eventBuffer
     genWeight	= 0;
     luminosityBlock	= 0;
     nAdditionalBJets	= 0;
+    nAdditionalBHadrons	= 0;
+    nAdditionalCJets	= 0;
     run	= 0;
     ttCat_2b	= 0;
     ttCat_4b	= 0;
