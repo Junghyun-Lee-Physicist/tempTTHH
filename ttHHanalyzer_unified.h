@@ -1376,7 +1376,10 @@ class ttHHanalyzer_unified {
     }
 
     // --- convert ntuple ttCat branches to enum index ---
+    // If ttCat_* branches exist (NtupleForge TTbarJetCategorizer), use them.
+    // Otherwise fall back to genTtbarId (always present in MC NanoAOD).
     int ntupleTtCatIndex() const {
+        // Try ttCat_* boolean branches first
         if (_ev->ttCat_LF)       return static_cast<int>(TtCat::kLF);
         if (_ev->ttCat_cc)       return static_cast<int>(TtCat::kCC);
         if (_ev->ttCat_b)        return static_cast<int>(TtCat::kB);
@@ -1385,7 +1388,9 @@ class ttHHanalyzer_unified {
         if (_ev->ttCat_bbb)      return static_cast<int>(TtCat::kBBB);
         if (_ev->ttCat_4b)       return static_cast<int>(TtCat::k4B);
         if (_ev->ttCat_noTTJets) return static_cast<int>(TtCat::kNoTTJets);
-        return static_cast<int>(TtCat::kNoTTJets); // no branch set
+
+        // Fallback: derive from genTtbarId when ttCat_* branches are absent
+        return static_cast<int>(computeTtCategory());
     }
 
     // --- Validation histogram: ntuple vs analyzer category (2D) ---
