@@ -1046,10 +1046,6 @@ class ttHHanalyzer_unified {
 	// We need to add in future
 	_sys = false;
 
-	// Check if GenJet branches were loaded from input ntuple
-	_hasGenJet = std::find(ev->successBranches.begin(), ev->successBranches.end(),
-	                       "Events/GenJet_hadronFlavour") != ev->successBranches.end();
-	std::cout << "  GenJet available: " << (_hasGenJet ? "YES" : "NO (will use genTtbarId fallback)") << std::endl;
 	_of = new outputFile(_cl);
 	_runYear = runYear;
 	_DataOrMC = DataOrMC;
@@ -1146,7 +1142,6 @@ class ttHHanalyzer_unified {
     float _genWeight;
     bool  _failGoldenJson;
     bool  _passMETFilters;
-    bool  _hasGenJet = false;  // whether GenJet branches exist in input ntuple
     std::string _DataOrMC, _runYear, _sampleName, _era;
     // Analysis Mode Variable Declaration
 	AnalysisMode _analysisMode;
@@ -1326,12 +1321,20 @@ class ttHHanalyzer_unified {
         return deta * deta + dphi * dphi;
     }
 
+    // --- helper: get actual GenPart/GenJet counts from vector sizes ---
+    // NOTE: treestream fills std::vector members per event but does NOT
+    // update the int counter members (nGenPart, nGenJet, etc.).
+    // Always use vector .size() instead of the counter variables.
+    int genPartCount() const { return static_cast<int>(_ev->GenPart_pdgId.size()); }
+    int genJetCount()  const { return static_cast<int>(_ev->GenJet_pt.size()); }
+
     // --- helper: check top ancestor in GenPart chain ---
     bool hasTopAncestor(int idx) const {
         int cur = idx;
+        int nGP = genPartCount();
         for (int d = 0; d < 30; ++d) {
             int mother = _ev->GenPart_genPartIdxMother[cur];
-            if (mother < 0 || mother >= _ev->nGenPart) return false;
+            if (mother < 0 || mother >= nGP) return false;
             if (std::abs(_ev->GenPart_pdgId[mother]) == 6) return true;
             cur = mother;
         }
@@ -1341,7 +1344,7 @@ class ttHHanalyzer_unified {
     // --- helper: event has tt-bar pair? ---
     bool eventHasTTPair() const {
         bool found_t = false, found_tbar = false;
-        for (int i = 0; i < _ev->nGenPart; ++i) {
+        for (int i = 0; i < genPartCount(); ++i) {
             int pid = _ev->GenPart_pdgId[i];
             if (pid == 6) found_t = true;
             else if (pid == -6) found_tbar = true;
@@ -1361,7 +1364,7 @@ class ttHHanalyzer_unified {
 
         // Step 1: collect additional (non-top-ancestor) last-copy B hadrons
         std::vector<std::pair<float,float>> addBH;
-        for (int i = 0; i < _ev->nGenPart; ++i) {
+        for (int i = 0; i < genPartCount(); ++i) {
             if (!isBHadron(_ev->GenPart_pdgId[i])) continue;
             if (!((_ev->GenPart_statusFlags[i] >> 13) & 1)) continue;
             if (hasTopAncestor(i)) continue;
@@ -1371,7 +1374,7 @@ class ttHHanalyzer_unified {
 
         // Step 2: gen b-jets in acceptance
         std::vector<int> bjetIdx;
-        for (int j = 0; j < _ev->nGenJet; ++j) {
+        for (int j = 0; j < genJetCount(); ++j) {
             if (_ev->GenJet_hadronFlavour[j] != 5) continue;
             if (_ev->GenJet_pt[j] < GEN_JET_PT_MIN) continue;
             if (std::fabs(_ev->GenJet_eta[j]) > GEN_JET_ETA_MAX) continue;
@@ -1403,7 +1406,7 @@ class ttHHanalyzer_unified {
         static constexpr float DR_MATCH_MAX2   = 0.4f * 0.4f;
 
         std::vector<std::pair<float,float>> addCH;
-        for (int i = 0; i < _ev->nGenPart; ++i) {
+        for (int i = 0; i < genPartCount(); ++i) {
             if (!isCHadron(_ev->GenPart_pdgId[i])) continue;
             if (!((_ev->GenPart_statusFlags[i] >> 13) & 1)) continue;
             if (hasTopAncestor(i)) continue;
@@ -1412,7 +1415,7 @@ class ttHHanalyzer_unified {
         if (addCH.empty()) return 0;
 
         std::vector<int> cjetIdx;
-        for (int j = 0; j < _ev->nGenJet; ++j) {
+        for (int j = 0; j < genJetCount(); ++j) {
             if (_ev->GenJet_hadronFlavour[j] != 4) continue;
             if (_ev->GenJet_pt[j] < GEN_JET_PT_MIN) continue;
             if (std::fabs(_ev->GenJet_eta[j]) > GEN_JET_ETA_MAX) continue;
@@ -1440,10 +1443,8 @@ class ttHHanalyzer_unified {
     TtCat computeTtCategory() const {
         if (_DataOrMC == "Data") return TtCat::kNoTTJets;
 
-        // Primary path: requires both GenPart AND GenJet to be available
-        // Without GenJet, B hadron → jet matching fails and everything
-        // gets misclassified as tt+LF
-        if (_ev->nGenPart > 0 && _hasGenJet) {
+        // Primary path: requires both GenPart AND GenJet vectors populated
+        if (genPartCount() > 0 && genJetCount() > 0) {
             if (!eventHasTTPair()) return TtCat::kNoTTJets;
 
             auto [nBJets, nBHadrons] = countAdditionalBJetsDetailed();
@@ -1459,7 +1460,7 @@ class ttHHanalyzer_unified {
             return TtCat::kLF;
         }
 
-        // Fallback: genTtbarId-based (used when GenJet missing from ntuple)
+        // Fallback: genTtbarId-based (used when GenPart/GenJet absent)
         return computeTtCategoryFromGenTtbarId();
     }
 
@@ -1500,7 +1501,7 @@ class ttHHanalyzer_unified {
     // --- get best available additional b-jet count ---
     int getBestAdditionalBJetCount() const {
         // 1) Analyzer-computed (requires both GenPart AND GenJet)
-        if (_ev->nGenPart > 0 && _hasGenJet) return countAdditionalBJets();
+        if (genPartCount() > 0 && genJetCount() > 0) return countAdditionalBJets();
         // 2) Ntuple branch (NtupleForge-computed)
         if (_ev->nAdditionalBJets >= 0) return _ev->nAdditionalBJets;
         // 3) Estimate from genTtbarId
@@ -1512,14 +1513,14 @@ class ttHHanalyzer_unified {
 
     // --- get best available additional B hadron count ---
     int getBestAdditionalBHadronCount() const {
-        if (_ev->nGenPart > 0 && _hasGenJet) return countAdditionalBJetsDetailed().nHadrons;
+        if (genPartCount() > 0 && genJetCount() > 0) return countAdditionalBJetsDetailed().nHadrons;
         if (_ev->nAdditionalBHadrons >= 0) return _ev->nAdditionalBHadrons;
         return -1;
     }
 
     // --- get best available additional c-jet count ---
     int getBestAdditionalCJetCount() const {
-        if (_ev->nGenPart > 0 && _hasGenJet) return countAdditionalCJets();
+        if (genPartCount() > 0 && genJetCount() > 0) return countAdditionalCJets();
         if (_ev->nAdditionalCJets >= 0) return _ev->nAdditionalCJets;
         return -1;
     }
