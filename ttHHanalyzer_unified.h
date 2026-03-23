@@ -1045,6 +1045,11 @@ class ttHHanalyzer_unified {
 	////_sys = systematics; // Currently we do not get systematic from argument
 	// We need to add in future
 	_sys = false;
+
+	// Check if GenJet branches were loaded from input ntuple
+	_hasGenJet = std::find(ev->successBranches.begin(), ev->successBranches.end(),
+	                       "Events/GenJet_hadronFlavour") != ev->successBranches.end();
+	std::cout << "  GenJet available: " << (_hasGenJet ? "YES" : "NO (will use genTtbarId fallback)") << std::endl;
 	_of = new outputFile(_cl);
 	_runYear = runYear;
 	_DataOrMC = DataOrMC;
@@ -1141,6 +1146,7 @@ class ttHHanalyzer_unified {
     float _genWeight;
     bool  _failGoldenJson;
     bool  _passMETFilters;
+    bool  _hasGenJet = false;  // whether GenJet branches exist in input ntuple
     std::string _DataOrMC, _runYear, _sampleName, _era;
     // Analysis Mode Variable Declaration
 	AnalysisMode _analysisMode;
@@ -1434,8 +1440,10 @@ class ttHHanalyzer_unified {
     TtCat computeTtCategory() const {
         if (_DataOrMC == "Data") return TtCat::kNoTTJets;
 
-        // Primary path: GenPart available
-        if (_ev->nGenPart > 0) {
+        // Primary path: requires both GenPart AND GenJet to be available
+        // Without GenJet, B hadron → jet matching fails and everything
+        // gets misclassified as tt+LF
+        if (_ev->nGenPart > 0 && _hasGenJet) {
             if (!eventHasTTPair()) return TtCat::kNoTTJets;
 
             auto [nBJets, nBHadrons] = countAdditionalBJetsDetailed();
@@ -1451,7 +1459,7 @@ class ttHHanalyzer_unified {
             return TtCat::kLF;
         }
 
-        // Fallback: genTtbarId-based
+        // Fallback: genTtbarId-based (used when GenJet missing from ntuple)
         return computeTtCategoryFromGenTtbarId();
     }
 
@@ -1491,8 +1499,8 @@ class ttHHanalyzer_unified {
 
     // --- get best available additional b-jet count ---
     int getBestAdditionalBJetCount() const {
-        // 1) Analyzer-computed (GenPart-based, most accurate)
-        if (_ev->nGenPart > 0) return countAdditionalBJets();
+        // 1) Analyzer-computed (requires both GenPart AND GenJet)
+        if (_ev->nGenPart > 0 && _hasGenJet) return countAdditionalBJets();
         // 2) Ntuple branch (NtupleForge-computed)
         if (_ev->nAdditionalBJets >= 0) return _ev->nAdditionalBJets;
         // 3) Estimate from genTtbarId
@@ -1504,14 +1512,14 @@ class ttHHanalyzer_unified {
 
     // --- get best available additional B hadron count ---
     int getBestAdditionalBHadronCount() const {
-        if (_ev->nGenPart > 0) return countAdditionalBJetsDetailed().nHadrons;
+        if (_ev->nGenPart > 0 && _hasGenJet) return countAdditionalBJetsDetailed().nHadrons;
         if (_ev->nAdditionalBHadrons >= 0) return _ev->nAdditionalBHadrons;
         return -1;
     }
 
     // --- get best available additional c-jet count ---
     int getBestAdditionalCJetCount() const {
-        if (_ev->nGenPart > 0) return countAdditionalCJets();
+        if (_ev->nGenPart > 0 && _hasGenJet) return countAdditionalCJets();
         if (_ev->nAdditionalCJets >= 0) return _ev->nAdditionalCJets;
         return -1;
     }
