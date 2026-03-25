@@ -91,9 +91,15 @@ These histograms are written to each condor job output ROOT file under the `TtCa
 2. **`ttCatFinalState`** (TH2F, 8×9): X-axis = ntuple ttCat category, Y-axis = actual number of additional b-jets from gen-level B-hadron ancestry tracing (-1 to 7+). This shows, for each assigned category, how the true gen-level final state is distributed (e.g., events categorized as `tt+bb` but having 3 actual additional b-jets).
 
 ### Algorithm
-The categorization uses:
-- `genTtbarId % 100` for standard categories (LF, cc, b, 2b)
-- For events with genTtbarId 53-56 (≥2 additional b-jets), performs B-hadron ancestry tracing in `GenPart` and ΔR matching to `GenJet` (pT > 20 GeV, |η| < 2.4) to determine the exact additional b-jet count
+The categorization uses a full GenPart-based primary path:
+1. Identify top decay products via GenPart mother chain
+2. Collect additional (non-top-ancestor) last-copy B hadrons
+3. Match them to GenJets (hadronFlavour==5, pT > 20 GeV, |η| < 2.4) via ΔR < 0.4
+4. Apply decision tree: 4b → bbb → 2b (per-jet B hadron count) → bb → b → cc → LF
+
+The tt+2b classification uses **per-jet** B hadron count: a single GenJet with ≥2 matched B hadrons (collinear g→bb), matching the NtupleForge `TTbarJetCategorizer` module.
+
+Cross-validated against `genTtbarId % 100` (CMS GenTtbarCategorizer output).
 
 ### Important Notes
 - Categorization runs on **ALL events** (pre-selection), not just selected events
