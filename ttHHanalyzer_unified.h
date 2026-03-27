@@ -1524,6 +1524,28 @@ class ttHHanalyzer_unified {
         return TtCat::kNoTTJets;
     }
 
+    // --- pure genTtbarId mapping (NO nAdditionalBJets refinement) ---
+    // Used for cross-validation: maps genTtbarId%100 to 5 standard categories only.
+    // bbb/4b cannot be resolved, so codes 53-56 always map to kBB.
+    TtCat genTtbarIdToStandardCategory() const {
+        int catId = _ev->genTtbarId % 100;
+        if (catId >= 41 && catId <= 49) return TtCat::kCC;
+        if (catId == 51) return TtCat::kB;
+        if (catId == 52) return TtCat::k2B;
+        if (catId >= 53 && catId <= 56) return TtCat::kBB;  // always BB (can't distinguish bbb/4b)
+        if (catId == 0) {
+            if (eventHasTTPair()) return TtCat::kLF;
+            return TtCat::kNoTTJets;
+        }
+        return TtCat::kNoTTJets;
+    }
+
+    // --- collapse bbb/4b to bb for fair comparison with genTtbarId ---
+    static TtCat collapseToStandard(TtCat cat) {
+        if (cat == TtCat::kBBB || cat == TtCat::k4B) return TtCat::kBB;
+        return cat;
+    }
+
     // --- convert ntuple ttCat branches to enum index ---
     int ntupleTtCatIndex() const {
         if (_ev->ttCat_LF)       return static_cast<int>(TtCat::kLF);
@@ -1585,6 +1607,12 @@ class ttHHanalyzer_unified {
     TH1F* _hTtCatCounts         = nullptr;  // 1D event counts per analyzer category
     TH2F* _hTtCatBHadrons       = nullptr;  // analyzer cat vs additional B hadron count
     TH2F* _hTtCatAddBNtupleVsAna = nullptr; // nAdditionalBJets: ntuple vs analyzer
+
+    // ─── Cross-validation: GenPart-based vs genTtbarId ───
+    // Collapses bbb/4b → bb for fair 5-category comparison
+    TH2F* _hTtCatXvalGenPart  = nullptr;  // analyzer GenPart vs genTtbarId (5-cat)
+    TH2F* _hTtCatXvalNtuple   = nullptr;  // ntuple GenPart vs genTtbarId (5-cat)
+    TH1F* _hTtCatXvalMismatch = nullptr;  // mismatch count per category
 
     // L1 prefiring 보정
     const correction::Correction *prefireJetCorr = nullptr;
@@ -2126,6 +2154,30 @@ class ttHHanalyzer_unified {
         _hTtCatAddBNtupleVsAna = new TH2F("ttCatAddBNtupleVsAna",
             "Additional b-jets: Ntuple vs Analyzer;Ntuple nAdditionalBJets;Analyzer nAdditionalBJets",
             10, -1.5, 8.5, 10, -1.5, 8.5);
+
+        // Cross-validation: GenPart algorithm vs genTtbarId (5-cat collapsed)
+        _hTtCatXvalGenPart = new TH2F("ttCatXvalGenPart",
+            "Cross-validation: Analyzer GenPart vs genTtbarId (5-cat);Analyzer (collapsed);genTtbarId mapping",
+            kNTtCat, 0, kNTtCat, kNTtCat, 0, kNTtCat);
+        for (int i = 0; i < kNTtCat; ++i) {
+            _hTtCatXvalGenPart->GetXaxis()->SetBinLabel(i+1, ttCatName(i));
+            _hTtCatXvalGenPart->GetYaxis()->SetBinLabel(i+1, ttCatName(i));
+        }
+
+        _hTtCatXvalNtuple = new TH2F("ttCatXvalNtuple",
+            "Cross-validation: Ntuple GenPart vs genTtbarId (5-cat);Ntuple (collapsed);genTtbarId mapping",
+            kNTtCat, 0, kNTtCat, kNTtCat, 0, kNTtCat);
+        for (int i = 0; i < kNTtCat; ++i) {
+            _hTtCatXvalNtuple->GetXaxis()->SetBinLabel(i+1, ttCatName(i));
+            _hTtCatXvalNtuple->GetYaxis()->SetBinLabel(i+1, ttCatName(i));
+        }
+
+        _hTtCatXvalMismatch = new TH1F("ttCatXvalMismatch",
+            "Mismatches: Analyzer GenPart vs genTtbarId per category;Category;Mismatches",
+            kNTtCat, 0, kNTtCat);
+        for (int i = 0; i < kNTtCat; ++i) {
+            _hTtCatXvalMismatch->GetXaxis()->SetBinLabel(i+1, ttCatName(i));
+        }
 
 	_histoDirs = tmpDirs;
     }

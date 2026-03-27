@@ -6,6 +6,7 @@
 #include "TVector3.h"
 #include "ttHHanalyzer_unified.h"
 #include <iostream>
+#include <iomanip>
 
 #include "correction.h"
 
@@ -112,7 +113,7 @@ void ttHHanalyzer_unified::loop(sysName sysType, bool up){
 
 
     int nevents = _ev->size();
-    nevents = 100; // DEBUG: limit to 100 events for categorization debugging
+    // nevents = 100; // DEBUG: removed - run all events for full cross-validation
 
     //std::cout<<"weight = "<<_weight<<std::endl;  
     std::cout << "Base Weight = " << _baseWeight << std::endl; // [��]
@@ -1368,6 +1369,14 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
                       << (isMismatch ? " *** MISMATCH ***" : " OK")
                       << "\n";
 
+            // 8) Cross-validation summary for this event
+            TtCat xvGenId = genTtbarIdToStandardCategory();
+            TtCat xvAnalyzer = collapseToStandard(analyzerCat);
+            bool xvMatch = (static_cast<int>(xvAnalyzer) == static_cast<int>(xvGenId));
+            std::cout << "  [XVAL] analyzer(collapsed)=" << ttCatName(static_cast<int>(xvAnalyzer))
+                      << " vs genTtbarId=" << ttCatName(static_cast<int>(xvGenId))
+                      << (xvMatch ? " OK" : " *** MISMATCH ***") << "\n";
+
             ++dbgCount;
         }
 
@@ -1397,6 +1406,37 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
         int nAddB_ana = (genPartCount() > 0 && genJetCount() > 0) ? countAdditionalBJets() : -1;
         int nAddB_ntu = _ev->nAdditionalBJets;
         _hTtCatAddBNtupleVsAna->Fill(nAddB_ntu, nAddB_ana);
+
+        // ── 7) 3-way cross-validation: GenPart vs genTtbarId ──
+        // Collapse bbb/4b → bb for fair comparison with genTtbarId
+        TtCat genIdCat = genTtbarIdToStandardCategory();
+        int genIdIdx = static_cast<int>(genIdCat);
+
+        TtCat analyzerCollapsed = collapseToStandard(analyzerCat);
+        int analyzerCollapsedIdx = static_cast<int>(analyzerCollapsed);
+
+        // (a) Analyzer GenPart (collapsed) vs genTtbarId mapping
+        _hTtCatXvalGenPart->Fill(analyzerCollapsedIdx + 0.5, genIdIdx + 0.5);
+
+        // (b) Ntuple GenPart (collapsed) vs genTtbarId mapping
+        TtCat ntupleCatEnum = static_cast<TtCat>(ntupleCat);
+        TtCat ntupleCollapsed = collapseToStandard(ntupleCatEnum);
+        int ntupleCollapsedIdx = static_cast<int>(ntupleCollapsed);
+        _hTtCatXvalNtuple->Fill(ntupleCollapsedIdx + 0.5, genIdIdx + 0.5);
+
+        // (c) Count mismatches (analyzer GenPart vs genTtbarId)
+        if (analyzerCollapsedIdx != genIdIdx) {
+            _hTtCatXvalMismatch->Fill(analyzerCollapsedIdx + 0.5);
+        }
+
+        // (d) Debug: print cross-validation detail for interesting cases
+        if (shouldPrint && analyzerCollapsedIdx != genIdIdx) {
+            std::cout << "  [XVAL] GenPart=" << ttCatName(static_cast<int>(analyzerCat))
+                      << " (collapsed=" << ttCatName(analyzerCollapsedIdx) << ")"
+                      << " vs genTtbarId%100=" << genCatId
+                      << " -> " << ttCatName(genIdIdx)
+                      << " *** XVAL MISMATCH ***\n";
+        }
     }
 
     // 7) Baseline selection + event cleaning, apply trigger path, reconstruct higher objects
@@ -1834,6 +1874,9 @@ void ttHHanalyzer_unified::writeHistos(){
     _hTtCatCounts->Write();
     _hTtCatBHadrons->Write();
     _hTtCatAddBNtupleVsAna->Write();
+    _hTtCatXvalGenPart->Write();
+    _hTtCatXvalNtuple->Write();
+    _hTtCatXvalMismatch->Write();
 
     // ── Print category summary ──
     std::cout << "\n[ttCatSummary] ═══════════════════════════════════════════════" << std::endl;
@@ -1889,6 +1932,40 @@ void ttHHanalyzer_unified::writeHistos(){
             }
         }
         std::cout << std::endl;
+    }
+
+    // ── Cross-validation: GenPart vs genTtbarId ──
+    std::cout << "[ttCatSummary] GenPart vs genTtbarId cross-validation (5-cat collapsed):" << std::endl;
+    double xvDiag = 0, xvOff = 0;
+    for (int ix = 1; ix <= kNTtCat; ++ix) {
+        for (int iy = 1; iy <= kNTtCat; ++iy) {
+            double c = _hTtCatXvalGenPart->GetBinContent(ix, iy);
+            if (ix == iy) {
+                xvDiag += c;
+            } else if (c > 0) {
+                xvOff += c;
+                std::cout << "  XVAL OFF-DIAG: Analyzer=" << ttCatName(ix-1)
+                          << " vs genTtbarId=" << ttCatName(iy-1)
+                          << " = " << (int)c << std::endl;
+            }
+        }
+    }
+    double xvTotal = xvDiag + xvOff;
+    std::cout << "[ttCatSummary] XVAL Agree: " << (int)xvDiag
+              << "  Mismatch: " << (int)xvOff;
+    if (xvTotal > 0) {
+        std::cout << std::fixed << std::setprecision(4)
+                  << "  Rate: " << (xvOff / xvTotal * 100.0) << "%";
+    }
+    std::cout << std::endl;
+
+    // Per-category mismatch breakdown
+    std::cout << "[ttCatSummary] XVAL mismatches by analyzer category:" << std::endl;
+    for (int i = 1; i <= kNTtCat; ++i) {
+        double m = _hTtCatXvalMismatch->GetBinContent(i);
+        if (m > 0) {
+            std::cout << "  " << ttCatName(i-1) << ": " << (int)m << " mismatches" << std::endl;
+        }
     }
 
     std::cout << "[ttCatSummary] ═══════════════════════════════════════════════\n" << std::endl;
