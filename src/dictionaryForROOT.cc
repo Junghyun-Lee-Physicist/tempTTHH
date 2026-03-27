@@ -192,7 +192,7 @@ namespace ROOT {
       ::eventBuffer::Electron_s *ptr = nullptr;
       static ::TVirtualIsAProxy* isa_proxy = new ::TIsAProxy(typeid(::eventBuffer::Electron_s));
       static ::ROOT::TGenericClassInfo 
-         instance("eventBuffer::Electron_s", "eventBuffer.h", 445,
+         instance("eventBuffer::Electron_s", "eventBuffer.h", 443,
                   typeid(::eventBuffer::Electron_s), ::ROOT::Internal::DefineBehavior(ptr, ptr),
                   &eventBuffercLcLElectron_s_Dictionary, isa_proxy, 0,
                   sizeof(::eventBuffer::Electron_s) );
@@ -327,7 +327,7 @@ namespace ROOT {
       ::eventBuffer::GenPart_s *ptr = nullptr;
       static ::TVirtualIsAProxy* isa_proxy = new ::TIsAProxy(typeid(::eventBuffer::GenPart_s));
       static ::ROOT::TGenericClassInfo 
-         instance("eventBuffer::GenPart_s", "eventBuffer.h", 594,
+         instance("eventBuffer::GenPart_s", "eventBuffer.h", 596,
                   typeid(::eventBuffer::GenPart_s), ::ROOT::Internal::DefineBehavior(ptr, ptr),
                   &eventBuffercLcLGenPart_s_Dictionary, isa_proxy, 0,
                   sizeof(::eventBuffer::GenPart_s) );
@@ -372,7 +372,7 @@ namespace ROOT {
       ::eventBuffer::Jet_s *ptr = nullptr;
       static ::TVirtualIsAProxy* isa_proxy = new ::TIsAProxy(typeid(::eventBuffer::Jet_s));
       static ::ROOT::TGenericClassInfo 
-         instance("eventBuffer::Jet_s", "eventBuffer.h", 621,
+         instance("eventBuffer::Jet_s", "eventBuffer.h", 623,
                   typeid(::eventBuffer::Jet_s), ::ROOT::Internal::DefineBehavior(ptr, ptr),
                   &eventBuffercLcLJet_s_Dictionary, isa_proxy, 0,
                   sizeof(::eventBuffer::Jet_s) );
@@ -417,7 +417,7 @@ namespace ROOT {
       ::eventBuffer::Muon_s *ptr = nullptr;
       static ::TVirtualIsAProxy* isa_proxy = new ::TIsAProxy(typeid(::eventBuffer::Muon_s));
       static ::ROOT::TGenericClassInfo 
-         instance("eventBuffer::Muon_s", "eventBuffer.h", 662,
+         instance("eventBuffer::Muon_s", "eventBuffer.h", 670,
                   typeid(::eventBuffer::Muon_s), ::ROOT::Internal::DefineBehavior(ptr, ptr),
                   &eventBuffercLcLMuon_s_Dictionary, isa_proxy, 0,
                   sizeof(::eventBuffer::Muon_s) );

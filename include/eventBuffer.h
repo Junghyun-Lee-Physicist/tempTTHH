@@ -3,7 +3,7 @@
 //----------------------------------------------------------------------------
 // File:        eventBuffer.h
 // Description: Analyzer header for ntuples created by TheNtupleMaker
-// Created:     Tue Mar 17 21:36:25 2026 by mkanalyzer.py v2.0.3 14-Oct-2020
+// Created:     Fri Mar 27 16:27:01 2026 by mkanalyzer.py v2.0.3 14-Oct-2020
 // Author:      JungHyun Lee
 //----------------------------------------------------------------------------
 #include <stdio.h>
@@ -81,6 +81,7 @@ struct eventBuffer
   std::vector<float>	GenJet_eta;
   std::vector<int>	GenJet_hadronFlavour;
   std::vector<float>	GenJet_mass;
+  std::vector<int>	GenJet_partonFlavour;
   std::vector<float>	GenJet_phi;
   std::vector<float>	GenJet_pt;
   std::vector<float>	GenPart_eta;
@@ -126,14 +127,14 @@ struct eventBuffer
   std::vector<float>	Muon_pt;
   std::vector<bool>	Muon_tightId;
 
-  int	nGenPart;
-  int	nFatJet;
   int	nLHEPdfWeight;
-  int	nMuon;
+  int	nJet;
+  int	nGenPart;
+  int	nGenJet;
   int	nElectron;
   int	nLHEScaleWeight;
-  int	nJet;
-  int	nGenJet;
+  int	nMuon;
+  int	nFatJet;
 
   bool	Flag_BadPFMuonDzFilter;
   bool	Flag_BadPFMuonFilter;
@@ -202,16 +203,12 @@ struct eventBuffer
   bool	HLT_Ele12_CaloIdL_TrackIdL_IsoVL_PFJet30;
   bool	HLT_Ele135_CaloIdVT_GsfTrkIdT;
   bool	HLT_Ele145_CaloIdVT_GsfTrkIdT;
-  bool	HLT_Ele15_CaloIdL_TrackIdL_IsoVL_PFJet30;
-  bool	HLT_Ele15_Ele8_CaloIdL_TrackIdL_IsoVL;
   bool	HLT_Ele15_IsoVVVL_PFHT450;
   bool	HLT_Ele15_IsoVVVL_PFHT450_CaloBTagCSV_4p5;
   bool	HLT_Ele15_IsoVVVL_PFHT450_PFMET50;
   bool	HLT_Ele15_IsoVVVL_PFHT600;
-  bool	HLT_Ele15_WPLoose_Gsf;
   bool	HLT_Ele16_Ele12_Ele8_CaloIdL_TrackIdL;
   bool	HLT_Ele17_CaloIdM_TrackIdM_PFJet30;
-  bool	HLT_Ele17_WPLoose_Gsf;
   bool	HLT_Ele200_CaloIdVT_GsfTrkIdT;
   bool	HLT_Ele20_WPLoose_Gsf;
   bool	HLT_Ele20_WPTight_Gsf;
@@ -276,7 +273,6 @@ struct eventBuffer
   bool	HLT_IsoMu27_TightChargedIsoPFTau20_SingleL1;
   bool	HLT_IsoMu30;
   bool	HLT_Mu10_TrkIsoVVL_DiPFJet40_DEta3p5_MJJ750_HTT350_PFMETNoMu60;
-  bool	HLT_Mu12;
   bool	HLT_Mu12_DoublePFJets100_CaloBTagCSV_p33;
   bool	HLT_Mu12_DoublePFJets200_CaloBTagCSV_p33;
   bool	HLT_Mu12_DoublePFJets350_CaloBTagCSV_p33;
@@ -287,7 +283,6 @@ struct eventBuffer
   bool	HLT_Mu12_DoublePhoton20;
   bool	HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL;
   bool	HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ;
-  bool	HLT_Mu15;
   bool	HLT_Mu15_IsoVVVL_PFHT450;
   bool	HLT_Mu15_IsoVVVL_PFHT450_CaloBTagCSV_4p5;
   bool	HLT_Mu15_IsoVVVL_PFHT450_PFMET50;
@@ -426,9 +421,10 @@ struct eventBuffer
   int	genTtbarId;
   float	genWeight;
   unsigned int	luminosityBlock;
-  int	nAdditionalBJets;
   int	nAdditionalBHadrons;
+  int	nAdditionalBJets;
   int	nAdditionalCJets;
+  int	nMatchedBHadrons;
   unsigned int	run;
   bool	ttCat_2b;
   bool	ttCat_4b;
@@ -460,6 +456,7 @@ struct eventBuffer
     float	pfRelIso03_all;
     float	phi;
     float	pt;
+    int	genPartIdx;
 
     std::ostream& operator<<(std::ostream& os)
     {
@@ -479,6 +476,7 @@ struct eventBuffer
       sprintf(r, "  %-32s: %f\n", "pfRelIso03_all", ( double)pfRelIso03_all); os << r;
       sprintf(r, "  %-32s: %f\n", "phi", ( double)phi); os << r;
       sprintf(r, "  %-32s: %f\n", "pt", ( double)pt); os << r;
+      sprintf(r, "  %-32s: %f\n", "genPartIdx", ( double)genPartIdx); os << r;
       return os;
     }
   };
@@ -577,6 +575,7 @@ struct eventBuffer
     float	eta;
     int	hadronFlavour;
     float	mass;
+    int	partonFlavour;
     float	phi;
     float	pt;
 
@@ -587,6 +586,7 @@ struct eventBuffer
       sprintf(r, "  %-32s: %f\n", "eta", ( double)eta); os << r;
       sprintf(r, "  %-32s: %f\n", "hadronFlavour", ( double)hadronFlavour); os << r;
       sprintf(r, "  %-32s: %f\n", "mass", ( double)mass); os << r;
+      sprintf(r, "  %-32s: %f\n", "partonFlavour", ( double)partonFlavour); os << r;
       sprintf(r, "  %-32s: %f\n", "phi", ( double)phi); os << r;
       sprintf(r, "  %-32s: %f\n", "pt", ( double)pt); os << r;
       return os;
@@ -637,6 +637,9 @@ struct eventBuffer
     int	puId;
     float	qgl;
     float	rawFactor;
+    int	genJetIdx;
+    int	hadronFlavour;
+    int	partonFlavour;
 
     std::ostream& operator<<(std::ostream& os)
     {
@@ -657,6 +660,9 @@ struct eventBuffer
       sprintf(r, "  %-32s: %f\n", "puId", ( double)puId); os << r;
       sprintf(r, "  %-32s: %f\n", "qgl", ( double)qgl); os << r;
       sprintf(r, "  %-32s: %f\n", "rawFactor", ( double)rawFactor); os << r;
+      sprintf(r, "  %-32s: %f\n", "genJetIdx", ( double)genJetIdx); os << r;
+      sprintf(r, "  %-32s: %f\n", "hadronFlavour", ( double)hadronFlavour); os << r;
+      sprintf(r, "  %-32s: %f\n", "partonFlavour", ( double)partonFlavour); os << r;
       return os;
     }
   };
@@ -676,6 +682,7 @@ struct eventBuffer
     float	phi;
     float	pt;
     bool	tightId;
+    int	genPartIdx;
 
     std::ostream& operator<<(std::ostream& os)
     {
@@ -694,6 +701,7 @@ struct eventBuffer
       sprintf(r, "  %-32s: %f\n", "phi", ( double)phi); os << r;
       sprintf(r, "  %-32s: %f\n", "pt", ( double)pt); os << r;
       sprintf(r, "  %-32s: %f\n", "tightId", ( double)tightId); os << r;
+      sprintf(r, "  %-32s: %f\n", "genPartIdx", ( double)genPartIdx); os << r;
       return os;
     }
   };
@@ -718,6 +726,7 @@ struct eventBuffer
         Electron[i].pfRelIso03_all	= (Electron_pfRelIso03_all.size() > i) ? Electron_pfRelIso03_all[i] : 0;
         Electron[i].phi	= (Electron_phi.size() > i) ? Electron_phi[i] : 0;
         Electron[i].pt	= (Electron_pt.size() > i) ? Electron_pt[i] : 0;
+        Electron[i].genPartIdx	= (Electron_genPartIdx.size() > i) ? Electron_genPartIdx[i] : 0;
       }
   }
 
@@ -776,6 +785,7 @@ struct eventBuffer
         GenJet[i].eta	= (GenJet_eta.size() > i) ? GenJet_eta[i] : 0;
         GenJet[i].hadronFlavour	= (GenJet_hadronFlavour.size() > i) ? GenJet_hadronFlavour[i] : 0;
         GenJet[i].mass	= (GenJet_mass.size() > i) ? GenJet_mass[i] : 0;
+        GenJet[i].partonFlavour	= (GenJet_partonFlavour.size() > i) ? GenJet_partonFlavour[i] : 0;
         GenJet[i].phi	= (GenJet_phi.size() > i) ? GenJet_phi[i] : 0;
         GenJet[i].pt	= (GenJet_pt.size() > i) ? GenJet_pt[i] : 0;
       }
@@ -817,6 +827,9 @@ struct eventBuffer
         Jet[i].puId	= (Jet_puId.size() > i) ? Jet_puId[i] : 0;
         Jet[i].qgl	= (Jet_qgl.size() > i) ? Jet_qgl[i] : 0;
         Jet[i].rawFactor	= (Jet_rawFactor.size() > i) ? Jet_rawFactor[i] : 0;
+        Jet[i].genJetIdx	= (Jet_genJetIdx.size() > i) ? Jet_genJetIdx[i] : 0;
+        Jet[i].hadronFlavour	= (Jet_hadronFlavour.size() > i) ? Jet_hadronFlavour[i] : 0;
+        Jet[i].partonFlavour	= (Jet_partonFlavour.size() > i) ? Jet_partonFlavour[i] : 0;
       }
   }
 
@@ -838,6 +851,7 @@ struct eventBuffer
         Muon[i].phi	= (Muon_phi.size() > i) ? Muon_phi[i] : 0;
         Muon[i].pt	= (Muon_pt.size() > i) ? Muon_pt[i] : 0;
         Muon[i].tightId	= (Muon_tightId.size() > i) ? (bool)Muon_tightId[i] : 0;
+        Muon[i].genPartIdx	= (Muon_genPartIdx.size() > i) ? Muon_genPartIdx[i] : 0;
       }
   }
 
@@ -892,6 +906,7 @@ struct eventBuffer
             Electron_pfRelIso03_all[i]	= Electron_pfRelIso03_all[j];
             Electron_phi[i]	= Electron_phi[j];
             Electron_pt[i]	= Electron_pt[j];
+            Electron_genPartIdx[i]	= Electron_genPartIdx[j];
           }
       }
     nElectron = n;
@@ -968,6 +983,7 @@ struct eventBuffer
             GenJet_eta[i]	= GenJet_eta[j];
             GenJet_hadronFlavour[i]	= GenJet_hadronFlavour[j];
             GenJet_mass[i]	= GenJet_mass[j];
+            GenJet_partonFlavour[i]	= GenJet_partonFlavour[j];
             GenJet_phi[i]	= GenJet_phi[j];
             GenJet_pt[i]	= GenJet_pt[j];
           }
@@ -1027,6 +1043,9 @@ struct eventBuffer
             Jet_puId[i]	= Jet_puId[j];
             Jet_qgl[i]	= Jet_qgl[j];
             Jet_rawFactor[i]	= Jet_rawFactor[j];
+            Jet_genJetIdx[i]	= Jet_genJetIdx[j];
+            Jet_hadronFlavour[i]	= Jet_hadronFlavour[j];
+            Jet_partonFlavour[i]	= Jet_partonFlavour[j];
           }
       }
     nJet = n;
@@ -1057,6 +1076,7 @@ struct eventBuffer
             Muon_phi[i]	= Muon_phi[j];
             Muon_pt[i]	= Muon_pt[j];
             Muon_tightId[i]	= Muon_tightId[j];
+            Muon_genPartIdx[i]	= Muon_genPartIdx[j];
           }
       }
     nMuon = n;
@@ -1147,6 +1167,7 @@ struct eventBuffer
     choose["Events/GenJet_eta"]	= DEFAULT;
     choose["Events/GenJet_hadronFlavour"]	= DEFAULT;
     choose["Events/GenJet_mass"]	= DEFAULT;
+    choose["Events/GenJet_partonFlavour"]	= DEFAULT;
     choose["Events/GenJet_phi"]	= DEFAULT;
     choose["Events/GenJet_pt"]	= DEFAULT;
     choose["Events/GenPart_eta"]	= DEFAULT;
@@ -1215,16 +1236,12 @@ struct eventBuffer
     choose["Events/HLT_Ele12_CaloIdL_TrackIdL_IsoVL_PFJet30"]	= DEFAULT;
     choose["Events/HLT_Ele135_CaloIdVT_GsfTrkIdT"]	= DEFAULT;
     choose["Events/HLT_Ele145_CaloIdVT_GsfTrkIdT"]	= DEFAULT;
-    choose["Events/HLT_Ele15_CaloIdL_TrackIdL_IsoVL_PFJet30"]	= DEFAULT;
-    choose["Events/HLT_Ele15_Ele8_CaloIdL_TrackIdL_IsoVL"]	= DEFAULT;
     choose["Events/HLT_Ele15_IsoVVVL_PFHT450"]	= DEFAULT;
     choose["Events/HLT_Ele15_IsoVVVL_PFHT450_CaloBTagCSV_4p5"]	= DEFAULT;
     choose["Events/HLT_Ele15_IsoVVVL_PFHT450_PFMET50"]	= DEFAULT;
     choose["Events/HLT_Ele15_IsoVVVL_PFHT600"]	= DEFAULT;
-    choose["Events/HLT_Ele15_WPLoose_Gsf"]	= DEFAULT;
     choose["Events/HLT_Ele16_Ele12_Ele8_CaloIdL_TrackIdL"]	= DEFAULT;
     choose["Events/HLT_Ele17_CaloIdM_TrackIdM_PFJet30"]	= DEFAULT;
-    choose["Events/HLT_Ele17_WPLoose_Gsf"]	= DEFAULT;
     choose["Events/HLT_Ele200_CaloIdVT_GsfTrkIdT"]	= DEFAULT;
     choose["Events/HLT_Ele20_WPLoose_Gsf"]	= DEFAULT;
     choose["Events/HLT_Ele20_WPTight_Gsf"]	= DEFAULT;
@@ -1289,7 +1306,6 @@ struct eventBuffer
     choose["Events/HLT_IsoMu27_TightChargedIsoPFTau20_SingleL1"]	= DEFAULT;
     choose["Events/HLT_IsoMu30"]	= DEFAULT;
     choose["Events/HLT_Mu10_TrkIsoVVL_DiPFJet40_DEta3p5_MJJ750_HTT350_PFMETNoMu60"]	= DEFAULT;
-    choose["Events/HLT_Mu12"]	= DEFAULT;
     choose["Events/HLT_Mu12_DoublePFJets100_CaloBTagCSV_p33"]	= DEFAULT;
     choose["Events/HLT_Mu12_DoublePFJets200_CaloBTagCSV_p33"]	= DEFAULT;
     choose["Events/HLT_Mu12_DoublePFJets350_CaloBTagCSV_p33"]	= DEFAULT;
@@ -1300,7 +1316,6 @@ struct eventBuffer
     choose["Events/HLT_Mu12_DoublePhoton20"]	= DEFAULT;
     choose["Events/HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL"]	= DEFAULT;
     choose["Events/HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ"]	= DEFAULT;
-    choose["Events/HLT_Mu15"]	= DEFAULT;
     choose["Events/HLT_Mu15_IsoVVVL_PFHT450"]	= DEFAULT;
     choose["Events/HLT_Mu15_IsoVVVL_PFHT450_CaloBTagCSV_4p5"]	= DEFAULT;
     choose["Events/HLT_Mu15_IsoVVVL_PFHT450_PFMET50"]	= DEFAULT;
@@ -1473,9 +1488,10 @@ struct eventBuffer
     choose["Events/genTtbarId"]	= DEFAULT;
     choose["Events/genWeight"]	= DEFAULT;
     choose["Events/luminosityBlock"]	= DEFAULT;
-    choose["Events/nAdditionalBJets"]	= DEFAULT;
     choose["Events/nAdditionalBHadrons"]	= DEFAULT;
+    choose["Events/nAdditionalBJets"]	= DEFAULT;
     choose["Events/nAdditionalCJets"]	= DEFAULT;
+    choose["Events/nMatchedBHadrons"]	= DEFAULT;
     choose["Events/run"]	= DEFAULT;
     choose["Events/ttCat_2b"]	= DEFAULT;
     choose["Events/ttCat_4b"]	= DEFAULT;
@@ -1520,113 +1536,113 @@ struct eventBuffer
     std::vector<std::string> successBranches;
     std::vector<std::string> missingBranches;
     if ( choose["Events/Electron_charge"] )
-      if (input->present("Events/Electron_charge")) { Electron_charge.resize(32); input->select("Events/Electron_charge", Electron_charge); Electron_charge.clear(); successBranches.push_back("Events/Electron_charge"); } else { missingBranches.push_back("Events/Electron_charge"); }
+      if (input->present("Events/Electron_charge")) { Electron_charge.resize(23); input->select("Events/Electron_charge", Electron_charge); Electron_charge.clear(); successBranches.push_back("Events/Electron_charge"); } else { missingBranches.push_back("Events/Electron_charge"); }
     if ( choose["Events/Electron_cutBased"] )
-      if (input->present("Events/Electron_cutBased")) { Electron_cutBased.resize(32); input->select("Events/Electron_cutBased", Electron_cutBased); Electron_cutBased.clear(); successBranches.push_back("Events/Electron_cutBased"); } else { missingBranches.push_back("Events/Electron_cutBased"); }
+      if (input->present("Events/Electron_cutBased")) { Electron_cutBased.resize(23); input->select("Events/Electron_cutBased", Electron_cutBased); Electron_cutBased.clear(); successBranches.push_back("Events/Electron_cutBased"); } else { missingBranches.push_back("Events/Electron_cutBased"); }
     if ( choose["Events/Electron_deltaEtaSC"] )
-      if (input->present("Events/Electron_deltaEtaSC")) { Electron_deltaEtaSC.resize(32); input->select("Events/Electron_deltaEtaSC", Electron_deltaEtaSC); Electron_deltaEtaSC.clear(); successBranches.push_back("Events/Electron_deltaEtaSC"); } else { missingBranches.push_back("Events/Electron_deltaEtaSC"); }
+      if (input->present("Events/Electron_deltaEtaSC")) { Electron_deltaEtaSC.resize(23); input->select("Events/Electron_deltaEtaSC", Electron_deltaEtaSC); Electron_deltaEtaSC.clear(); successBranches.push_back("Events/Electron_deltaEtaSC"); } else { missingBranches.push_back("Events/Electron_deltaEtaSC"); }
     if ( choose["Events/Electron_dxy"] )
-      if (input->present("Events/Electron_dxy")) { Electron_dxy.resize(32); input->select("Events/Electron_dxy", Electron_dxy); Electron_dxy.clear(); successBranches.push_back("Events/Electron_dxy"); } else { missingBranches.push_back("Events/Electron_dxy"); }
+      if (input->present("Events/Electron_dxy")) { Electron_dxy.resize(23); input->select("Events/Electron_dxy", Electron_dxy); Electron_dxy.clear(); successBranches.push_back("Events/Electron_dxy"); } else { missingBranches.push_back("Events/Electron_dxy"); }
     if ( choose["Events/Electron_dz"] )
-      if (input->present("Events/Electron_dz")) { Electron_dz.resize(32); input->select("Events/Electron_dz", Electron_dz); Electron_dz.clear(); successBranches.push_back("Events/Electron_dz"); } else { missingBranches.push_back("Events/Electron_dz"); }
+      if (input->present("Events/Electron_dz")) { Electron_dz.resize(23); input->select("Events/Electron_dz", Electron_dz); Electron_dz.clear(); successBranches.push_back("Events/Electron_dz"); } else { missingBranches.push_back("Events/Electron_dz"); }
     if ( choose["Events/Electron_eta"] )
-      if (input->present("Events/Electron_eta")) { Electron_eta.resize(32); input->select("Events/Electron_eta", Electron_eta); Electron_eta.clear(); successBranches.push_back("Events/Electron_eta"); } else { missingBranches.push_back("Events/Electron_eta"); }
+      if (input->present("Events/Electron_eta")) { Electron_eta.resize(23); input->select("Events/Electron_eta", Electron_eta); Electron_eta.clear(); successBranches.push_back("Events/Electron_eta"); } else { missingBranches.push_back("Events/Electron_eta"); }
     if ( choose["Events/Electron_genPartIdx"] )
-      if (input->present("Events/Electron_genPartIdx")) { Electron_genPartIdx.resize(28); input->select("Events/Electron_genPartIdx", Electron_genPartIdx); Electron_genPartIdx.clear(); successBranches.push_back("Events/Electron_genPartIdx"); } else { missingBranches.push_back("Events/Electron_genPartIdx"); }
+      if (input->present("Events/Electron_genPartIdx")) { Electron_genPartIdx.resize(23); input->select("Events/Electron_genPartIdx", Electron_genPartIdx); Electron_genPartIdx.clear(); successBranches.push_back("Events/Electron_genPartIdx"); } else { missingBranches.push_back("Events/Electron_genPartIdx"); }
     if ( choose["Events/Electron_mass"] )
-      if (input->present("Events/Electron_mass")) { Electron_mass.resize(32); input->select("Events/Electron_mass", Electron_mass); Electron_mass.clear(); successBranches.push_back("Events/Electron_mass"); } else { missingBranches.push_back("Events/Electron_mass"); }
+      if (input->present("Events/Electron_mass")) { Electron_mass.resize(23); input->select("Events/Electron_mass", Electron_mass); Electron_mass.clear(); successBranches.push_back("Events/Electron_mass"); } else { missingBranches.push_back("Events/Electron_mass"); }
     if ( choose["Events/Electron_miniPFRelIso_all"] )
-      if (input->present("Events/Electron_miniPFRelIso_all")) { Electron_miniPFRelIso_all.resize(32); input->select("Events/Electron_miniPFRelIso_all", Electron_miniPFRelIso_all); Electron_miniPFRelIso_all.clear(); successBranches.push_back("Events/Electron_miniPFRelIso_all"); } else { missingBranches.push_back("Events/Electron_miniPFRelIso_all"); }
+      if (input->present("Events/Electron_miniPFRelIso_all")) { Electron_miniPFRelIso_all.resize(23); input->select("Events/Electron_miniPFRelIso_all", Electron_miniPFRelIso_all); Electron_miniPFRelIso_all.clear(); successBranches.push_back("Events/Electron_miniPFRelIso_all"); } else { missingBranches.push_back("Events/Electron_miniPFRelIso_all"); }
     if ( choose["Events/Electron_mvaFall17V2Iso_WP80"] )
-      if (input->present("Events/Electron_mvaFall17V2Iso_WP80")) { Electron_mvaFall17V2Iso_WP80.resize(32); input->select("Events/Electron_mvaFall17V2Iso_WP80", Electron_mvaFall17V2Iso_WP80); Electron_mvaFall17V2Iso_WP80.clear(); successBranches.push_back("Events/Electron_mvaFall17V2Iso_WP80"); } else { missingBranches.push_back("Events/Electron_mvaFall17V2Iso_WP80"); }
+      if (input->present("Events/Electron_mvaFall17V2Iso_WP80")) { Electron_mvaFall17V2Iso_WP80.resize(23); input->select("Events/Electron_mvaFall17V2Iso_WP80", Electron_mvaFall17V2Iso_WP80); Electron_mvaFall17V2Iso_WP80.clear(); successBranches.push_back("Events/Electron_mvaFall17V2Iso_WP80"); } else { missingBranches.push_back("Events/Electron_mvaFall17V2Iso_WP80"); }
     if ( choose["Events/Electron_mvaFall17V2Iso_WP90"] )
-      if (input->present("Events/Electron_mvaFall17V2Iso_WP90")) { Electron_mvaFall17V2Iso_WP90.resize(32); input->select("Events/Electron_mvaFall17V2Iso_WP90", Electron_mvaFall17V2Iso_WP90); Electron_mvaFall17V2Iso_WP90.clear(); successBranches.push_back("Events/Electron_mvaFall17V2Iso_WP90"); } else { missingBranches.push_back("Events/Electron_mvaFall17V2Iso_WP90"); }
+      if (input->present("Events/Electron_mvaFall17V2Iso_WP90")) { Electron_mvaFall17V2Iso_WP90.resize(23); input->select("Events/Electron_mvaFall17V2Iso_WP90", Electron_mvaFall17V2Iso_WP90); Electron_mvaFall17V2Iso_WP90.clear(); successBranches.push_back("Events/Electron_mvaFall17V2Iso_WP90"); } else { missingBranches.push_back("Events/Electron_mvaFall17V2Iso_WP90"); }
     if ( choose["Events/Electron_mvaTTH"] )
-      if (input->present("Events/Electron_mvaTTH")) { Electron_mvaTTH.resize(32); input->select("Events/Electron_mvaTTH", Electron_mvaTTH); Electron_mvaTTH.clear(); successBranches.push_back("Events/Electron_mvaTTH"); } else { missingBranches.push_back("Events/Electron_mvaTTH"); }
+      if (input->present("Events/Electron_mvaTTH")) { Electron_mvaTTH.resize(23); input->select("Events/Electron_mvaTTH", Electron_mvaTTH); Electron_mvaTTH.clear(); successBranches.push_back("Events/Electron_mvaTTH"); } else { missingBranches.push_back("Events/Electron_mvaTTH"); }
     if ( choose["Events/Electron_pfRelIso03_all"] )
-      if (input->present("Events/Electron_pfRelIso03_all")) { Electron_pfRelIso03_all.resize(32); input->select("Events/Electron_pfRelIso03_all", Electron_pfRelIso03_all); Electron_pfRelIso03_all.clear(); successBranches.push_back("Events/Electron_pfRelIso03_all"); } else { missingBranches.push_back("Events/Electron_pfRelIso03_all"); }
+      if (input->present("Events/Electron_pfRelIso03_all")) { Electron_pfRelIso03_all.resize(23); input->select("Events/Electron_pfRelIso03_all", Electron_pfRelIso03_all); Electron_pfRelIso03_all.clear(); successBranches.push_back("Events/Electron_pfRelIso03_all"); } else { missingBranches.push_back("Events/Electron_pfRelIso03_all"); }
     if ( choose["Events/Electron_phi"] )
-      if (input->present("Events/Electron_phi")) { Electron_phi.resize(32); input->select("Events/Electron_phi", Electron_phi); Electron_phi.clear(); successBranches.push_back("Events/Electron_phi"); } else { missingBranches.push_back("Events/Electron_phi"); }
+      if (input->present("Events/Electron_phi")) { Electron_phi.resize(23); input->select("Events/Electron_phi", Electron_phi); Electron_phi.clear(); successBranches.push_back("Events/Electron_phi"); } else { missingBranches.push_back("Events/Electron_phi"); }
     if ( choose["Events/Electron_pt"] )
-      if (input->present("Events/Electron_pt")) { Electron_pt.resize(32); input->select("Events/Electron_pt", Electron_pt); Electron_pt.clear(); successBranches.push_back("Events/Electron_pt"); } else { missingBranches.push_back("Events/Electron_pt"); }
+      if (input->present("Events/Electron_pt")) { Electron_pt.resize(23); input->select("Events/Electron_pt", Electron_pt); Electron_pt.clear(); successBranches.push_back("Events/Electron_pt"); } else { missingBranches.push_back("Events/Electron_pt"); }
     if ( choose["Events/FatJet_area"] )
-      if (input->present("Events/FatJet_area")) { FatJet_area.resize(28); input->select("Events/FatJet_area", FatJet_area); FatJet_area.clear(); successBranches.push_back("Events/FatJet_area"); } else { missingBranches.push_back("Events/FatJet_area"); }
+      if (input->present("Events/FatJet_area")) { FatJet_area.resize(19); input->select("Events/FatJet_area", FatJet_area); FatJet_area.clear(); successBranches.push_back("Events/FatJet_area"); } else { missingBranches.push_back("Events/FatJet_area"); }
     if ( choose["Events/FatJet_deepTagMD_H4qvsQCD"] )
-      if (input->present("Events/FatJet_deepTagMD_H4qvsQCD")) { FatJet_deepTagMD_H4qvsQCD.resize(28); input->select("Events/FatJet_deepTagMD_H4qvsQCD", FatJet_deepTagMD_H4qvsQCD); FatJet_deepTagMD_H4qvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_H4qvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_H4qvsQCD"); }
+      if (input->present("Events/FatJet_deepTagMD_H4qvsQCD")) { FatJet_deepTagMD_H4qvsQCD.resize(19); input->select("Events/FatJet_deepTagMD_H4qvsQCD", FatJet_deepTagMD_H4qvsQCD); FatJet_deepTagMD_H4qvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_H4qvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_H4qvsQCD"); }
     if ( choose["Events/FatJet_deepTagMD_HbbvsQCD"] )
-      if (input->present("Events/FatJet_deepTagMD_HbbvsQCD")) { FatJet_deepTagMD_HbbvsQCD.resize(28); input->select("Events/FatJet_deepTagMD_HbbvsQCD", FatJet_deepTagMD_HbbvsQCD); FatJet_deepTagMD_HbbvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_HbbvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_HbbvsQCD"); }
+      if (input->present("Events/FatJet_deepTagMD_HbbvsQCD")) { FatJet_deepTagMD_HbbvsQCD.resize(19); input->select("Events/FatJet_deepTagMD_HbbvsQCD", FatJet_deepTagMD_HbbvsQCD); FatJet_deepTagMD_HbbvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_HbbvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_HbbvsQCD"); }
     if ( choose["Events/FatJet_deepTagMD_TvsQCD"] )
-      if (input->present("Events/FatJet_deepTagMD_TvsQCD")) { FatJet_deepTagMD_TvsQCD.resize(28); input->select("Events/FatJet_deepTagMD_TvsQCD", FatJet_deepTagMD_TvsQCD); FatJet_deepTagMD_TvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_TvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_TvsQCD"); }
+      if (input->present("Events/FatJet_deepTagMD_TvsQCD")) { FatJet_deepTagMD_TvsQCD.resize(19); input->select("Events/FatJet_deepTagMD_TvsQCD", FatJet_deepTagMD_TvsQCD); FatJet_deepTagMD_TvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_TvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_TvsQCD"); }
     if ( choose["Events/FatJet_deepTagMD_WvsQCD"] )
-      if (input->present("Events/FatJet_deepTagMD_WvsQCD")) { FatJet_deepTagMD_WvsQCD.resize(28); input->select("Events/FatJet_deepTagMD_WvsQCD", FatJet_deepTagMD_WvsQCD); FatJet_deepTagMD_WvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_WvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_WvsQCD"); }
+      if (input->present("Events/FatJet_deepTagMD_WvsQCD")) { FatJet_deepTagMD_WvsQCD.resize(19); input->select("Events/FatJet_deepTagMD_WvsQCD", FatJet_deepTagMD_WvsQCD); FatJet_deepTagMD_WvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_WvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_WvsQCD"); }
     if ( choose["Events/FatJet_deepTagMD_ZHbbvsQCD"] )
-      if (input->present("Events/FatJet_deepTagMD_ZHbbvsQCD")) { FatJet_deepTagMD_ZHbbvsQCD.resize(28); input->select("Events/FatJet_deepTagMD_ZHbbvsQCD", FatJet_deepTagMD_ZHbbvsQCD); FatJet_deepTagMD_ZHbbvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_ZHbbvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_ZHbbvsQCD"); }
+      if (input->present("Events/FatJet_deepTagMD_ZHbbvsQCD")) { FatJet_deepTagMD_ZHbbvsQCD.resize(19); input->select("Events/FatJet_deepTagMD_ZHbbvsQCD", FatJet_deepTagMD_ZHbbvsQCD); FatJet_deepTagMD_ZHbbvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_ZHbbvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_ZHbbvsQCD"); }
     if ( choose["Events/FatJet_deepTagMD_ZHccvsQCD"] )
-      if (input->present("Events/FatJet_deepTagMD_ZHccvsQCD")) { FatJet_deepTagMD_ZHccvsQCD.resize(28); input->select("Events/FatJet_deepTagMD_ZHccvsQCD", FatJet_deepTagMD_ZHccvsQCD); FatJet_deepTagMD_ZHccvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_ZHccvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_ZHccvsQCD"); }
+      if (input->present("Events/FatJet_deepTagMD_ZHccvsQCD")) { FatJet_deepTagMD_ZHccvsQCD.resize(19); input->select("Events/FatJet_deepTagMD_ZHccvsQCD", FatJet_deepTagMD_ZHccvsQCD); FatJet_deepTagMD_ZHccvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_ZHccvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_ZHccvsQCD"); }
     if ( choose["Events/FatJet_deepTagMD_ZbbvsQCD"] )
-      if (input->present("Events/FatJet_deepTagMD_ZbbvsQCD")) { FatJet_deepTagMD_ZbbvsQCD.resize(28); input->select("Events/FatJet_deepTagMD_ZbbvsQCD", FatJet_deepTagMD_ZbbvsQCD); FatJet_deepTagMD_ZbbvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_ZbbvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_ZbbvsQCD"); }
+      if (input->present("Events/FatJet_deepTagMD_ZbbvsQCD")) { FatJet_deepTagMD_ZbbvsQCD.resize(19); input->select("Events/FatJet_deepTagMD_ZbbvsQCD", FatJet_deepTagMD_ZbbvsQCD); FatJet_deepTagMD_ZbbvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_ZbbvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_ZbbvsQCD"); }
     if ( choose["Events/FatJet_deepTagMD_ZvsQCD"] )
-      if (input->present("Events/FatJet_deepTagMD_ZvsQCD")) { FatJet_deepTagMD_ZvsQCD.resize(28); input->select("Events/FatJet_deepTagMD_ZvsQCD", FatJet_deepTagMD_ZvsQCD); FatJet_deepTagMD_ZvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_ZvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_ZvsQCD"); }
+      if (input->present("Events/FatJet_deepTagMD_ZvsQCD")) { FatJet_deepTagMD_ZvsQCD.resize(19); input->select("Events/FatJet_deepTagMD_ZvsQCD", FatJet_deepTagMD_ZvsQCD); FatJet_deepTagMD_ZvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_ZvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_ZvsQCD"); }
     if ( choose["Events/FatJet_deepTagMD_bbvsLight"] )
-      if (input->present("Events/FatJet_deepTagMD_bbvsLight")) { FatJet_deepTagMD_bbvsLight.resize(28); input->select("Events/FatJet_deepTagMD_bbvsLight", FatJet_deepTagMD_bbvsLight); FatJet_deepTagMD_bbvsLight.clear(); successBranches.push_back("Events/FatJet_deepTagMD_bbvsLight"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_bbvsLight"); }
+      if (input->present("Events/FatJet_deepTagMD_bbvsLight")) { FatJet_deepTagMD_bbvsLight.resize(19); input->select("Events/FatJet_deepTagMD_bbvsLight", FatJet_deepTagMD_bbvsLight); FatJet_deepTagMD_bbvsLight.clear(); successBranches.push_back("Events/FatJet_deepTagMD_bbvsLight"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_bbvsLight"); }
     if ( choose["Events/FatJet_deepTagMD_ccvsLight"] )
-      if (input->present("Events/FatJet_deepTagMD_ccvsLight")) { FatJet_deepTagMD_ccvsLight.resize(28); input->select("Events/FatJet_deepTagMD_ccvsLight", FatJet_deepTagMD_ccvsLight); FatJet_deepTagMD_ccvsLight.clear(); successBranches.push_back("Events/FatJet_deepTagMD_ccvsLight"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_ccvsLight"); }
+      if (input->present("Events/FatJet_deepTagMD_ccvsLight")) { FatJet_deepTagMD_ccvsLight.resize(19); input->select("Events/FatJet_deepTagMD_ccvsLight", FatJet_deepTagMD_ccvsLight); FatJet_deepTagMD_ccvsLight.clear(); successBranches.push_back("Events/FatJet_deepTagMD_ccvsLight"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_ccvsLight"); }
     if ( choose["Events/FatJet_deepTag_H"] )
-      if (input->present("Events/FatJet_deepTag_H")) { FatJet_deepTag_H.resize(28); input->select("Events/FatJet_deepTag_H", FatJet_deepTag_H); FatJet_deepTag_H.clear(); successBranches.push_back("Events/FatJet_deepTag_H"); } else { missingBranches.push_back("Events/FatJet_deepTag_H"); }
+      if (input->present("Events/FatJet_deepTag_H")) { FatJet_deepTag_H.resize(19); input->select("Events/FatJet_deepTag_H", FatJet_deepTag_H); FatJet_deepTag_H.clear(); successBranches.push_back("Events/FatJet_deepTag_H"); } else { missingBranches.push_back("Events/FatJet_deepTag_H"); }
     if ( choose["Events/FatJet_deepTag_QCD"] )
-      if (input->present("Events/FatJet_deepTag_QCD")) { FatJet_deepTag_QCD.resize(28); input->select("Events/FatJet_deepTag_QCD", FatJet_deepTag_QCD); FatJet_deepTag_QCD.clear(); successBranches.push_back("Events/FatJet_deepTag_QCD"); } else { missingBranches.push_back("Events/FatJet_deepTag_QCD"); }
+      if (input->present("Events/FatJet_deepTag_QCD")) { FatJet_deepTag_QCD.resize(19); input->select("Events/FatJet_deepTag_QCD", FatJet_deepTag_QCD); FatJet_deepTag_QCD.clear(); successBranches.push_back("Events/FatJet_deepTag_QCD"); } else { missingBranches.push_back("Events/FatJet_deepTag_QCD"); }
     if ( choose["Events/FatJet_deepTag_QCDothers"] )
-      if (input->present("Events/FatJet_deepTag_QCDothers")) { FatJet_deepTag_QCDothers.resize(28); input->select("Events/FatJet_deepTag_QCDothers", FatJet_deepTag_QCDothers); FatJet_deepTag_QCDothers.clear(); successBranches.push_back("Events/FatJet_deepTag_QCDothers"); } else { missingBranches.push_back("Events/FatJet_deepTag_QCDothers"); }
+      if (input->present("Events/FatJet_deepTag_QCDothers")) { FatJet_deepTag_QCDothers.resize(19); input->select("Events/FatJet_deepTag_QCDothers", FatJet_deepTag_QCDothers); FatJet_deepTag_QCDothers.clear(); successBranches.push_back("Events/FatJet_deepTag_QCDothers"); } else { missingBranches.push_back("Events/FatJet_deepTag_QCDothers"); }
     if ( choose["Events/FatJet_deepTag_TvsQCD"] )
-      if (input->present("Events/FatJet_deepTag_TvsQCD")) { FatJet_deepTag_TvsQCD.resize(28); input->select("Events/FatJet_deepTag_TvsQCD", FatJet_deepTag_TvsQCD); FatJet_deepTag_TvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTag_TvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTag_TvsQCD"); }
+      if (input->present("Events/FatJet_deepTag_TvsQCD")) { FatJet_deepTag_TvsQCD.resize(19); input->select("Events/FatJet_deepTag_TvsQCD", FatJet_deepTag_TvsQCD); FatJet_deepTag_TvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTag_TvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTag_TvsQCD"); }
     if ( choose["Events/FatJet_deepTag_WvsQCD"] )
-      if (input->present("Events/FatJet_deepTag_WvsQCD")) { FatJet_deepTag_WvsQCD.resize(28); input->select("Events/FatJet_deepTag_WvsQCD", FatJet_deepTag_WvsQCD); FatJet_deepTag_WvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTag_WvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTag_WvsQCD"); }
+      if (input->present("Events/FatJet_deepTag_WvsQCD")) { FatJet_deepTag_WvsQCD.resize(19); input->select("Events/FatJet_deepTag_WvsQCD", FatJet_deepTag_WvsQCD); FatJet_deepTag_WvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTag_WvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTag_WvsQCD"); }
     if ( choose["Events/FatJet_deepTag_ZvsQCD"] )
-      if (input->present("Events/FatJet_deepTag_ZvsQCD")) { FatJet_deepTag_ZvsQCD.resize(28); input->select("Events/FatJet_deepTag_ZvsQCD", FatJet_deepTag_ZvsQCD); FatJet_deepTag_ZvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTag_ZvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTag_ZvsQCD"); }
+      if (input->present("Events/FatJet_deepTag_ZvsQCD")) { FatJet_deepTag_ZvsQCD.resize(19); input->select("Events/FatJet_deepTag_ZvsQCD", FatJet_deepTag_ZvsQCD); FatJet_deepTag_ZvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTag_ZvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTag_ZvsQCD"); }
     if ( choose["Events/FatJet_eta"] )
-      if (input->present("Events/FatJet_eta")) { FatJet_eta.resize(28); input->select("Events/FatJet_eta", FatJet_eta); FatJet_eta.clear(); successBranches.push_back("Events/FatJet_eta"); } else { missingBranches.push_back("Events/FatJet_eta"); }
+      if (input->present("Events/FatJet_eta")) { FatJet_eta.resize(19); input->select("Events/FatJet_eta", FatJet_eta); FatJet_eta.clear(); successBranches.push_back("Events/FatJet_eta"); } else { missingBranches.push_back("Events/FatJet_eta"); }
     if ( choose["Events/FatJet_jetId"] )
-      if (input->present("Events/FatJet_jetId")) { FatJet_jetId.resize(28); input->select("Events/FatJet_jetId", FatJet_jetId); FatJet_jetId.clear(); successBranches.push_back("Events/FatJet_jetId"); } else { missingBranches.push_back("Events/FatJet_jetId"); }
+      if (input->present("Events/FatJet_jetId")) { FatJet_jetId.resize(19); input->select("Events/FatJet_jetId", FatJet_jetId); FatJet_jetId.clear(); successBranches.push_back("Events/FatJet_jetId"); } else { missingBranches.push_back("Events/FatJet_jetId"); }
     if ( choose["Events/FatJet_mass"] )
-      if (input->present("Events/FatJet_mass")) { FatJet_mass.resize(28); input->select("Events/FatJet_mass", FatJet_mass); FatJet_mass.clear(); successBranches.push_back("Events/FatJet_mass"); } else { missingBranches.push_back("Events/FatJet_mass"); }
+      if (input->present("Events/FatJet_mass")) { FatJet_mass.resize(19); input->select("Events/FatJet_mass", FatJet_mass); FatJet_mass.clear(); successBranches.push_back("Events/FatJet_mass"); } else { missingBranches.push_back("Events/FatJet_mass"); }
     if ( choose["Events/FatJet_msoftdrop"] )
-      if (input->present("Events/FatJet_msoftdrop")) { FatJet_msoftdrop.resize(28); input->select("Events/FatJet_msoftdrop", FatJet_msoftdrop); FatJet_msoftdrop.clear(); successBranches.push_back("Events/FatJet_msoftdrop"); } else { missingBranches.push_back("Events/FatJet_msoftdrop"); }
+      if (input->present("Events/FatJet_msoftdrop")) { FatJet_msoftdrop.resize(19); input->select("Events/FatJet_msoftdrop", FatJet_msoftdrop); FatJet_msoftdrop.clear(); successBranches.push_back("Events/FatJet_msoftdrop"); } else { missingBranches.push_back("Events/FatJet_msoftdrop"); }
     if ( choose["Events/FatJet_n2b1"] )
-      if (input->present("Events/FatJet_n2b1")) { FatJet_n2b1.resize(28); input->select("Events/FatJet_n2b1", FatJet_n2b1); FatJet_n2b1.clear(); successBranches.push_back("Events/FatJet_n2b1"); } else { missingBranches.push_back("Events/FatJet_n2b1"); }
+      if (input->present("Events/FatJet_n2b1")) { FatJet_n2b1.resize(19); input->select("Events/FatJet_n2b1", FatJet_n2b1); FatJet_n2b1.clear(); successBranches.push_back("Events/FatJet_n2b1"); } else { missingBranches.push_back("Events/FatJet_n2b1"); }
     if ( choose["Events/FatJet_n3b1"] )
-      if (input->present("Events/FatJet_n3b1")) { FatJet_n3b1.resize(28); input->select("Events/FatJet_n3b1", FatJet_n3b1); FatJet_n3b1.clear(); successBranches.push_back("Events/FatJet_n3b1"); } else { missingBranches.push_back("Events/FatJet_n3b1"); }
+      if (input->present("Events/FatJet_n3b1")) { FatJet_n3b1.resize(19); input->select("Events/FatJet_n3b1", FatJet_n3b1); FatJet_n3b1.clear(); successBranches.push_back("Events/FatJet_n3b1"); } else { missingBranches.push_back("Events/FatJet_n3b1"); }
     if ( choose["Events/FatJet_particleNetMD_QCD"] )
-      if (input->present("Events/FatJet_particleNetMD_QCD")) { FatJet_particleNetMD_QCD.resize(28); input->select("Events/FatJet_particleNetMD_QCD", FatJet_particleNetMD_QCD); FatJet_particleNetMD_QCD.clear(); successBranches.push_back("Events/FatJet_particleNetMD_QCD"); } else { missingBranches.push_back("Events/FatJet_particleNetMD_QCD"); }
+      if (input->present("Events/FatJet_particleNetMD_QCD")) { FatJet_particleNetMD_QCD.resize(19); input->select("Events/FatJet_particleNetMD_QCD", FatJet_particleNetMD_QCD); FatJet_particleNetMD_QCD.clear(); successBranches.push_back("Events/FatJet_particleNetMD_QCD"); } else { missingBranches.push_back("Events/FatJet_particleNetMD_QCD"); }
     if ( choose["Events/FatJet_particleNetMD_Xbb"] )
-      if (input->present("Events/FatJet_particleNetMD_Xbb")) { FatJet_particleNetMD_Xbb.resize(28); input->select("Events/FatJet_particleNetMD_Xbb", FatJet_particleNetMD_Xbb); FatJet_particleNetMD_Xbb.clear(); successBranches.push_back("Events/FatJet_particleNetMD_Xbb"); } else { missingBranches.push_back("Events/FatJet_particleNetMD_Xbb"); }
+      if (input->present("Events/FatJet_particleNetMD_Xbb")) { FatJet_particleNetMD_Xbb.resize(19); input->select("Events/FatJet_particleNetMD_Xbb", FatJet_particleNetMD_Xbb); FatJet_particleNetMD_Xbb.clear(); successBranches.push_back("Events/FatJet_particleNetMD_Xbb"); } else { missingBranches.push_back("Events/FatJet_particleNetMD_Xbb"); }
     if ( choose["Events/FatJet_particleNetMD_Xcc"] )
-      if (input->present("Events/FatJet_particleNetMD_Xcc")) { FatJet_particleNetMD_Xcc.resize(28); input->select("Events/FatJet_particleNetMD_Xcc", FatJet_particleNetMD_Xcc); FatJet_particleNetMD_Xcc.clear(); successBranches.push_back("Events/FatJet_particleNetMD_Xcc"); } else { missingBranches.push_back("Events/FatJet_particleNetMD_Xcc"); }
+      if (input->present("Events/FatJet_particleNetMD_Xcc")) { FatJet_particleNetMD_Xcc.resize(19); input->select("Events/FatJet_particleNetMD_Xcc", FatJet_particleNetMD_Xcc); FatJet_particleNetMD_Xcc.clear(); successBranches.push_back("Events/FatJet_particleNetMD_Xcc"); } else { missingBranches.push_back("Events/FatJet_particleNetMD_Xcc"); }
     if ( choose["Events/FatJet_particleNetMD_Xqq"] )
-      if (input->present("Events/FatJet_particleNetMD_Xqq")) { FatJet_particleNetMD_Xqq.resize(28); input->select("Events/FatJet_particleNetMD_Xqq", FatJet_particleNetMD_Xqq); FatJet_particleNetMD_Xqq.clear(); successBranches.push_back("Events/FatJet_particleNetMD_Xqq"); } else { missingBranches.push_back("Events/FatJet_particleNetMD_Xqq"); }
+      if (input->present("Events/FatJet_particleNetMD_Xqq")) { FatJet_particleNetMD_Xqq.resize(19); input->select("Events/FatJet_particleNetMD_Xqq", FatJet_particleNetMD_Xqq); FatJet_particleNetMD_Xqq.clear(); successBranches.push_back("Events/FatJet_particleNetMD_Xqq"); } else { missingBranches.push_back("Events/FatJet_particleNetMD_Xqq"); }
     if ( choose["Events/FatJet_particleNet_HbbvsQCD"] )
-      if (input->present("Events/FatJet_particleNet_HbbvsQCD")) { FatJet_particleNet_HbbvsQCD.resize(28); input->select("Events/FatJet_particleNet_HbbvsQCD", FatJet_particleNet_HbbvsQCD); FatJet_particleNet_HbbvsQCD.clear(); successBranches.push_back("Events/FatJet_particleNet_HbbvsQCD"); } else { missingBranches.push_back("Events/FatJet_particleNet_HbbvsQCD"); }
+      if (input->present("Events/FatJet_particleNet_HbbvsQCD")) { FatJet_particleNet_HbbvsQCD.resize(19); input->select("Events/FatJet_particleNet_HbbvsQCD", FatJet_particleNet_HbbvsQCD); FatJet_particleNet_HbbvsQCD.clear(); successBranches.push_back("Events/FatJet_particleNet_HbbvsQCD"); } else { missingBranches.push_back("Events/FatJet_particleNet_HbbvsQCD"); }
     if ( choose["Events/FatJet_particleNet_TvsQCD"] )
-      if (input->present("Events/FatJet_particleNet_TvsQCD")) { FatJet_particleNet_TvsQCD.resize(28); input->select("Events/FatJet_particleNet_TvsQCD", FatJet_particleNet_TvsQCD); FatJet_particleNet_TvsQCD.clear(); successBranches.push_back("Events/FatJet_particleNet_TvsQCD"); } else { missingBranches.push_back("Events/FatJet_particleNet_TvsQCD"); }
+      if (input->present("Events/FatJet_particleNet_TvsQCD")) { FatJet_particleNet_TvsQCD.resize(19); input->select("Events/FatJet_particleNet_TvsQCD", FatJet_particleNet_TvsQCD); FatJet_particleNet_TvsQCD.clear(); successBranches.push_back("Events/FatJet_particleNet_TvsQCD"); } else { missingBranches.push_back("Events/FatJet_particleNet_TvsQCD"); }
     if ( choose["Events/FatJet_particleNet_WvsQCD"] )
-      if (input->present("Events/FatJet_particleNet_WvsQCD")) { FatJet_particleNet_WvsQCD.resize(28); input->select("Events/FatJet_particleNet_WvsQCD", FatJet_particleNet_WvsQCD); FatJet_particleNet_WvsQCD.clear(); successBranches.push_back("Events/FatJet_particleNet_WvsQCD"); } else { missingBranches.push_back("Events/FatJet_particleNet_WvsQCD"); }
+      if (input->present("Events/FatJet_particleNet_WvsQCD")) { FatJet_particleNet_WvsQCD.resize(19); input->select("Events/FatJet_particleNet_WvsQCD", FatJet_particleNet_WvsQCD); FatJet_particleNet_WvsQCD.clear(); successBranches.push_back("Events/FatJet_particleNet_WvsQCD"); } else { missingBranches.push_back("Events/FatJet_particleNet_WvsQCD"); }
     if ( choose["Events/FatJet_particleNet_ZvsQCD"] )
-      if (input->present("Events/FatJet_particleNet_ZvsQCD")) { FatJet_particleNet_ZvsQCD.resize(28); input->select("Events/FatJet_particleNet_ZvsQCD", FatJet_particleNet_ZvsQCD); FatJet_particleNet_ZvsQCD.clear(); successBranches.push_back("Events/FatJet_particleNet_ZvsQCD"); } else { missingBranches.push_back("Events/FatJet_particleNet_ZvsQCD"); }
+      if (input->present("Events/FatJet_particleNet_ZvsQCD")) { FatJet_particleNet_ZvsQCD.resize(19); input->select("Events/FatJet_particleNet_ZvsQCD", FatJet_particleNet_ZvsQCD); FatJet_particleNet_ZvsQCD.clear(); successBranches.push_back("Events/FatJet_particleNet_ZvsQCD"); } else { missingBranches.push_back("Events/FatJet_particleNet_ZvsQCD"); }
     if ( choose["Events/FatJet_particleNet_mass"] )
-      if (input->present("Events/FatJet_particleNet_mass")) { FatJet_particleNet_mass.resize(28); input->select("Events/FatJet_particleNet_mass", FatJet_particleNet_mass); FatJet_particleNet_mass.clear(); successBranches.push_back("Events/FatJet_particleNet_mass"); } else { missingBranches.push_back("Events/FatJet_particleNet_mass"); }
+      if (input->present("Events/FatJet_particleNet_mass")) { FatJet_particleNet_mass.resize(19); input->select("Events/FatJet_particleNet_mass", FatJet_particleNet_mass); FatJet_particleNet_mass.clear(); successBranches.push_back("Events/FatJet_particleNet_mass"); } else { missingBranches.push_back("Events/FatJet_particleNet_mass"); }
     if ( choose["Events/FatJet_phi"] )
-      if (input->present("Events/FatJet_phi")) { FatJet_phi.resize(28); input->select("Events/FatJet_phi", FatJet_phi); FatJet_phi.clear(); successBranches.push_back("Events/FatJet_phi"); } else { missingBranches.push_back("Events/FatJet_phi"); }
+      if (input->present("Events/FatJet_phi")) { FatJet_phi.resize(19); input->select("Events/FatJet_phi", FatJet_phi); FatJet_phi.clear(); successBranches.push_back("Events/FatJet_phi"); } else { missingBranches.push_back("Events/FatJet_phi"); }
     if ( choose["Events/FatJet_pt"] )
-      if (input->present("Events/FatJet_pt")) { FatJet_pt.resize(28); input->select("Events/FatJet_pt", FatJet_pt); FatJet_pt.clear(); successBranches.push_back("Events/FatJet_pt"); } else { missingBranches.push_back("Events/FatJet_pt"); }
+      if (input->present("Events/FatJet_pt")) { FatJet_pt.resize(19); input->select("Events/FatJet_pt", FatJet_pt); FatJet_pt.clear(); successBranches.push_back("Events/FatJet_pt"); } else { missingBranches.push_back("Events/FatJet_pt"); }
     if ( choose["Events/FatJet_rawFactor"] )
-      if (input->present("Events/FatJet_rawFactor")) { FatJet_rawFactor.resize(28); input->select("Events/FatJet_rawFactor", FatJet_rawFactor); FatJet_rawFactor.clear(); successBranches.push_back("Events/FatJet_rawFactor"); } else { missingBranches.push_back("Events/FatJet_rawFactor"); }
+      if (input->present("Events/FatJet_rawFactor")) { FatJet_rawFactor.resize(19); input->select("Events/FatJet_rawFactor", FatJet_rawFactor); FatJet_rawFactor.clear(); successBranches.push_back("Events/FatJet_rawFactor"); } else { missingBranches.push_back("Events/FatJet_rawFactor"); }
     if ( choose["Events/FatJet_tau1"] )
-      if (input->present("Events/FatJet_tau1")) { FatJet_tau1.resize(28); input->select("Events/FatJet_tau1", FatJet_tau1); FatJet_tau1.clear(); successBranches.push_back("Events/FatJet_tau1"); } else { missingBranches.push_back("Events/FatJet_tau1"); }
+      if (input->present("Events/FatJet_tau1")) { FatJet_tau1.resize(19); input->select("Events/FatJet_tau1", FatJet_tau1); FatJet_tau1.clear(); successBranches.push_back("Events/FatJet_tau1"); } else { missingBranches.push_back("Events/FatJet_tau1"); }
     if ( choose["Events/FatJet_tau2"] )
-      if (input->present("Events/FatJet_tau2")) { FatJet_tau2.resize(28); input->select("Events/FatJet_tau2", FatJet_tau2); FatJet_tau2.clear(); successBranches.push_back("Events/FatJet_tau2"); } else { missingBranches.push_back("Events/FatJet_tau2"); }
+      if (input->present("Events/FatJet_tau2")) { FatJet_tau2.resize(19); input->select("Events/FatJet_tau2", FatJet_tau2); FatJet_tau2.clear(); successBranches.push_back("Events/FatJet_tau2"); } else { missingBranches.push_back("Events/FatJet_tau2"); }
     if ( choose["Events/FatJet_tau3"] )
-      if (input->present("Events/FatJet_tau3")) { FatJet_tau3.resize(28); input->select("Events/FatJet_tau3", FatJet_tau3); FatJet_tau3.clear(); successBranches.push_back("Events/FatJet_tau3"); } else { missingBranches.push_back("Events/FatJet_tau3"); }
+      if (input->present("Events/FatJet_tau3")) { FatJet_tau3.resize(19); input->select("Events/FatJet_tau3", FatJet_tau3); FatJet_tau3.clear(); successBranches.push_back("Events/FatJet_tau3"); } else { missingBranches.push_back("Events/FatJet_tau3"); }
     if ( choose["Events/FatJet_tau4"] )
-      if (input->present("Events/FatJet_tau4")) { FatJet_tau4.resize(28); input->select("Events/FatJet_tau4", FatJet_tau4); FatJet_tau4.clear(); successBranches.push_back("Events/FatJet_tau4"); } else { missingBranches.push_back("Events/FatJet_tau4"); }
+      if (input->present("Events/FatJet_tau4")) { FatJet_tau4.resize(19); input->select("Events/FatJet_tau4", FatJet_tau4); FatJet_tau4.clear(); successBranches.push_back("Events/FatJet_tau4"); } else { missingBranches.push_back("Events/FatJet_tau4"); }
     if ( choose["Events/Flag_BadPFMuonDzFilter"] )
       if (input->present("Events/Flag_BadPFMuonDzFilter")) { input->select("Events/Flag_BadPFMuonDzFilter", Flag_BadPFMuonDzFilter); successBranches.push_back("Events/Flag_BadPFMuonDzFilter"); } else { missingBranches.push_back("Events/Flag_BadPFMuonDzFilter"); }
     if ( choose["Events/Flag_BadPFMuonFilter"] )
@@ -1646,31 +1662,33 @@ struct eventBuffer
     if ( choose["Events/Flag_goodVertices"] )
       if (input->present("Events/Flag_goodVertices")) { input->select("Events/Flag_goodVertices", Flag_goodVertices); successBranches.push_back("Events/Flag_goodVertices"); } else { missingBranches.push_back("Events/Flag_goodVertices"); }
     if ( choose["Events/GenJet_eta"] )
-      if (input->present("Events/GenJet_eta")) { GenJet_eta.resize(55); input->select("Events/GenJet_eta", GenJet_eta); GenJet_eta.clear(); successBranches.push_back("Events/GenJet_eta"); } else { missingBranches.push_back("Events/GenJet_eta"); }
+      if (input->present("Events/GenJet_eta")) { GenJet_eta.resize(51); input->select("Events/GenJet_eta", GenJet_eta); GenJet_eta.clear(); successBranches.push_back("Events/GenJet_eta"); } else { missingBranches.push_back("Events/GenJet_eta"); }
     if ( choose["Events/GenJet_hadronFlavour"] )
-      if (input->present("Events/GenJet_hadronFlavour")) { GenJet_hadronFlavour.resize(55); input->select("Events/GenJet_hadronFlavour", GenJet_hadronFlavour); GenJet_hadronFlavour.clear(); successBranches.push_back("Events/GenJet_hadronFlavour"); } else { missingBranches.push_back("Events/GenJet_hadronFlavour"); }
+      if (input->present("Events/GenJet_hadronFlavour")) { GenJet_hadronFlavour.resize(51); input->select("Events/GenJet_hadronFlavour", GenJet_hadronFlavour); GenJet_hadronFlavour.clear(); successBranches.push_back("Events/GenJet_hadronFlavour"); } else { missingBranches.push_back("Events/GenJet_hadronFlavour"); }
     if ( choose["Events/GenJet_mass"] )
-      if (input->present("Events/GenJet_mass")) { GenJet_mass.resize(55); input->select("Events/GenJet_mass", GenJet_mass); GenJet_mass.clear(); successBranches.push_back("Events/GenJet_mass"); } else { missingBranches.push_back("Events/GenJet_mass"); }
+      if (input->present("Events/GenJet_mass")) { GenJet_mass.resize(51); input->select("Events/GenJet_mass", GenJet_mass); GenJet_mass.clear(); successBranches.push_back("Events/GenJet_mass"); } else { missingBranches.push_back("Events/GenJet_mass"); }
+    if ( choose["Events/GenJet_partonFlavour"] )
+      if (input->present("Events/GenJet_partonFlavour")) { GenJet_partonFlavour.resize(51); input->select("Events/GenJet_partonFlavour", GenJet_partonFlavour); GenJet_partonFlavour.clear(); successBranches.push_back("Events/GenJet_partonFlavour"); } else { missingBranches.push_back("Events/GenJet_partonFlavour"); }
     if ( choose["Events/GenJet_phi"] )
-      if (input->present("Events/GenJet_phi")) { GenJet_phi.resize(55); input->select("Events/GenJet_phi", GenJet_phi); GenJet_phi.clear(); successBranches.push_back("Events/GenJet_phi"); } else { missingBranches.push_back("Events/GenJet_phi"); }
+      if (input->present("Events/GenJet_phi")) { GenJet_phi.resize(51); input->select("Events/GenJet_phi", GenJet_phi); GenJet_phi.clear(); successBranches.push_back("Events/GenJet_phi"); } else { missingBranches.push_back("Events/GenJet_phi"); }
     if ( choose["Events/GenJet_pt"] )
-      if (input->present("Events/GenJet_pt")) { GenJet_pt.resize(55); input->select("Events/GenJet_pt", GenJet_pt); GenJet_pt.clear(); successBranches.push_back("Events/GenJet_pt"); } else { missingBranches.push_back("Events/GenJet_pt"); }
+      if (input->present("Events/GenJet_pt")) { GenJet_pt.resize(51); input->select("Events/GenJet_pt", GenJet_pt); GenJet_pt.clear(); successBranches.push_back("Events/GenJet_pt"); } else { missingBranches.push_back("Events/GenJet_pt"); }
     if ( choose["Events/GenPart_eta"] )
-      if (input->present("Events/GenPart_eta")) { GenPart_eta.resize(270); input->select("Events/GenPart_eta", GenPart_eta); GenPart_eta.clear(); successBranches.push_back("Events/GenPart_eta"); } else { missingBranches.push_back("Events/GenPart_eta"); }
+      if (input->present("Events/GenPart_eta")) { GenPart_eta.resize(206); input->select("Events/GenPart_eta", GenPart_eta); GenPart_eta.clear(); successBranches.push_back("Events/GenPart_eta"); } else { missingBranches.push_back("Events/GenPart_eta"); }
     if ( choose["Events/GenPart_genPartIdxMother"] )
-      if (input->present("Events/GenPart_genPartIdxMother")) { GenPart_genPartIdxMother.resize(270); input->select("Events/GenPart_genPartIdxMother", GenPart_genPartIdxMother); GenPart_genPartIdxMother.clear(); successBranches.push_back("Events/GenPart_genPartIdxMother"); } else { missingBranches.push_back("Events/GenPart_genPartIdxMother"); }
+      if (input->present("Events/GenPart_genPartIdxMother")) { GenPart_genPartIdxMother.resize(206); input->select("Events/GenPart_genPartIdxMother", GenPart_genPartIdxMother); GenPart_genPartIdxMother.clear(); successBranches.push_back("Events/GenPart_genPartIdxMother"); } else { missingBranches.push_back("Events/GenPart_genPartIdxMother"); }
     if ( choose["Events/GenPart_mass"] )
-      if (input->present("Events/GenPart_mass")) { GenPart_mass.resize(270); input->select("Events/GenPart_mass", GenPart_mass); GenPart_mass.clear(); successBranches.push_back("Events/GenPart_mass"); } else { missingBranches.push_back("Events/GenPart_mass"); }
+      if (input->present("Events/GenPart_mass")) { GenPart_mass.resize(206); input->select("Events/GenPart_mass", GenPart_mass); GenPart_mass.clear(); successBranches.push_back("Events/GenPart_mass"); } else { missingBranches.push_back("Events/GenPart_mass"); }
     if ( choose["Events/GenPart_pdgId"] )
-      if (input->present("Events/GenPart_pdgId")) { GenPart_pdgId.resize(270); input->select("Events/GenPart_pdgId", GenPart_pdgId); GenPart_pdgId.clear(); successBranches.push_back("Events/GenPart_pdgId"); } else { missingBranches.push_back("Events/GenPart_pdgId"); }
+      if (input->present("Events/GenPart_pdgId")) { GenPart_pdgId.resize(206); input->select("Events/GenPart_pdgId", GenPart_pdgId); GenPart_pdgId.clear(); successBranches.push_back("Events/GenPart_pdgId"); } else { missingBranches.push_back("Events/GenPart_pdgId"); }
     if ( choose["Events/GenPart_phi"] )
-      if (input->present("Events/GenPart_phi")) { GenPart_phi.resize(270); input->select("Events/GenPart_phi", GenPart_phi); GenPart_phi.clear(); successBranches.push_back("Events/GenPart_phi"); } else { missingBranches.push_back("Events/GenPart_phi"); }
+      if (input->present("Events/GenPart_phi")) { GenPart_phi.resize(206); input->select("Events/GenPart_phi", GenPart_phi); GenPart_phi.clear(); successBranches.push_back("Events/GenPart_phi"); } else { missingBranches.push_back("Events/GenPart_phi"); }
     if ( choose["Events/GenPart_pt"] )
-      if (input->present("Events/GenPart_pt")) { GenPart_pt.resize(270); input->select("Events/GenPart_pt", GenPart_pt); GenPart_pt.clear(); successBranches.push_back("Events/GenPart_pt"); } else { missingBranches.push_back("Events/GenPart_pt"); }
+      if (input->present("Events/GenPart_pt")) { GenPart_pt.resize(206); input->select("Events/GenPart_pt", GenPart_pt); GenPart_pt.clear(); successBranches.push_back("Events/GenPart_pt"); } else { missingBranches.push_back("Events/GenPart_pt"); }
     if ( choose["Events/GenPart_status"] )
-      if (input->present("Events/GenPart_status")) { GenPart_status.resize(270); input->select("Events/GenPart_status", GenPart_status); GenPart_status.clear(); successBranches.push_back("Events/GenPart_status"); } else { missingBranches.push_back("Events/GenPart_status"); }
+      if (input->present("Events/GenPart_status")) { GenPart_status.resize(206); input->select("Events/GenPart_status", GenPart_status); GenPart_status.clear(); successBranches.push_back("Events/GenPart_status"); } else { missingBranches.push_back("Events/GenPart_status"); }
     if ( choose["Events/GenPart_statusFlags"] )
-      if (input->present("Events/GenPart_statusFlags")) { GenPart_statusFlags.resize(270); input->select("Events/GenPart_statusFlags", GenPart_statusFlags); GenPart_statusFlags.clear(); successBranches.push_back("Events/GenPart_statusFlags"); } else { missingBranches.push_back("Events/GenPart_statusFlags"); }
+      if (input->present("Events/GenPart_statusFlags")) { GenPart_statusFlags.resize(206); input->select("Events/GenPart_statusFlags", GenPart_statusFlags); GenPart_statusFlags.clear(); successBranches.push_back("Events/GenPart_statusFlags"); } else { missingBranches.push_back("Events/GenPart_statusFlags"); }
     if ( choose["Events/Generator_weight"] )
       if (input->present("Events/Generator_weight")) { input->select("Events/Generator_weight", Generator_weight); successBranches.push_back("Events/Generator_weight"); } else { missingBranches.push_back("Events/Generator_weight"); }
     if ( choose["Events/HLT_AK8PFHT750_TrimMass50"] )
@@ -1787,10 +1805,6 @@ struct eventBuffer
       if (input->present("Events/HLT_Ele135_CaloIdVT_GsfTrkIdT")) { input->select("Events/HLT_Ele135_CaloIdVT_GsfTrkIdT", HLT_Ele135_CaloIdVT_GsfTrkIdT); successBranches.push_back("Events/HLT_Ele135_CaloIdVT_GsfTrkIdT"); } else { missingBranches.push_back("Events/HLT_Ele135_CaloIdVT_GsfTrkIdT"); }
     if ( choose["Events/HLT_Ele145_CaloIdVT_GsfTrkIdT"] )
       if (input->present("Events/HLT_Ele145_CaloIdVT_GsfTrkIdT")) { input->select("Events/HLT_Ele145_CaloIdVT_GsfTrkIdT", HLT_Ele145_CaloIdVT_GsfTrkIdT); successBranches.push_back("Events/HLT_Ele145_CaloIdVT_GsfTrkIdT"); } else { missingBranches.push_back("Events/HLT_Ele145_CaloIdVT_GsfTrkIdT"); }
-    if ( choose["Events/HLT_Ele15_CaloIdL_TrackIdL_IsoVL_PFJet30"] )
-      if (input->present("Events/HLT_Ele15_CaloIdL_TrackIdL_IsoVL_PFJet30")) { input->select("Events/HLT_Ele15_CaloIdL_TrackIdL_IsoVL_PFJet30", HLT_Ele15_CaloIdL_TrackIdL_IsoVL_PFJet30); successBranches.push_back("Events/HLT_Ele15_CaloIdL_TrackIdL_IsoVL_PFJet30"); } else { missingBranches.push_back("Events/HLT_Ele15_CaloIdL_TrackIdL_IsoVL_PFJet30"); }
-    if ( choose["Events/HLT_Ele15_Ele8_CaloIdL_TrackIdL_IsoVL"] )
-      if (input->present("Events/HLT_Ele15_Ele8_CaloIdL_TrackIdL_IsoVL")) { input->select("Events/HLT_Ele15_Ele8_CaloIdL_TrackIdL_IsoVL", HLT_Ele15_Ele8_CaloIdL_TrackIdL_IsoVL); successBranches.push_back("Events/HLT_Ele15_Ele8_CaloIdL_TrackIdL_IsoVL"); } else { missingBranches.push_back("Events/HLT_Ele15_Ele8_CaloIdL_TrackIdL_IsoVL"); }
     if ( choose["Events/HLT_Ele15_IsoVVVL_PFHT450"] )
       if (input->present("Events/HLT_Ele15_IsoVVVL_PFHT450")) { input->select("Events/HLT_Ele15_IsoVVVL_PFHT450", HLT_Ele15_IsoVVVL_PFHT450); successBranches.push_back("Events/HLT_Ele15_IsoVVVL_PFHT450"); } else { missingBranches.push_back("Events/HLT_Ele15_IsoVVVL_PFHT450"); }
     if ( choose["Events/HLT_Ele15_IsoVVVL_PFHT450_CaloBTagCSV_4p5"] )
@@ -1799,14 +1813,10 @@ struct eventBuffer
       if (input->present("Events/HLT_Ele15_IsoVVVL_PFHT450_PFMET50")) { input->select("Events/HLT_Ele15_IsoVVVL_PFHT450_PFMET50", HLT_Ele15_IsoVVVL_PFHT450_PFMET50); successBranches.push_back("Events/HLT_Ele15_IsoVVVL_PFHT450_PFMET50"); } else { missingBranches.push_back("Events/HLT_Ele15_IsoVVVL_PFHT450_PFMET50"); }
     if ( choose["Events/HLT_Ele15_IsoVVVL_PFHT600"] )
       if (input->present("Events/HLT_Ele15_IsoVVVL_PFHT600")) { input->select("Events/HLT_Ele15_IsoVVVL_PFHT600", HLT_Ele15_IsoVVVL_PFHT600); successBranches.push_back("Events/HLT_Ele15_IsoVVVL_PFHT600"); } else { missingBranches.push_back("Events/HLT_Ele15_IsoVVVL_PFHT600"); }
-    if ( choose["Events/HLT_Ele15_WPLoose_Gsf"] )
-      if (input->present("Events/HLT_Ele15_WPLoose_Gsf")) { input->select("Events/HLT_Ele15_WPLoose_Gsf", HLT_Ele15_WPLoose_Gsf); successBranches.push_back("Events/HLT_Ele15_WPLoose_Gsf"); } else { missingBranches.push_back("Events/HLT_Ele15_WPLoose_Gsf"); }
     if ( choose["Events/HLT_Ele16_Ele12_Ele8_CaloIdL_TrackIdL"] )
       if (input->present("Events/HLT_Ele16_Ele12_Ele8_CaloIdL_TrackIdL")) { input->select("Events/HLT_Ele16_Ele12_Ele8_CaloIdL_TrackIdL", HLT_Ele16_Ele12_Ele8_CaloIdL_TrackIdL); successBranches.push_back("Events/HLT_Ele16_Ele12_Ele8_CaloIdL_TrackIdL"); } else { missingBranches.push_back("Events/HLT_Ele16_Ele12_Ele8_CaloIdL_TrackIdL"); }
     if ( choose["Events/HLT_Ele17_CaloIdM_TrackIdM_PFJet30"] )
       if (input->present("Events/HLT_Ele17_CaloIdM_TrackIdM_PFJet30")) { input->select("Events/HLT_Ele17_CaloIdM_TrackIdM_PFJet30", HLT_Ele17_CaloIdM_TrackIdM_PFJet30); successBranches.push_back("Events/HLT_Ele17_CaloIdM_TrackIdM_PFJet30"); } else { missingBranches.push_back("Events/HLT_Ele17_CaloIdM_TrackIdM_PFJet30"); }
-    if ( choose["Events/HLT_Ele17_WPLoose_Gsf"] )
-      if (input->present("Events/HLT_Ele17_WPLoose_Gsf")) { input->select("Events/HLT_Ele17_WPLoose_Gsf", HLT_Ele17_WPLoose_Gsf); successBranches.push_back("Events/HLT_Ele17_WPLoose_Gsf"); } else { missingBranches.push_back("Events/HLT_Ele17_WPLoose_Gsf"); }
     if ( choose["Events/HLT_Ele200_CaloIdVT_GsfTrkIdT"] )
       if (input->present("Events/HLT_Ele200_CaloIdVT_GsfTrkIdT")) { input->select("Events/HLT_Ele200_CaloIdVT_GsfTrkIdT", HLT_Ele200_CaloIdVT_GsfTrkIdT); successBranches.push_back("Events/HLT_Ele200_CaloIdVT_GsfTrkIdT"); } else { missingBranches.push_back("Events/HLT_Ele200_CaloIdVT_GsfTrkIdT"); }
     if ( choose["Events/HLT_Ele20_WPLoose_Gsf"] )
@@ -1935,8 +1945,6 @@ struct eventBuffer
       if (input->present("Events/HLT_IsoMu30")) { input->select("Events/HLT_IsoMu30", HLT_IsoMu30); successBranches.push_back("Events/HLT_IsoMu30"); } else { missingBranches.push_back("Events/HLT_IsoMu30"); }
     if ( choose["Events/HLT_Mu10_TrkIsoVVL_DiPFJet40_DEta3p5_MJJ750_HTT350_PFMETNoMu60"] )
       if (input->present("Events/HLT_Mu10_TrkIsoVVL_DiPFJet40_DEta3p5_MJJ750_HTT350_PFMETNoMu60")) { input->select("Events/HLT_Mu10_TrkIsoVVL_DiPFJet40_DEta3p5_MJJ750_HTT350_PFMETNoMu60", HLT_Mu10_TrkIsoVVL_DiPFJet40_DEta3p5_MJJ750_HTT350_PFMETNoMu60); successBranches.push_back("Events/HLT_Mu10_TrkIsoVVL_DiPFJet40_DEta3p5_MJJ750_HTT350_PFMETNoMu60"); } else { missingBranches.push_back("Events/HLT_Mu10_TrkIsoVVL_DiPFJet40_DEta3p5_MJJ750_HTT350_PFMETNoMu60"); }
-    if ( choose["Events/HLT_Mu12"] )
-      if (input->present("Events/HLT_Mu12")) { input->select("Events/HLT_Mu12", HLT_Mu12); successBranches.push_back("Events/HLT_Mu12"); } else { missingBranches.push_back("Events/HLT_Mu12"); }
     if ( choose["Events/HLT_Mu12_DoublePFJets100_CaloBTagCSV_p33"] )
       if (input->present("Events/HLT_Mu12_DoublePFJets100_CaloBTagCSV_p33")) { input->select("Events/HLT_Mu12_DoublePFJets100_CaloBTagCSV_p33", HLT_Mu12_DoublePFJets100_CaloBTagCSV_p33); successBranches.push_back("Events/HLT_Mu12_DoublePFJets100_CaloBTagCSV_p33"); } else { missingBranches.push_back("Events/HLT_Mu12_DoublePFJets100_CaloBTagCSV_p33"); }
     if ( choose["Events/HLT_Mu12_DoublePFJets200_CaloBTagCSV_p33"] )
@@ -1957,8 +1965,6 @@ struct eventBuffer
       if (input->present("Events/HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL")) { input->select("Events/HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL", HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL); successBranches.push_back("Events/HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL"); } else { missingBranches.push_back("Events/HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL"); }
     if ( choose["Events/HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ"] )
       if (input->present("Events/HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ")) { input->select("Events/HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ", HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ); successBranches.push_back("Events/HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ"); } else { missingBranches.push_back("Events/HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ"); }
-    if ( choose["Events/HLT_Mu15"] )
-      if (input->present("Events/HLT_Mu15")) { input->select("Events/HLT_Mu15", HLT_Mu15); successBranches.push_back("Events/HLT_Mu15"); } else { missingBranches.push_back("Events/HLT_Mu15"); }
     if ( choose["Events/HLT_Mu15_IsoVVVL_PFHT450"] )
       if (input->present("Events/HLT_Mu15_IsoVVVL_PFHT450")) { input->select("Events/HLT_Mu15_IsoVVVL_PFHT450", HLT_Mu15_IsoVVVL_PFHT450); successBranches.push_back("Events/HLT_Mu15_IsoVVVL_PFHT450"); } else { missingBranches.push_back("Events/HLT_Mu15_IsoVVVL_PFHT450"); }
     if ( choose["Events/HLT_Mu15_IsoVVVL_PFHT450_CaloBTagCSV_4p5"] )
@@ -2164,41 +2170,41 @@ struct eventBuffer
     if ( choose["Events/HLT_QuadPFJet98_83_71_15_DoubleBTagCSV_p013_p08_VBF1"] )
       if (input->present("Events/HLT_QuadPFJet98_83_71_15_DoubleBTagCSV_p013_p08_VBF1")) { input->select("Events/HLT_QuadPFJet98_83_71_15_DoubleBTagCSV_p013_p08_VBF1", HLT_QuadPFJet98_83_71_15_DoubleBTagCSV_p013_p08_VBF1); successBranches.push_back("Events/HLT_QuadPFJet98_83_71_15_DoubleBTagCSV_p013_p08_VBF1"); } else { missingBranches.push_back("Events/HLT_QuadPFJet98_83_71_15_DoubleBTagCSV_p013_p08_VBF1"); }
     if ( choose["Events/Jet_area"] )
-      if (input->present("Events/Jet_area")) { Jet_area.resize(116); input->select("Events/Jet_area", Jet_area); Jet_area.clear(); successBranches.push_back("Events/Jet_area"); } else { missingBranches.push_back("Events/Jet_area"); }
+      if (input->present("Events/Jet_area")) { Jet_area.resize(62); input->select("Events/Jet_area", Jet_area); Jet_area.clear(); successBranches.push_back("Events/Jet_area"); } else { missingBranches.push_back("Events/Jet_area"); }
     if ( choose["Events/Jet_bRegCorr"] )
-      if (input->present("Events/Jet_bRegCorr")) { Jet_bRegCorr.resize(116); input->select("Events/Jet_bRegCorr", Jet_bRegCorr); Jet_bRegCorr.clear(); successBranches.push_back("Events/Jet_bRegCorr"); } else { missingBranches.push_back("Events/Jet_bRegCorr"); }
+      if (input->present("Events/Jet_bRegCorr")) { Jet_bRegCorr.resize(62); input->select("Events/Jet_bRegCorr", Jet_bRegCorr); Jet_bRegCorr.clear(); successBranches.push_back("Events/Jet_bRegCorr"); } else { missingBranches.push_back("Events/Jet_bRegCorr"); }
     if ( choose["Events/Jet_bRegRes"] )
-      if (input->present("Events/Jet_bRegRes")) { Jet_bRegRes.resize(116); input->select("Events/Jet_bRegRes", Jet_bRegRes); Jet_bRegRes.clear(); successBranches.push_back("Events/Jet_bRegRes"); } else { missingBranches.push_back("Events/Jet_bRegRes"); }
+      if (input->present("Events/Jet_bRegRes")) { Jet_bRegRes.resize(62); input->select("Events/Jet_bRegRes", Jet_bRegRes); Jet_bRegRes.clear(); successBranches.push_back("Events/Jet_bRegRes"); } else { missingBranches.push_back("Events/Jet_bRegRes"); }
     if ( choose["Events/Jet_btagDeepFlavB"] )
-      if (input->present("Events/Jet_btagDeepFlavB")) { Jet_btagDeepFlavB.resize(116); input->select("Events/Jet_btagDeepFlavB", Jet_btagDeepFlavB); Jet_btagDeepFlavB.clear(); successBranches.push_back("Events/Jet_btagDeepFlavB"); } else { missingBranches.push_back("Events/Jet_btagDeepFlavB"); }
+      if (input->present("Events/Jet_btagDeepFlavB")) { Jet_btagDeepFlavB.resize(62); input->select("Events/Jet_btagDeepFlavB", Jet_btagDeepFlavB); Jet_btagDeepFlavB.clear(); successBranches.push_back("Events/Jet_btagDeepFlavB"); } else { missingBranches.push_back("Events/Jet_btagDeepFlavB"); }
     if ( choose["Events/Jet_btagDeepFlavCvB"] )
-      if (input->present("Events/Jet_btagDeepFlavCvB")) { Jet_btagDeepFlavCvB.resize(116); input->select("Events/Jet_btagDeepFlavCvB", Jet_btagDeepFlavCvB); Jet_btagDeepFlavCvB.clear(); successBranches.push_back("Events/Jet_btagDeepFlavCvB"); } else { missingBranches.push_back("Events/Jet_btagDeepFlavCvB"); }
+      if (input->present("Events/Jet_btagDeepFlavCvB")) { Jet_btagDeepFlavCvB.resize(62); input->select("Events/Jet_btagDeepFlavCvB", Jet_btagDeepFlavCvB); Jet_btagDeepFlavCvB.clear(); successBranches.push_back("Events/Jet_btagDeepFlavCvB"); } else { missingBranches.push_back("Events/Jet_btagDeepFlavCvB"); }
     if ( choose["Events/Jet_btagDeepFlavCvL"] )
-      if (input->present("Events/Jet_btagDeepFlavCvL")) { Jet_btagDeepFlavCvL.resize(116); input->select("Events/Jet_btagDeepFlavCvL", Jet_btagDeepFlavCvL); Jet_btagDeepFlavCvL.clear(); successBranches.push_back("Events/Jet_btagDeepFlavCvL"); } else { missingBranches.push_back("Events/Jet_btagDeepFlavCvL"); }
+      if (input->present("Events/Jet_btagDeepFlavCvL")) { Jet_btagDeepFlavCvL.resize(62); input->select("Events/Jet_btagDeepFlavCvL", Jet_btagDeepFlavCvL); Jet_btagDeepFlavCvL.clear(); successBranches.push_back("Events/Jet_btagDeepFlavCvL"); } else { missingBranches.push_back("Events/Jet_btagDeepFlavCvL"); }
     if ( choose["Events/Jet_btagDeepFlavQG"] )
-      if (input->present("Events/Jet_btagDeepFlavQG")) { Jet_btagDeepFlavQG.resize(116); input->select("Events/Jet_btagDeepFlavQG", Jet_btagDeepFlavQG); Jet_btagDeepFlavQG.clear(); successBranches.push_back("Events/Jet_btagDeepFlavQG"); } else { missingBranches.push_back("Events/Jet_btagDeepFlavQG"); }
+      if (input->present("Events/Jet_btagDeepFlavQG")) { Jet_btagDeepFlavQG.resize(62); input->select("Events/Jet_btagDeepFlavQG", Jet_btagDeepFlavQG); Jet_btagDeepFlavQG.clear(); successBranches.push_back("Events/Jet_btagDeepFlavQG"); } else { missingBranches.push_back("Events/Jet_btagDeepFlavQG"); }
     if ( choose["Events/Jet_eta"] )
-      if (input->present("Events/Jet_eta")) { Jet_eta.resize(116); input->select("Events/Jet_eta", Jet_eta); Jet_eta.clear(); successBranches.push_back("Events/Jet_eta"); } else { missingBranches.push_back("Events/Jet_eta"); }
+      if (input->present("Events/Jet_eta")) { Jet_eta.resize(62); input->select("Events/Jet_eta", Jet_eta); Jet_eta.clear(); successBranches.push_back("Events/Jet_eta"); } else { missingBranches.push_back("Events/Jet_eta"); }
     if ( choose["Events/Jet_genJetIdx"] )
-      if (input->present("Events/Jet_genJetIdx")) { Jet_genJetIdx.resize(57); input->select("Events/Jet_genJetIdx", Jet_genJetIdx); Jet_genJetIdx.clear(); successBranches.push_back("Events/Jet_genJetIdx"); } else { missingBranches.push_back("Events/Jet_genJetIdx"); }
+      if (input->present("Events/Jet_genJetIdx")) { Jet_genJetIdx.resize(62); input->select("Events/Jet_genJetIdx", Jet_genJetIdx); Jet_genJetIdx.clear(); successBranches.push_back("Events/Jet_genJetIdx"); } else { missingBranches.push_back("Events/Jet_genJetIdx"); }
     if ( choose["Events/Jet_hadronFlavour"] )
-      if (input->present("Events/Jet_hadronFlavour")) { Jet_hadronFlavour.resize(57); input->select("Events/Jet_hadronFlavour", Jet_hadronFlavour); Jet_hadronFlavour.clear(); successBranches.push_back("Events/Jet_hadronFlavour"); } else { missingBranches.push_back("Events/Jet_hadronFlavour"); }
+      if (input->present("Events/Jet_hadronFlavour")) { Jet_hadronFlavour.resize(62); input->select("Events/Jet_hadronFlavour", Jet_hadronFlavour); Jet_hadronFlavour.clear(); successBranches.push_back("Events/Jet_hadronFlavour"); } else { missingBranches.push_back("Events/Jet_hadronFlavour"); }
     if ( choose["Events/Jet_jetId"] )
-      if (input->present("Events/Jet_jetId")) { Jet_jetId.resize(116); input->select("Events/Jet_jetId", Jet_jetId); Jet_jetId.clear(); successBranches.push_back("Events/Jet_jetId"); } else { missingBranches.push_back("Events/Jet_jetId"); }
+      if (input->present("Events/Jet_jetId")) { Jet_jetId.resize(62); input->select("Events/Jet_jetId", Jet_jetId); Jet_jetId.clear(); successBranches.push_back("Events/Jet_jetId"); } else { missingBranches.push_back("Events/Jet_jetId"); }
     if ( choose["Events/Jet_mass"] )
-      if (input->present("Events/Jet_mass")) { Jet_mass.resize(116); input->select("Events/Jet_mass", Jet_mass); Jet_mass.clear(); successBranches.push_back("Events/Jet_mass"); } else { missingBranches.push_back("Events/Jet_mass"); }
+      if (input->present("Events/Jet_mass")) { Jet_mass.resize(62); input->select("Events/Jet_mass", Jet_mass); Jet_mass.clear(); successBranches.push_back("Events/Jet_mass"); } else { missingBranches.push_back("Events/Jet_mass"); }
     if ( choose["Events/Jet_partonFlavour"] )
-      if (input->present("Events/Jet_partonFlavour")) { Jet_partonFlavour.resize(57); input->select("Events/Jet_partonFlavour", Jet_partonFlavour); Jet_partonFlavour.clear(); successBranches.push_back("Events/Jet_partonFlavour"); } else { missingBranches.push_back("Events/Jet_partonFlavour"); }
+      if (input->present("Events/Jet_partonFlavour")) { Jet_partonFlavour.resize(62); input->select("Events/Jet_partonFlavour", Jet_partonFlavour); Jet_partonFlavour.clear(); successBranches.push_back("Events/Jet_partonFlavour"); } else { missingBranches.push_back("Events/Jet_partonFlavour"); }
     if ( choose["Events/Jet_phi"] )
-      if (input->present("Events/Jet_phi")) { Jet_phi.resize(116); input->select("Events/Jet_phi", Jet_phi); Jet_phi.clear(); successBranches.push_back("Events/Jet_phi"); } else { missingBranches.push_back("Events/Jet_phi"); }
+      if (input->present("Events/Jet_phi")) { Jet_phi.resize(62); input->select("Events/Jet_phi", Jet_phi); Jet_phi.clear(); successBranches.push_back("Events/Jet_phi"); } else { missingBranches.push_back("Events/Jet_phi"); }
     if ( choose["Events/Jet_pt"] )
-      if (input->present("Events/Jet_pt")) { Jet_pt.resize(116); input->select("Events/Jet_pt", Jet_pt); Jet_pt.clear(); successBranches.push_back("Events/Jet_pt"); } else { missingBranches.push_back("Events/Jet_pt"); }
+      if (input->present("Events/Jet_pt")) { Jet_pt.resize(62); input->select("Events/Jet_pt", Jet_pt); Jet_pt.clear(); successBranches.push_back("Events/Jet_pt"); } else { missingBranches.push_back("Events/Jet_pt"); }
     if ( choose["Events/Jet_puId"] )
-      if (input->present("Events/Jet_puId")) { Jet_puId.resize(116); input->select("Events/Jet_puId", Jet_puId); Jet_puId.clear(); successBranches.push_back("Events/Jet_puId"); } else { missingBranches.push_back("Events/Jet_puId"); }
+      if (input->present("Events/Jet_puId")) { Jet_puId.resize(62); input->select("Events/Jet_puId", Jet_puId); Jet_puId.clear(); successBranches.push_back("Events/Jet_puId"); } else { missingBranches.push_back("Events/Jet_puId"); }
     if ( choose["Events/Jet_qgl"] )
-      if (input->present("Events/Jet_qgl")) { Jet_qgl.resize(116); input->select("Events/Jet_qgl", Jet_qgl); Jet_qgl.clear(); successBranches.push_back("Events/Jet_qgl"); } else { missingBranches.push_back("Events/Jet_qgl"); }
+      if (input->present("Events/Jet_qgl")) { Jet_qgl.resize(62); input->select("Events/Jet_qgl", Jet_qgl); Jet_qgl.clear(); successBranches.push_back("Events/Jet_qgl"); } else { missingBranches.push_back("Events/Jet_qgl"); }
     if ( choose["Events/Jet_rawFactor"] )
-      if (input->present("Events/Jet_rawFactor")) { Jet_rawFactor.resize(116); input->select("Events/Jet_rawFactor", Jet_rawFactor); Jet_rawFactor.clear(); successBranches.push_back("Events/Jet_rawFactor"); } else { missingBranches.push_back("Events/Jet_rawFactor"); }
+      if (input->present("Events/Jet_rawFactor")) { Jet_rawFactor.resize(62); input->select("Events/Jet_rawFactor", Jet_rawFactor); Jet_rawFactor.clear(); successBranches.push_back("Events/Jet_rawFactor"); } else { missingBranches.push_back("Events/Jet_rawFactor"); }
     if ( choose["Events/L1PreFiringWeight_Dn"] )
       if (input->present("Events/L1PreFiringWeight_Dn")) { input->select("Events/L1PreFiringWeight_Dn", L1PreFiringWeight_Dn); successBranches.push_back("Events/L1PreFiringWeight_Dn"); } else { missingBranches.push_back("Events/L1PreFiringWeight_Dn"); }
     if ( choose["Events/L1PreFiringWeight_Nom"] )
@@ -2222,33 +2228,33 @@ struct eventBuffer
     if ( choose["Events/MET_significance"] )
       if (input->present("Events/MET_significance")) { input->select("Events/MET_significance", MET_significance); successBranches.push_back("Events/MET_significance"); } else { missingBranches.push_back("Events/MET_significance"); }
     if ( choose["Events/Muon_charge"] )
-      if (input->present("Events/Muon_charge")) { Muon_charge.resize(41); input->select("Events/Muon_charge", Muon_charge); Muon_charge.clear(); successBranches.push_back("Events/Muon_charge"); } else { missingBranches.push_back("Events/Muon_charge"); }
+      if (input->present("Events/Muon_charge")) { Muon_charge.resize(37); input->select("Events/Muon_charge", Muon_charge); Muon_charge.clear(); successBranches.push_back("Events/Muon_charge"); } else { missingBranches.push_back("Events/Muon_charge"); }
     if ( choose["Events/Muon_dxy"] )
-      if (input->present("Events/Muon_dxy")) { Muon_dxy.resize(41); input->select("Events/Muon_dxy", Muon_dxy); Muon_dxy.clear(); successBranches.push_back("Events/Muon_dxy"); } else { missingBranches.push_back("Events/Muon_dxy"); }
+      if (input->present("Events/Muon_dxy")) { Muon_dxy.resize(37); input->select("Events/Muon_dxy", Muon_dxy); Muon_dxy.clear(); successBranches.push_back("Events/Muon_dxy"); } else { missingBranches.push_back("Events/Muon_dxy"); }
     if ( choose["Events/Muon_dz"] )
-      if (input->present("Events/Muon_dz")) { Muon_dz.resize(41); input->select("Events/Muon_dz", Muon_dz); Muon_dz.clear(); successBranches.push_back("Events/Muon_dz"); } else { missingBranches.push_back("Events/Muon_dz"); }
+      if (input->present("Events/Muon_dz")) { Muon_dz.resize(37); input->select("Events/Muon_dz", Muon_dz); Muon_dz.clear(); successBranches.push_back("Events/Muon_dz"); } else { missingBranches.push_back("Events/Muon_dz"); }
     if ( choose["Events/Muon_eta"] )
-      if (input->present("Events/Muon_eta")) { Muon_eta.resize(41); input->select("Events/Muon_eta", Muon_eta); Muon_eta.clear(); successBranches.push_back("Events/Muon_eta"); } else { missingBranches.push_back("Events/Muon_eta"); }
+      if (input->present("Events/Muon_eta")) { Muon_eta.resize(37); input->select("Events/Muon_eta", Muon_eta); Muon_eta.clear(); successBranches.push_back("Events/Muon_eta"); } else { missingBranches.push_back("Events/Muon_eta"); }
     if ( choose["Events/Muon_genPartIdx"] )
-      if (input->present("Events/Muon_genPartIdx")) { Muon_genPartIdx.resize(38); input->select("Events/Muon_genPartIdx", Muon_genPartIdx); Muon_genPartIdx.clear(); successBranches.push_back("Events/Muon_genPartIdx"); } else { missingBranches.push_back("Events/Muon_genPartIdx"); }
+      if (input->present("Events/Muon_genPartIdx")) { Muon_genPartIdx.resize(37); input->select("Events/Muon_genPartIdx", Muon_genPartIdx); Muon_genPartIdx.clear(); successBranches.push_back("Events/Muon_genPartIdx"); } else { missingBranches.push_back("Events/Muon_genPartIdx"); }
     if ( choose["Events/Muon_looseId"] )
-      if (input->present("Events/Muon_looseId")) { Muon_looseId.resize(41); input->select("Events/Muon_looseId", Muon_looseId); Muon_looseId.clear(); successBranches.push_back("Events/Muon_looseId"); } else { missingBranches.push_back("Events/Muon_looseId"); }
+      if (input->present("Events/Muon_looseId")) { Muon_looseId.resize(37); input->select("Events/Muon_looseId", Muon_looseId); Muon_looseId.clear(); successBranches.push_back("Events/Muon_looseId"); } else { missingBranches.push_back("Events/Muon_looseId"); }
     if ( choose["Events/Muon_mass"] )
-      if (input->present("Events/Muon_mass")) { Muon_mass.resize(41); input->select("Events/Muon_mass", Muon_mass); Muon_mass.clear(); successBranches.push_back("Events/Muon_mass"); } else { missingBranches.push_back("Events/Muon_mass"); }
+      if (input->present("Events/Muon_mass")) { Muon_mass.resize(37); input->select("Events/Muon_mass", Muon_mass); Muon_mass.clear(); successBranches.push_back("Events/Muon_mass"); } else { missingBranches.push_back("Events/Muon_mass"); }
     if ( choose["Events/Muon_mediumId"] )
-      if (input->present("Events/Muon_mediumId")) { Muon_mediumId.resize(41); input->select("Events/Muon_mediumId", Muon_mediumId); Muon_mediumId.clear(); successBranches.push_back("Events/Muon_mediumId"); } else { missingBranches.push_back("Events/Muon_mediumId"); }
+      if (input->present("Events/Muon_mediumId")) { Muon_mediumId.resize(37); input->select("Events/Muon_mediumId", Muon_mediumId); Muon_mediumId.clear(); successBranches.push_back("Events/Muon_mediumId"); } else { missingBranches.push_back("Events/Muon_mediumId"); }
     if ( choose["Events/Muon_miniPFRelIso_all"] )
-      if (input->present("Events/Muon_miniPFRelIso_all")) { Muon_miniPFRelIso_all.resize(41); input->select("Events/Muon_miniPFRelIso_all", Muon_miniPFRelIso_all); Muon_miniPFRelIso_all.clear(); successBranches.push_back("Events/Muon_miniPFRelIso_all"); } else { missingBranches.push_back("Events/Muon_miniPFRelIso_all"); }
+      if (input->present("Events/Muon_miniPFRelIso_all")) { Muon_miniPFRelIso_all.resize(37); input->select("Events/Muon_miniPFRelIso_all", Muon_miniPFRelIso_all); Muon_miniPFRelIso_all.clear(); successBranches.push_back("Events/Muon_miniPFRelIso_all"); } else { missingBranches.push_back("Events/Muon_miniPFRelIso_all"); }
     if ( choose["Events/Muon_mvaTTH"] )
-      if (input->present("Events/Muon_mvaTTH")) { Muon_mvaTTH.resize(41); input->select("Events/Muon_mvaTTH", Muon_mvaTTH); Muon_mvaTTH.clear(); successBranches.push_back("Events/Muon_mvaTTH"); } else { missingBranches.push_back("Events/Muon_mvaTTH"); }
+      if (input->present("Events/Muon_mvaTTH")) { Muon_mvaTTH.resize(37); input->select("Events/Muon_mvaTTH", Muon_mvaTTH); Muon_mvaTTH.clear(); successBranches.push_back("Events/Muon_mvaTTH"); } else { missingBranches.push_back("Events/Muon_mvaTTH"); }
     if ( choose["Events/Muon_pfRelIso04_all"] )
-      if (input->present("Events/Muon_pfRelIso04_all")) { Muon_pfRelIso04_all.resize(41); input->select("Events/Muon_pfRelIso04_all", Muon_pfRelIso04_all); Muon_pfRelIso04_all.clear(); successBranches.push_back("Events/Muon_pfRelIso04_all"); } else { missingBranches.push_back("Events/Muon_pfRelIso04_all"); }
+      if (input->present("Events/Muon_pfRelIso04_all")) { Muon_pfRelIso04_all.resize(37); input->select("Events/Muon_pfRelIso04_all", Muon_pfRelIso04_all); Muon_pfRelIso04_all.clear(); successBranches.push_back("Events/Muon_pfRelIso04_all"); } else { missingBranches.push_back("Events/Muon_pfRelIso04_all"); }
     if ( choose["Events/Muon_phi"] )
-      if (input->present("Events/Muon_phi")) { Muon_phi.resize(41); input->select("Events/Muon_phi", Muon_phi); Muon_phi.clear(); successBranches.push_back("Events/Muon_phi"); } else { missingBranches.push_back("Events/Muon_phi"); }
+      if (input->present("Events/Muon_phi")) { Muon_phi.resize(37); input->select("Events/Muon_phi", Muon_phi); Muon_phi.clear(); successBranches.push_back("Events/Muon_phi"); } else { missingBranches.push_back("Events/Muon_phi"); }
     if ( choose["Events/Muon_pt"] )
-      if (input->present("Events/Muon_pt")) { Muon_pt.resize(41); input->select("Events/Muon_pt", Muon_pt); Muon_pt.clear(); successBranches.push_back("Events/Muon_pt"); } else { missingBranches.push_back("Events/Muon_pt"); }
+      if (input->present("Events/Muon_pt")) { Muon_pt.resize(37); input->select("Events/Muon_pt", Muon_pt); Muon_pt.clear(); successBranches.push_back("Events/Muon_pt"); } else { missingBranches.push_back("Events/Muon_pt"); }
     if ( choose["Events/Muon_tightId"] )
-      if (input->present("Events/Muon_tightId")) { Muon_tightId.resize(41); input->select("Events/Muon_tightId", Muon_tightId); Muon_tightId.clear(); successBranches.push_back("Events/Muon_tightId"); } else { missingBranches.push_back("Events/Muon_tightId"); }
+      if (input->present("Events/Muon_tightId")) { Muon_tightId.resize(37); input->select("Events/Muon_tightId", Muon_tightId); Muon_tightId.clear(); successBranches.push_back("Events/Muon_tightId"); } else { missingBranches.push_back("Events/Muon_tightId"); }
     if ( choose["Events/PV_chi2"] )
       if (input->present("Events/PV_chi2")) { input->select("Events/PV_chi2", PV_chi2); successBranches.push_back("Events/PV_chi2"); } else { missingBranches.push_back("Events/PV_chi2"); }
     if ( choose["Events/PV_ndof"] )
@@ -2303,12 +2309,14 @@ struct eventBuffer
       if (input->present("Events/genWeight")) { input->select("Events/genWeight", genWeight); successBranches.push_back("Events/genWeight"); } else { missingBranches.push_back("Events/genWeight"); }
     if ( choose["Events/luminosityBlock"] )
       if (input->present("Events/luminosityBlock")) { input->select("Events/luminosityBlock", luminosityBlock); successBranches.push_back("Events/luminosityBlock"); } else { missingBranches.push_back("Events/luminosityBlock"); }
-    if ( choose["Events/nAdditionalBJets"] )
-      if (input->present("Events/nAdditionalBJets")) { input->select("Events/nAdditionalBJets", nAdditionalBJets); successBranches.push_back("Events/nAdditionalBJets"); } else { missingBranches.push_back("Events/nAdditionalBJets"); }
     if ( choose["Events/nAdditionalBHadrons"] )
       if (input->present("Events/nAdditionalBHadrons")) { input->select("Events/nAdditionalBHadrons", nAdditionalBHadrons); successBranches.push_back("Events/nAdditionalBHadrons"); } else { missingBranches.push_back("Events/nAdditionalBHadrons"); }
+    if ( choose["Events/nAdditionalBJets"] )
+      if (input->present("Events/nAdditionalBJets")) { input->select("Events/nAdditionalBJets", nAdditionalBJets); successBranches.push_back("Events/nAdditionalBJets"); } else { missingBranches.push_back("Events/nAdditionalBJets"); }
     if ( choose["Events/nAdditionalCJets"] )
       if (input->present("Events/nAdditionalCJets")) { input->select("Events/nAdditionalCJets", nAdditionalCJets); successBranches.push_back("Events/nAdditionalCJets"); } else { missingBranches.push_back("Events/nAdditionalCJets"); }
+    if ( choose["Events/nMatchedBHadrons"] )
+      if (input->present("Events/nMatchedBHadrons")) { input->select("Events/nMatchedBHadrons", nMatchedBHadrons); successBranches.push_back("Events/nMatchedBHadrons"); } else { missingBranches.push_back("Events/nMatchedBHadrons"); }
     if ( choose["Events/run"] )
       if (input->present("Events/run")) { input->select("Events/run", run); successBranches.push_back("Events/run"); } else { missingBranches.push_back("Events/run"); }
     if ( choose["Events/ttCat_2b"] )
@@ -2367,14 +2375,14 @@ struct eventBuffer
   {
     initBuffers();
 
-    output->add("nGenPart", 	nGenPart);
-    output->add("nFatJet", 	nFatJet);
     output->add("nLHEPdfWeight", 	nLHEPdfWeight);
-    output->add("nMuon", 	nMuon);
+    output->add("nJet", 	nJet);
+    output->add("nGenPart", 	nGenPart);
+    output->add("nGenJet", 	nGenJet);
     output->add("nElectron", 	nElectron);
     output->add("nLHEScaleWeight", 	nLHEScaleWeight);
-    output->add("nJet", 	nJet);
-    output->add("nGenJet", 	nGenJet);
+    output->add("nMuon", 	nMuon);
+    output->add("nFatJet", 	nFatJet);
   
     output->add("Events/Electron_charge[nElectron]", 	Electron_charge);
     output->add("Events/Electron_cutBased[nElectron]", 	Electron_cutBased);
@@ -2474,6 +2482,8 @@ struct eventBuffer
     output->add("Events/GenJet_hadronFlavour[nGenJet]",
                  GenJet_hadronFlavour);
     output->add("Events/GenJet_mass[nGenJet]", 	GenJet_mass);
+    output->add("Events/GenJet_partonFlavour[nGenJet]",
+                 GenJet_partonFlavour);
     output->add("Events/GenJet_phi[nGenJet]", 	GenJet_phi);
     output->add("Events/GenJet_pt[nGenJet]", 	GenJet_pt);
     output->add("Events/GenPart_eta[nGenPart]", 	GenPart_eta);
@@ -2562,10 +2572,6 @@ struct eventBuffer
                  HLT_Ele135_CaloIdVT_GsfTrkIdT);
     output->add("Events/HLT_Ele145_CaloIdVT_GsfTrkIdT",
                  HLT_Ele145_CaloIdVT_GsfTrkIdT);
-    output->add("Events/HLT_Ele15_CaloIdL_TrackIdL_IsoVL_PFJet30",
-                 HLT_Ele15_CaloIdL_TrackIdL_IsoVL_PFJet30);
-    output->add("Events/HLT_Ele15_Ele8_CaloIdL_TrackIdL_IsoVL",
-                 HLT_Ele15_Ele8_CaloIdL_TrackIdL_IsoVL);
     output->add("Events/HLT_Ele15_IsoVVVL_PFHT450",
                  HLT_Ele15_IsoVVVL_PFHT450);
     output->add("Events/HLT_Ele15_IsoVVVL_PFHT450_CaloBTagCSV_4p5",
@@ -2574,12 +2580,10 @@ struct eventBuffer
                  HLT_Ele15_IsoVVVL_PFHT450_PFMET50);
     output->add("Events/HLT_Ele15_IsoVVVL_PFHT600",
                  HLT_Ele15_IsoVVVL_PFHT600);
-    output->add("Events/HLT_Ele15_WPLoose_Gsf", 	HLT_Ele15_WPLoose_Gsf);
     output->add("Events/HLT_Ele16_Ele12_Ele8_CaloIdL_TrackIdL",
                  HLT_Ele16_Ele12_Ele8_CaloIdL_TrackIdL);
     output->add("Events/HLT_Ele17_CaloIdM_TrackIdM_PFJet30",
                  HLT_Ele17_CaloIdM_TrackIdM_PFJet30);
-    output->add("Events/HLT_Ele17_WPLoose_Gsf", 	HLT_Ele17_WPLoose_Gsf);
     output->add("Events/HLT_Ele200_CaloIdVT_GsfTrkIdT",
                  HLT_Ele200_CaloIdVT_GsfTrkIdT);
     output->add("Events/HLT_Ele20_WPLoose_Gsf", 	HLT_Ele20_WPLoose_Gsf);
@@ -2696,7 +2700,6 @@ struct eventBuffer
     output->add("Events/HLT_IsoMu30", 	HLT_IsoMu30);
     output->add("Events/HLT_Mu10_TrkIsoVVL_DiPFJet40_DEta3p5_MJJ750_HTT350_PFMETNoMu60",
                  HLT_Mu10_TrkIsoVVL_DiPFJet40_DEta3p5_MJJ750_HTT350_PFMETNoMu60);
-    output->add("Events/HLT_Mu12", 	HLT_Mu12);
     output->add("Events/HLT_Mu12_DoublePFJets100_CaloBTagCSV_p33",
                  HLT_Mu12_DoublePFJets100_CaloBTagCSV_p33);
     output->add("Events/HLT_Mu12_DoublePFJets200_CaloBTagCSV_p33",
@@ -2716,7 +2719,6 @@ struct eventBuffer
                  HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL);
     output->add("Events/HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ",
                  HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ);
-    output->add("Events/HLT_Mu15", 	HLT_Mu15);
     output->add("Events/HLT_Mu15_IsoVVVL_PFHT450",
                  HLT_Mu15_IsoVVVL_PFHT450);
     output->add("Events/HLT_Mu15_IsoVVVL_PFHT450_CaloBTagCSV_4p5",
@@ -2952,9 +2954,10 @@ struct eventBuffer
     output->add("Events/genTtbarId", 	genTtbarId);
     output->add("Events/genWeight", 	genWeight);
     output->add("Events/luminosityBlock", 	luminosityBlock);
-    output->add("Events/nAdditionalBJets", 	nAdditionalBJets);
     output->add("Events/nAdditionalBHadrons", 	nAdditionalBHadrons);
+    output->add("Events/nAdditionalBJets", 	nAdditionalBJets);
     output->add("Events/nAdditionalCJets", 	nAdditionalCJets);
+    output->add("Events/nMatchedBHadrons", 	nMatchedBHadrons);
     output->add("Events/run", 	run);
     output->add("Events/ttCat_2b", 	ttCat_2b);
     output->add("Events/ttCat_4b", 	ttCat_4b);
@@ -3036,16 +3039,12 @@ struct eventBuffer
     HLT_Ele12_CaloIdL_TrackIdL_IsoVL_PFJet30	= 0;
     HLT_Ele135_CaloIdVT_GsfTrkIdT	= 0;
     HLT_Ele145_CaloIdVT_GsfTrkIdT	= 0;
-    HLT_Ele15_CaloIdL_TrackIdL_IsoVL_PFJet30	= 0;
-    HLT_Ele15_Ele8_CaloIdL_TrackIdL_IsoVL	= 0;
     HLT_Ele15_IsoVVVL_PFHT450	= 0;
     HLT_Ele15_IsoVVVL_PFHT450_CaloBTagCSV_4p5	= 0;
     HLT_Ele15_IsoVVVL_PFHT450_PFMET50	= 0;
     HLT_Ele15_IsoVVVL_PFHT600	= 0;
-    HLT_Ele15_WPLoose_Gsf	= 0;
     HLT_Ele16_Ele12_Ele8_CaloIdL_TrackIdL	= 0;
     HLT_Ele17_CaloIdM_TrackIdM_PFJet30	= 0;
-    HLT_Ele17_WPLoose_Gsf	= 0;
     HLT_Ele200_CaloIdVT_GsfTrkIdT	= 0;
     HLT_Ele20_WPLoose_Gsf	= 0;
     HLT_Ele20_WPTight_Gsf	= 0;
@@ -3110,7 +3109,6 @@ struct eventBuffer
     HLT_IsoMu27_TightChargedIsoPFTau20_SingleL1	= 0;
     HLT_IsoMu30	= 0;
     HLT_Mu10_TrkIsoVVL_DiPFJet40_DEta3p5_MJJ750_HTT350_PFMETNoMu60	= 0;
-    HLT_Mu12	= 0;
     HLT_Mu12_DoublePFJets100_CaloBTagCSV_p33	= 0;
     HLT_Mu12_DoublePFJets200_CaloBTagCSV_p33	= 0;
     HLT_Mu12_DoublePFJets350_CaloBTagCSV_p33	= 0;
@@ -3121,7 +3119,6 @@ struct eventBuffer
     HLT_Mu12_DoublePhoton20	= 0;
     HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL	= 0;
     HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ	= 0;
-    HLT_Mu15	= 0;
     HLT_Mu15_IsoVVVL_PFHT450	= 0;
     HLT_Mu15_IsoVVVL_PFHT450_CaloBTagCSV_4p5	= 0;
     HLT_Mu15_IsoVVVL_PFHT450_PFMET50	= 0;
@@ -3260,9 +3257,10 @@ struct eventBuffer
     genTtbarId	= 0;
     genWeight	= 0;
     luminosityBlock	= 0;
-    nAdditionalBJets	= 0;
     nAdditionalBHadrons	= 0;
+    nAdditionalBJets	= 0;
     nAdditionalCJets	= 0;
+    nMatchedBHadrons	= 0;
     run	= 0;
     ttCat_2b	= 0;
     ttCat_4b	= 0;
@@ -3272,12 +3270,12 @@ struct eventBuffer
     ttCat_bbb	= 0;
     ttCat_cc	= 0;
     ttCat_noTTJets	= 0;
-    Electron	= std::vector<eventBuffer::Electron_s>(32);
-    FatJet	= std::vector<eventBuffer::FatJet_s>(28);
-    GenJet	= std::vector<eventBuffer::GenJet_s>(55);
-    GenPart	= std::vector<eventBuffer::GenPart_s>(270);
-    Jet	= std::vector<eventBuffer::Jet_s>(116);
-    Muon	= std::vector<eventBuffer::Muon_s>(41);
+    Electron	= std::vector<eventBuffer::Electron_s>(23);
+    FatJet	= std::vector<eventBuffer::FatJet_s>(19);
+    GenJet	= std::vector<eventBuffer::GenJet_s>(51);
+    GenPart	= std::vector<eventBuffer::GenPart_s>(206);
+    Jet	= std::vector<eventBuffer::Jet_s>(62);
+    Muon	= std::vector<eventBuffer::Muon_s>(37);
 
   }
       
