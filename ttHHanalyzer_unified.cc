@@ -1249,6 +1249,9 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
     // Compares ntuple-level ttCat branches with analyzer-recomputed category.
     // Fills validation histograms to confirm the decision tree implementation
     // matches between NtupleForge and this analyzer.
+    //
+    // [FIX] Debug output now shows per-jet B hadron map for tt+2b/tt+b
+    // distinction validation.
     // ═══════════════════════════════════════════════════════════════════════
     if (_DataOrMC != "Data") {
         int ntupleCat = ntupleTtCatIndex();
@@ -1257,17 +1260,24 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
 
         // ── Debug: detailed dump for first 100 events ──
         static int dbgCount = 0;
-        if (dbgCount < 100) {
-            std::cout << "\n===== [ttCatDebug] Event #" << dbgCount << " (evt=" << _ev->event << ") =====\n";
+
+        // Only print detailed debug for:
+        // - First 20 events always
+        // - Events 20-100: only if mismatch or interesting category (bbb/4b/2b)
+        bool isMismatch = (ntupleCat != analyzerIdx);
+        bool isInteresting = (analyzerCat == TtCat::k2B || analyzerCat == TtCat::kBBB ||
+                              analyzerCat == TtCat::k4B || analyzerCat == TtCat::kB);
+        bool shouldPrint = (dbgCount < 20) ||
+                           (dbgCount < 100 && (isMismatch || isInteresting));
+
+        if (shouldPrint) {
+            std::cout << "\n===== [ttCatDebug] Event #" << dbgCount
+                      << " (evt=" << _ev->event << ") =====\n";
 
             // 1) Counter variables vs vector sizes
-            std::cout << "  [Counters] nGenPart=" << _ev->nGenPart
-                      << "  GenPart_pdgId.size()=" << _ev->GenPart_pdgId.size()
-                      << "  GenPart_eta.size()=" << _ev->GenPart_eta.size() << "\n";
-            std::cout << "  [Counters] nGenJet=" << _ev->nGenJet
-                      << "  GenJet_pt.size()=" << _ev->GenJet_pt.size()
-                      << "  GenJet_eta.size()=" << _ev->GenJet_eta.size()
-                      << "  GenJet_hadronFlavour.size()=" << _ev->GenJet_hadronFlavour.size() << "\n";
+            std::cout << "  [Sizes] GenPart_pdgId=" << _ev->GenPart_pdgId.size()
+                      << " GenJet_pt=" << _ev->GenJet_pt.size()
+                      << " GenJet_hadronFlavour=" << _ev->GenJet_hadronFlavour.size() << "\n";
 
             // 2) genTtbarId
             std::cout << "  [genTtbarId] " << _ev->genTtbarId
@@ -1288,51 +1298,75 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
                       << " nAdditionalBHadrons=" << _ev->nAdditionalBHadrons
                       << " nAdditionalCJets=" << _ev->nAdditionalCJets << "\n";
 
-            // 5) GenPart-based: tt pair check
+            // 5) tt pair check
             bool hasTT = eventHasTTPair();
             std::cout << "  [analyzer] hasTTPair=" << hasTT << "\n";
 
-            // 6) Additional B hadrons detail
-            int nBH_count = 0;
-            for (int i = 0; i < genPartCount(); ++i) {
-                if (!isBHadron(_ev->GenPart_pdgId[i])) continue;
-                if (!((_ev->GenPart_statusFlags[i] >> 13) & 1)) continue;
-                bool fromTop = hasTopAncestor(i);
-                if (!fromTop) ++nBH_count;
-                if (dbgCount < 5) { // very detailed for first 5 events
-                    std::cout << "    BHadron i=" << i
-                              << " pdgId=" << _ev->GenPart_pdgId[i]
-                              << " eta=" << _ev->GenPart_eta[i]
-                              << " phi=" << _ev->GenPart_phi[i]
-                              << " fromTop=" << fromTop << "\n";
+            // 6) Full categorization with per-jet B hadron detail
+            if (hasTT && genPartCount() > 0 && genJetCount() > 0) {
+                auto result = countAdditionalBJetsDetailed();
+
+                // 6a) Additional B hadrons detail (first 5 events: per-particle)
+                if (dbgCount < 5) {
+                    int bhIdx = 0;
+                    for (int i = 0; i < genPartCount(); ++i) {
+                        if (!isBHadron(_ev->GenPart_pdgId[i])) continue;
+                        if (!((_ev->GenPart_statusFlags[i] >> 13) & 1)) continue;
+                        bool fromTop = hasTopAncestor(i);
+                        if (!fromTop) {
+                            std::cout << "    BHadron #" << bhIdx++
+                                      << " GP_idx=" << i
+                                      << " pdgId=" << _ev->GenPart_pdgId[i]
+                                      << " eta=" << _ev->GenPart_eta[i]
+                                      << " phi=" << _ev->GenPart_phi[i]
+                                      << " (non-top)\n";
+                        }
+                    }
+                }
+
+                // 6b) Per-jet B hadron map (CRITICAL for 2b/b debug)
+                std::cout << "  [analyzer result] addBJets=" << result.nJets
+                          << " addBHadrons(total)=" << result.nHadrons
+                          << " addBHadrons(matched)=" << result.nMatched
+                          << " addCJets=" << countAdditionalCJets() << "\n";
+
+                if (!result.jetBHMap.empty()) {
+                    std::cout << "  [per-jet BH map]";
+                    for (const auto& [jetIdx, bhCount] : result.jetBHMap) {
+                        std::cout << " GenJet#" << jetIdx
+                                  << "(pT=" << _ev->GenJet_pt[jetIdx]
+                                  << ",eta=" << _ev->GenJet_eta[jetIdx]
+                                  << "):" << bhCount << "BH";
+                    }
+                    std::cout << "\n";
+
+                    // Highlight the 2b/b decision logic
+                    if (result.nJets == 1) {
+                        int singleJetBH = result.jetBHMap.begin()->second;
+                        std::cout << "  [2b/b decision] single jet has "
+                                  << singleJetBH << " matched BH"
+                                  << " -> " << (singleJetBH >= 2 ? "tt+2b" : "tt+b")
+                                  << " (total BH=" << result.nHadrons
+                                  << ", matched BH=" << result.nMatched << ")\n";
+
+                        // Flag the case where old logic would differ
+                        if (result.nHadrons >= 2 && singleJetBH < 2) {
+                            std::cout << "  *** OLD LOGIC WOULD MISCLASSIFY: "
+                                      << "total BH=" << result.nHadrons
+                                      << " >= 2 but per-jet=" << singleJetBH
+                                      << " < 2 (unmatched BH inflated count) ***\n";
+                        }
+                    }
                 }
             }
-            std::cout << "  [analyzer] additional B hadrons (non-top): " << nBH_count << "\n";
 
-            // 7) GenJet b-jets detail
-            int nBJet_count = 0;
-            for (int j = 0; j < genJetCount(); ++j) {
-                int hFlav = (j < (int)_ev->GenJet_hadronFlavour.size()) ? _ev->GenJet_hadronFlavour[j] : -999;
-                if (hFlav == 5 && _ev->GenJet_pt[j] >= 20.0f && std::fabs(_ev->GenJet_eta[j]) <= 2.4f) {
-                    ++nBJet_count;
-                }
-                if (dbgCount < 3) { // very detailed for first 3 events
-                    std::cout << "    GenJet j=" << j
-                              << " pt=" << _ev->GenJet_pt[j]
-                              << " eta=" << _ev->GenJet_eta[j]
-                              << " hadronFlavour=" << hFlav << "\n";
-                }
-            }
-            std::cout << "  [analyzer] GenJets with hadronFlavour==5 (pT>20,|eta|<2.4): " << nBJet_count << "\n";
-
-            // 8) Full categorization result
-            auto [nBJ, nBH] = countAdditionalBJetsDetailed();
-            int nCJ = countAdditionalCJets();
-            std::cout << "  [analyzer result] addBJets=" << nBJ << " addBHadrons=" << nBH
-                      << " addCJets=" << nCJ << "\n";
-            std::cout << "  [FINAL] ntupleCat=" << ntupleCat << "(" << ttCatName(ntupleCat) << ")"
-                      << "  analyzerCat=" << analyzerIdx << "(" << ttCatName(analyzerIdx) << ")"
-                      << ((ntupleCat != analyzerIdx) ? "  *** MISMATCH ***" : "") << "\n";
+            // 7) Final comparison
+            std::cout << "  [FINAL] ntupleCat=" << ntupleCat
+                      << "(" << ttCatName(ntupleCat) << ")"
+                      << " analyzerCat=" << analyzerIdx
+                      << "(" << ttCatName(analyzerIdx) << ")"
+                      << (isMismatch ? " *** MISMATCH ***" : " OK")
+                      << "\n";
 
             ++dbgCount;
         }

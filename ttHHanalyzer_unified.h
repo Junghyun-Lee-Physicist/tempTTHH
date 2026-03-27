@@ -1354,47 +1354,68 @@ class ttHHanalyzer_unified {
     }
 
     // --- count additional b-jets (not from top decay) ---
-    // Returns {nUniqueJets, nBHadrons} for b/2b distinction
-    struct AddBJetResult { int nJets; int nHadrons; };
+    // Returns per-jet B hadron map for correct b/2b distinction
+    struct AddBJetResult {
+        int nJets;      // unique additional b-jets (matched to GenJets)
+        int nHadrons;   // total additional B hadrons (incl. unmatched)
+        int nMatched;   // B hadrons successfully DR-matched to GenJets
+        // Per-jet B hadron count: key=GenJet index, value=# matched B hadrons
+        std::unordered_map<int, int> jetBHMap;
+    };
 
     AddBJetResult countAdditionalBJetsDetailed() const {
         static constexpr float GEN_JET_PT_MIN  = 20.0f;
         static constexpr float GEN_JET_ETA_MAX = 2.4f;
         static constexpr float DR_MATCH_MAX2   = 0.4f * 0.4f;
 
+        AddBJetResult result{0, 0, 0, {}};
+
         // Step 1: collect additional (non-top-ancestor) last-copy B hadrons
-        std::vector<std::pair<float,float>> addBH;
+        struct BHadronInfo { float eta; float phi; int pdgId; int gpIdx; };
+        std::vector<BHadronInfo> addBH;
         for (int i = 0; i < genPartCount(); ++i) {
             if (!isBHadron(_ev->GenPart_pdgId[i])) continue;
-            if (!((_ev->GenPart_statusFlags[i] >> 13) & 1)) continue;
+            if (!((_ev->GenPart_statusFlags[i] >> 13) & 1)) continue;   // isLastCopy
             if (hasTopAncestor(i)) continue;
-            addBH.emplace_back(_ev->GenPart_eta[i], _ev->GenPart_phi[i]);
+            addBH.push_back({_ev->GenPart_eta[i], _ev->GenPart_phi[i],
+                             _ev->GenPart_pdgId[i], i});
         }
-        if (addBH.empty()) return {0, 0};
+        result.nHadrons = static_cast<int>(addBH.size());
+        if (addBH.empty()) return result;
 
         // Step 2: gen b-jets in acceptance
         std::vector<int> bjetIdx;
         for (int j = 0; j < genJetCount(); ++j) {
+            if (static_cast<int>(_ev->GenJet_hadronFlavour.size()) <= j) break;
             if (_ev->GenJet_hadronFlavour[j] != 5) continue;
             if (_ev->GenJet_pt[j] < GEN_JET_PT_MIN) continue;
             if (std::fabs(_ev->GenJet_eta[j]) > GEN_JET_ETA_MAX) continue;
             bjetIdx.push_back(j);
         }
-        if (bjetIdx.empty()) return {0, static_cast<int>(addBH.size())};
+        if (bjetIdx.empty()) return result;
 
-        // Step 3 & 4: DR matching — each B hadron to closest GenJet
-        std::set<int> matched;
-        for (auto& [bh_eta, bh_phi] : addBH) {
+        // Step 3: DR match each B hadron to closest b-GenJet
+        // Build per-jet B hadron map
+        std::unordered_map<int, int> jetBHMap;
+        int nMatchedBH = 0;
+        for (const auto& bh : addBH) {
             float bestDR2 = DR_MATCH_MAX2;
             int bestJ = -1;
             for (int j : bjetIdx) {
-                float dr2 = deltaR2(bh_eta, bh_phi,
+                float dr2 = deltaR2(bh.eta, bh.phi,
                                     _ev->GenJet_eta[j], _ev->GenJet_phi[j]);
                 if (dr2 < bestDR2) { bestDR2 = dr2; bestJ = j; }
             }
-            if (bestJ >= 0) matched.insert(bestJ);
+            if (bestJ >= 0) {
+                jetBHMap[bestJ]++;
+                nMatchedBH++;
+            }
         }
-        return {static_cast<int>(matched.size()), static_cast<int>(addBH.size())};
+
+        result.nJets = static_cast<int>(jetBHMap.size());
+        result.nMatched = nMatchedBH;
+        result.jetBHMap = std::move(jetBHMap);
+        return result;
     }
 
     int countAdditionalBJets() const { return countAdditionalBJetsDetailed().nJets; }
@@ -1447,15 +1468,35 @@ class ttHHanalyzer_unified {
         if (genPartCount() > 0 && genJetCount() > 0) {
             if (!eventHasTTPair()) return TtCat::kNoTTJets;
 
-            auto [nBJets, nBHadrons] = countAdditionalBJetsDetailed();
+            auto result = countAdditionalBJetsDetailed();
+            int nBJets = result.nJets;
 
-            // Decision tree (Section 21.5)
+            // Decision tree (AN-2022/122 Sec 3.1-3.2, AN-19-094 Sec 6.1.2)
+            //
+            // Order: strictly monotonically decreasing in nBJets,
+            // making mutual exclusivity self-evident.
             if (nBJets >= 4)  return TtCat::k4B;
             if (nBJets == 3)  return TtCat::kBBB;
-            if (nBJets == 1 && nBHadrons >= 2) return TtCat::k2B;
             if (nBJets >= 2)  return TtCat::kBB;
-            if (nBJets == 1)  return TtCat::kB;
 
+            if (nBJets == 1) {
+                // ═══════════════════════════════════════════════════════
+                // CRITICAL FIX: tt+2b vs tt+b distinction
+                //
+                // tt+2b: the single jet has >=2 B hadrons MATCHED to it
+                //        (collinear g->bb where both b quarks merge into
+                //        one jet cone)
+                // tt+b:  the single jet has exactly 1 B hadron matched
+                //
+                // Use per-jet B hadron count from jetBHMap, NOT the
+                // total nHadrons (which includes unmatched B hadrons).
+                // ═══════════════════════════════════════════════════════
+                int singleJetBHCount = result.jetBHMap.begin()->second;
+                if (singleJetBHCount >= 2) return TtCat::k2B;
+                return TtCat::kB;
+            }
+
+            // No additional b-jets; check c-jets
             if (countAdditionalCJets() > 0) return TtCat::kCC;
             return TtCat::kLF;
         }
@@ -1513,8 +1554,20 @@ class ttHHanalyzer_unified {
 
     // --- get best available additional B hadron count ---
     int getBestAdditionalBHadronCount() const {
-        if (genPartCount() > 0 && genJetCount() > 0) return countAdditionalBJetsDetailed().nHadrons;
+        if (genPartCount() > 0 && genJetCount() > 0) {
+            return countAdditionalBJetsDetailed().nHadrons;
+        }
         if (_ev->nAdditionalBHadrons >= 0) return _ev->nAdditionalBHadrons;
+        return -1;
+    }
+
+    // --- get matched B hadron count (for validation) ---
+    int getBestMatchedBHadronCount() const {
+        if (genPartCount() > 0 && genJetCount() > 0) {
+            return countAdditionalBJetsDetailed().nMatched;
+        }
+        // nMatchedBHadrons may or may not exist in old ntuples
+        // Return -1 if unavailable
         return -1;
     }
 
