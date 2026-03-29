@@ -1255,6 +1255,39 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
     // distinction validation.
     // ═══════════════════════════════════════════════════════════════════════
     if (_DataOrMC != "Data") {
+        // === Branch availability check (first event only) ===
+        static bool branchCheckDone = false;
+        if (!branchCheckDone) {
+            branchCheckDone = true;
+            std::cout << "\n[TTCAT_BRANCH_CHECK] ═══════════════════════════════\n";
+            std::cout << "  GenPart_pdgId.size()           = " << _ev->GenPart_pdgId.size() << "\n";
+            std::cout << "  GenPart_statusFlags.size()      = " << _ev->GenPart_statusFlags.size() << "\n";
+            std::cout << "  GenPart_genPartIdxMother.size() = " << _ev->GenPart_genPartIdxMother.size() << "\n";
+            std::cout << "  GenPart_eta.size()              = " << _ev->GenPart_eta.size() << "\n";
+            std::cout << "  GenPart_phi.size()              = " << _ev->GenPart_phi.size() << "\n";
+            std::cout << "  GenJet_pt.size()                = " << _ev->GenJet_pt.size() << "\n";
+            std::cout << "  GenJet_eta.size()               = " << _ev->GenJet_eta.size() << "\n";
+            std::cout << "  GenJet_phi.size()               = " << _ev->GenJet_phi.size() << "\n";
+            std::cout << "  GenJet_hadronFlavour.size()     = " << _ev->GenJet_hadronFlavour.size() << "\n";
+            std::cout << "  genTtbarId                      = " << _ev->genTtbarId << "\n";
+            std::cout << "  ttCat_LF (ntuple)               = " << _ev->ttCat_LF << "\n";
+            std::cout << "  nAdditionalBJets (ntuple)       = " << _ev->nAdditionalBJets << "\n";
+            if (_ev->GenPart_statusFlags.size() == 0) {
+                std::cout << "  *** WARNING: GenPart_statusFlags is EMPTY! ***\n"
+                          << "  *** isLastCopy cannot be checked -> all events will be tt+LF ***\n"
+                          << "  *** Check eventBuffer declaration and branch file. ***\n";
+            }
+            if (_ev->GenPart_genPartIdxMother.size() == 0) {
+                std::cout << "  *** WARNING: GenPart_genPartIdxMother is EMPTY! ***\n"
+                          << "  *** Top ancestor check cannot work. ***\n";
+            }
+            if (_ev->GenJet_hadronFlavour.size() == 0) {
+                std::cout << "  *** WARNING: GenJet_hadronFlavour is EMPTY! ***\n"
+                          << "  *** No b-jets can be identified. ***\n";
+            }
+            std::cout << "[TTCAT_BRANCH_CHECK] ═══════════════════════════════\n\n";
+        }
+
         int ntupleCat = ntupleTtCatIndex();
         TtCat analyzerCat = computeTtCategory();
         int analyzerIdx = static_cast<int>(analyzerCat);
@@ -1406,6 +1439,65 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
         int nAddB_ana = (genPartCount() > 0 && genJetCount() > 0) ? countAdditionalBJets() : -1;
         int nAddB_ntu = _ev->nAdditionalBJets;
         _hTtCatAddBNtupleVsAna->Fill(nAddB_ntu, nAddB_ana);
+
+        // === Per-event diagnostic log (CSV format, first 100 events) ===
+        // Matches NtupleForge format for diff comparison
+        static int csvCount = 0;
+        if (csvCount < 100) {
+            int log_nGP = genPartCount();
+            int log_nGJ = genJetCount();
+            int log_nAddBH = 0, log_nBJetAcc = 0, log_nMatchedBH = 0, log_nAddBJets = 0;
+            int log_nCJets = -1;
+            std::string log_mapStr = "{}";
+
+            bool log_hasTT = eventHasTTPair();
+
+            if (log_hasTT && log_nGP > 0 && log_nGJ > 0) {
+                auto logResult = countAdditionalBJetsDetailed();
+                log_nAddBH = logResult.nHadrons;
+                log_nMatchedBH = logResult.nMatched;
+                log_nAddBJets = logResult.nJets;
+
+                // Count b-jets in acceptance
+                for (int j = 0; j < log_nGJ; ++j) {
+                    if (static_cast<int>(_ev->GenJet_hadronFlavour.size()) <= j) break;
+                    if (_ev->GenJet_hadronFlavour[j] != 5) continue;
+                    if (_ev->GenJet_pt[j] < 20.0f) continue;
+                    if (std::fabs(_ev->GenJet_eta[j]) > 2.4f) continue;
+                    log_nBJetAcc++;
+                }
+
+                // c-jets (only if nBJets <= 1, matching ntuplizer logic)
+                log_nCJets = (log_nAddBJets <= 1) ? countAdditionalCJets() : 0;
+
+                // Build jetBHMap string (sorted for deterministic output)
+                if (!logResult.jetBHMap.empty()) {
+                    std::map<int,int> sortedMap(logResult.jetBHMap.begin(),
+                                                logResult.jetBHMap.end());
+                    log_mapStr = "{";
+                    bool first = true;
+                    for (const auto& [k, v] : sortedMap) {
+                        if (!first) log_mapStr += ",";
+                        log_mapStr += std::to_string(k) + ":" + std::to_string(v);
+                        first = false;
+                    }
+                    log_mapStr += "}";
+                }
+            }
+
+            int log_genId = _ev->genTtbarId % 100;
+
+            std::cout << "TTCAT,"
+                      << _ev->run << ":" << _ev->luminosityBlock << ":" << _ev->event << ","
+                      << log_nGP << "," << log_nGJ << ","
+                      << log_nAddBH << "," << log_nBJetAcc << ","
+                      << log_nMatchedBH << "," << log_nAddBJets << ","
+                      << log_mapStr << "," << log_nCJets << ","
+                      << ttCatName(analyzerIdx) << "," << log_genId
+                      << "\n";
+
+            ++csvCount;
+        }
 
         // ── 7) 3-way cross-validation: GenPart vs genTtbarId ──
         // Collapse bbb/4b → bb for fair comparison with genTtbarId
