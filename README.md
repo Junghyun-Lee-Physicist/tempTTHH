@@ -66,45 +66,182 @@ python3 submit_job_FH_Trigger.py
 
 ---
 
-## tt+jets Event Categorization Validation (NEW)
+## tt+jets Event Categorization & 4-way Validation
 
-The analyzer now includes built-in tt+jets event categorization logic that mirrors the NtupleForge `TTbarJetCategorizer` Python module. This enables event-by-event validation against the pre-computed ntuple branches (`ttCat_LF`, `ttCat_cc`, `ttCat_b`, `ttCat_2b`, `ttCat_bb`, `ttCat_bbb`, `ttCat_4b`, `ttCat_noTTJets`).
+The analyzer follows the project rule that **NtupleForge is the single
+source of truth for ttbar categorization**. Downstream physics
+(stitching, hist split, DNN routing, systematics) reads its label from
+the ntuple's `ttCat_*` branches via `officialTtCategory()` and never
+recomputes anything by itself.
+
+That said, the analyzer *does* run the categorization logic again
+during validation, so that any drift between the C++ and Python
+implementations is caught immediately. There are four estimators of
+the same per-event label, and the analyzer compares all six pair-wise
+combinations on every MC event:
+
+| Name          | Source                          | Algorithm                                  |
+|---------------|---------------------------------|--------------------------------------------|
+| `ANA_GENPART` | analyzer (C++)                  | own GenPart-based algorithm                |
+| `ANA_GENID`   | analyzer (C++)                  | decode of `genTtbarId%100`                 |
+| `NTU_PRIMARY` | ntuple `ttCat_*` branches       | ntuplizer's `decode_genttbarid` (POG path) |
+| `NTU_XVAL`    | ntuple `ttCatXval_*` branches   | ntuplizer's GenPart algorithm (Python)     |
+
+Two of the six pairs MUST agree at the byte level — the same algorithm
+written in two languages, or the same integer decoded in two languages:
+
+```
+ANA_GENID   == NTU_PRIMARY    (both decode the same genTtbarId integer)
+ANA_GENPART == NTU_XVAL       (same GenPart algorithm, two languages)
+```
+
+Any disagreement on either of these pairs is a regression in
+ntuplizer ↔ analyzer parity and must be fixed before the production
+sample is trusted. The remaining four pairs reflect a real algorithmic
+difference (POG ghost-clustering vs our GenPart walker) and are
+expected to disagree at the few-percent (signal) to few-tens-of-percent
+(ttbar inclusive) level, depending on sample composition.
 
 ### Categories
-Following CMS AN-2022/122 and AN-19-094:
-| Category   | Definition                                                       |
-|------------|------------------------------------------------------------------|
-| `tt+LF`    | No additional heavy-flavour jets                                 |
-| `tt+cc`    | Additional charm jet(s), no additional b-jets                    |
-| `tt+b`     | 1 additional b-jet from a single B hadron                        |
-| `tt+2b`    | 1 additional b-jet from ≥2 overlapping B hadrons                 |
-| `tt+bb`    | Exactly 2 additional b-jets                                      |
-| `tt+bbb`   | Exactly 3 additional b-jets (ttHH-specific)                      |
-| `tt+4b`    | ≥4 additional b-jets (ttHH-specific)                             |
-| `noTTJets` | Non-tt events (no tt pair found)                                 |
 
-### Output Histograms (in `TtCatValidation/` directory)
-These histograms are written to each condor job output ROOT file under the `TtCatValidation/` directory:
+Five mutually exclusive event-level categories, encoded by the
+`TtCat` enum in `ttHHanalyzer_unified.h`:
 
-1. **`ttCatValidation`** (TH2F, 8×8): X-axis = ntuple ttCat branch category, Y-axis = analyzer-recomputed category. Diagonal entries indicate agreement. Off-diagonal entries reveal mismatches.
+| Category         | Definition                                             |
+|------------------|--------------------------------------------------------|
+| `LightFlavour`   | No additional b- or c-jet                              |
+| `AddCjet`        | ≥1 additional c-jet, no additional b-jet               |
+| `Add1Bjet_1Had`  | 1 additional b-jet containing exactly 1 b-hadron       |
+| `Add1Bjet_2Had`  | 1 additional b-jet containing ≥2 b-hadrons (collinear g→bb) |
+| `Add2Bjet`       | ≥2 additional b-jets (covers AN's bb / bbb / 4b)       |
 
-2. **`ttCatFinalState`** (TH2F, 8×9): X-axis = ntuple ttCat category, Y-axis = actual number of additional b-jets from gen-level B-hadron ancestry tracing (-1 to 7+). This shows, for each assigned category, how the true gen-level final state is distributed (e.g., events categorized as `tt+bb` but having 3 actual additional b-jets).
+The bbb / 4b split that some older notes mention is **not** present
+here. The CMS `GenTtbarCategorizer` plugin (which produces the
+NanoAOD `genTtbarId` integer we read) does not encode the additional
+b-jet *count* — it encodes the b-hadron multiplicity inside the
+leading two b-jets only. The ttHH AN reconstructs bbb / 4b at *sample*
+level (Option1 / Option2 in §3.4), not per event, and the downstream
+DNN merges them into a single tt+nb output node. So a per-event five
+category schema matches both the available information in `genTtbarId`
+and the downstream analysis design.
 
-### Algorithm
-The categorization uses a full GenPart-based primary path:
-1. Identify top decay products via GenPart mother chain
-2. Collect additional (non-top-ancestor) last-copy B hadrons
-3. Match them to GenJets (hadronFlavour==5, pT > 20 GeV, |η| < 2.4) via ΔR < 0.4
-4. Apply decision tree: 4b → bbb → 2b (per-jet B hadron count) → bb → b → cc → LF
+### Output histograms (in `TtCatValidation/` directory)
 
-The tt+2b classification uses **per-jet** B hadron count: a single GenJet with ≥2 matched B hadrons (collinear g→bb), matching the NtupleForge `TTbarJetCategorizer` module.
+The analyzer writes 11 histograms into the `TtCatValidation/`
+sub-directory of every output ROOT file:
 
-Cross-validated against `genTtbarId % 100` (CMS GenTtbarCategorizer output).
+1. **Four 1D count plots** (`TH1F`): `ttCat_Counts_AnaGenPart`,
+   `ttCat_Counts_AnaGenId`, `ttCat_Counts_NtuPrimary`,
+   `ttCat_Counts_NtuXval`. Per-category event count for each estimator.
 
-### Important Notes
-- Categorization runs on **ALL events** (pre-selection), not just selected events
-- The categorization labels are applied blindly to all MC samples; the downstream analysis must use sample names to determine which categories are physically meaningful
-- Data events are always classified as `noTTJets`
+2. **Six 2D pair-wise confusion matrices** (`TH2F`):
+   `ttCat_<X>_vs_<Y>` for all C(4,2)=6 pairs of estimators. The two
+   must-agree pairs are `ttCat_AnaGenId_vs_NtuPrimary` and
+   `ttCat_AnaGenPart_vs_NtuXval`; their off-diagonal sum must be zero.
+
+3. **One 2D `genTtbarId` distribution** (`TH2F`):
+   `ttCat_GenTtbarIdMod100`. 60 bins of `genTtbarId%100` on X (so each
+   POG code 0 / 41–45 / 51–55 lives in its own column), analyzer
+   GenPart category on Y. Useful for spotting any POG code that the
+   analyzer's GenPart algorithm is mishandling.
+
+The end-of-job summary printout (in the analyzer log) lists the
+per-pair agreement percentages and lists every off-diagonal cell of
+the two must-agree pairs explicitly.
+
+### Important notes
+
+- The four-way validation runs on **all MC events** before selection,
+  not just selected events. This is intentional — we want to catch
+  parity drift across the full kinematic phase space, not just the
+  small fraction that survives the analysis cuts.
+- Data events take the early-return path: `_DataOrMC == "Data"` skips
+  the entire validation block, so the per-event cost is zero on data.
+- Downstream physics never reads any `ANA_*` value; only
+  `officialTtCategory()` (= `NTU_PRIMARY`) is used. Removing the four
+  validation estimators would not change a single physics result.
+
+### Validation plotter — `scripts/plot_ttcat_validation.py`
+
+A standalone PyROOT script that reads a single analyzer output file
+and renders all 11 histograms in `TtCatValidation/` to PNG. Zero
+external dependencies — `cmsenv` already provides ROOT.
+
+```bash
+cmsenv
+python scripts/plot_ttcat_validation.py output_TTToHadronic.root
+python scripts/plot_ttcat_validation.py output_TTToHadronic.root -o plots/
+python scripts/plot_ttcat_validation.py output_TTToHadronic.root --normalize row
+python scripts/plot_ttcat_validation.py output_TTToHadronic.root --log-counts
+```
+
+Output: 4 individual count PNGs, 1 grouped count overlay, 6 pair-wise
+confusion matrices (the two must-agree pairs are auto-marked in their
+title with `MUST-AGREE OK` or `MUST-AGREE BROKEN`), 1 `genTtbarId`
+distribution, and 1 one-page `summary.png` with everything in a 4×3
+grid. See the script's docstring for details.
+
+**What "good" looks like:** both must-agree pair plots are
+diagonal-only with `agreement = 100.0000%`. If a must-agree pair shows
+any off-diagonal entry, stop and debug ntuplizer ↔ analyzer parity
+before trusting the sample.
+
+### Legacy: `TTCatDebug.h`
+
+`TTCatDebug.h` is a stand-alone header from the previous validation
+era. It writes per-event categorization diagnostics to a fixed CSV
+file (`ttcat_ana.csv`) using the same schema as NtupleForge's old
+`ttcat_ntu.csv`, so that the two files can be compared with shell
+`sort` + `diff` for byte-level parity checks.
+
+This was the right tool when ntuples carried only one categorization
+result and the second algorithm had to be re-derived offline. **It is
+no longer used by the current analyzer** (no `#include "TTCatDebug.h"`
+anywhere in `ttHHanalyzer_unified.{h,cc}`, no call to `ttcatdbg::emit`)
+and is superseded by the in-memory four-way comparison + the
+`TtCatValidation/` ROOT histograms described above. The current
+pipeline does the same byte-level parity check as the old CSV diff,
+but inside the same event loop, using histogram off-diagonal cells
+instead of an external `diff` invocation.
+
+The header is kept in the repository for now as a reference and as an
+emergency fallback if a future debugging session needs raw per-event
+CSV output. It should be moved to a `legacy/` sub-directory (or
+removed entirely) on the next cleanup pass.
+
+### References
+
+- **CMS `GenTtbarCategorizer.cc`** —
+  [TopQuarkAnalysis/TopTools/plugins/GenTtbarCategorizer.cc](https://github.com/cms-sw/cmssw/blob/master/TopQuarkAnalysis/TopTools/plugins/GenTtbarCategorizer.cc).
+  The integer encoding rule (lines ~282–300) is what `decode_genttbarid()`
+  inverts.
+- **CMS GenHFHadronMatcher TWiki** —
+  <https://twiki.cern.ch/twiki/bin/view/CMSPublic/GenHFHadronMatcher>.
+  Describes the ghost-clustering procedure that feeds
+  `GenTtbarCategorizer`.
+- **CMS NanoAOD `genTtbarId` documentation** —
+  <https://twiki.cern.ch/twiki/bin/view/CMS/TopModGen>.
+- **ttHH AN-2022/122**, §3.1 (object & event categorisation) and §3.4
+  (5FS / 4FS sample stitching). The AN cites the GenHFHadronMatcher /
+  GenTtbarCategorizer plugin chain as the official categoriser.
+- **ttH AN-19-094**, §6.1.2 — earlier reference on the same plugin
+  chain for the ttH analysis.
+- **NtupleForge README** (`README_ntuplizer.md`) — canonical
+  description of where the `ttCat_*` and `ttCatXval_*` branches come
+  from. Read it before touching the analyzer's categorization code.
+
+### Known TODOs
+
+- The branch name `ttCatXval_*` (`Xval` = "cross-validation") is opaque.
+  Will be renamed in coordination with the ntuplizer in the next major
+  refactor; the analyzer functions `readNtupleXvalCategory` and the
+  member histograms `_hTtCat_*_NtuXval` will rename together.
+- Add a `validateTtCat` runtime flag (default `false`). With the flag
+  off, production runs skip the four-way comparison and just call
+  `officialTtCategory()`, recovering the per-event GenPart loop cost.
+  With the flag on (validating a new ntuple production, or after
+  touching the categorizer), the full comparison runs.
+- Move (or delete) `TTCatDebug.h` to a `legacy/` sub-directory.
 
 ---
 
@@ -161,4 +298,3 @@ cppif (_policy.applyNewCut) {
         return false;
     }
 }
-
