@@ -1251,96 +1251,40 @@ class ttHHanalyzer_unified {
     std::vector<double> _cutFlowWeight; // 가중치 적용 (Weight)
 
     // ═══════════════════════════════════════════════════════════════════════
-    // tt+jets categorization — Option B' five-category schema
-    // ═══════════════════════════════════════════════════════════════════════
+    // tt+jets Event Categorization
     //
-    // The five mutually exclusive categories follow the AN-2022/122 §3.1
-    // and AN-19-094 §6.1.2 definitions but use explicit Bjet/Hadron suffixes
-    // to remove the historical ambiguity of names like "tt+2b" (where the
-    // "2" refers to b-hadrons inside one jet, not to the number of b-jets).
+    // Classifies tt+jets events by additional-jet heavy-flavour content.
+    // Based on CMS AN-2022/122 (ttHH) and CMS AN-19-094 (ttH).
     //
-    //   kLightFlavour   tt+LF   no additional b- or c-jets
-    //   kAddCjet        tt+cc   ≥1 additional c-jet, no additional b-jet
-    //   kAdd1Bjet1Had   tt+b    1 additional b-jet containing 1 b-hadron
-    //   kAdd1Bjet2Had   tt+2b   1 additional b-jet containing ≥2 b-hadrons
-    //                            (collinear g→bb merged into one jet)
-    //   kAdd2Bjet       tt+bb   ≥2 additional b-jets (covers AN's bb,bbb,4b)
+    // "Additional" means jets NOT from top-quark decay.
+    // Uses GenHFHadronMatcher methodology: gen jets pT>20, |eta|<2.4.
     //
-    // The bbb/4b split is NOT recovered here because:
-    //   1. The CMS GenTtbarCategorizer plugin (the AN-cited tool, used by
-    //      the genTtbarId branch) cannot distinguish them — it only encodes
-    //      hadron multiplicity in the leading two b-jets, not jet count.
-    //   2. The ttHH AN constructs bbb/4b at sample level (Option1/Option2),
-    //      not from per-event GenHFHadronMatcher labelling.
-    //   3. The DNN merges them into one tt+nb output node anyway.
+    // Decision tree (Section 21.5):
+    //   extra_b_jets >= 4                              -> tt+4b
+    //   extra_b_jets == 3                              -> tt+bbb
+    //   extra_b_jets == 1 AND >=2 B hadrons in jet     -> tt+2b
+    //   extra_b_jets >= 2                              -> tt+bb
+    //   extra_b_jets == 1 (single B hadron)            -> tt+b
+    //   extra_c_jets >= 1 (no extra b)                 -> tt+cc
+    //   else                                           -> tt+LF
     //
-    // Acceptance for additional b-jets / c-jets: pT > 20 GeV, |η| < 2.4,
-    // ΔR(hadron, gen-jet) < 0.4. These match the ntuplizer constants.
-    //
-    // ─── Algorithms used here ───────────────────────────────────────────
-    //
-    // The analyzer implements TWO independent estimators of the category,
-    // and reads two more from the ntuple. All four are compared in
-    // validation histograms; the decision the analyzer uses downstream
-    // (stitching, hist split) is the ntuple "primary" branch ttCat_*.
-    //
-    //   ANA_GENPART  : analyzer's own GenPart-based algorithm.
-    //                  Bit-for-bit equivalent of the ntuplizer's
-    //                  _categorize_genpart_xval() function. Computed from
-    //                  raw GenPart_*/GenJet_* branches.
-    //
-    //   ANA_GENID    : decode of genTtbarId%100. Same logic as the
-    //                  ntuplizer's decode_genttbarid() function.
-    //
-    //   NTU_PRIMARY  : ttCat_* branches written by the ntuplizer
-    //                  (genTtbarId-based, AN-cited POG path).
-    //                  This is what downstream stitching uses.
-    //
-    //   NTU_XVAL     : ttCatXval_* branches written by the ntuplizer
-    //                  (its own GenPart algorithm, validation only).
-    //
-    // Expected agreement:
-    //   ANA_GENID  ≡  NTU_PRIMARY     (both decode the same integer,
-    //                                  byte-identical)
-    //   ANA_GENPART ≡  NTU_XVAL       (same algorithm in two languages,
-    //                                  byte-identical modulo float order)
-    //   ANA_GENID vs ANA_GENPART      ~97% (POG vs GenPart, real
-    //                                  algorithmic difference)
+    // Fallback chain (when GenPart absent):
+    //   1) ntuple ttCat_* flags (from NtupleForge)
+    //   2) genTtbarId + nAdditionalBJets from ntuple
+    //   3) genTtbarId alone (max resolution: tt+bb)
     // ═══════════════════════════════════════════════════════════════════════
     enum class TtCat {
-        kLightFlavour = 0,
-        kAddCjet,
-        kAdd1Bjet1Had,
-        kAdd1Bjet2Had,
-        kAdd2Bjet,
-        kNoTTJets,
-        kUnknown,
-        kNCategories
+        kLF = 0, kCC, kB, k2B, kBB, kBBB, k4B, kNoTTJets, kNCategories
     };
 
     static constexpr int kNTtCat = static_cast<int>(TtCat::kNCategories);
 
     static const char* ttCatName(int idx) {
         static const char* names[] = {
-            "LightFlavour",
-            "AddCjet",
-            "Add1Bjet_1Had",
-            "Add1Bjet_2Had",
-            "Add2Bjet",
-            "NoTTJets",
-            "Unknown"
+            "tt+LF", "tt+cc", "tt+b", "tt+2b", "tt+bb", "tt+bbb", "tt+4b", "noTTJets"
         };
         if (idx >= 0 && idx < kNTtCat) return names[idx];
-        return "OutOfRange";
-    }
-
-    // Compact alias used in cross-validation tables.
-    static const char* ttCatShortName(int idx) {
-        static const char* names[] = {
-            "LF", "Cj", "1B1H", "1B2H", "2B+", "noTT", "?"
-        };
-        if (idx >= 0 && idx < kNTtCat) return names[idx];
-        return "??";
+        return "unknown";
     }
 
     // --- helper: is PDG ID a B hadron? ---
@@ -1514,172 +1458,161 @@ class ttHHanalyzer_unified {
         return static_cast<int>(matched.size());
     }
 
-    // ──────────────────────────────────────────────────────────────────
-    // Algorithm 1 — analyzer's own GenPart-based categorization
-    //
-    // Bit-for-bit equivalent of the ntuplizer's _categorize_genpart_xval()
-    // function. Operates on raw GenPart_*/GenJet_* branches only; does
-    // NOT touch genTtbarId or any ttCat[Xval]_* branch.
-    //
-    // The decision tree differs from the old 7-category version only in
-    // that codes 53/54/55 (≥2 additional b-jets) are no longer split into
-    // bb/bbb/4b — they collapse into kAdd2Bjet. See the enum docstring
-    // above for the rationale.
-    //
-    // Returns kNoTTJets for non-tt events and kUnknown if the input
-    // GenPart/GenJet vectors are empty (e.g. data NanoAOD).
-    // ──────────────────────────────────────────────────────────────────
-    TtCat computeTtCategoryFromGenPart() const {
+    // --- main categorization function ---
+    // Primary: full GenPart-based (works for all MC samples)
+    // Fallback: genTtbarId + nAdditionalBJets from ntuple
+    TtCat computeTtCategory() const {
         if (_DataOrMC == "Data") return TtCat::kNoTTJets;
 
-        if (genPartCount() == 0 || genJetCount() == 0) {
-            return TtCat::kUnknown;
+        // Primary path: requires both GenPart AND GenJet vectors populated
+        if (genPartCount() > 0 && genJetCount() > 0) {
+            if (!eventHasTTPair()) return TtCat::kNoTTJets;
+
+            auto result = countAdditionalBJetsDetailed();
+            int nBJets = result.nJets;
+
+            // Decision tree (AN-2022/122 Sec 3.1-3.2, AN-19-094 Sec 6.1.2)
+            //
+            // Order: strictly monotonically decreasing in nBJets,
+            // making mutual exclusivity self-evident.
+            if (nBJets >= 4)  return TtCat::k4B;
+            if (nBJets == 3)  return TtCat::kBBB;
+            if (nBJets >= 2)  return TtCat::kBB;
+
+            if (nBJets == 1) {
+                // ═══════════════════════════════════════════════════════
+                // CRITICAL FIX: tt+2b vs tt+b distinction
+                //
+                // tt+2b: the single jet has >=2 B hadrons MATCHED to it
+                //        (collinear g->bb where both b quarks merge into
+                //        one jet cone)
+                // tt+b:  the single jet has exactly 1 B hadron matched
+                //
+                // Use per-jet B hadron count from jetBHMap, NOT the
+                // total nHadrons (which includes unmatched B hadrons).
+                // ═══════════════════════════════════════════════════════
+                int singleJetBHCount = result.jetBHMap.begin()->second;
+                if (singleJetBHCount >= 2) return TtCat::k2B;
+                return TtCat::kB;
+            }
+
+            // No additional b-jets; check c-jets
+            if (countAdditionalCJets() > 0) return TtCat::kCC;
+            return TtCat::kLF;
         }
-        if (!eventHasTTPair()) return TtCat::kNoTTJets;
 
-        const auto result = countAdditionalBJetsDetailed();
-        const int nBJets = result.nJets;
-
-        // ≥2 additional b-jets — single bucket (no bbb/4b split)
-        if (nBJets >= 2) return TtCat::kAdd2Bjet;
-
-        // Exactly 1 additional b-jet — split by per-jet hadron count.
-        // Use the per-jet B hadron count (not the total over all hadrons),
-        // which is the same convention the ntuplizer encodes via
-        // genTtbarId codes 51 (1 hadron) vs 52 (≥2 hadrons in one jet).
-        if (nBJets == 1) {
-            const int singleJetBHCount = result.jetBHMap.begin()->second;
-            if (singleJetBHCount >= 2) return TtCat::kAdd1Bjet2Had;
-            return TtCat::kAdd1Bjet1Had;
-        }
-
-        // No additional b-jets — check c-jets, else light flavour.
-        if (countAdditionalCJets() > 0) return TtCat::kAddCjet;
-        return TtCat::kLightFlavour;
+        // Fallback: genTtbarId-based (used when GenPart/GenJet absent)
+        return computeTtCategoryFromGenTtbarId();
     }
 
-    // ──────────────────────────────────────────────────────────────────
-    // Algorithm 2 — decode of the genTtbarId integer (POG path)
-    //
-    // Equivalent to the ntuplizer's decode_genttbarid() function and to
-    // CMS GenTtbarCategorizer.cc lines 282-300.
-    //
-    //   genTtbarId %% 100   meaning
-    //   0                   tt+LF (no additional heavy flavour jet)
-    //   41-45               tt+cc (one or more additional c-jets)
-    //   51                  1 add b-jet, 1 b-hadron in it
-    //   52                  1 add b-jet, ≥2 b-hadrons in it (collinear g→bb)
-    //   53,54,55            ≥2 add b-jets (jet count NOT recoverable)
-    //   any other / -1      not ttbar
-    // ──────────────────────────────────────────────────────────────────
+    // --- genTtbarId-based fallback ---
+    // Uses nAdditionalBJets from ntuple to refine codes 53-56 (>=2 b-jets)
     TtCat computeTtCategoryFromGenTtbarId() const {
-        const int gtid = _ev->genTtbarId;
-        if (gtid < 0) return TtCat::kNoTTJets;
-        const int catId = gtid % 100;
-        if (catId == 0)  return TtCat::kLightFlavour;
-        if (catId >= 41 && catId <= 45) return TtCat::kAddCjet;
-        if (catId == 51) return TtCat::kAdd1Bjet1Had;
-        if (catId == 52) return TtCat::kAdd1Bjet2Had;
-        if (catId >= 53 && catId <= 55) return TtCat::kAdd2Bjet;
+        int catId = _ev->genTtbarId % 100;
+        if (catId >= 41 && catId <= 49) return TtCat::kCC;
+        if (catId == 51) return TtCat::kB;
+        if (catId == 52) return TtCat::k2B;
+        if (catId >= 53 && catId <= 56) {
+            // genTtbarId guarantees >=2 additional b-jets
+            // Use nAdditionalBJets from ntuple (NtupleForge-computed) to refine
+            int nAddB = _ev->nAdditionalBJets;
+            if (nAddB >= 4) return TtCat::k4B;
+            if (nAddB == 3) return TtCat::kBBB;
+            return TtCat::kBB;
+        }
+        if (catId == 0) return TtCat::kLF;
         return TtCat::kNoTTJets;
     }
 
-    // ──────────────────────────────────────────────────────────────────
-    // Read the ntuple's two ttCat branch sets.
-    //
-    // These are the values written by the ntuplizer's TtbarCategorizer
-    // module. They are the "single source of truth" for downstream
-    // stitching and hist split — the analyzer never overrides them.
-    //
-    // For each set, exactly one of the five Bool branches is True on
-    // ttbar events; on non-ttbar events all five are False and the
-    // event maps to kNoTTJets here.
-    // ──────────────────────────────────────────────────────────────────
-    TtCat readNtuplePrimaryCategory() const {
-        if (_ev->ttCat_LightFlavour)  return TtCat::kLightFlavour;
-        if (_ev->ttCat_AddCjet)       return TtCat::kAddCjet;
-        if (_ev->ttCat_Add1Bjet_1Had) return TtCat::kAdd1Bjet1Had;
-        if (_ev->ttCat_Add1Bjet_2Had) return TtCat::kAdd1Bjet2Had;
-        if (_ev->ttCat_Add2Bjet)      return TtCat::kAdd2Bjet;
-        // All five False: depends on source code.
-        // 0 = GENTTBARID (impossible if ttbar — would have set a Bool)
-        // 2 = NO_TTBAR
-        // 3 = NO_GENTTBARID (data, or missing branch)
-        if (_ev->ttCatSource == 2) return TtCat::kNoTTJets;
-        return TtCat::kUnknown;
+    // --- pure genTtbarId mapping (NO nAdditionalBJets refinement) ---
+    // Used for cross-validation: maps genTtbarId%100 to 5 standard categories only.
+    // bbb/4b cannot be resolved, so codes 53-56 always map to kBB.
+    TtCat genTtbarIdToStandardCategory() const {
+        int catId = _ev->genTtbarId % 100;
+        if (catId >= 41 && catId <= 49) return TtCat::kCC;
+        if (catId == 51) return TtCat::kB;
+        if (catId == 52) return TtCat::k2B;
+        if (catId >= 53 && catId <= 56) return TtCat::kBB;  // always BB (can't distinguish bbb/4b)
+        if (catId == 0) {
+            if (eventHasTTPair()) return TtCat::kLF;
+            return TtCat::kNoTTJets;
+        }
+        return TtCat::kNoTTJets;
     }
 
-    TtCat readNtupleXvalCategory() const {
-        if (_ev->ttCatXval_LightFlavour)  return TtCat::kLightFlavour;
-        if (_ev->ttCatXval_AddCjet)       return TtCat::kAddCjet;
-        if (_ev->ttCatXval_Add1Bjet_1Had) return TtCat::kAdd1Bjet1Had;
-        if (_ev->ttCatXval_Add1Bjet_2Had) return TtCat::kAdd1Bjet2Had;
-        if (_ev->ttCatXval_Add2Bjet)      return TtCat::kAdd2Bjet;
-        if (_ev->ttCatXvalSource == 2) return TtCat::kNoTTJets;
-        return TtCat::kUnknown;
+    // --- collapse bbb/4b to bb for fair comparison with genTtbarId ---
+    static TtCat collapseToStandard(TtCat cat) {
+        if (cat == TtCat::kBBB || cat == TtCat::k4B) return TtCat::kBB;
+        return cat;
     }
 
-    // The "official" category the analyzer uses for downstream decisions.
-    // By project convention this is always the ntuple primary set —
-    // never the analyzer's own GenPart computation, which exists only
-    // as a sanity check.
-    TtCat officialTtCategory() const {
-        return readNtuplePrimaryCategory();
+    // --- convert ntuple ttCat branches to enum index ---
+    int ntupleTtCatIndex() const {
+        if (_ev->ttCat_LF)       return static_cast<int>(TtCat::kLF);
+        if (_ev->ttCat_cc)       return static_cast<int>(TtCat::kCC);
+        if (_ev->ttCat_b)        return static_cast<int>(TtCat::kB);
+        if (_ev->ttCat_2b)       return static_cast<int>(TtCat::k2B);
+        if (_ev->ttCat_bb)       return static_cast<int>(TtCat::kBB);
+        if (_ev->ttCat_bbb)      return static_cast<int>(TtCat::kBBB);
+        if (_ev->ttCat_4b)       return static_cast<int>(TtCat::k4B);
+        if (_ev->ttCat_noTTJets) return static_cast<int>(TtCat::kNoTTJets);
+
+        // Fallback: derive from genTtbarId when ttCat_* branches are absent
+        return static_cast<int>(computeTtCategory());
     }
 
-    // ──────────────────────────────────────────────────────────────────
-    // Diagnostic helpers (used by the validation block & debug print).
-    // These never feed downstream physics — they only provide context
-    // for the per-event debug dump and the validation histograms.
-    // ──────────────────────────────────────────────────────────────────
-    int analyzerAdditionalBJetCount() const {
-        if (genPartCount() == 0 || genJetCount() == 0) return -1;
-        return countAdditionalBJets();
+    // --- get best available additional b-jet count ---
+    int getBestAdditionalBJetCount() const {
+        // 1) Analyzer-computed (requires both GenPart AND GenJet)
+        if (genPartCount() > 0 && genJetCount() > 0) return countAdditionalBJets();
+        // 2) Ntuple branch (NtupleForge-computed)
+        if (_ev->nAdditionalBJets >= 0) return _ev->nAdditionalBJets;
+        // 3) Estimate from genTtbarId
+        int catId = _ev->genTtbarId % 100;
+        if (catId == 51 || catId == 52) return 1;
+        if (catId >= 53 && catId <= 56) return 2;
+        return 0;
     }
 
-    int analyzerAdditionalBHadronCount() const {
-        if (genPartCount() == 0 || genJetCount() == 0) return -1;
-        return countAdditionalBJetsDetailed().nHadrons;
+    // --- get best available additional B hadron count ---
+    int getBestAdditionalBHadronCount() const {
+        if (genPartCount() > 0 && genJetCount() > 0) {
+            return countAdditionalBJetsDetailed().nHadrons;
+        }
+        if (_ev->nAdditionalBHadrons >= 0) return _ev->nAdditionalBHadrons;
+        return -1;
     }
 
-    int analyzerAdditionalCJetCount() const {
-        if (genPartCount() == 0 || genJetCount() == 0) return -1;
-        return countAdditionalCJets();
+    // --- get matched B hadron count (for validation) ---
+    int getBestMatchedBHadronCount() const {
+        if (genPartCount() > 0 && genJetCount() > 0) {
+            return countAdditionalBJetsDetailed().nMatched;
+        }
+        // nMatchedBHadrons may or may not exist in old ntuples
+        // Return -1 if unavailable
+        return -1;
     }
 
-    // ──────────────────────────────────────────────────────────────────
-    // tt+jets categorization validation histograms
-    //
-    // Four estimators of the same event-level label are compared
-    // pair-wise. See enum docstring above for the labels' meaning.
-    //
-    //   ANA_GENPART  analyzer's GenPart algorithm
-    //   ANA_GENID    analyzer's decode of genTtbarId
-    //   NTU_PRIMARY  ntuple ttCat_*       (= ntuplizer's genTtbarId path)
-    //   NTU_XVAL     ntuple ttCatXval_*   (= ntuplizer's GenPart path)
-    //
-    // The six 2D histograms below cover all C(4,2)=6 pairings; the
-    // diagonals reveal where each pair agrees and the off-diagonal
-    // entries reveal exactly which categories disagree. The four
-    // 1D histograms hold per-category event counts for each estimator.
-    // ──────────────────────────────────────────────────────────────────
+    // --- get best available additional c-jet count ---
+    int getBestAdditionalCJetCount() const {
+        if (genPartCount() > 0 && genJetCount() > 0) return countAdditionalCJets();
+        if (_ev->nAdditionalCJets >= 0) return _ev->nAdditionalCJets;
+        return -1;
+    }
 
-    // 1D event counts per estimator
-    TH1F* _hTtCat_Counts_AnaGenPart  = nullptr;
-    TH1F* _hTtCat_Counts_AnaGenId    = nullptr;
-    TH1F* _hTtCat_Counts_NtuPrimary  = nullptr;
-    TH1F* _hTtCat_Counts_NtuXval     = nullptr;
+    // ─── Validation histograms ───
+    TH2F* _hTtCatValidation     = nullptr;  // ntuple vs analyzer category (2D)
+    TH2F* _hTtCatFinalState     = nullptr;  // ntuple cat vs additional b-jet count
+    TH2F* _hTtCatGenTtbarId     = nullptr;  // genTtbarId%100 vs analyzer category
+    TH1F* _hTtCatCounts         = nullptr;  // 1D event counts per analyzer category
+    TH2F* _hTtCatBHadrons       = nullptr;  // analyzer cat vs additional B hadron count
+    TH2F* _hTtCatAddBNtupleVsAna = nullptr; // nAdditionalBJets: ntuple vs analyzer
 
-    // 2D pair-wise comparisons (6 pairs)
-    TH2F* _hTtCat_AnaGenPart_vs_AnaGenId    = nullptr;
-    TH2F* _hTtCat_AnaGenPart_vs_NtuPrimary  = nullptr;
-    TH2F* _hTtCat_AnaGenPart_vs_NtuXval     = nullptr;  // expected: diagonal
-    TH2F* _hTtCat_AnaGenId_vs_NtuPrimary    = nullptr;  // expected: diagonal
-    TH2F* _hTtCat_AnaGenId_vs_NtuXval       = nullptr;
-    TH2F* _hTtCat_NtuPrimary_vs_NtuXval     = nullptr;
-
-    // genTtbarId mod 100 distribution split by analyzer category
-    TH2F* _hTtCat_GenTtbarIdMod100         = nullptr;
+    // ─── Cross-validation: GenPart-based vs genTtbarId ───
+    // Collapses bbb/4b → bb for fair 5-category comparison
+    TH2F* _hTtCatXvalGenPart  = nullptr;  // analyzer GenPart vs genTtbarId (5-cat)
+    TH2F* _hTtCatXvalNtuple   = nullptr;  // ntuple GenPart vs genTtbarId (5-cat)
+    TH1F* _hTtCatXvalMismatch = nullptr;  // mismatch count per category
 
     // L1 prefiring 보정
     const correction::Correction *prefireJetCorr = nullptr;
@@ -2170,86 +2103,81 @@ class ttHHanalyzer_unified {
 
         // ═══════════════════════════════════════════════════════════════
         // tt+jets categorization validation histograms
-        //
-        // Four estimators of the same per-event label, six pair-wise
-        // 2D histograms, four 1D count histograms, plus a genTtbarId
-        // mod 100 distribution. See header docstring for layout.
         // ═══════════════════════════════════════════════════════════════
         _of->file->cd();
         TDirectory *ttCatDir = _of->file->mkdir("TtCatValidation"+trail);
         tmpDirs.push_back(ttCatDir);
         ttCatDir->cd();
 
-        // Helper lambdas to keep the labelled-axis boilerplate compact.
-        auto labelAxisX = [&](TH1* h){
-            for (int i = 0; i < kNTtCat; ++i)
-                h->GetXaxis()->SetBinLabel(i+1, ttCatName(i));
-        };
-        auto labelAxisY = [&](TH2* h){
-            for (int i = 0; i < kNTtCat; ++i)
-                h->GetYaxis()->SetBinLabel(i+1, ttCatName(i));
-        };
-        auto makeCounts = [&](const char* name, const char* title) {
-            auto* h = new TH1F(name, title, kNTtCat, 0, kNTtCat);
-            labelAxisX(h);
-            return h;
-        };
-        auto makePair = [&](const char* name, const char* xTitle, const char* yTitle) {
-            TString title = TString::Format(";%s;%s", xTitle, yTitle);
-            auto* h = new TH2F(name, title, kNTtCat, 0, kNTtCat, kNTtCat, 0, kNTtCat);
-            labelAxisX(h);
-            labelAxisY(h);
-            return h;
-        };
+        // 1) Ntuple vs Analyzer category (2D) — should be diagonal
+        _hTtCatValidation = new TH2F("ttCatValidation",
+            "tt+jets category: Ntuple vs Analyzer;Ntuple category;Analyzer category",
+            kNTtCat, 0, kNTtCat, kNTtCat, 0, kNTtCat);
+        for (int i = 0; i < kNTtCat; ++i) {
+            _hTtCatValidation->GetXaxis()->SetBinLabel(i+1, ttCatName(i));
+            _hTtCatValidation->GetYaxis()->SetBinLabel(i+1, ttCatName(i));
+        }
 
-        // ── 1D event counts per estimator ──
-        _hTtCat_Counts_AnaGenPart = makeCounts(
-            "ttCat_Counts_AnaGenPart",
-            "Events per category (analyzer GenPart);Category;Events");
-        _hTtCat_Counts_AnaGenId = makeCounts(
-            "ttCat_Counts_AnaGenId",
-            "Events per category (analyzer genTtbarId decode);Category;Events");
-        _hTtCat_Counts_NtuPrimary = makeCounts(
-            "ttCat_Counts_NtuPrimary",
-            "Events per category (ntuple ttCat_*);Category;Events");
-        _hTtCat_Counts_NtuXval = makeCounts(
-            "ttCat_Counts_NtuXval",
-            "Events per category (ntuple ttCatXval_*);Category;Events");
+        // 2) Ntuple category vs additional b-jet count
+        _hTtCatFinalState = new TH2F("ttCatFinalState",
+            "tt+jets category vs additional b-jets;Ntuple category;N additional b-jets (gen)",
+            kNTtCat, 0, kNTtCat, 9, -1.5, 7.5);
+        for (int i = 0; i < kNTtCat; ++i) {
+            _hTtCatFinalState->GetXaxis()->SetBinLabel(i+1, ttCatName(i));
+        }
 
-        // ── 2D pair-wise comparisons (6 pairs) ──
-        // Naming: <X>_vs_<Y>  →  X = rows, Y = columns when viewed as
-        // a confusion matrix. Diagonal = agreement, off-diagonal = disagreement.
-
-        _hTtCat_AnaGenPart_vs_AnaGenId = makePair(
-            "ttCat_AnaGenPart_vs_AnaGenId",
-            "Analyzer GenPart", "Analyzer genTtbarId decode");
-
-        _hTtCat_AnaGenPart_vs_NtuPrimary = makePair(
-            "ttCat_AnaGenPart_vs_NtuPrimary",
-            "Analyzer GenPart", "Ntuple ttCat_* (primary)");
-
-        _hTtCat_AnaGenPart_vs_NtuXval = makePair(
-            "ttCat_AnaGenPart_vs_NtuXval",
-            "Analyzer GenPart", "Ntuple ttCatXval_*");
-
-        _hTtCat_AnaGenId_vs_NtuPrimary = makePair(
-            "ttCat_AnaGenId_vs_NtuPrimary",
-            "Analyzer genTtbarId decode", "Ntuple ttCat_* (primary)");
-
-        _hTtCat_AnaGenId_vs_NtuXval = makePair(
-            "ttCat_AnaGenId_vs_NtuXval",
-            "Analyzer genTtbarId decode", "Ntuple ttCatXval_*");
-
-        _hTtCat_NtuPrimary_vs_NtuXval = makePair(
-            "ttCat_NtuPrimary_vs_NtuXval",
-            "Ntuple ttCat_* (primary)", "Ntuple ttCatXval_*");
-
-        // ── genTtbarId mod 100 distribution split by analyzer category ──
-        _hTtCat_GenTtbarIdMod100 = new TH2F(
-            "ttCat_GenTtbarIdMod100",
-            "genTtbarId mod 100 vs analyzer GenPart category;genTtbarId %% 100;Analyzer GenPart category",
+        // 3) genTtbarId % 100 vs analyzer category
+        _hTtCatGenTtbarId = new TH2F("ttCatGenTtbarId",
+            "genTtbarId mod 100 vs Analyzer category;genTtbarId %% 100;Analyzer category",
             60, -0.5, 59.5, kNTtCat, 0, kNTtCat);
-        labelAxisY(_hTtCat_GenTtbarIdMod100);
+        for (int i = 0; i < kNTtCat; ++i) {
+            _hTtCatGenTtbarId->GetYaxis()->SetBinLabel(i+1, ttCatName(i));
+        }
+
+        // 4) 1D event counts per analyzer category
+        _hTtCatCounts = new TH1F("ttCatCounts",
+            "Events per tt+jets category (analyzer);Category;Events",
+            kNTtCat, 0, kNTtCat);
+        for (int i = 0; i < kNTtCat; ++i) {
+            _hTtCatCounts->GetXaxis()->SetBinLabel(i+1, ttCatName(i));
+        }
+
+        // 5) Analyzer category vs additional B hadron count
+        _hTtCatBHadrons = new TH2F("ttCatBHadrons",
+            "Analyzer category vs additional B hadrons;Analyzer category;N additional B hadrons",
+            kNTtCat, 0, kNTtCat, 10, -1.5, 8.5);
+        for (int i = 0; i < kNTtCat; ++i) {
+            _hTtCatBHadrons->GetXaxis()->SetBinLabel(i+1, ttCatName(i));
+        }
+
+        // 6) nAdditionalBJets: ntuple vs analyzer
+        _hTtCatAddBNtupleVsAna = new TH2F("ttCatAddBNtupleVsAna",
+            "Additional b-jets: Ntuple vs Analyzer;Ntuple nAdditionalBJets;Analyzer nAdditionalBJets",
+            10, -1.5, 8.5, 10, -1.5, 8.5);
+
+        // Cross-validation: GenPart algorithm vs genTtbarId (5-cat collapsed)
+        _hTtCatXvalGenPart = new TH2F("ttCatXvalGenPart",
+            "Cross-validation: Analyzer GenPart vs genTtbarId (5-cat);Analyzer (collapsed);genTtbarId mapping",
+            kNTtCat, 0, kNTtCat, kNTtCat, 0, kNTtCat);
+        for (int i = 0; i < kNTtCat; ++i) {
+            _hTtCatXvalGenPart->GetXaxis()->SetBinLabel(i+1, ttCatName(i));
+            _hTtCatXvalGenPart->GetYaxis()->SetBinLabel(i+1, ttCatName(i));
+        }
+
+        _hTtCatXvalNtuple = new TH2F("ttCatXvalNtuple",
+            "Cross-validation: Ntuple GenPart vs genTtbarId (5-cat);Ntuple (collapsed);genTtbarId mapping",
+            kNTtCat, 0, kNTtCat, kNTtCat, 0, kNTtCat);
+        for (int i = 0; i < kNTtCat; ++i) {
+            _hTtCatXvalNtuple->GetXaxis()->SetBinLabel(i+1, ttCatName(i));
+            _hTtCatXvalNtuple->GetYaxis()->SetBinLabel(i+1, ttCatName(i));
+        }
+
+        _hTtCatXvalMismatch = new TH1F("ttCatXvalMismatch",
+            "Mismatches: Analyzer GenPart vs genTtbarId per category;Category;Mismatches",
+            kNTtCat, 0, kNTtCat);
+        for (int i = 0; i < kNTtCat; ++i) {
+            _hTtCatXvalMismatch->GetXaxis()->SetBinLabel(i+1, ttCatName(i));
+        }
 
 	_histoDirs = tmpDirs;
     }

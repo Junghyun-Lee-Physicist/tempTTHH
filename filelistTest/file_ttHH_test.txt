@@ -1,1 +1,1 @@
-/Users/jhlee/ttHH/ntuple/NanoAOD_NTuples/ttHH_0.root
+/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/tree.root

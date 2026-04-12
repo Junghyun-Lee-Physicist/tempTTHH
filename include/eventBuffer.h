@@ -3,7 +3,7 @@
 //----------------------------------------------------------------------------
 // File:        eventBuffer.h
 // Description: Analyzer header for ntuples created by TheNtupleMaker
-// Created:     Fri Mar 27 16:27:01 2026 by mkanalyzer.py v2.0.3 14-Oct-2020
+// Created:     Sat Apr 11 23:47:58 2026 by mkanalyzer.py v2.0.3 14-Oct-2020
 // Author:      JungHyun Lee
 //----------------------------------------------------------------------------
 #include <stdio.h>
@@ -127,14 +127,14 @@ struct eventBuffer
   std::vector<float>	Muon_pt;
   std::vector<bool>	Muon_tightId;
 
+  int	nElectron;
+  int	nMuon;
   int	nLHEPdfWeight;
   int	nJet;
-  int	nGenPart;
-  int	nGenJet;
-  int	nElectron;
-  int	nLHEScaleWeight;
-  int	nMuon;
   int	nFatJet;
+  int	nGenJet;
+  int	nGenPart;
+  int	nLHEScaleWeight;
 
   bool	Flag_BadPFMuonDzFilter;
   bool	Flag_BadPFMuonFilter;
@@ -421,19 +421,19 @@ struct eventBuffer
   int	genTtbarId;
   float	genWeight;
   unsigned int	luminosityBlock;
-  int	nAdditionalBHadrons;
-  int	nAdditionalBJets;
-  int	nAdditionalCJets;
-  int	nMatchedBHadrons;
   unsigned int	run;
-  bool	ttCat_2b;
-  bool	ttCat_4b;
-  bool	ttCat_LF;
-  bool	ttCat_b;
-  bool	ttCat_bb;
-  bool	ttCat_bbb;
-  bool	ttCat_cc;
-  bool	ttCat_noTTJets;
+  int	ttCatSource;
+  int	ttCatXvalSource;
+  bool	ttCatXval_Add1Bjet_1Had;
+  bool	ttCatXval_Add1Bjet_2Had;
+  bool	ttCatXval_Add2Bjet;
+  bool	ttCatXval_AddCjet;
+  bool	ttCatXval_LightFlavour;
+  bool	ttCat_Add1Bjet_1Had;
+  bool	ttCat_Add1Bjet_2Had;
+  bool	ttCat_Add2Bjet;
+  bool	ttCat_AddCjet;
+  bool	ttCat_LightFlavour;
 
   //--------------------------------------------------------------------------
   // --- Structs can be filled by calling fill(), or individual fill
@@ -1488,19 +1488,19 @@ struct eventBuffer
     choose["Events/genTtbarId"]	= DEFAULT;
     choose["Events/genWeight"]	= DEFAULT;
     choose["Events/luminosityBlock"]	= DEFAULT;
-    choose["Events/nAdditionalBHadrons"]	= DEFAULT;
-    choose["Events/nAdditionalBJets"]	= DEFAULT;
-    choose["Events/nAdditionalCJets"]	= DEFAULT;
-    choose["Events/nMatchedBHadrons"]	= DEFAULT;
     choose["Events/run"]	= DEFAULT;
-    choose["Events/ttCat_2b"]	= DEFAULT;
-    choose["Events/ttCat_4b"]	= DEFAULT;
-    choose["Events/ttCat_LF"]	= DEFAULT;
-    choose["Events/ttCat_b"]	= DEFAULT;
-    choose["Events/ttCat_bb"]	= DEFAULT;
-    choose["Events/ttCat_bbb"]	= DEFAULT;
-    choose["Events/ttCat_cc"]	= DEFAULT;
-    choose["Events/ttCat_noTTJets"]	= DEFAULT;
+    choose["Events/ttCatSource"]	= DEFAULT;
+    choose["Events/ttCatXvalSource"]	= DEFAULT;
+    choose["Events/ttCatXval_Add1Bjet_1Had"]	= DEFAULT;
+    choose["Events/ttCatXval_Add1Bjet_2Had"]	= DEFAULT;
+    choose["Events/ttCatXval_Add2Bjet"]	= DEFAULT;
+    choose["Events/ttCatXval_AddCjet"]	= DEFAULT;
+    choose["Events/ttCatXval_LightFlavour"]	= DEFAULT;
+    choose["Events/ttCat_Add1Bjet_1Had"]	= DEFAULT;
+    choose["Events/ttCat_Add1Bjet_2Had"]	= DEFAULT;
+    choose["Events/ttCat_Add2Bjet"]	= DEFAULT;
+    choose["Events/ttCat_AddCjet"]	= DEFAULT;
+    choose["Events/ttCat_LightFlavour"]	= DEFAULT;
 
     if ( DEFAULT )
       {
@@ -1566,83 +1566,83 @@ struct eventBuffer
     if ( choose["Events/Electron_pt"] )
       if (input->present("Events/Electron_pt")) { Electron_pt.resize(23); input->select("Events/Electron_pt", Electron_pt); Electron_pt.clear(); successBranches.push_back("Events/Electron_pt"); } else { missingBranches.push_back("Events/Electron_pt"); }
     if ( choose["Events/FatJet_area"] )
-      if (input->present("Events/FatJet_area")) { FatJet_area.resize(19); input->select("Events/FatJet_area", FatJet_area); FatJet_area.clear(); successBranches.push_back("Events/FatJet_area"); } else { missingBranches.push_back("Events/FatJet_area"); }
+      if (input->present("Events/FatJet_area")) { FatJet_area.resize(21); input->select("Events/FatJet_area", FatJet_area); FatJet_area.clear(); successBranches.push_back("Events/FatJet_area"); } else { missingBranches.push_back("Events/FatJet_area"); }
     if ( choose["Events/FatJet_deepTagMD_H4qvsQCD"] )
-      if (input->present("Events/FatJet_deepTagMD_H4qvsQCD")) { FatJet_deepTagMD_H4qvsQCD.resize(19); input->select("Events/FatJet_deepTagMD_H4qvsQCD", FatJet_deepTagMD_H4qvsQCD); FatJet_deepTagMD_H4qvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_H4qvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_H4qvsQCD"); }
+      if (input->present("Events/FatJet_deepTagMD_H4qvsQCD")) { FatJet_deepTagMD_H4qvsQCD.resize(21); input->select("Events/FatJet_deepTagMD_H4qvsQCD", FatJet_deepTagMD_H4qvsQCD); FatJet_deepTagMD_H4qvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_H4qvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_H4qvsQCD"); }
     if ( choose["Events/FatJet_deepTagMD_HbbvsQCD"] )
-      if (input->present("Events/FatJet_deepTagMD_HbbvsQCD")) { FatJet_deepTagMD_HbbvsQCD.resize(19); input->select("Events/FatJet_deepTagMD_HbbvsQCD", FatJet_deepTagMD_HbbvsQCD); FatJet_deepTagMD_HbbvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_HbbvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_HbbvsQCD"); }
+      if (input->present("Events/FatJet_deepTagMD_HbbvsQCD")) { FatJet_deepTagMD_HbbvsQCD.resize(21); input->select("Events/FatJet_deepTagMD_HbbvsQCD", FatJet_deepTagMD_HbbvsQCD); FatJet_deepTagMD_HbbvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_HbbvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_HbbvsQCD"); }
     if ( choose["Events/FatJet_deepTagMD_TvsQCD"] )
-      if (input->present("Events/FatJet_deepTagMD_TvsQCD")) { FatJet_deepTagMD_TvsQCD.resize(19); input->select("Events/FatJet_deepTagMD_TvsQCD", FatJet_deepTagMD_TvsQCD); FatJet_deepTagMD_TvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_TvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_TvsQCD"); }
+      if (input->present("Events/FatJet_deepTagMD_TvsQCD")) { FatJet_deepTagMD_TvsQCD.resize(21); input->select("Events/FatJet_deepTagMD_TvsQCD", FatJet_deepTagMD_TvsQCD); FatJet_deepTagMD_TvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_TvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_TvsQCD"); }
     if ( choose["Events/FatJet_deepTagMD_WvsQCD"] )
-      if (input->present("Events/FatJet_deepTagMD_WvsQCD")) { FatJet_deepTagMD_WvsQCD.resize(19); input->select("Events/FatJet_deepTagMD_WvsQCD", FatJet_deepTagMD_WvsQCD); FatJet_deepTagMD_WvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_WvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_WvsQCD"); }
+      if (input->present("Events/FatJet_deepTagMD_WvsQCD")) { FatJet_deepTagMD_WvsQCD.resize(21); input->select("Events/FatJet_deepTagMD_WvsQCD", FatJet_deepTagMD_WvsQCD); FatJet_deepTagMD_WvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_WvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_WvsQCD"); }
     if ( choose["Events/FatJet_deepTagMD_ZHbbvsQCD"] )
-      if (input->present("Events/FatJet_deepTagMD_ZHbbvsQCD")) { FatJet_deepTagMD_ZHbbvsQCD.resize(19); input->select("Events/FatJet_deepTagMD_ZHbbvsQCD", FatJet_deepTagMD_ZHbbvsQCD); FatJet_deepTagMD_ZHbbvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_ZHbbvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_ZHbbvsQCD"); }
+      if (input->present("Events/FatJet_deepTagMD_ZHbbvsQCD")) { FatJet_deepTagMD_ZHbbvsQCD.resize(21); input->select("Events/FatJet_deepTagMD_ZHbbvsQCD", FatJet_deepTagMD_ZHbbvsQCD); FatJet_deepTagMD_ZHbbvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_ZHbbvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_ZHbbvsQCD"); }
     if ( choose["Events/FatJet_deepTagMD_ZHccvsQCD"] )
-      if (input->present("Events/FatJet_deepTagMD_ZHccvsQCD")) { FatJet_deepTagMD_ZHccvsQCD.resize(19); input->select("Events/FatJet_deepTagMD_ZHccvsQCD", FatJet_deepTagMD_ZHccvsQCD); FatJet_deepTagMD_ZHccvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_ZHccvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_ZHccvsQCD"); }
+      if (input->present("Events/FatJet_deepTagMD_ZHccvsQCD")) { FatJet_deepTagMD_ZHccvsQCD.resize(21); input->select("Events/FatJet_deepTagMD_ZHccvsQCD", FatJet_deepTagMD_ZHccvsQCD); FatJet_deepTagMD_ZHccvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_ZHccvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_ZHccvsQCD"); }
     if ( choose["Events/FatJet_deepTagMD_ZbbvsQCD"] )
-      if (input->present("Events/FatJet_deepTagMD_ZbbvsQCD")) { FatJet_deepTagMD_ZbbvsQCD.resize(19); input->select("Events/FatJet_deepTagMD_ZbbvsQCD", FatJet_deepTagMD_ZbbvsQCD); FatJet_deepTagMD_ZbbvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_ZbbvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_ZbbvsQCD"); }
+      if (input->present("Events/FatJet_deepTagMD_ZbbvsQCD")) { FatJet_deepTagMD_ZbbvsQCD.resize(21); input->select("Events/FatJet_deepTagMD_ZbbvsQCD", FatJet_deepTagMD_ZbbvsQCD); FatJet_deepTagMD_ZbbvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_ZbbvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_ZbbvsQCD"); }
     if ( choose["Events/FatJet_deepTagMD_ZvsQCD"] )
-      if (input->present("Events/FatJet_deepTagMD_ZvsQCD")) { FatJet_deepTagMD_ZvsQCD.resize(19); input->select("Events/FatJet_deepTagMD_ZvsQCD", FatJet_deepTagMD_ZvsQCD); FatJet_deepTagMD_ZvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_ZvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_ZvsQCD"); }
+      if (input->present("Events/FatJet_deepTagMD_ZvsQCD")) { FatJet_deepTagMD_ZvsQCD.resize(21); input->select("Events/FatJet_deepTagMD_ZvsQCD", FatJet_deepTagMD_ZvsQCD); FatJet_deepTagMD_ZvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTagMD_ZvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_ZvsQCD"); }
     if ( choose["Events/FatJet_deepTagMD_bbvsLight"] )
-      if (input->present("Events/FatJet_deepTagMD_bbvsLight")) { FatJet_deepTagMD_bbvsLight.resize(19); input->select("Events/FatJet_deepTagMD_bbvsLight", FatJet_deepTagMD_bbvsLight); FatJet_deepTagMD_bbvsLight.clear(); successBranches.push_back("Events/FatJet_deepTagMD_bbvsLight"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_bbvsLight"); }
+      if (input->present("Events/FatJet_deepTagMD_bbvsLight")) { FatJet_deepTagMD_bbvsLight.resize(21); input->select("Events/FatJet_deepTagMD_bbvsLight", FatJet_deepTagMD_bbvsLight); FatJet_deepTagMD_bbvsLight.clear(); successBranches.push_back("Events/FatJet_deepTagMD_bbvsLight"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_bbvsLight"); }
     if ( choose["Events/FatJet_deepTagMD_ccvsLight"] )
-      if (input->present("Events/FatJet_deepTagMD_ccvsLight")) { FatJet_deepTagMD_ccvsLight.resize(19); input->select("Events/FatJet_deepTagMD_ccvsLight", FatJet_deepTagMD_ccvsLight); FatJet_deepTagMD_ccvsLight.clear(); successBranches.push_back("Events/FatJet_deepTagMD_ccvsLight"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_ccvsLight"); }
+      if (input->present("Events/FatJet_deepTagMD_ccvsLight")) { FatJet_deepTagMD_ccvsLight.resize(21); input->select("Events/FatJet_deepTagMD_ccvsLight", FatJet_deepTagMD_ccvsLight); FatJet_deepTagMD_ccvsLight.clear(); successBranches.push_back("Events/FatJet_deepTagMD_ccvsLight"); } else { missingBranches.push_back("Events/FatJet_deepTagMD_ccvsLight"); }
     if ( choose["Events/FatJet_deepTag_H"] )
-      if (input->present("Events/FatJet_deepTag_H")) { FatJet_deepTag_H.resize(19); input->select("Events/FatJet_deepTag_H", FatJet_deepTag_H); FatJet_deepTag_H.clear(); successBranches.push_back("Events/FatJet_deepTag_H"); } else { missingBranches.push_back("Events/FatJet_deepTag_H"); }
+      if (input->present("Events/FatJet_deepTag_H")) { FatJet_deepTag_H.resize(21); input->select("Events/FatJet_deepTag_H", FatJet_deepTag_H); FatJet_deepTag_H.clear(); successBranches.push_back("Events/FatJet_deepTag_H"); } else { missingBranches.push_back("Events/FatJet_deepTag_H"); }
     if ( choose["Events/FatJet_deepTag_QCD"] )
-      if (input->present("Events/FatJet_deepTag_QCD")) { FatJet_deepTag_QCD.resize(19); input->select("Events/FatJet_deepTag_QCD", FatJet_deepTag_QCD); FatJet_deepTag_QCD.clear(); successBranches.push_back("Events/FatJet_deepTag_QCD"); } else { missingBranches.push_back("Events/FatJet_deepTag_QCD"); }
+      if (input->present("Events/FatJet_deepTag_QCD")) { FatJet_deepTag_QCD.resize(21); input->select("Events/FatJet_deepTag_QCD", FatJet_deepTag_QCD); FatJet_deepTag_QCD.clear(); successBranches.push_back("Events/FatJet_deepTag_QCD"); } else { missingBranches.push_back("Events/FatJet_deepTag_QCD"); }
     if ( choose["Events/FatJet_deepTag_QCDothers"] )
-      if (input->present("Events/FatJet_deepTag_QCDothers")) { FatJet_deepTag_QCDothers.resize(19); input->select("Events/FatJet_deepTag_QCDothers", FatJet_deepTag_QCDothers); FatJet_deepTag_QCDothers.clear(); successBranches.push_back("Events/FatJet_deepTag_QCDothers"); } else { missingBranches.push_back("Events/FatJet_deepTag_QCDothers"); }
+      if (input->present("Events/FatJet_deepTag_QCDothers")) { FatJet_deepTag_QCDothers.resize(21); input->select("Events/FatJet_deepTag_QCDothers", FatJet_deepTag_QCDothers); FatJet_deepTag_QCDothers.clear(); successBranches.push_back("Events/FatJet_deepTag_QCDothers"); } else { missingBranches.push_back("Events/FatJet_deepTag_QCDothers"); }
     if ( choose["Events/FatJet_deepTag_TvsQCD"] )
-      if (input->present("Events/FatJet_deepTag_TvsQCD")) { FatJet_deepTag_TvsQCD.resize(19); input->select("Events/FatJet_deepTag_TvsQCD", FatJet_deepTag_TvsQCD); FatJet_deepTag_TvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTag_TvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTag_TvsQCD"); }
+      if (input->present("Events/FatJet_deepTag_TvsQCD")) { FatJet_deepTag_TvsQCD.resize(21); input->select("Events/FatJet_deepTag_TvsQCD", FatJet_deepTag_TvsQCD); FatJet_deepTag_TvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTag_TvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTag_TvsQCD"); }
     if ( choose["Events/FatJet_deepTag_WvsQCD"] )
-      if (input->present("Events/FatJet_deepTag_WvsQCD")) { FatJet_deepTag_WvsQCD.resize(19); input->select("Events/FatJet_deepTag_WvsQCD", FatJet_deepTag_WvsQCD); FatJet_deepTag_WvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTag_WvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTag_WvsQCD"); }
+      if (input->present("Events/FatJet_deepTag_WvsQCD")) { FatJet_deepTag_WvsQCD.resize(21); input->select("Events/FatJet_deepTag_WvsQCD", FatJet_deepTag_WvsQCD); FatJet_deepTag_WvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTag_WvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTag_WvsQCD"); }
     if ( choose["Events/FatJet_deepTag_ZvsQCD"] )
-      if (input->present("Events/FatJet_deepTag_ZvsQCD")) { FatJet_deepTag_ZvsQCD.resize(19); input->select("Events/FatJet_deepTag_ZvsQCD", FatJet_deepTag_ZvsQCD); FatJet_deepTag_ZvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTag_ZvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTag_ZvsQCD"); }
+      if (input->present("Events/FatJet_deepTag_ZvsQCD")) { FatJet_deepTag_ZvsQCD.resize(21); input->select("Events/FatJet_deepTag_ZvsQCD", FatJet_deepTag_ZvsQCD); FatJet_deepTag_ZvsQCD.clear(); successBranches.push_back("Events/FatJet_deepTag_ZvsQCD"); } else { missingBranches.push_back("Events/FatJet_deepTag_ZvsQCD"); }
     if ( choose["Events/FatJet_eta"] )
-      if (input->present("Events/FatJet_eta")) { FatJet_eta.resize(19); input->select("Events/FatJet_eta", FatJet_eta); FatJet_eta.clear(); successBranches.push_back("Events/FatJet_eta"); } else { missingBranches.push_back("Events/FatJet_eta"); }
+      if (input->present("Events/FatJet_eta")) { FatJet_eta.resize(21); input->select("Events/FatJet_eta", FatJet_eta); FatJet_eta.clear(); successBranches.push_back("Events/FatJet_eta"); } else { missingBranches.push_back("Events/FatJet_eta"); }
     if ( choose["Events/FatJet_jetId"] )
-      if (input->present("Events/FatJet_jetId")) { FatJet_jetId.resize(19); input->select("Events/FatJet_jetId", FatJet_jetId); FatJet_jetId.clear(); successBranches.push_back("Events/FatJet_jetId"); } else { missingBranches.push_back("Events/FatJet_jetId"); }
+      if (input->present("Events/FatJet_jetId")) { FatJet_jetId.resize(21); input->select("Events/FatJet_jetId", FatJet_jetId); FatJet_jetId.clear(); successBranches.push_back("Events/FatJet_jetId"); } else { missingBranches.push_back("Events/FatJet_jetId"); }
     if ( choose["Events/FatJet_mass"] )
-      if (input->present("Events/FatJet_mass")) { FatJet_mass.resize(19); input->select("Events/FatJet_mass", FatJet_mass); FatJet_mass.clear(); successBranches.push_back("Events/FatJet_mass"); } else { missingBranches.push_back("Events/FatJet_mass"); }
+      if (input->present("Events/FatJet_mass")) { FatJet_mass.resize(21); input->select("Events/FatJet_mass", FatJet_mass); FatJet_mass.clear(); successBranches.push_back("Events/FatJet_mass"); } else { missingBranches.push_back("Events/FatJet_mass"); }
     if ( choose["Events/FatJet_msoftdrop"] )
-      if (input->present("Events/FatJet_msoftdrop")) { FatJet_msoftdrop.resize(19); input->select("Events/FatJet_msoftdrop", FatJet_msoftdrop); FatJet_msoftdrop.clear(); successBranches.push_back("Events/FatJet_msoftdrop"); } else { missingBranches.push_back("Events/FatJet_msoftdrop"); }
+      if (input->present("Events/FatJet_msoftdrop")) { FatJet_msoftdrop.resize(21); input->select("Events/FatJet_msoftdrop", FatJet_msoftdrop); FatJet_msoftdrop.clear(); successBranches.push_back("Events/FatJet_msoftdrop"); } else { missingBranches.push_back("Events/FatJet_msoftdrop"); }
     if ( choose["Events/FatJet_n2b1"] )
-      if (input->present("Events/FatJet_n2b1")) { FatJet_n2b1.resize(19); input->select("Events/FatJet_n2b1", FatJet_n2b1); FatJet_n2b1.clear(); successBranches.push_back("Events/FatJet_n2b1"); } else { missingBranches.push_back("Events/FatJet_n2b1"); }
+      if (input->present("Events/FatJet_n2b1")) { FatJet_n2b1.resize(21); input->select("Events/FatJet_n2b1", FatJet_n2b1); FatJet_n2b1.clear(); successBranches.push_back("Events/FatJet_n2b1"); } else { missingBranches.push_back("Events/FatJet_n2b1"); }
     if ( choose["Events/FatJet_n3b1"] )
-      if (input->present("Events/FatJet_n3b1")) { FatJet_n3b1.resize(19); input->select("Events/FatJet_n3b1", FatJet_n3b1); FatJet_n3b1.clear(); successBranches.push_back("Events/FatJet_n3b1"); } else { missingBranches.push_back("Events/FatJet_n3b1"); }
+      if (input->present("Events/FatJet_n3b1")) { FatJet_n3b1.resize(21); input->select("Events/FatJet_n3b1", FatJet_n3b1); FatJet_n3b1.clear(); successBranches.push_back("Events/FatJet_n3b1"); } else { missingBranches.push_back("Events/FatJet_n3b1"); }
     if ( choose["Events/FatJet_particleNetMD_QCD"] )
-      if (input->present("Events/FatJet_particleNetMD_QCD")) { FatJet_particleNetMD_QCD.resize(19); input->select("Events/FatJet_particleNetMD_QCD", FatJet_particleNetMD_QCD); FatJet_particleNetMD_QCD.clear(); successBranches.push_back("Events/FatJet_particleNetMD_QCD"); } else { missingBranches.push_back("Events/FatJet_particleNetMD_QCD"); }
+      if (input->present("Events/FatJet_particleNetMD_QCD")) { FatJet_particleNetMD_QCD.resize(21); input->select("Events/FatJet_particleNetMD_QCD", FatJet_particleNetMD_QCD); FatJet_particleNetMD_QCD.clear(); successBranches.push_back("Events/FatJet_particleNetMD_QCD"); } else { missingBranches.push_back("Events/FatJet_particleNetMD_QCD"); }
     if ( choose["Events/FatJet_particleNetMD_Xbb"] )
-      if (input->present("Events/FatJet_particleNetMD_Xbb")) { FatJet_particleNetMD_Xbb.resize(19); input->select("Events/FatJet_particleNetMD_Xbb", FatJet_particleNetMD_Xbb); FatJet_particleNetMD_Xbb.clear(); successBranches.push_back("Events/FatJet_particleNetMD_Xbb"); } else { missingBranches.push_back("Events/FatJet_particleNetMD_Xbb"); }
+      if (input->present("Events/FatJet_particleNetMD_Xbb")) { FatJet_particleNetMD_Xbb.resize(21); input->select("Events/FatJet_particleNetMD_Xbb", FatJet_particleNetMD_Xbb); FatJet_particleNetMD_Xbb.clear(); successBranches.push_back("Events/FatJet_particleNetMD_Xbb"); } else { missingBranches.push_back("Events/FatJet_particleNetMD_Xbb"); }
     if ( choose["Events/FatJet_particleNetMD_Xcc"] )
-      if (input->present("Events/FatJet_particleNetMD_Xcc")) { FatJet_particleNetMD_Xcc.resize(19); input->select("Events/FatJet_particleNetMD_Xcc", FatJet_particleNetMD_Xcc); FatJet_particleNetMD_Xcc.clear(); successBranches.push_back("Events/FatJet_particleNetMD_Xcc"); } else { missingBranches.push_back("Events/FatJet_particleNetMD_Xcc"); }
+      if (input->present("Events/FatJet_particleNetMD_Xcc")) { FatJet_particleNetMD_Xcc.resize(21); input->select("Events/FatJet_particleNetMD_Xcc", FatJet_particleNetMD_Xcc); FatJet_particleNetMD_Xcc.clear(); successBranches.push_back("Events/FatJet_particleNetMD_Xcc"); } else { missingBranches.push_back("Events/FatJet_particleNetMD_Xcc"); }
     if ( choose["Events/FatJet_particleNetMD_Xqq"] )
-      if (input->present("Events/FatJet_particleNetMD_Xqq")) { FatJet_particleNetMD_Xqq.resize(19); input->select("Events/FatJet_particleNetMD_Xqq", FatJet_particleNetMD_Xqq); FatJet_particleNetMD_Xqq.clear(); successBranches.push_back("Events/FatJet_particleNetMD_Xqq"); } else { missingBranches.push_back("Events/FatJet_particleNetMD_Xqq"); }
+      if (input->present("Events/FatJet_particleNetMD_Xqq")) { FatJet_particleNetMD_Xqq.resize(21); input->select("Events/FatJet_particleNetMD_Xqq", FatJet_particleNetMD_Xqq); FatJet_particleNetMD_Xqq.clear(); successBranches.push_back("Events/FatJet_particleNetMD_Xqq"); } else { missingBranches.push_back("Events/FatJet_particleNetMD_Xqq"); }
     if ( choose["Events/FatJet_particleNet_HbbvsQCD"] )
-      if (input->present("Events/FatJet_particleNet_HbbvsQCD")) { FatJet_particleNet_HbbvsQCD.resize(19); input->select("Events/FatJet_particleNet_HbbvsQCD", FatJet_particleNet_HbbvsQCD); FatJet_particleNet_HbbvsQCD.clear(); successBranches.push_back("Events/FatJet_particleNet_HbbvsQCD"); } else { missingBranches.push_back("Events/FatJet_particleNet_HbbvsQCD"); }
+      if (input->present("Events/FatJet_particleNet_HbbvsQCD")) { FatJet_particleNet_HbbvsQCD.resize(21); input->select("Events/FatJet_particleNet_HbbvsQCD", FatJet_particleNet_HbbvsQCD); FatJet_particleNet_HbbvsQCD.clear(); successBranches.push_back("Events/FatJet_particleNet_HbbvsQCD"); } else { missingBranches.push_back("Events/FatJet_particleNet_HbbvsQCD"); }
     if ( choose["Events/FatJet_particleNet_TvsQCD"] )
-      if (input->present("Events/FatJet_particleNet_TvsQCD")) { FatJet_particleNet_TvsQCD.resize(19); input->select("Events/FatJet_particleNet_TvsQCD", FatJet_particleNet_TvsQCD); FatJet_particleNet_TvsQCD.clear(); successBranches.push_back("Events/FatJet_particleNet_TvsQCD"); } else { missingBranches.push_back("Events/FatJet_particleNet_TvsQCD"); }
+      if (input->present("Events/FatJet_particleNet_TvsQCD")) { FatJet_particleNet_TvsQCD.resize(21); input->select("Events/FatJet_particleNet_TvsQCD", FatJet_particleNet_TvsQCD); FatJet_particleNet_TvsQCD.clear(); successBranches.push_back("Events/FatJet_particleNet_TvsQCD"); } else { missingBranches.push_back("Events/FatJet_particleNet_TvsQCD"); }
     if ( choose["Events/FatJet_particleNet_WvsQCD"] )
-      if (input->present("Events/FatJet_particleNet_WvsQCD")) { FatJet_particleNet_WvsQCD.resize(19); input->select("Events/FatJet_particleNet_WvsQCD", FatJet_particleNet_WvsQCD); FatJet_particleNet_WvsQCD.clear(); successBranches.push_back("Events/FatJet_particleNet_WvsQCD"); } else { missingBranches.push_back("Events/FatJet_particleNet_WvsQCD"); }
+      if (input->present("Events/FatJet_particleNet_WvsQCD")) { FatJet_particleNet_WvsQCD.resize(21); input->select("Events/FatJet_particleNet_WvsQCD", FatJet_particleNet_WvsQCD); FatJet_particleNet_WvsQCD.clear(); successBranches.push_back("Events/FatJet_particleNet_WvsQCD"); } else { missingBranches.push_back("Events/FatJet_particleNet_WvsQCD"); }
     if ( choose["Events/FatJet_particleNet_ZvsQCD"] )
-      if (input->present("Events/FatJet_particleNet_ZvsQCD")) { FatJet_particleNet_ZvsQCD.resize(19); input->select("Events/FatJet_particleNet_ZvsQCD", FatJet_particleNet_ZvsQCD); FatJet_particleNet_ZvsQCD.clear(); successBranches.push_back("Events/FatJet_particleNet_ZvsQCD"); } else { missingBranches.push_back("Events/FatJet_particleNet_ZvsQCD"); }
+      if (input->present("Events/FatJet_particleNet_ZvsQCD")) { FatJet_particleNet_ZvsQCD.resize(21); input->select("Events/FatJet_particleNet_ZvsQCD", FatJet_particleNet_ZvsQCD); FatJet_particleNet_ZvsQCD.clear(); successBranches.push_back("Events/FatJet_particleNet_ZvsQCD"); } else { missingBranches.push_back("Events/FatJet_particleNet_ZvsQCD"); }
     if ( choose["Events/FatJet_particleNet_mass"] )
-      if (input->present("Events/FatJet_particleNet_mass")) { FatJet_particleNet_mass.resize(19); input->select("Events/FatJet_particleNet_mass", FatJet_particleNet_mass); FatJet_particleNet_mass.clear(); successBranches.push_back("Events/FatJet_particleNet_mass"); } else { missingBranches.push_back("Events/FatJet_particleNet_mass"); }
+      if (input->present("Events/FatJet_particleNet_mass")) { FatJet_particleNet_mass.resize(21); input->select("Events/FatJet_particleNet_mass", FatJet_particleNet_mass); FatJet_particleNet_mass.clear(); successBranches.push_back("Events/FatJet_particleNet_mass"); } else { missingBranches.push_back("Events/FatJet_particleNet_mass"); }
     if ( choose["Events/FatJet_phi"] )
-      if (input->present("Events/FatJet_phi")) { FatJet_phi.resize(19); input->select("Events/FatJet_phi", FatJet_phi); FatJet_phi.clear(); successBranches.push_back("Events/FatJet_phi"); } else { missingBranches.push_back("Events/FatJet_phi"); }
+      if (input->present("Events/FatJet_phi")) { FatJet_phi.resize(21); input->select("Events/FatJet_phi", FatJet_phi); FatJet_phi.clear(); successBranches.push_back("Events/FatJet_phi"); } else { missingBranches.push_back("Events/FatJet_phi"); }
     if ( choose["Events/FatJet_pt"] )
-      if (input->present("Events/FatJet_pt")) { FatJet_pt.resize(19); input->select("Events/FatJet_pt", FatJet_pt); FatJet_pt.clear(); successBranches.push_back("Events/FatJet_pt"); } else { missingBranches.push_back("Events/FatJet_pt"); }
+      if (input->present("Events/FatJet_pt")) { FatJet_pt.resize(21); input->select("Events/FatJet_pt", FatJet_pt); FatJet_pt.clear(); successBranches.push_back("Events/FatJet_pt"); } else { missingBranches.push_back("Events/FatJet_pt"); }
     if ( choose["Events/FatJet_rawFactor"] )
-      if (input->present("Events/FatJet_rawFactor")) { FatJet_rawFactor.resize(19); input->select("Events/FatJet_rawFactor", FatJet_rawFactor); FatJet_rawFactor.clear(); successBranches.push_back("Events/FatJet_rawFactor"); } else { missingBranches.push_back("Events/FatJet_rawFactor"); }
+      if (input->present("Events/FatJet_rawFactor")) { FatJet_rawFactor.resize(21); input->select("Events/FatJet_rawFactor", FatJet_rawFactor); FatJet_rawFactor.clear(); successBranches.push_back("Events/FatJet_rawFactor"); } else { missingBranches.push_back("Events/FatJet_rawFactor"); }
     if ( choose["Events/FatJet_tau1"] )
-      if (input->present("Events/FatJet_tau1")) { FatJet_tau1.resize(19); input->select("Events/FatJet_tau1", FatJet_tau1); FatJet_tau1.clear(); successBranches.push_back("Events/FatJet_tau1"); } else { missingBranches.push_back("Events/FatJet_tau1"); }
+      if (input->present("Events/FatJet_tau1")) { FatJet_tau1.resize(21); input->select("Events/FatJet_tau1", FatJet_tau1); FatJet_tau1.clear(); successBranches.push_back("Events/FatJet_tau1"); } else { missingBranches.push_back("Events/FatJet_tau1"); }
     if ( choose["Events/FatJet_tau2"] )
-      if (input->present("Events/FatJet_tau2")) { FatJet_tau2.resize(19); input->select("Events/FatJet_tau2", FatJet_tau2); FatJet_tau2.clear(); successBranches.push_back("Events/FatJet_tau2"); } else { missingBranches.push_back("Events/FatJet_tau2"); }
+      if (input->present("Events/FatJet_tau2")) { FatJet_tau2.resize(21); input->select("Events/FatJet_tau2", FatJet_tau2); FatJet_tau2.clear(); successBranches.push_back("Events/FatJet_tau2"); } else { missingBranches.push_back("Events/FatJet_tau2"); }
     if ( choose["Events/FatJet_tau3"] )
-      if (input->present("Events/FatJet_tau3")) { FatJet_tau3.resize(19); input->select("Events/FatJet_tau3", FatJet_tau3); FatJet_tau3.clear(); successBranches.push_back("Events/FatJet_tau3"); } else { missingBranches.push_back("Events/FatJet_tau3"); }
+      if (input->present("Events/FatJet_tau3")) { FatJet_tau3.resize(21); input->select("Events/FatJet_tau3", FatJet_tau3); FatJet_tau3.clear(); successBranches.push_back("Events/FatJet_tau3"); } else { missingBranches.push_back("Events/FatJet_tau3"); }
     if ( choose["Events/FatJet_tau4"] )
-      if (input->present("Events/FatJet_tau4")) { FatJet_tau4.resize(19); input->select("Events/FatJet_tau4", FatJet_tau4); FatJet_tau4.clear(); successBranches.push_back("Events/FatJet_tau4"); } else { missingBranches.push_back("Events/FatJet_tau4"); }
+      if (input->present("Events/FatJet_tau4")) { FatJet_tau4.resize(21); input->select("Events/FatJet_tau4", FatJet_tau4); FatJet_tau4.clear(); successBranches.push_back("Events/FatJet_tau4"); } else { missingBranches.push_back("Events/FatJet_tau4"); }
     if ( choose["Events/Flag_BadPFMuonDzFilter"] )
       if (input->present("Events/Flag_BadPFMuonDzFilter")) { input->select("Events/Flag_BadPFMuonDzFilter", Flag_BadPFMuonDzFilter); successBranches.push_back("Events/Flag_BadPFMuonDzFilter"); } else { missingBranches.push_back("Events/Flag_BadPFMuonDzFilter"); }
     if ( choose["Events/Flag_BadPFMuonFilter"] )
@@ -1662,33 +1662,33 @@ struct eventBuffer
     if ( choose["Events/Flag_goodVertices"] )
       if (input->present("Events/Flag_goodVertices")) { input->select("Events/Flag_goodVertices", Flag_goodVertices); successBranches.push_back("Events/Flag_goodVertices"); } else { missingBranches.push_back("Events/Flag_goodVertices"); }
     if ( choose["Events/GenJet_eta"] )
-      if (input->present("Events/GenJet_eta")) { GenJet_eta.resize(51); input->select("Events/GenJet_eta", GenJet_eta); GenJet_eta.clear(); successBranches.push_back("Events/GenJet_eta"); } else { missingBranches.push_back("Events/GenJet_eta"); }
+      if (input->present("Events/GenJet_eta")) { GenJet_eta.resize(50); input->select("Events/GenJet_eta", GenJet_eta); GenJet_eta.clear(); successBranches.push_back("Events/GenJet_eta"); } else { missingBranches.push_back("Events/GenJet_eta"); }
     if ( choose["Events/GenJet_hadronFlavour"] )
-      if (input->present("Events/GenJet_hadronFlavour")) { GenJet_hadronFlavour.resize(51); input->select("Events/GenJet_hadronFlavour", GenJet_hadronFlavour); GenJet_hadronFlavour.clear(); successBranches.push_back("Events/GenJet_hadronFlavour"); } else { missingBranches.push_back("Events/GenJet_hadronFlavour"); }
+      if (input->present("Events/GenJet_hadronFlavour")) { GenJet_hadronFlavour.resize(50); input->select("Events/GenJet_hadronFlavour", GenJet_hadronFlavour); GenJet_hadronFlavour.clear(); successBranches.push_back("Events/GenJet_hadronFlavour"); } else { missingBranches.push_back("Events/GenJet_hadronFlavour"); }
     if ( choose["Events/GenJet_mass"] )
-      if (input->present("Events/GenJet_mass")) { GenJet_mass.resize(51); input->select("Events/GenJet_mass", GenJet_mass); GenJet_mass.clear(); successBranches.push_back("Events/GenJet_mass"); } else { missingBranches.push_back("Events/GenJet_mass"); }
+      if (input->present("Events/GenJet_mass")) { GenJet_mass.resize(50); input->select("Events/GenJet_mass", GenJet_mass); GenJet_mass.clear(); successBranches.push_back("Events/GenJet_mass"); } else { missingBranches.push_back("Events/GenJet_mass"); }
     if ( choose["Events/GenJet_partonFlavour"] )
-      if (input->present("Events/GenJet_partonFlavour")) { GenJet_partonFlavour.resize(51); input->select("Events/GenJet_partonFlavour", GenJet_partonFlavour); GenJet_partonFlavour.clear(); successBranches.push_back("Events/GenJet_partonFlavour"); } else { missingBranches.push_back("Events/GenJet_partonFlavour"); }
+      if (input->present("Events/GenJet_partonFlavour")) { GenJet_partonFlavour.resize(50); input->select("Events/GenJet_partonFlavour", GenJet_partonFlavour); GenJet_partonFlavour.clear(); successBranches.push_back("Events/GenJet_partonFlavour"); } else { missingBranches.push_back("Events/GenJet_partonFlavour"); }
     if ( choose["Events/GenJet_phi"] )
-      if (input->present("Events/GenJet_phi")) { GenJet_phi.resize(51); input->select("Events/GenJet_phi", GenJet_phi); GenJet_phi.clear(); successBranches.push_back("Events/GenJet_phi"); } else { missingBranches.push_back("Events/GenJet_phi"); }
+      if (input->present("Events/GenJet_phi")) { GenJet_phi.resize(50); input->select("Events/GenJet_phi", GenJet_phi); GenJet_phi.clear(); successBranches.push_back("Events/GenJet_phi"); } else { missingBranches.push_back("Events/GenJet_phi"); }
     if ( choose["Events/GenJet_pt"] )
-      if (input->present("Events/GenJet_pt")) { GenJet_pt.resize(51); input->select("Events/GenJet_pt", GenJet_pt); GenJet_pt.clear(); successBranches.push_back("Events/GenJet_pt"); } else { missingBranches.push_back("Events/GenJet_pt"); }
+      if (input->present("Events/GenJet_pt")) { GenJet_pt.resize(50); input->select("Events/GenJet_pt", GenJet_pt); GenJet_pt.clear(); successBranches.push_back("Events/GenJet_pt"); } else { missingBranches.push_back("Events/GenJet_pt"); }
     if ( choose["Events/GenPart_eta"] )
-      if (input->present("Events/GenPart_eta")) { GenPart_eta.resize(206); input->select("Events/GenPart_eta", GenPart_eta); GenPart_eta.clear(); successBranches.push_back("Events/GenPart_eta"); } else { missingBranches.push_back("Events/GenPart_eta"); }
+      if (input->present("Events/GenPart_eta")) { GenPart_eta.resize(233); input->select("Events/GenPart_eta", GenPart_eta); GenPart_eta.clear(); successBranches.push_back("Events/GenPart_eta"); } else { missingBranches.push_back("Events/GenPart_eta"); }
     if ( choose["Events/GenPart_genPartIdxMother"] )
-      if (input->present("Events/GenPart_genPartIdxMother")) { GenPart_genPartIdxMother.resize(206); input->select("Events/GenPart_genPartIdxMother", GenPart_genPartIdxMother); GenPart_genPartIdxMother.clear(); successBranches.push_back("Events/GenPart_genPartIdxMother"); } else { missingBranches.push_back("Events/GenPart_genPartIdxMother"); }
+      if (input->present("Events/GenPart_genPartIdxMother")) { GenPart_genPartIdxMother.resize(233); input->select("Events/GenPart_genPartIdxMother", GenPart_genPartIdxMother); GenPart_genPartIdxMother.clear(); successBranches.push_back("Events/GenPart_genPartIdxMother"); } else { missingBranches.push_back("Events/GenPart_genPartIdxMother"); }
     if ( choose["Events/GenPart_mass"] )
-      if (input->present("Events/GenPart_mass")) { GenPart_mass.resize(206); input->select("Events/GenPart_mass", GenPart_mass); GenPart_mass.clear(); successBranches.push_back("Events/GenPart_mass"); } else { missingBranches.push_back("Events/GenPart_mass"); }
+      if (input->present("Events/GenPart_mass")) { GenPart_mass.resize(233); input->select("Events/GenPart_mass", GenPart_mass); GenPart_mass.clear(); successBranches.push_back("Events/GenPart_mass"); } else { missingBranches.push_back("Events/GenPart_mass"); }
     if ( choose["Events/GenPart_pdgId"] )
-      if (input->present("Events/GenPart_pdgId")) { GenPart_pdgId.resize(206); input->select("Events/GenPart_pdgId", GenPart_pdgId); GenPart_pdgId.clear(); successBranches.push_back("Events/GenPart_pdgId"); } else { missingBranches.push_back("Events/GenPart_pdgId"); }
+      if (input->present("Events/GenPart_pdgId")) { GenPart_pdgId.resize(233); input->select("Events/GenPart_pdgId", GenPart_pdgId); GenPart_pdgId.clear(); successBranches.push_back("Events/GenPart_pdgId"); } else { missingBranches.push_back("Events/GenPart_pdgId"); }
     if ( choose["Events/GenPart_phi"] )
-      if (input->present("Events/GenPart_phi")) { GenPart_phi.resize(206); input->select("Events/GenPart_phi", GenPart_phi); GenPart_phi.clear(); successBranches.push_back("Events/GenPart_phi"); } else { missingBranches.push_back("Events/GenPart_phi"); }
+      if (input->present("Events/GenPart_phi")) { GenPart_phi.resize(233); input->select("Events/GenPart_phi", GenPart_phi); GenPart_phi.clear(); successBranches.push_back("Events/GenPart_phi"); } else { missingBranches.push_back("Events/GenPart_phi"); }
     if ( choose["Events/GenPart_pt"] )
-      if (input->present("Events/GenPart_pt")) { GenPart_pt.resize(206); input->select("Events/GenPart_pt", GenPart_pt); GenPart_pt.clear(); successBranches.push_back("Events/GenPart_pt"); } else { missingBranches.push_back("Events/GenPart_pt"); }
+      if (input->present("Events/GenPart_pt")) { GenPart_pt.resize(233); input->select("Events/GenPart_pt", GenPart_pt); GenPart_pt.clear(); successBranches.push_back("Events/GenPart_pt"); } else { missingBranches.push_back("Events/GenPart_pt"); }
     if ( choose["Events/GenPart_status"] )
-      if (input->present("Events/GenPart_status")) { GenPart_status.resize(206); input->select("Events/GenPart_status", GenPart_status); GenPart_status.clear(); successBranches.push_back("Events/GenPart_status"); } else { missingBranches.push_back("Events/GenPart_status"); }
+      if (input->present("Events/GenPart_status")) { GenPart_status.resize(233); input->select("Events/GenPart_status", GenPart_status); GenPart_status.clear(); successBranches.push_back("Events/GenPart_status"); } else { missingBranches.push_back("Events/GenPart_status"); }
     if ( choose["Events/GenPart_statusFlags"] )
-      if (input->present("Events/GenPart_statusFlags")) { GenPart_statusFlags.resize(206); input->select("Events/GenPart_statusFlags", GenPart_statusFlags); GenPart_statusFlags.clear(); successBranches.push_back("Events/GenPart_statusFlags"); } else { missingBranches.push_back("Events/GenPart_statusFlags"); }
+      if (input->present("Events/GenPart_statusFlags")) { GenPart_statusFlags.resize(233); input->select("Events/GenPart_statusFlags", GenPart_statusFlags); GenPart_statusFlags.clear(); successBranches.push_back("Events/GenPart_statusFlags"); } else { missingBranches.push_back("Events/GenPart_statusFlags"); }
     if ( choose["Events/Generator_weight"] )
       if (input->present("Events/Generator_weight")) { input->select("Events/Generator_weight", Generator_weight); successBranches.push_back("Events/Generator_weight"); } else { missingBranches.push_back("Events/Generator_weight"); }
     if ( choose["Events/HLT_AK8PFHT750_TrimMass50"] )
@@ -2309,32 +2309,32 @@ struct eventBuffer
       if (input->present("Events/genWeight")) { input->select("Events/genWeight", genWeight); successBranches.push_back("Events/genWeight"); } else { missingBranches.push_back("Events/genWeight"); }
     if ( choose["Events/luminosityBlock"] )
       if (input->present("Events/luminosityBlock")) { input->select("Events/luminosityBlock", luminosityBlock); successBranches.push_back("Events/luminosityBlock"); } else { missingBranches.push_back("Events/luminosityBlock"); }
-    if ( choose["Events/nAdditionalBHadrons"] )
-      if (input->present("Events/nAdditionalBHadrons")) { input->select("Events/nAdditionalBHadrons", nAdditionalBHadrons); successBranches.push_back("Events/nAdditionalBHadrons"); } else { missingBranches.push_back("Events/nAdditionalBHadrons"); }
-    if ( choose["Events/nAdditionalBJets"] )
-      if (input->present("Events/nAdditionalBJets")) { input->select("Events/nAdditionalBJets", nAdditionalBJets); successBranches.push_back("Events/nAdditionalBJets"); } else { missingBranches.push_back("Events/nAdditionalBJets"); }
-    if ( choose["Events/nAdditionalCJets"] )
-      if (input->present("Events/nAdditionalCJets")) { input->select("Events/nAdditionalCJets", nAdditionalCJets); successBranches.push_back("Events/nAdditionalCJets"); } else { missingBranches.push_back("Events/nAdditionalCJets"); }
-    if ( choose["Events/nMatchedBHadrons"] )
-      if (input->present("Events/nMatchedBHadrons")) { input->select("Events/nMatchedBHadrons", nMatchedBHadrons); successBranches.push_back("Events/nMatchedBHadrons"); } else { missingBranches.push_back("Events/nMatchedBHadrons"); }
     if ( choose["Events/run"] )
       if (input->present("Events/run")) { input->select("Events/run", run); successBranches.push_back("Events/run"); } else { missingBranches.push_back("Events/run"); }
-    if ( choose["Events/ttCat_2b"] )
-      if (input->present("Events/ttCat_2b")) { input->select("Events/ttCat_2b", ttCat_2b); successBranches.push_back("Events/ttCat_2b"); } else { missingBranches.push_back("Events/ttCat_2b"); }
-    if ( choose["Events/ttCat_4b"] )
-      if (input->present("Events/ttCat_4b")) { input->select("Events/ttCat_4b", ttCat_4b); successBranches.push_back("Events/ttCat_4b"); } else { missingBranches.push_back("Events/ttCat_4b"); }
-    if ( choose["Events/ttCat_LF"] )
-      if (input->present("Events/ttCat_LF")) { input->select("Events/ttCat_LF", ttCat_LF); successBranches.push_back("Events/ttCat_LF"); } else { missingBranches.push_back("Events/ttCat_LF"); }
-    if ( choose["Events/ttCat_b"] )
-      if (input->present("Events/ttCat_b")) { input->select("Events/ttCat_b", ttCat_b); successBranches.push_back("Events/ttCat_b"); } else { missingBranches.push_back("Events/ttCat_b"); }
-    if ( choose["Events/ttCat_bb"] )
-      if (input->present("Events/ttCat_bb")) { input->select("Events/ttCat_bb", ttCat_bb); successBranches.push_back("Events/ttCat_bb"); } else { missingBranches.push_back("Events/ttCat_bb"); }
-    if ( choose["Events/ttCat_bbb"] )
-      if (input->present("Events/ttCat_bbb")) { input->select("Events/ttCat_bbb", ttCat_bbb); successBranches.push_back("Events/ttCat_bbb"); } else { missingBranches.push_back("Events/ttCat_bbb"); }
-    if ( choose["Events/ttCat_cc"] )
-      if (input->present("Events/ttCat_cc")) { input->select("Events/ttCat_cc", ttCat_cc); successBranches.push_back("Events/ttCat_cc"); } else { missingBranches.push_back("Events/ttCat_cc"); }
-    if ( choose["Events/ttCat_noTTJets"] )
-      if (input->present("Events/ttCat_noTTJets")) { input->select("Events/ttCat_noTTJets", ttCat_noTTJets); successBranches.push_back("Events/ttCat_noTTJets"); } else { missingBranches.push_back("Events/ttCat_noTTJets"); }
+    if ( choose["Events/ttCatSource"] )
+      if (input->present("Events/ttCatSource")) { input->select("Events/ttCatSource", ttCatSource); successBranches.push_back("Events/ttCatSource"); } else { missingBranches.push_back("Events/ttCatSource"); }
+    if ( choose["Events/ttCatXvalSource"] )
+      if (input->present("Events/ttCatXvalSource")) { input->select("Events/ttCatXvalSource", ttCatXvalSource); successBranches.push_back("Events/ttCatXvalSource"); } else { missingBranches.push_back("Events/ttCatXvalSource"); }
+    if ( choose["Events/ttCatXval_Add1Bjet_1Had"] )
+      if (input->present("Events/ttCatXval_Add1Bjet_1Had")) { input->select("Events/ttCatXval_Add1Bjet_1Had", ttCatXval_Add1Bjet_1Had); successBranches.push_back("Events/ttCatXval_Add1Bjet_1Had"); } else { missingBranches.push_back("Events/ttCatXval_Add1Bjet_1Had"); }
+    if ( choose["Events/ttCatXval_Add1Bjet_2Had"] )
+      if (input->present("Events/ttCatXval_Add1Bjet_2Had")) { input->select("Events/ttCatXval_Add1Bjet_2Had", ttCatXval_Add1Bjet_2Had); successBranches.push_back("Events/ttCatXval_Add1Bjet_2Had"); } else { missingBranches.push_back("Events/ttCatXval_Add1Bjet_2Had"); }
+    if ( choose["Events/ttCatXval_Add2Bjet"] )
+      if (input->present("Events/ttCatXval_Add2Bjet")) { input->select("Events/ttCatXval_Add2Bjet", ttCatXval_Add2Bjet); successBranches.push_back("Events/ttCatXval_Add2Bjet"); } else { missingBranches.push_back("Events/ttCatXval_Add2Bjet"); }
+    if ( choose["Events/ttCatXval_AddCjet"] )
+      if (input->present("Events/ttCatXval_AddCjet")) { input->select("Events/ttCatXval_AddCjet", ttCatXval_AddCjet); successBranches.push_back("Events/ttCatXval_AddCjet"); } else { missingBranches.push_back("Events/ttCatXval_AddCjet"); }
+    if ( choose["Events/ttCatXval_LightFlavour"] )
+      if (input->present("Events/ttCatXval_LightFlavour")) { input->select("Events/ttCatXval_LightFlavour", ttCatXval_LightFlavour); successBranches.push_back("Events/ttCatXval_LightFlavour"); } else { missingBranches.push_back("Events/ttCatXval_LightFlavour"); }
+    if ( choose["Events/ttCat_Add1Bjet_1Had"] )
+      if (input->present("Events/ttCat_Add1Bjet_1Had")) { input->select("Events/ttCat_Add1Bjet_1Had", ttCat_Add1Bjet_1Had); successBranches.push_back("Events/ttCat_Add1Bjet_1Had"); } else { missingBranches.push_back("Events/ttCat_Add1Bjet_1Had"); }
+    if ( choose["Events/ttCat_Add1Bjet_2Had"] )
+      if (input->present("Events/ttCat_Add1Bjet_2Had")) { input->select("Events/ttCat_Add1Bjet_2Had", ttCat_Add1Bjet_2Had); successBranches.push_back("Events/ttCat_Add1Bjet_2Had"); } else { missingBranches.push_back("Events/ttCat_Add1Bjet_2Had"); }
+    if ( choose["Events/ttCat_Add2Bjet"] )
+      if (input->present("Events/ttCat_Add2Bjet")) { input->select("Events/ttCat_Add2Bjet", ttCat_Add2Bjet); successBranches.push_back("Events/ttCat_Add2Bjet"); } else { missingBranches.push_back("Events/ttCat_Add2Bjet"); }
+    if ( choose["Events/ttCat_AddCjet"] )
+      if (input->present("Events/ttCat_AddCjet")) { input->select("Events/ttCat_AddCjet", ttCat_AddCjet); successBranches.push_back("Events/ttCat_AddCjet"); } else { missingBranches.push_back("Events/ttCat_AddCjet"); }
+    if ( choose["Events/ttCat_LightFlavour"] )
+      if (input->present("Events/ttCat_LightFlavour")) { input->select("Events/ttCat_LightFlavour", ttCat_LightFlavour); successBranches.push_back("Events/ttCat_LightFlavour"); } else { missingBranches.push_back("Events/ttCat_LightFlavour"); }
 
 
     // --- Branch Access Report ---
@@ -2375,14 +2375,14 @@ struct eventBuffer
   {
     initBuffers();
 
+    output->add("nElectron", 	nElectron);
+    output->add("nMuon", 	nMuon);
     output->add("nLHEPdfWeight", 	nLHEPdfWeight);
     output->add("nJet", 	nJet);
-    output->add("nGenPart", 	nGenPart);
-    output->add("nGenJet", 	nGenJet);
-    output->add("nElectron", 	nElectron);
-    output->add("nLHEScaleWeight", 	nLHEScaleWeight);
-    output->add("nMuon", 	nMuon);
     output->add("nFatJet", 	nFatJet);
+    output->add("nGenJet", 	nGenJet);
+    output->add("nGenPart", 	nGenPart);
+    output->add("nLHEScaleWeight", 	nLHEScaleWeight);
   
     output->add("Events/Electron_charge[nElectron]", 	Electron_charge);
     output->add("Events/Electron_cutBased[nElectron]", 	Electron_cutBased);
@@ -2954,19 +2954,19 @@ struct eventBuffer
     output->add("Events/genTtbarId", 	genTtbarId);
     output->add("Events/genWeight", 	genWeight);
     output->add("Events/luminosityBlock", 	luminosityBlock);
-    output->add("Events/nAdditionalBHadrons", 	nAdditionalBHadrons);
-    output->add("Events/nAdditionalBJets", 	nAdditionalBJets);
-    output->add("Events/nAdditionalCJets", 	nAdditionalCJets);
-    output->add("Events/nMatchedBHadrons", 	nMatchedBHadrons);
     output->add("Events/run", 	run);
-    output->add("Events/ttCat_2b", 	ttCat_2b);
-    output->add("Events/ttCat_4b", 	ttCat_4b);
-    output->add("Events/ttCat_LF", 	ttCat_LF);
-    output->add("Events/ttCat_b", 	ttCat_b);
-    output->add("Events/ttCat_bb", 	ttCat_bb);
-    output->add("Events/ttCat_bbb", 	ttCat_bbb);
-    output->add("Events/ttCat_cc", 	ttCat_cc);
-    output->add("Events/ttCat_noTTJets", 	ttCat_noTTJets);
+    output->add("Events/ttCatSource", 	ttCatSource);
+    output->add("Events/ttCatXvalSource", 	ttCatXvalSource);
+    output->add("Events/ttCatXval_Add1Bjet_1Had", 	ttCatXval_Add1Bjet_1Had);
+    output->add("Events/ttCatXval_Add1Bjet_2Had", 	ttCatXval_Add1Bjet_2Had);
+    output->add("Events/ttCatXval_Add2Bjet", 	ttCatXval_Add2Bjet);
+    output->add("Events/ttCatXval_AddCjet", 	ttCatXval_AddCjet);
+    output->add("Events/ttCatXval_LightFlavour", 	ttCatXval_LightFlavour);
+    output->add("Events/ttCat_Add1Bjet_1Had", 	ttCat_Add1Bjet_1Had);
+    output->add("Events/ttCat_Add1Bjet_2Had", 	ttCat_Add1Bjet_2Had);
+    output->add("Events/ttCat_Add2Bjet", 	ttCat_Add2Bjet);
+    output->add("Events/ttCat_AddCjet", 	ttCat_AddCjet);
+    output->add("Events/ttCat_LightFlavour", 	ttCat_LightFlavour);
 
   }
 
@@ -3257,23 +3257,23 @@ struct eventBuffer
     genTtbarId	= 0;
     genWeight	= 0;
     luminosityBlock	= 0;
-    nAdditionalBHadrons	= 0;
-    nAdditionalBJets	= 0;
-    nAdditionalCJets	= 0;
-    nMatchedBHadrons	= 0;
     run	= 0;
-    ttCat_2b	= 0;
-    ttCat_4b	= 0;
-    ttCat_LF	= 0;
-    ttCat_b	= 0;
-    ttCat_bb	= 0;
-    ttCat_bbb	= 0;
-    ttCat_cc	= 0;
-    ttCat_noTTJets	= 0;
+    ttCatSource	= 0;
+    ttCatXvalSource	= 0;
+    ttCatXval_Add1Bjet_1Had	= 0;
+    ttCatXval_Add1Bjet_2Had	= 0;
+    ttCatXval_Add2Bjet	= 0;
+    ttCatXval_AddCjet	= 0;
+    ttCatXval_LightFlavour	= 0;
+    ttCat_Add1Bjet_1Had	= 0;
+    ttCat_Add1Bjet_2Had	= 0;
+    ttCat_Add2Bjet	= 0;
+    ttCat_AddCjet	= 0;
+    ttCat_LightFlavour	= 0;
     Electron	= std::vector<eventBuffer::Electron_s>(23);
-    FatJet	= std::vector<eventBuffer::FatJet_s>(19);
-    GenJet	= std::vector<eventBuffer::GenJet_s>(51);
-    GenPart	= std::vector<eventBuffer::GenPart_s>(206);
+    FatJet	= std::vector<eventBuffer::FatJet_s>(21);
+    GenJet	= std::vector<eventBuffer::GenJet_s>(50);
+    GenPart	= std::vector<eventBuffer::GenPart_s>(233);
     Jet	= std::vector<eventBuffer::Jet_s>(62);
     Muon	= std::vector<eventBuffer::Muon_s>(37);
 

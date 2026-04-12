@@ -32,6 +32,17 @@
   --era "" \
   --mode main
 
+(TTToHadronic)
+./ttHHanalyzer_unified \
+  --filelist filelistTest/file_TTToHadronic_Tier3.txt \
+  --output output_TTToHadronic.root \
+  --weight 0.000214351205 \
+  --year 2017 \
+  --dataOrMC MC \
+  --sample  TTToHadronic \
+  --era "" \
+  --mode main
+
 # 2. Data Sample (BTagCSV)
 ./ttHHanalyzer_unified \
   --filelist filelistTest/file_BTagCSVB_Tier3.txt \
