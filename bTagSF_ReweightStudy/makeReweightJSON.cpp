@@ -97,10 +97,15 @@ int main(int argc, char** argv)
         for (double e : Config::reweightHT_edges) htEdgesJSON.push_back(e);
     }
 
-    // ── Track which samples were actually loaded ──
+// ── Track which process keys were actually loaded ──
     std::vector<std::string> loadedSamples;
 
-    // ── Build: systematic → process → binning/multibinning → ratio ──
+    // ── Build: systematic → process_key → binning/multibinning → ratio ──
+    // [ttH AN App. A.2] inclusive ttbar samples produce 3 process keys each
+    // (LF / cc / B), other samples produce a single key = sample name.
+    // The hist names inside each ROOT file are now:
+    //   2D: "NormRatios/h_normRatio_nJets_HT_<pkey>_<syst>"
+    //   1D: "NormRatios/h_normRatio_nJets_<pkey>_<syst>"
     json systContent = json::array();
 
     for (const auto& syst : systematics) {
@@ -116,82 +121,92 @@ int main(int argc, char** argv)
                 continue;
             }
 
-            json binningNode;
+            // For inclusive ttbar: 3 process keys per sample (LF/cc/B)
+            // For others: 1 process key (== sample name)
+            const auto pkeys = TtCat::AllProcessKeysForSample(sample);
 
-            if (use2D) {
-                // ── 2D: Read TH2D, write MultiBinning ──
-                TString hname = "NormRatios/h_normRatio_nJets_HT_" + TString(syst.c_str());
-                TH2D* h = dynamic_cast<TH2D*>(f->Get(hname));
-                if (!h) {
-                    if (syst == "central")
-                        std::cerr << "  [WARN] Missing " << hname << " in " << fname
-                                  << " (was exe_BTagSF compiled with useHTForReweight=true?)\n";
-                    f->Close(); delete f;
-                    continue;
-                }
+            for (const auto& pkey : pkeys) {
+                json binningNode;
 
-                // Flatten content: nJets varies slowest (row), HT varies fastest (col)
-                // correctionlib multibinning convention: row-major, last axis fastest
-                json content = json::array();
-                for (int nj = 0; nj <= maxBin; ++nj) {
-                    for (int ht = 0; ht < nHTBins; ++ht) {
-                        content.push_back(h->GetBinContent(nj + 1, ht + 1));
+                if (use2D) {
+                    // ── 2D: Read TH2D, write MultiBinning ──
+                    TString hname = "NormRatios/h_normRatio_nJets_HT_"
+                                  + TString(pkey.c_str()) + "_"
+                                  + TString(syst.c_str());
+                    TH2D* h = dynamic_cast<TH2D*>(f->Get(hname));
+                    if (!h) {
+                        if (syst == "central")
+                            std::cerr << "  [WARN] Missing " << hname << " in " << fname
+                                      << " (was exe_BTagSF compiled with useHTForReweight=true,"
+                                      << " or did this event-class have zero events?)\n";
+                        continue;
+                    }
+
+                    // Flatten content: nJets row-major, HT fast axis
+                    json content = json::array();
+                    for (int nj = 0; nj <= maxBin; ++nj) {
+                        for (int ht = 0; ht < nHTBins; ++ht) {
+                            content.push_back(h->GetBinContent(nj + 1, ht + 1));
+                        }
+                    }
+
+                    binningNode["nodetype"] = "multibinning";
+                    binningNode["inputs"]   = json::array({"nJets", "HT"});
+                    binningNode["edges"]    = json::array({nJetsEdges, htEdgesJSON});
+                    binningNode["content"]  = content;
+                    binningNode["flow"]     = "clamp";
+
+                    if (syst == "central") {
+                        double r7  = h->GetBinContent(8, 1);
+                        double r10 = h->GetBinContent(11, 1);
+                        std::cout << "  " << std::left << std::setw(28) << pkey
+                                  << "  r(nJ=7,HT0)=" << std::fixed
+                                  << std::setprecision(5) << r7
+                                  << "  r(nJ=10,HT0)=" << r10 << "\n";
+                        loadedSamples.push_back(pkey);
+                    }
+
+                } else {
+                    // ── 1D: Read TH1D, write Binning ──
+                    TString hname = "NormRatios/h_normRatio_nJets_"
+                                  + TString(pkey.c_str()) + "_"
+                                  + TString(syst.c_str());
+                    TH1D* h = dynamic_cast<TH1D*>(f->Get(hname));
+                    if (!h) {
+                        if (syst == "central")
+                            std::cerr << "  [WARN] Missing " << hname << " in " << fname
+                                      << " (was exe_BTagSF compiled with useHTForReweight=false,"
+                                      << " or did this event-class have zero events?)\n";
+                        continue;
+                    }
+
+                    json content = json::array();
+                    for (int b = 0; b <= maxBin; ++b) {
+                        content.push_back(h->GetBinContent(b + 1));
+                    }
+
+                    binningNode["nodetype"] = "binning";
+                    binningNode["input"]    = "nJets";
+                    binningNode["edges"]    = nJetsEdges;
+                    binningNode["content"]  = content;
+                    binningNode["flow"]     = "clamp";
+
+                    if (syst == "central") {
+                        double r7  = (h->GetNbinsX() >= 8)  ? h->GetBinContent(8)  : 1.0;
+                        double r10 = (h->GetNbinsX() >= 11) ? h->GetBinContent(11) : 1.0;
+                        std::cout << "  " << std::left << std::setw(28) << pkey
+                                  << "  r(nJ=7)=" << std::fixed << std::setprecision(5) << r7
+                                  << "  r(nJ=10)=" << r10 << "\n";
+                        loadedSamples.push_back(pkey);
                     }
                 }
 
-                binningNode["nodetype"] = "multibinning";
-                binningNode["inputs"]   = json::array({"nJets", "HT"});
-                binningNode["edges"]    = json::array({nJetsEdges, htEdgesJSON});
-                binningNode["content"]  = content;
-                binningNode["flow"]     = "clamp";
+                // Push into JSON: process key, not sample name
+                processContent.push_back({{"key", pkey}, {"value", binningNode}});
+            } // end pkey loop
 
-                // Print representative ratios for central
-                if (syst == "central") {
-                    double r7  = h->GetBinContent(8, 1);   // nJets=7, first HT bin
-                    double r10 = h->GetBinContent(11, 1);  // nJets=10, first HT bin
-                    std::cout << "  " << std::left << std::setw(22) << sample
-                              << "  r(nJ=7,HT0)=" << std::fixed << std::setprecision(5) << r7
-                              << "  r(nJ=10,HT0)=" << r10 << "\n";
-                    loadedSamples.push_back(sample);
-                }
-
-            } else {
-                // ── 1D: Read TH1D, write Binning ──
-                TString hname = "NormRatios/h_normRatio_nJets_" + TString(syst.c_str());
-                TH1D* h = dynamic_cast<TH1D*>(f->Get(hname));
-                if (!h) {
-                    if (syst == "central")
-                        std::cerr << "  [WARN] Missing " << hname << " in " << fname
-                                  << " (was exe_BTagSF compiled with useHTForReweight=false?)\n";
-                    f->Close(); delete f;
-                    continue;
-                }
-
-                json content = json::array();
-                for (int b = 0; b <= maxBin; ++b) {
-                    content.push_back(h->GetBinContent(b + 1));
-                }
-
-                binningNode["nodetype"] = "binning";
-                binningNode["input"]    = "nJets";
-                binningNode["edges"]    = nJetsEdges;
-                binningNode["content"]  = content;
-                binningNode["flow"]     = "clamp";
-
-                // Print representative ratios for central
-                if (syst == "central") {
-                    double r7  = (h->GetNbinsX() >= 8)  ? h->GetBinContent(8)  : 1.0;
-                    double r10 = (h->GetNbinsX() >= 11) ? h->GetBinContent(11) : 1.0;
-                    std::cout << "  " << std::left << std::setw(22) << sample
-                              << "  r(nJ=7)=" << std::fixed << std::setprecision(5) << r7
-                              << "  r(nJ=10)=" << r10 << "\n";
-                    loadedSamples.push_back(sample);
-                }
-            }
-
-            processContent.push_back({{"key", sample}, {"value", binningNode}});
             f->Close(); delete f;
-        }
+        } // end sample loop
 
         json processCategory;
         processCategory["nodetype"] = "category";
@@ -199,7 +214,7 @@ int main(int argc, char** argv)
         processCategory["content"]  = processContent;
 
         systContent.push_back({{"key", syst}, {"value", processCategory}});
-    }
+    } // end syst loop
 
     if (loadedSamples.empty()) {
         std::cerr << "\n[FATAL] No samples loaded. Run exe_BTagSF first.\n";

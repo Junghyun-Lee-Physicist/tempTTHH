@@ -54,7 +54,7 @@ Sample Name: BTagCSV_B
   Weight : 1
   DataSet: BTagCSV, Era: B
 
->>> Total entries: 128954
+>>> Total entries: 31572
 
   Reweight mode  : 2D (nJets × HT)
   Total flat bins: 390
@@ -63,13 +63,13 @@ Sample Name: BTagCSV_B
 ╔══════════════════════════════════════════════════════════════╗
 ║  Pass 2: Applying B-Tag Reweight & Filling Histograms        ║
 ╚══════════════════════════════════════════════════════════════╝
-    [Pass 2] 0 / 128954 (0.0%)
+    [Pass 2] 0 / 31572 (0.0%)
 
 ╔══════════════════════════════════════════════════════════════╗
 ║  B-Tag Reweight Summary                                      ║
 ╠══════════════════════════════════════════════════════════════╣
-  Events processed : 128954
-  Events passed    : 90916
+  Events processed : 31572
+  Events passed    : 24762
 ╚══════════════════════════════════════════════════════════════╝
 
 >>> Writing output to: bTagReweight_BTagCSV_B.root

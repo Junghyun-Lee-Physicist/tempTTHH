@@ -662,6 +662,7 @@ void DeriveSF()
     auto etaLabels = Config::Eta_Labels();
 
     std::map<std::string, TH2D*> sfMapForJSON;
+    std::map<std::string, TH2D*> sfErrMapForJSON;   // [FIX] BuildCorrectionSet 4-arg 시그니처 (sfMap, sfErrMap, htEdges, ptEdges)에 맞춤. central SF와 별개로 uncertainty도 JSON에 직렬화하기 위해 보관.
 
     // ------------------------------------------------------------------------
     // Process each (NB, Eta) category
@@ -831,6 +832,12 @@ void DeriveSF()
             hForJSON->SetDirectory(nullptr);
             sfMapForJSON[key] = hForJSON;
 
+            // [FIX] uncertainty map 보관 (sfMapForJSON과 동일 패턴: detached Clone).
+            //       소유권은 sfErrMapForJSON으로 이전 → main 끝에 일괄 정리.
+            TH2D* hErrForJSON = static_cast<TH2D*>(hSFErr->Clone(("ForJSON_Err_" + key).c_str()));
+            hErrForJSON->SetDirectory(nullptr);
+            sfErrMapForJSON[key] = hErrForJSON;
+
             std::cout << "  Measured: " << nMeasured
                       << ", Fit: " << nFit
                       << ", Neighbor: " << nNeighbor
@@ -885,7 +892,8 @@ void DeriveSF()
     // ------------------------------------------------------------------------
     std::cout << "\n>>> Generating " << jsonFileName << "...\n";
 
-    json cset = JSONBuilder::BuildCorrectionSet(sfMapForJSON, HT_Edges, PT_Edges);
+    // [FIX] BuildCorrectionSet 시그니처: (sfMap, sfErrMap, htEdges, ptEdges). 4번째 인자는 eta가 아니라 uncertainty map.
+    json cset = JSONBuilder::BuildCorrectionSet(sfMapForJSON, sfErrMapForJSON, HT_Edges, PT_Edges);
 
     if (JSONBuilder::WriteGzipJSON(cset, jsonFileName)) {
         std::cout << ">>> Success: " << jsonFileName << " created.\n";
@@ -894,6 +902,9 @@ void DeriveSF()
     }
 
     for (auto& kv : sfMapForJSON) {
+        if (kv.second) delete kv.second;
+    }
+    for (auto& kv : sfErrMapForJSON) {     // [FIX] error map도 같이 정리 (RAII)
         if (kv.second) delete kv.second;
     }
 

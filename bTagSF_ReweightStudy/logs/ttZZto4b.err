@@ -1,3 +1,0 @@
-
-[FATAL][InvariantViolation] entry=1414403 : 6th jet pT <= 40
-  -> This event should not exist after skimming. Exiting.

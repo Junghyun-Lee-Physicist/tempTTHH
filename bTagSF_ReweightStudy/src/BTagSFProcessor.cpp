@@ -325,31 +325,48 @@ void BTagSFProcessor::Loop()
         std::cout << "  nHTBins        : " << nHTBins << "\n";
     std::cout << "\n";
 
-    // ====================================================================
+// ====================================================================
     // Phase 2: Pass 1 — Normalization Ratios  (MC only)
     // ====================================================================
     // BTV recommendation:
-    //   r = Σω_before / Σω_after  per bin per systematic
-    //   Final weight = btagSF × r(bin)
+    //   r = Σω_before / Σω_after  per (process, bin) per systematic
+    //   Final weight = btagSF × r(process, bin)
     //
-    // Bin = nJets only        (useHTForReweight = false)
-    //     = nJets × HT flat   (useHTForReweight = true)
+    // [ttH AN App. A.2] Process key dispatch:
+    //   - inclusive ttbar (TTToHadronic / SemiLeptonic / 2L2Nu):
+    //     each event routed to "<sample>_LF" / "_cc" / "_B" via genTtbarId.
+    //   - other samples: single key = sample name.
+    //
+    // Storage layout: sumNoSF[pkey][syst][flatBin]
     // ====================================================================
 
-    // [systematic][flatBin] → accumulated sum
-    std::map<std::string, std::vector<double>> sumNoSF;
-    std::map<std::string, std::vector<double>> sumWithSF;
-    std::map<std::string, std::vector<double>> normRatio;
+    // Pre-build the list of process keys that this sample can produce.
+    const std::vector<std::string> processKeys =
+        TtCat::AllProcessKeysForSample(sampleName.Data());
 
-    for (const auto& syst : systematics) {
-        sumNoSF[syst].assign(totalBins, 0.0);
-        sumWithSF[syst].assign(totalBins, 0.0);
-        normRatio[syst].assign(totalBins, 1.0);
+    // Nested accumulators: process key → systematic → flatBin
+    std::map<std::string, std::map<std::string, std::vector<double>>> sumNoSF;
+    std::map<std::string, std::map<std::string, std::vector<double>>> sumWithSF;
+    std::map<std::string, std::map<std::string, std::vector<double>>> normRatio;
+
+    for (const auto& pkey : processKeys) {
+        for (const auto& syst : systematics) {
+            sumNoSF  [pkey][syst].assign(totalBins, 0.0);
+            sumWithSF[pkey][syst].assign(totalBins, 0.0);
+            normRatio[pkey][syst].assign(totalBins, 1.0);
+        }
     }
 
     if (!isData) {
         std::cout << "╔══════════════════════════════════════════════════════════════╗\n";
         std::cout << "║  Pass 1: Computing Normalization Ratios                      ║\n";
+        std::cout << "║  Process keys: " << processKeys.size()
+                  << " (";
+        for (size_t i = 0; i < processKeys.size(); ++i) {
+            std::cout << processKeys[i];
+            if (i + 1 < processKeys.size()) std::cout << ", ";
+        }
+        std::cout << ")\n";
         std::cout << "╚══════════════════════════════════════════════════════════════╝\n";
 
         for (Long64_t j = 0; j < nEntries; ++j) {
@@ -373,6 +390,20 @@ void BTagSFProcessor::Loop()
 
             if (!passHadronicTrigger(dataSet, era)) continue;
 
+            // ── Per-event process key (ttbar category dispatch) ──
+            const std::string pkey = CurrentEventProcessKey(sampleName.Data());
+
+            // Defensive: if pkey is somehow not in our pre-built list, init it.
+            // (Happens only if genTtbarId encoding contains an unexpected value
+            //  — extremely rare, but keeps the loop crash-free.)
+            if (sumNoSF.find(pkey) == sumNoSF.end()) {
+                for (const auto& syst : systematics) {
+                    sumNoSF  [pkey][syst].assign(totalBins, 0.0);
+                    sumWithSF[pkey][syst].assign(totalBins, 0.0);
+                    normRatio[pkey][syst].assign(totalBins, 1.0);
+                }
+            }
+
             // Base weight (before b-tag SF)
             const double baseWeight =
                 reader->GetGenWeight()
@@ -394,7 +425,7 @@ void BTagSFProcessor::Loop()
             const int flatBin = Config::getReweightFlatIndex(
                 reader->GetNJets(), currentHT);
 
-            // Accumulate for each systematic
+            // Accumulate for each systematic, dispatched by process key
             for (const auto& syst : systematics) {
                 double btagEvtW = 1.0;
                 try {
@@ -407,61 +438,70 @@ void BTagSFProcessor::Loop()
                     btagEvtW = 1.0;
                 }
 
-                sumNoSF[syst][flatBin]   += weightNoSFVal;
-                sumWithSF[syst][flatBin] += weightNoSFVal * btagEvtW;
+                sumNoSF  [pkey][syst][flatBin] += weightNoSFVal;
+                sumWithSF[pkey][syst][flatBin] += weightNoSFVal * btagEvtW;
             }
         }
 
-        // Compute ratios
-        for (const auto& syst : systematics) {
-            for (int b = 0; b < totalBins; ++b) {
-                normRatio[syst][b] = (sumWithSF[syst][b] > 0.0)
-                    ? sumNoSF[syst][b] / sumWithSF[syst][b]
-                    : 1.0;
+        // Compute ratios per (pkey, syst, bin)
+        for (auto& [pkey, systMap] : sumNoSF) {
+            for (const auto& syst : systematics) {
+                for (int b = 0; b < totalBins; ++b) {
+                    normRatio[pkey][syst][b] =
+                        (sumWithSF[pkey][syst][b] > 0.0)
+                            ? sumNoSF[pkey][syst][b] / sumWithSF[pkey][syst][b]
+                            : 1.0;
+                }
             }
         }
 
-        // Print representative ratios for "central"
+        // Print representative ratios for "central" per process key
         std::cout << "\n  Normalization ratios (central):\n";
+
         if (Config::useHTForReweight) {
-            // 2D: print a table for a few nJets values
-            std::cout << "  nJets \\ HT  |";
-            for (int ht = 0; ht < nHTBins; ++ht) {
-                std::cout << std::setw(10)
-                          << "[" << Config::reweightHT_edges[ht]
-                          << "," << Config::reweightHT_edges[ht + 1] << ")";
-            }
-            std::cout << "\n  ";
-            for (int i = 0; i < 14 + nHTBins * 10; ++i) std::cout << "-";
-            std::cout << "\n";
-
-            for (int nj = Config::minNJets; nj <= std::min(12, maxNJetsBin); ++nj) {
-                bool hasData = false;
+            for (const auto& pkey : processKeys) {
+                if (sumNoSF.find(pkey) == sumNoSF.end()) continue;
+                std::cout << "  ── Process: " << pkey << " ──\n";
+                std::cout << "  nJets/HT  |";
                 for (int ht = 0; ht < nHTBins; ++ht) {
-                    int idx = nj * nHTBins + ht;
-                    if (sumNoSF["central"][idx] > 0.0) { hasData = true; break; }
+                    std::cout << std::setw(10) << ("HT" + std::to_string(ht));
                 }
-                if (!hasData) continue;
-
-                std::cout << "  " << std::setw(5) << nj << "        |";
-                for (int ht = 0; ht < nHTBins; ++ht) {
-                    int idx = nj * nHTBins + ht;
-                    std::cout << std::setw(10) << std::fixed << std::setprecision(5)
-                              << normRatio["central"][idx];
-                }
+                std::cout << "\n  ----------+";
+                for (int ht = 0; ht < nHTBins; ++ht) std::cout << "----------";
                 std::cout << "\n";
+
+                for (int nj = Config::minNJets; nj <= 15; ++nj) {
+                    bool hasData = false;
+                    for (int ht = 0; ht < nHTBins; ++ht) {
+                        int idx = nj * nHTBins + ht;
+                        if (sumNoSF[pkey]["central"][idx] > 0.0) { hasData = true; break; }
+                    }
+                    if (!hasData) continue;
+
+                    std::cout << "  " << std::setw(5) << nj << "        |";
+                    for (int ht = 0; ht < nHTBins; ++ht) {
+                        int idx = nj * nHTBins + ht;
+                        std::cout << std::setw(10) << std::fixed << std::setprecision(5)
+                                  << normRatio[pkey]["central"][idx];
+                    }
+                    std::cout << "\n";
+                }
             }
         } else {
-            // 1D: same as before
-            std::cout << "  nJets |   sumNoSF        |  sumWithSF       | ratio\n";
-            std::cout << "  ------+------------------+------------------+----------\n";
-            for (int b = Config::minNJets; b <= 15; ++b) {
-                if (sumNoSF["central"][b] == 0.0) continue;
-                std::cout << std::setw(7) << b << " | "
-                          << std::setw(16) << std::setprecision(4)
-                          << sumNoSF["central"][b] << " | "
-                          << std::setw(16) << sumWithSF["central"][b] << " | "
-                          << std::setprecision(6) << normRatio["central"][b] << "\n";
+            // 1D
+            for (const auto& pkey : processKeys) {
+                if (sumNoSF.find(pkey) == sumNoSF.end()) continue;
+                std::cout << "  ── Process: " << pkey << " ──\n";
+                std::cout << "  nJets |   sumNoSF        |  sumWithSF       | ratio\n";
+                std::cout << "  ------+------------------+------------------+----------\n";
+                for (int b = Config::minNJets; b <= 15; ++b) {
+                    if (sumNoSF[pkey]["central"][b] == 0.0) continue;
+                    std::cout << std::setw(7) << b << " | "
+                              << std::setw(16) << std::setprecision(4)
+                              << sumNoSF[pkey]["central"][b] << " | "
+                              << std::setw(16) << sumWithSF[pkey]["central"][b] << " | "
+                              << std::setprecision(6) << normRatio[pkey]["central"][b] << "\n";
+                }
             }
         }
         std::cout << "\n";
@@ -470,51 +510,67 @@ void BTagSFProcessor::Loop()
     // ====================================================================
     // Phase 3: Create Output & Histograms
     // ====================================================================
+// ====================================================================
+    // Phase 3: Create Output & Histograms
+    // ====================================================================
     TFile* outputFile = new TFile(getOutputName(), "RECREATE");
     outputFile->cd();
 
-    // ── Normalization ratio histograms (one per systematic) ──
+    // ── Normalization ratio histograms (one per process key per systematic) ──
+    // Naming: h_normRatio_nJets[_HT]_<processKey>_<systematic>
+    // [Ref] ttH AN App. A.2 — per-process normalization SF.
     if (!isData) {
         outputFile->mkdir("NormRatios");
         outputFile->cd("NormRatios");
 
         if (Config::useHTForReweight) {
-            // 2D: TH2D (nJets × HT)
-            // Build nJets edges: [-0.5, 0.5, 1.5, ..., maxNJetsBin+0.5]
+            // 2D: TH2D (nJets × HT) — one per (pkey × syst)
             std::vector<double> nJetsEdges;
             for (int i = 0; i <= maxNJetsBin + 1; ++i)
                 nJetsEdges.push_back(static_cast<double>(i) - 0.5);
 
             const auto& htEdges = Config::reweightHT_edges;
 
-            for (const auto& syst : systematics) {
-                TString hName = "h_normRatio_nJets_HT_" + TString(syst.c_str());
-                auto* h = new TH2D(hName, hName + ";nJets;HT [GeV];ratio",
-                    maxNJetsBin + 1, nJetsEdges.data(),
-                    nHTBins, htEdges.data());
+            for (const auto& pkey : processKeys) {
+                if (normRatio.find(pkey) == normRatio.end()) continue;
+                for (const auto& syst : systematics) {
+                    TString hName = "h_normRatio_nJets_HT_"
+                                  + TString(pkey.c_str()) + "_"
+                                  + TString(syst.c_str());
+                    auto* h = new TH2D(hName, hName + ";nJets;HT [GeV];ratio",
+                        maxNJetsBin + 1, nJetsEdges.data(),
+                        nHTBins, htEdges.data());
 
-                for (int nj = 0; nj <= maxNJetsBin; ++nj) {
-                    for (int ht = 0; ht < nHTBins; ++ht) {
-                        int flatIdx = nj * nHTBins + ht;
-                        h->SetBinContent(nj + 1, ht + 1, normRatio[syst][flatIdx]);
+                    for (int nj = 0; nj <= maxNJetsBin; ++nj) {
+                        for (int ht = 0; ht < nHTBins; ++ht) {
+                            int flatIdx = nj * nHTBins + ht;
+                            h->SetBinContent(nj + 1, ht + 1,
+                                             normRatio[pkey][syst][flatIdx]);
+                        }
                     }
+                    h->Write();
                 }
-                h->Write();
             }
         } else {
-            // 1D: TH1D (nJets only)
-            for (const auto& syst : systematics) {
-                TString hName = "h_normRatio_nJets_" + TString(syst.c_str());
-                auto* h = new TH1D(hName, hName + ";nJets;ratio",
-                                   maxNJetsBin + 1, -0.5, maxNJetsBin + 0.5);
-                for (int b = 0; b <= maxNJetsBin; ++b) {
-                    h->SetBinContent(b + 1, normRatio[syst][b]);
+            // 1D: TH1D (nJets only) — one per (pkey × syst)
+            for (const auto& pkey : processKeys) {
+                if (normRatio.find(pkey) == normRatio.end()) continue;
+                for (const auto& syst : systematics) {
+                    TString hName = "h_normRatio_nJets_"
+                                  + TString(pkey.c_str()) + "_"
+                                  + TString(syst.c_str());
+                    auto* h = new TH1D(hName, hName + ";nJets;ratio",
+                                       maxNJetsBin + 1, -0.5, maxNJetsBin + 0.5);
+                    for (int b = 0; b <= maxNJetsBin; ++b) {
+                        h->SetBinContent(b + 1, normRatio[pkey][syst][b]);
+                    }
+                    h->Write();
                 }
-                h->Write();
             }
         }
         outputFile->cd();
     }
+
 
     // ── Validation histograms (using Config definitions) ──
     const int maxJets = Config::btagMaxJetsForPerJetHist;
@@ -634,11 +690,19 @@ void BTagSFProcessor::Loop()
             }
         }
 
-        // ── Normalization ratio (from 1D or 2D flat bin) ──
+        // ── Normalization ratio (from 1D or 2D flat bin, per process key) ──
+        // [ttH AN App. A.2] inclusive ttbar dispatched to LF/cc/B by genTtbarId
         double btagNormRatio = 1.0;
         if (!isData) {
+            const std::string pkey2 = CurrentEventProcessKey(sampleName.Data());
             const int flatBin = Config::getReweightFlatIndex(nJets, currentHT);
-            btagNormRatio = normRatio["central"][flatBin];
+            // Defensive lookup: pkey may be absent in pathological cases
+            auto it = normRatio.find(pkey2);
+            if (it != normRatio.end()) {
+                btagNormRatio = it->second.at("central").at(flatBin);
+            } else {
+                btagNormRatio = 1.0;
+            }
         }
 
         // ── Three weight tiers ──
@@ -717,4 +781,21 @@ void BTagSFProcessor::Loop()
     outputFile->cd();
     std::cout << ">>> Done.\n";
     delete outputFile;
+}
+
+// ============================================================================
+// CurrentEventProcessKey
+// ----------------------------------------------------------------------------
+// Returns the process key for the current event (read by reader->GetEntry()).
+// For inclusive ttbar samples (TTToHadronic / TTToSemiLeptonic / TTTo2L2Nu)
+// the event is dispatched into LF / cc / B groups via genTtbarId.
+// Other samples return their sample name unchanged.
+// [Ref] ttH AN-19-094 §A.2 (b-tag normalization SF derived per ttbar category)
+// ============================================================================
+std::string BTagSFProcessor::CurrentEventProcessKey(const std::string& sampleName) const
+{
+    if (!TtCat::IsInclusiveTtbar(sampleName)) {
+        return sampleName;
+    }
+    return TtCat::MakeProcessKey(sampleName, reader->GetGenTtbarId());
 }
