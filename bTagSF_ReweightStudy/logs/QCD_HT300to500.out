@@ -2,7 +2,7 @@
 
   [BTagSFProcessor] b-tag JSON: /Users/jhlee/correctionLib/corrections/jsonpog-integration/POG/BTV/2017_UL/btagging.json.gz
   [BTagSFProcessor] deepJet_shape inputs (5): systematic flavor abseta pt discriminant 
-  [BTagSFProcessor] trigger SF JSON: ../DerivedCorr/TriggerSF/trigger_sf.json.gz
+  [BTagSFProcessor] trigger SF JSON: TriggerSF/trigger_sf.json.gz
   [BTagSFProcessor] Init complete.
 
 
@@ -13,7 +13,7 @@
 ╟──────────────────────────────────────────────────────────────╢
   Input base dir : /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/
   Tree path      : Tree/Tree
-  Trigger SF JSON: ../DerivedCorr/TriggerSF/trigger_sf.json.gz
+  Trigger SF JSON: TriggerSF/trigger_sf.json.gz
 ╟──────────────────────────────────────────────────────────────╢
 ║ [Section 1-C] B-Tag Reweight                                 ║
 ╟──────────────────────────────────────────────────────────────╢
@@ -60,22 +60,44 @@ Sample Name: QCD_HT300to500
   nHTBins        : 15
 
 ╔══════════════════════════════════════════════════════════════╗
-║  Pass 1: Computing Normalization Ratios                      ║
-║  Process keys: 1 (QCD_HT300to500)
+║  Pass 1: Accumulating per-process (Σω_noSF, Σω_withSF)       ║
+║  Process groups for this sample: tt+LF
 ╚══════════════════════════════════════════════════════════════╝
     [Pass 1] 0 / 7443 (0.0%)
 
-  Normalization ratios (central):
-  ── Process: QCD_HT300to500 ──
-  nJets/HT  |       HT0       HT1       HT2       HT3       HT4       HT5       HT6       HT7       HT8       HT9      HT10      HT11      HT12      HT13      HT14
-  ----------+------------------------------------------------------------------------------------------------------------------------------------------------------
-      8        |   0.83669   0.86372   0.86345   0.82293   0.76490   0.40340   0.59336   1.00000   0.60760   0.33698   1.00000   1.00000   1.00000   1.00000   1.00000
-      9        |   0.84118   0.78494   0.86890   0.91374   0.85873   0.44096   0.34323   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000
-     10        |   0.90851   0.75727   0.96053   0.85923   0.40707   0.50773   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000
-     11        |   1.00000   1.00000   0.91396   1.19639   1.23452   1.00000   1.00000   0.90969   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000
+  Per-process accumulators (central):
+  ── tt+LF ──
+  bin  | sumNoSF        | sumWithSF      | local r (preview)
+  -----+----------------+----------------+---------
+   120 |     54643.6773 |     65213.4851 | 0.837920
+   121 |     78078.6354 |     90498.9775 | 0.862757
+   122 |     84182.7135 |     97645.9661 | 0.862122
+   123 |     13044.6981 |     15857.5151 | 0.822619
+   124 |      4206.9822 |      5508.8969 | 0.763671
+   125 |       610.1992 |      1510.5302 | 0.403964
+   126 |       459.3254 |       772.6791 | 0.594458
+   128 |       165.8193 |       272.9095 | 0.607598
+   129 |       442.5580 |      1313.2983 | 0.336982
+   135 |      5125.0077 |      6107.1766 | 0.839178
+   136 |     10123.1958 |     12865.0464 | 0.786876
+   137 |     23431.8727 |     26987.0230 | 0.868264
+   138 |      7712.4507 |      8458.2328 | 0.911828
+   139 |       843.1189 |       986.2385 | 0.854883
+   140 |       436.6373 |       991.1230 | 0.440548
+   141 |       204.4499 |       595.6630 | 0.343231
+   150 |       614.1671 |       675.9058 | 0.908658
+   151 |       851.6299 |      1114.9809 | 0.763807
+   152 |      2950.3841 |      3066.3985 | 0.962166
+   153 |      3830.3742 |      4452.2543 | 0.860322
+   154 |       690.5436 |      1681.1354 | 0.410760
+   155 |       381.5472 |       752.7931 | 0.506842
+   167 |       174.6429 |       191.0844 | 0.913957
+   168 |       528.9522 |       439.7531 | 1.202839
+   169 |       161.8386 |       131.0945 | 1.234519
+   172 |       220.7260 |       242.6400 | 0.909685
 
 ╔══════════════════════════════════════════════════════════════╗
-║  Pass 2: Applying B-Tag Reweight & Filling Histograms        ║
+║  Pass 2: Filling validation histograms (3-tier)              ║
 ╚══════════════════════════════════════════════════════════════╝
     [Pass 2] 0 / 7443 (0.0%)
 
@@ -84,10 +106,13 @@ Sample Name: QCD_HT300to500
 ╠══════════════════════════════════════════════════════════════╣
   Events processed : 7443
   Events passed    : 1800
-  Σ weight (noSF)      : 284423.4061
-  Σ weight (withSF)    : 336936.4860
-  Σ weight (reweighted): 284423.4061
-  Deviation: 0.0000 %  [OK]
+  Σ weight (noSF)      : 294116.1471
+  Σ weight (withSF)    : 348332.8009
+  Σ weight (reweighted): 294116.1471
+  Deviation (in-sample): 0.0000 %  [OK]
+  Note: this is a sample-local closure preview. The true
+  per-group closure is verified after group-sum in makeReweightJSON
+  and JSON-based application downstream.
 ╚══════════════════════════════════════════════════════════════╝
 
 >>> Writing output to: bTagReweight_QCD_HT300to500.root

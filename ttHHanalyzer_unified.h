@@ -29,6 +29,7 @@
 //#include "fifo_map.hpp" // No need now, I'll update cutflow logic
 
 #include "CorrectionsManager.h"
+#include "Config_TtCatGroup.hh"   // ttH AN App. A.2.1 process key mapping (LF/cc/B/ttH/ttHH/...)
 
 #include <nlohmann/json.hpp>
 

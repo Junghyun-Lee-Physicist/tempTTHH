@@ -1,6 +1,7 @@
 #define BTagSFProcessor_cxx
 #include "BTagSFProcessor.hh"
 #include "Config.hh"
+#include "Config_TtCatGroup.hh"
 
 #include <TH2.h>
 #include <iostream>
@@ -43,45 +44,52 @@ TString BTagSFProcessor::getOutputName() const {
 }
 
 // ============================================================================
-// resolveBTagJSONPath
+// Resolve b-tag JSON path (CVMFS first, then local fallback)
 // ============================================================================
 std::string BTagSFProcessor::resolveBTagJSONPath()
 {
     for (const auto& path : Config::btagJSONPaths) {
         if (fs::exists(path)) return path;
     }
-
-    std::cerr << "[BTagSFProcessor][FATAL] Cannot find b-tag JSON. Searched:\n";
+    std::cerr << "[BTagSFProcessor][FATAL] No valid b-tag JSON found. Tried:\n";
     for (const auto& p : Config::btagJSONPaths)
-        std::cerr << "  " << p << "\n";
+        std::cerr << "    " << p << "\n";
     std::exit(1);
     return "";
 }
 
 // ============================================================================
-// resolveJetSystematic
+// CurrentEventProcessKey
+// ----------------------------------------------------------------------------
+// Returns the process *group* key for the current event (ttH AN App. A.2.1).
+//   - inclusive ttbar: dispatched by genTtbarId (tt+LF / tt+cc / tt+B)
+//   - other samples: fixed mapping by sample name (Config_TtCatGroup.hh)
 // ============================================================================
-// BTV recommendation (shape correction SFs):
-//   c-jets (flavor=4): ONLY respond to cferr1/cferr2 variations
-//   b/light jets:      respond to ALL other variations (NOT cferr)
-//   Non-applicable variation → fall back to "central"
+std::string BTagSFProcessor::CurrentEventProcessKey(const std::string& sampleName) const
+{
+    return TtCatGroup::MakeProcessKey(sampleName, reader->GetGenTtbarId());
+}
+
+// ============================================================================
+// Resolve flavor-aware systematic name (BTV recommendation)
+//   c-jet (flavor=4) → only cferr1/2 (otherwise → "central")
+//   b/light (flavor=5/0) → everything except cferr (otherwise → "central")
 // ============================================================================
 std::string BTagSFProcessor::resolveJetSystematic(
     int hadronFlavor, const std::string& eventSystematic)
 {
-    if (eventSystematic == "central") return "central";
-
-    const bool isCferr = (eventSystematic.find("cferr") != std::string::npos);
+    const bool isCFerr =
+        (eventSystematic.find("cferr") != std::string::npos);
 
     if (hadronFlavor == 4) {
-        return isCferr ? eventSystematic : "central";
+        return isCFerr ? eventSystematic : "central";
     } else {
-        return isCferr ? "central" : eventSystematic;
+        return isCFerr ? "central" : eventSystematic;
     }
 }
 
 // ============================================================================
-// evaluateJetBTagSF
+// Evaluate single-jet b-tag SF via correctionlib
 // ============================================================================
 double BTagSFProcessor::evaluateJetBTagSF(
     const std::string& systematic,
@@ -90,92 +98,92 @@ double BTagSFProcessor::evaluateJetBTagSF(
     double pt,
     double discriminant) const
 {
-    std::vector<correction::Variable::Type> inputs(btagSlots.totalInputs);
+    std::vector<correction::Variable::Type> args(btagSlots.totalInputs);
 
-    inputs[btagSlots.systematic]   = systematic;
-    inputs[btagSlots.flavor]       = hadronFlavor;
-    inputs[btagSlots.abseta]       = abseta;
-    inputs[btagSlots.pt]           = pt;
-    inputs[btagSlots.discriminant] = discriminant;
+    args[btagSlots.systematic]   = systematic;
+    args[btagSlots.flavor]       = hadronFlavor;
+    args[btagSlots.abseta]       = abseta;
+    args[btagSlots.pt]           = pt;
+    args[btagSlots.discriminant] = discriminant;
+    if (btagSlots.workingPoint >= 0)
+        args[btagSlots.workingPoint] = std::string("shape");
 
-    if (btagSlots.workingPoint >= 0) {
-        inputs[btagSlots.workingPoint] = std::string("M");
-    }
-
-    return btagShapeSFProvider->evaluate(inputs);
+    return btagShapeSFProvider->evaluate(args);
 }
 
 // ============================================================================
-// computeBTagEventWeight: ω_event = ∏ SF(jet_i)
+// Per-event b-tag weight = ∏ SF(jet_i) over all jets
+// (flavor-aware systematic per jet)
 // ============================================================================
 double BTagSFProcessor::computeBTagEventWeight(
-    const std::string& systematic) const
+    const std::string& eventSystematic) const
 {
-    double eventWeight = 1.0;
+    double w = 1.0;
+    const auto& pt   = reader->GetJetPt();
+    const auto& eta  = reader->GetJetEta();
+    const auto& disc = reader->GetBTagScore();
+    const auto& had  = reader->GetHadronFlavor();
 
-    const auto& ptVec     = reader->GetJetPt();
-    const auto& etaVec    = reader->GetJetEta();
-    const auto& btagVec   = reader->GetBTagScore();
-    const auto& flavorVec = reader->GetHadronFlavor();
-    const int   nJets     = reader->GetNJets();
-
-    for (int j = 0; j < nJets; ++j) {
-        const int    flavor = flavorVec.at(j);
-        const double pt     = static_cast<double>(ptVec.at(j));
-        const double abseta = std::abs(static_cast<double>(etaVec.at(j)));
-        const double disc   = static_cast<double>(btagVec.at(j));
-
-        const std::string jetSyst = resolveJetSystematic(flavor, systematic);
-        eventWeight *= evaluateJetBTagSF(jetSyst, flavor, abseta, pt, disc);
+    const size_t nJets = pt.size();
+    for (size_t i = 0; i < nJets; ++i) {
+        const std::string jetSyst = resolveJetSystematic(had[i], eventSystematic);
+        const double sf = evaluateJetBTagSF(
+            jetSyst, had[i], std::fabs(eta[i]), pt[i], disc[i]);
+        w *= sf;
     }
-
-    return eventWeight;
+    return w;
 }
 
 // ============================================================================
-// passHadronicTrigger
+// Hadronic trigger OR with PD-exclusivity for Data
+//   BTagCSV → keep 4J3T  group only
+//   JetHT   → keep (6J1T||6J2T||PFHT1050) and reject 4J3T (avoid double count)
+//   MC      → OR of everything
+// (era=B uses *_B branches; CDEF uses *_CDEF)
 // ============================================================================
 bool BTagSFProcessor::passHadronicTrigger(
     const TString& dataSet, const TString& era) const
 {
     const bool isEraB = (era == "B");
-
+    const bool fired4J3T = isEraB ? reader->GetPassTrigger_4J3T_B()
+                                  : reader->GetPassTrigger_4J3T_CDEF();
     const bool fired6J1T = isEraB ? reader->GetPassTrigger_6J1T_B()
                                   : reader->GetPassTrigger_6J1T_CDEF();
     const bool fired6J2T = isEraB ? reader->GetPassTrigger_6J2T_B()
                                   : reader->GetPassTrigger_6J2T_CDEF();
-    const bool fired4J3T = isEraB ? reader->GetPassTrigger_4J3T_B()
-                                  : reader->GetPassTrigger_4J3T_CDEF();
     const bool firedHT   = reader->GetPassTrigger_PFHT1050();
 
-    const bool anyMultiJet   = (fired6J1T || fired6J2T);
-    const bool passAnyHadron = (fired4J3T || anyMultiJet || firedHT);
+    const bool group_BTagCSV = fired4J3T;
+    const bool group_JetHT   = (fired6J1T || fired6J2T || firedHT);
 
-    // MC: simple OR
-    if (!isData) return passAnyHadron;
-
-    // Data: PD-exclusivity
-    if (dataSet == "BTagCSV") {
-        return fired4J3T;
-    } else if (dataSet == "JetHT") {
-        return (anyMultiJet || (firedHT && !anyMultiJet && !fired4J3T));
-    } else {
-        std::cerr << "[BTagSFProcessor][FATAL] Unknown Data PD: " << dataSet << "\n";
-        std::exit(1);
+    if (dataSet == "default") {
+        // MC
+        return group_BTagCSV || group_JetHT;
     }
+    if (dataSet.Contains("BTagCSV")) {
+        return group_BTagCSV;
+    }
+    if (dataSet.Contains("JetHT")) {
+        return group_JetHT && !group_BTagCSV;
+    }
+    if (dataSet.Contains("SingleMuon")) {
+        return group_BTagCSV || group_JetHT;
+    }
+    std::cerr << "[BTagSFProcessor][WARN] Unknown dataSet: " << dataSet << "\n";
     return false;
 }
 
 // ============================================================================
-// evaluateTriggerSF — FATAL on failure (no fallback)
-//
-// The trigger SF JSON was derived with edge-value extrapolation,
-// so every (nBJets, eta, HT, jet6PT) combination MUST have a value.
-// If correctionlib throws, something is fundamentally wrong → abort.
+// Evaluate trigger SF via correctionlib (FATAL on failure)
 // ============================================================================
 double BTagSFProcessor::evaluateTriggerSF(
     int nBJets, double jet6Eta, double HT, double jet6PT) const
 {
+    if (!trigSFProvider) {
+        std::cerr << "[BTagSFProcessor][FATAL] trigSFProvider not loaded\n";
+        std::exit(1);
+    }
+
     try {
         return trigSFProvider->evaluate({
             static_cast<int>(nBJets),
@@ -184,20 +192,17 @@ double BTagSFProcessor::evaluateTriggerSF(
             static_cast<double>(jet6PT)
         });
     } catch (const std::exception& e) {
-        std::cerr << "\n[FATAL] Trigger SF evaluation failed!\n"
-                  << "  nBJets  = " << nBJets  << "\n"
-                  << "  jet6Eta = " << jet6Eta  << "\n"
-                  << "  HT      = " << HT       << "\n"
-                  << "  jet6PT  = " << jet6PT    << "\n"
-                  << "  Error   : " << e.what()  << "\n"
-                  << "  -> Trigger SF JSON must cover all bins. Exiting.\n";
+        std::cerr << "[BTagSFProcessor][FATAL] Trigger SF evaluate failed: "
+                  << e.what()
+                  << "  (nB=" << nBJets << ", eta=" << jet6Eta
+                  << ", HT=" << HT << ", pt=" << jet6PT << ")\n";
         std::exit(1);
     }
-    return 1.0;  // unreachable
+    return 1.0;
 }
 
 // ============================================================================
-// Init
+// Init: open file, build NtupleReader, load correctionlib JSONs
 // ============================================================================
 void BTagSFProcessor::Init()
 {
@@ -269,6 +274,16 @@ void BTagSFProcessor::Init()
 
 // ============================================================================
 // Loop (Two-Pass)
+// ----------------------------------------------------------------------------
+// Pass 1: For each event, dispatch to one of the per-event process group keys
+//         (ttH AN App. A.2.1). Accumulate per-(group, syst, bin) sumNoSF and
+//         sumWithSF. Output as TH1D/TH2D under "NormSums/" so makeReweightJSON
+//         can sum across samples and compute the final per-group ratio.
+//
+// Pass 2: Validation 3-tier histograms (noSF / withSF / reweighted). Since the
+//         final per-group ratio is computed only after group-sum (in
+//         makeReweightJSON), Pass 2 here keeps reweighted = withSF as a
+//         placeholder. True closure is verified downstream after JSON load.
 // ============================================================================
 void BTagSFProcessor::Loop()
 {
@@ -311,7 +326,6 @@ void BTagSFProcessor::Loop()
     const Long64_t nEntries = fChain->GetEntries();
     std::cout << "\n>>> Total entries: " << nEntries << "\n\n";
 
-    // Shorthands from Config
     const int maxNJetsBin   = Config::btagMaxNJetsBin;
     const int totalBins     = Config::getTotalReweightBins();
     const int nHTBins       = Config::getNumHTBins();
@@ -325,49 +339,34 @@ void BTagSFProcessor::Loop()
         std::cout << "  nHTBins        : " << nHTBins << "\n";
     std::cout << "\n";
 
-// ====================================================================
-    // Phase 2: Pass 1 — Normalization Ratios  (MC only)
     // ====================================================================
-    // BTV recommendation:
-    //   r = Σω_before / Σω_after  per (process, bin) per systematic
-    //   Final weight = btagSF × r(process, bin)
+    // Phase 2: Pass 1 — Per-process accumulators of (Σω_noSF, Σω_withSF)
     //
-    // [ttH AN App. A.2] Process key dispatch:
-    //   - inclusive ttbar (TTToHadronic / SemiLeptonic / 2L2Nu):
-    //     each event routed to "<sample>_LF" / "_cc" / "_B" via genTtbarId.
-    //   - other samples: single key = sample name.
-    //
-    // Storage layout: sumNoSF[pkey][syst][flatBin]
+    // Storage: sumNoSF[pkey][syst][flatBin]
+    // Group sum across samples is done later in makeReweightJSON.
     // ====================================================================
-
-    // Pre-build the list of process keys that this sample can produce.
     const std::vector<std::string> processKeys =
-        TtCat::AllProcessKeysForSample(sampleName.Data());
+        TtCatGroup::ProcessKeysForSample(sampleName.Data());
 
-    // Nested accumulators: process key → systematic → flatBin
     std::map<std::string, std::map<std::string, std::vector<double>>> sumNoSF;
     std::map<std::string, std::map<std::string, std::vector<double>>> sumWithSF;
-    std::map<std::string, std::map<std::string, std::vector<double>>> normRatio;
 
     for (const auto& pkey : processKeys) {
         for (const auto& syst : systematics) {
             sumNoSF  [pkey][syst].assign(totalBins, 0.0);
             sumWithSF[pkey][syst].assign(totalBins, 0.0);
-            normRatio[pkey][syst].assign(totalBins, 1.0);
         }
     }
 
     if (!isData) {
         std::cout << "╔══════════════════════════════════════════════════════════════╗\n";
-        std::cout << "║  Pass 1: Computing Normalization Ratios                      ║\n";
-        std::cout << "║  Process keys: " << processKeys.size()
-                  << " (";
+        std::cout << "║  Pass 1: Accumulating per-process (Σω_noSF, Σω_withSF)       ║\n";
+        std::cout << "║  Process groups for this sample: ";
         for (size_t i = 0; i < processKeys.size(); ++i) {
             std::cout << processKeys[i];
             if (i + 1 < processKeys.size()) std::cout << ", ";
         }
-        std::cout << ")\n";
-        std::cout << "╚══════════════════════════════════════════════════════════════╝\n";
+        std::cout << "\n╚══════════════════════════════════════════════════════════════╝\n";
 
         for (Long64_t j = 0; j < nEntries; ++j) {
             reader->GetEntry(j);
@@ -378,7 +377,7 @@ void BTagSFProcessor::Loop()
                           << 100.0 * j / nEntries << "%)\n";
             }
 
-            // ── Skimming invariants (nJets >= 6) ──
+            // Skim invariants (NO b-tag selection — BTV requirement)
             if (reader->GetNJets() < Config::minNJets)
                 FATAL_INVARIANT("NJets < 6", j);
             if (reader->GetJetPt().at(5) <= 40.0)
@@ -390,42 +389,34 @@ void BTagSFProcessor::Loop()
 
             if (!passHadronicTrigger(dataSet, era)) continue;
 
-            // ── Per-event process key (ttbar category dispatch) ──
+            // Per-event process key dispatch
             const std::string pkey = CurrentEventProcessKey(sampleName.Data());
 
-            // Defensive: if pkey is somehow not in our pre-built list, init it.
-            // (Happens only if genTtbarId encoding contains an unexpected value
-            //  — extremely rare, but keeps the loop crash-free.)
+            // Defensive (genTtbarId edge case)
             if (sumNoSF.find(pkey) == sumNoSF.end()) {
                 for (const auto& syst : systematics) {
                     sumNoSF  [pkey][syst].assign(totalBins, 0.0);
                     sumWithSF[pkey][syst].assign(totalBins, 0.0);
-                    normRatio[pkey][syst].assign(totalBins, 1.0);
                 }
             }
 
-            // Base weight (before b-tag SF)
             const double baseWeight =
                 reader->GetGenWeight()
                 * reader->GetPUWeight()
                 * reader->GetPrefireWeight()
                 * xsecWeight;
 
-            // Trigger SF — MUST succeed (FATAL on failure)
             const double currentHT = reader->GetHT();
             const double jet6PT    = reader->GetJetPt().at(5);
             const double jet6Eta   = reader->GetJetEta().at(5);
             const int    nBJets    = reader->GetNBJets();
 
-            double trigSF = evaluateTriggerSF(nBJets, jet6Eta, currentHT, jet6PT);
-
+            const double trigSF = evaluateTriggerSF(nBJets, jet6Eta, currentHT, jet6PT);
             const double weightNoSFVal = baseWeight * trigSF;
 
-            // Flat bin index (1D or 2D depending on Config flag)
             const int flatBin = Config::getReweightFlatIndex(
                 reader->GetNJets(), currentHT);
 
-            // Accumulate for each systematic, dispatched by process key
             for (const auto& syst : systematics) {
                 double btagEvtW = 1.0;
                 try {
@@ -437,94 +428,53 @@ void BTagSFProcessor::Loop()
                     }
                     btagEvtW = 1.0;
                 }
-
                 sumNoSF  [pkey][syst][flatBin] += weightNoSFVal;
                 sumWithSF[pkey][syst][flatBin] += weightNoSFVal * btagEvtW;
             }
         }
 
-        // Compute ratios per (pkey, syst, bin)
-        for (auto& [pkey, systMap] : sumNoSF) {
-            for (const auto& syst : systematics) {
-                for (int b = 0; b < totalBins; ++b) {
-                    normRatio[pkey][syst][b] =
-                        (sumWithSF[pkey][syst][b] > 0.0)
-                            ? sumNoSF[pkey][syst][b] / sumWithSF[pkey][syst][b]
-                            : 1.0;
-                }
-            }
-        }
-
-        // Print representative ratios for "central" per process key
-        std::cout << "\n  Normalization ratios (central):\n";
-
-        if (Config::useHTForReweight) {
-            for (const auto& pkey : processKeys) {
-                if (sumNoSF.find(pkey) == sumNoSF.end()) continue;
-                std::cout << "  ── Process: " << pkey << " ──\n";
-                std::cout << "  nJets/HT  |";
-                for (int ht = 0; ht < nHTBins; ++ht) {
-                    std::cout << std::setw(10) << ("HT" + std::to_string(ht));
-                }
-                std::cout << "\n  ----------+";
-                for (int ht = 0; ht < nHTBins; ++ht) std::cout << "----------";
-                std::cout << "\n";
-
-                for (int nj = Config::minNJets; nj <= 15; ++nj) {
-                    bool hasData = false;
-                    for (int ht = 0; ht < nHTBins; ++ht) {
-                        int idx = nj * nHTBins + ht;
-                        if (sumNoSF[pkey]["central"][idx] > 0.0) { hasData = true; break; }
-                    }
-                    if (!hasData) continue;
-
-                    std::cout << "  " << std::setw(5) << nj << "        |";
-                    for (int ht = 0; ht < nHTBins; ++ht) {
-                        int idx = nj * nHTBins + ht;
-                        std::cout << std::setw(10) << std::fixed << std::setprecision(5)
-                                  << normRatio[pkey]["central"][idx];
-                    }
-                    std::cout << "\n";
-                }
-            }
-        } else {
-            // 1D
-            for (const auto& pkey : processKeys) {
-                if (sumNoSF.find(pkey) == sumNoSF.end()) continue;
-                std::cout << "  ── Process: " << pkey << " ──\n";
-                std::cout << "  nJets |   sumNoSF        |  sumWithSF       | ratio\n";
-                std::cout << "  ------+------------------+------------------+----------\n";
-                for (int b = Config::minNJets; b <= 15; ++b) {
-                    if (sumNoSF[pkey]["central"][b] == 0.0) continue;
-                    std::cout << std::setw(7) << b << " | "
-                              << std::setw(16) << std::setprecision(4)
-                              << sumNoSF[pkey]["central"][b] << " | "
-                              << std::setw(16) << sumWithSF[pkey]["central"][b] << " | "
-                              << std::setprecision(6) << normRatio[pkey]["central"][b] << "\n";
-                }
+        // Print central-only summary per process key
+        std::cout << "\n  Per-process accumulators (central):\n";
+        for (const auto& pkey : processKeys) {
+            if (sumNoSF.find(pkey) == sumNoSF.end()) continue;
+            std::cout << "  ── " << pkey << " ──\n";
+            std::cout << "  bin  | sumNoSF        | sumWithSF      | local r (preview)\n";
+            std::cout << "  -----+----------------+----------------+---------\n";
+            for (int b = 0; b < totalBins; ++b) {
+                double sN = sumNoSF[pkey]["central"][b];
+                double sW = sumWithSF[pkey]["central"][b];
+                if (sN == 0.0 && sW == 0.0) continue;
+                double r = (sW > 0.0) ? sN / sW : 1.0;
+                std::cout << "  " << std::setw(4) << b
+                          << " | " << std::setw(14) << std::setprecision(4) << sN
+                          << " | " << std::setw(14) << sW
+                          << " | " << std::setprecision(6) << r << "\n";
             }
         }
         std::cout << "\n";
     }
 
     // ====================================================================
-    // Phase 3: Create Output & Histograms
-    // ====================================================================
-// ====================================================================
-    // Phase 3: Create Output & Histograms
+    // Phase 3: Create Output & Save Per-Process Sums
+    //
+    // For each (pkey, syst): write sumNoSF and sumWithSF as separate hists
+    // under "NormSums/". makeReweightJSON.cpp will read these and compute
+    // group-summed ratios.
+    //
+    // Naming:
+    //   2D: h_sumNoSF_nJets_HT_<pkey_sanitized>_<syst>
+    //       h_sumWithSF_nJets_HT_<pkey_sanitized>_<syst>
+    //   1D: h_sumNoSF_nJets_<pkey_sanitized>_<syst>
+    //       h_sumWithSF_nJets_<pkey_sanitized>_<syst>
     // ====================================================================
     TFile* outputFile = new TFile(getOutputName(), "RECREATE");
     outputFile->cd();
 
-    // ── Normalization ratio histograms (one per process key per systematic) ──
-    // Naming: h_normRatio_nJets[_HT]_<processKey>_<systematic>
-    // [Ref] ttH AN App. A.2 — per-process normalization SF.
     if (!isData) {
-        outputFile->mkdir("NormRatios");
-        outputFile->cd("NormRatios");
+        outputFile->mkdir("NormSums");
+        outputFile->cd("NormSums");
 
         if (Config::useHTForReweight) {
-            // 2D: TH2D (nJets × HT) — one per (pkey × syst)
             std::vector<double> nJetsEdges;
             for (int i = 0; i <= maxNJetsBin + 1; ++i)
                 nJetsEdges.push_back(static_cast<double>(i) - 0.5);
@@ -532,45 +482,66 @@ void BTagSFProcessor::Loop()
             const auto& htEdges = Config::reweightHT_edges;
 
             for (const auto& pkey : processKeys) {
-                if (normRatio.find(pkey) == normRatio.end()) continue;
+                if (sumNoSF.find(pkey) == sumNoSF.end()) continue;
+                const std::string skey = TtCatGroup::SanitizeKey(pkey);
+
                 for (const auto& syst : systematics) {
-                    TString hName = "h_normRatio_nJets_HT_"
-                                  + TString(pkey.c_str()) + "_"
-                                  + TString(syst.c_str());
-                    auto* h = new TH2D(hName, hName + ";nJets;HT [GeV];ratio",
+                    TString hNameNo = "h_sumNoSF_nJets_HT_"
+                                    + TString(skey.c_str()) + "_"
+                                    + TString(syst.c_str());
+                    auto* hNo = new TH2D(hNameNo,
+                        hNameNo + ";nJets;HT [GeV];Sum w (noSF)",
+                        maxNJetsBin + 1, nJetsEdges.data(),
+                        nHTBins, htEdges.data());
+
+                    TString hNameWi = "h_sumWithSF_nJets_HT_"
+                                    + TString(skey.c_str()) + "_"
+                                    + TString(syst.c_str());
+                    auto* hWi = new TH2D(hNameWi,
+                        hNameWi + ";nJets;HT [GeV];Sum w (withSF)",
                         maxNJetsBin + 1, nJetsEdges.data(),
                         nHTBins, htEdges.data());
 
                     for (int nj = 0; nj <= maxNJetsBin; ++nj) {
                         for (int ht = 0; ht < nHTBins; ++ht) {
                             int flatIdx = nj * nHTBins + ht;
-                            h->SetBinContent(nj + 1, ht + 1,
-                                             normRatio[pkey][syst][flatIdx]);
+                            hNo->SetBinContent(nj + 1, ht + 1,
+                                               sumNoSF[pkey][syst][flatIdx]);
+                            hWi->SetBinContent(nj + 1, ht + 1,
+                                               sumWithSF[pkey][syst][flatIdx]);
                         }
                     }
-                    h->Write();
+                    hNo->Write(); hWi->Write();
                 }
             }
         } else {
-            // 1D: TH1D (nJets only) — one per (pkey × syst)
             for (const auto& pkey : processKeys) {
-                if (normRatio.find(pkey) == normRatio.end()) continue;
+                if (sumNoSF.find(pkey) == sumNoSF.end()) continue;
+                const std::string skey = TtCatGroup::SanitizeKey(pkey);
+
                 for (const auto& syst : systematics) {
-                    TString hName = "h_normRatio_nJets_"
-                                  + TString(pkey.c_str()) + "_"
-                                  + TString(syst.c_str());
-                    auto* h = new TH1D(hName, hName + ";nJets;ratio",
-                                       maxNJetsBin + 1, -0.5, maxNJetsBin + 0.5);
+                    TString hNameNo = "h_sumNoSF_nJets_"
+                                    + TString(skey.c_str()) + "_"
+                                    + TString(syst.c_str());
+                    auto* hNo = new TH1D(hNameNo, hNameNo + ";nJets;Sum w (noSF)",
+                                         maxNJetsBin + 1, -0.5, maxNJetsBin + 0.5);
+
+                    TString hNameWi = "h_sumWithSF_nJets_"
+                                    + TString(skey.c_str()) + "_"
+                                    + TString(syst.c_str());
+                    auto* hWi = new TH1D(hNameWi, hNameWi + ";nJets;Sum w (withSF)",
+                                         maxNJetsBin + 1, -0.5, maxNJetsBin + 0.5);
+
                     for (int b = 0; b <= maxNJetsBin; ++b) {
-                        h->SetBinContent(b + 1, normRatio[pkey][syst][b]);
+                        hNo->SetBinContent(b + 1, sumNoSF[pkey][syst][b]);
+                        hWi->SetBinContent(b + 1, sumWithSF[pkey][syst][b]);
                     }
-                    h->Write();
+                    hNo->Write(); hWi->Write();
                 }
             }
         }
         outputFile->cd();
     }
-
 
     // ── Validation histograms (using Config definitions) ──
     const int maxJets = Config::btagMaxJetsForPerJetHist;
@@ -596,7 +567,6 @@ void BTagSFProcessor::Loop()
     auto* h_nbJets_reweighted = new TH1D("h_nbJets_reweighted", ";n_{b-jets};Events",
         Config::histNBJets_nBins, Config::histNBJets_Low, Config::histNBJets_High);
 
-    // Per-jet histograms
     std::vector<TH1D*> h_jetPt_noSF(maxJets), h_jetPt_withSF(maxJets), h_jetPt_reweighted(maxJets);
     std::vector<TH1D*> h_bTag_noSF(maxJets),  h_bTag_withSF(maxJets),  h_bTag_reweighted(maxJets);
 
@@ -623,10 +593,16 @@ void BTagSFProcessor::Loop()
     }
 
     // ====================================================================
-    // Phase 4: Pass 2 — Apply Weights & Fill
+    // Phase 4: Pass 2 — Validation hist fill (noSF / withSF / reweighted)
+    //
+    // Note: per-group ratio is finalized in makeReweightJSON.cpp after
+    //       cross-sample sum, so here `reweighted` uses a placeholder
+    //       (locally computed sample-only ratio). True closure plot must
+    //       be made downstream after JSON load (or use plot_btag.py with
+    //       the JSON loaded for proper reweight).
     // ====================================================================
     std::cout << "╔══════════════════════════════════════════════════════════════╗\n";
-    std::cout << "║  Pass 2: Applying B-Tag Reweight & Filling Histograms        ║\n";
+    std::cout << "║  Pass 2: Filling validation histograms (3-tier)              ║\n";
     std::cout << "╚══════════════════════════════════════════════════════════════╝\n";
 
     long long nProcessed = 0, nPassed = 0;
@@ -642,7 +618,6 @@ void BTagSFProcessor::Loop()
 
         ++nProcessed;
 
-        // ── Skimming invariants (nJets >= 6) ──
         if (reader->GetNJets() < Config::minNJets)
             FATAL_INVARIANT("NJets < 6", j);
         if (reader->GetJetPt().at(5) <= 40.0)
@@ -672,7 +647,7 @@ void BTagSFProcessor::Loop()
                        * xsecWeight;
         }
 
-        // ── Trigger SF (FATAL on failure — no fallback) ──
+        // ── Trigger SF ──
         double trigSF = 1.0;
         if (!isData) {
             trigSF = evaluateTriggerSF(nBJets, jet6Eta, currentHT, jet6PT);
@@ -690,27 +665,24 @@ void BTagSFProcessor::Loop()
             }
         }
 
-        // ── Normalization ratio (from 1D or 2D flat bin, per process key) ──
-        // [ttH AN App. A.2] inclusive ttbar dispatched to LF/cc/B by genTtbarId
+        // ── Sample-local ratio for in-sample closure preview ──
+        // (true per-group ratio is computed in makeReweightJSON after group sum)
         double btagNormRatio = 1.0;
         if (!isData) {
-            const std::string pkey2 = CurrentEventProcessKey(sampleName.Data());
+            const std::string pkey = CurrentEventProcessKey(sampleName.Data());
             const int flatBin = Config::getReweightFlatIndex(nJets, currentHT);
-            // Defensive lookup: pkey may be absent in pathological cases
-            auto it = normRatio.find(pkey2);
-            if (it != normRatio.end()) {
-                btagNormRatio = it->second.at("central").at(flatBin);
-            } else {
-                btagNormRatio = 1.0;
+            auto it = sumNoSF.find(pkey);
+            if (it != sumNoSF.end()) {
+                const double sN = it->second.at("central").at(flatBin);
+                const double sW = sumWithSF[pkey]["central"][flatBin];
+                btagNormRatio = (sW > 0.0) ? sN / sW : 1.0;
             }
         }
 
-        // ── Three weight tiers ──
         const double wNoSF       = baseWeight * trigSF;
         const double wWithSF     = baseWeight * trigSF * btagEvtWeight;
         const double wReweighted = baseWeight * trigSF * btagEvtWeight * btagNormRatio;
 
-        // ── Fill event-level ──
         h_nJets_noSF->Fill(nJets, wNoSF);
         h_nJets_withSF->Fill(nJets, wWithSF);
         h_nJets_reweighted->Fill(nJets, wReweighted);
@@ -723,7 +695,6 @@ void BTagSFProcessor::Loop()
         h_nbJets_withSF->Fill(nBJets, wWithSF);
         h_nbJets_reweighted->Fill(nBJets, wReweighted);
 
-        // ── Fill per-jet ──
         const int nToFill = std::min(nJets, maxJets);
         const auto& ptVec   = reader->GetJetPt();
         const auto& btagVec = reader->GetBTagScore();
@@ -758,8 +729,11 @@ void BTagSFProcessor::Loop()
         std::cout << "  Σ weight (noSF)      : " << totNoSF << "\n";
         std::cout << "  Σ weight (withSF)    : " << h_nJets_withSF->Integral() << "\n";
         std::cout << "  Σ weight (reweighted): " << totReW << "\n";
-        std::cout << "  Deviation: " << std::setprecision(4) << dev << " %"
+        std::cout << "  Deviation (in-sample): " << std::setprecision(4) << dev << " %"
                   << (dev > 1.0 ? "  [WARNING]" : "  [OK]") << "\n";
+        std::cout << "  Note: this is a sample-local closure preview. The true\n"
+                     "  per-group closure is verified after group-sum in makeReweightJSON\n"
+                     "  and JSON-based application downstream.\n";
     }
     std::cout << "╚══════════════════════════════════════════════════════════════╝\n\n";
 
@@ -781,21 +755,4 @@ void BTagSFProcessor::Loop()
     outputFile->cd();
     std::cout << ">>> Done.\n";
     delete outputFile;
-}
-
-// ============================================================================
-// CurrentEventProcessKey
-// ----------------------------------------------------------------------------
-// Returns the process key for the current event (read by reader->GetEntry()).
-// For inclusive ttbar samples (TTToHadronic / TTToSemiLeptonic / TTTo2L2Nu)
-// the event is dispatched into LF / cc / B groups via genTtbarId.
-// Other samples return their sample name unchanged.
-// [Ref] ttH AN-19-094 §A.2 (b-tag normalization SF derived per ttbar category)
-// ============================================================================
-std::string BTagSFProcessor::CurrentEventProcessKey(const std::string& sampleName) const
-{
-    if (!TtCat::IsInclusiveTtbar(sampleName)) {
-        return sampleName;
-    }
-    return TtCat::MakeProcessKey(sampleName, reader->GetGenTtbarId());
 }

@@ -742,13 +742,22 @@ double CorrectionsManager::getBTagSF_Shape(int hadFlav, double eta, double pt, d
 // sampleName_이 비어있거나 JSON에 해당 process가 없으면 1.0 반환 (경고 출력).
 // ───────────────────────────────────────────────────────────────────────────
 double CorrectionsManager::getBTagReweight(const std::string& systematic,
+                                           const std::string& processKey,
                                            int nJets,
                                            double HT) const {
     // Data이거나 reweight JSON이 로드되지 않았으면 1.0 반환
     if (isData_ || !btagReweight_) return 1.0;
 
-    // sampleName이 비어있으면 lookup 불가
-    if (sampleName_.empty()) return 1.0;
+    // processKey가 비어있으면 lookup 불가 — fallback 1.0
+    if (processKey.empty()) {
+        static int warnCount = 0;
+        if (warnCount++ < 3) {
+            std::cerr << "[getBTagReweight] Empty processKey — caller must pass "
+                         "TtCatGroup::MakeProcessKey(sampleName, genTtbarId). "
+                         "Falling back to 1.0.\n";
+        }
+        return 1.0;
+    }
 
     try {
         if (btagReweightIs2D_) {
@@ -757,13 +766,13 @@ double CorrectionsManager::getBTagReweight(const std::string& systematic,
             // ═══════════════════════════════════════════════════════════════
             // HT가 음수이면 기본값으로 최소 edge 사용 (안전장치)
             double ht_val = (HT >= 0.0) ? HT : 500.0;
-            return btagReweight_->evaluate({systematic, sampleName_,
+            return btagReweight_->evaluate({systematic, processKey,
                                             static_cast<int>(nJets), ht_val});
         } else {
             // ═══════════════════════════════════════════════════════════════
             // 1D 모드 (1D mode): evaluate({systematic, process, nJets})
             // ═══════════════════════════════════════════════════════════════
-            return btagReweight_->evaluate({systematic, sampleName_,
+            return btagReweight_->evaluate({systematic, processKey,
                                             static_cast<int>(nJets)});
         }
     } catch (const std::exception& e) {
@@ -772,7 +781,7 @@ double CorrectionsManager::getBTagReweight(const std::string& systematic,
         if (errCount++ < 5) {
             std::cerr << "[getBTagReweight] Error: " << e.what()
                       << " syst=" << systematic
-                      << " process=" << sampleName_
+                      << " process=" << processKey
                       << " nJets=" << nJets
                       << " HT=" << HT << std::endl;
         }

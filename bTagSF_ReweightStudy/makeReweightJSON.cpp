@@ -1,31 +1,37 @@
 // ============================================================================
 // makeReweightJSON.cpp
 //
-// Aggregates normalization ratios from all bTagReweight_<sample>.root files
-// into a single correctionlib-schema-v2 JSON.
+// Aggregates per-sample (Σω_noSF, Σω_withSF) histograms — produced by
+// exe_BTagSF — into per-process-group b-tag normalization ratios, and writes
+// a single correctionlib-schema-v2 JSON.
 //
-// The JSON can then be loaded by any downstream analysis code:
+// Method (ttH AN-19-094 §A.2.1):
+//   1. Each sample contributes 1 or 3 process keys (inclusive ttbar → 3).
+//   2. For each process *group* (defined in Config_TtCatGroup.hh), sum the
+//      sumNoSF and sumWithSF accumulators across all samples in the group.
+//   3. ratio[group, syst, bin] = Σ_samples(sumNoSF) / Σ_samples(sumWithSF).
+//   4. Write 'systematic → process_group → binning → ratio' JSON.
 //
-//   1D (useHTForReweight = false):
-//     double ratio = rw->evaluate({"central", "TTToHadronic", 8});
+// Input ROOT files (from exe_BTagSF):
+//   bTagReweight_<sample>.root
+//     └── NormSums/h_sumNoSF_nJets[_HT]_<pkey>_<syst>
+//         NormSums/h_sumWithSF_nJets[_HT]_<pkey>_<syst>
 //
-//   2D (useHTForReweight = true):
-//     double ratio = rw->evaluate({"central", "TTToHadronic", 8, 750.0});
-//
-// Schema:
-//   systematic (Category) → process (Category) → Binning/MultiBinning → ratio
+// Output JSON:
+//   <Config::btagReweightJSON>   (path defined in Config.hh)
+//   correctionlib schema v2.
+//   correction name = "btagNormReweight"
+//   inputs: systematic (string), process (string), nJets (int), [HT (real)]
+//   output: normalization ratio (real)
 //
 // Usage:
 //   make exe_MakeJSON
-//   ./exe_MakeJSON                        # uses all MC samples from Config
-//   ./exe_MakeJSON TTToHadronic tt4b      # specific samples only
-//
-// Requires: ROOT 6, nlohmann/json (single-include header in include/nlohmann/)
+//   ./exe_MakeJSON                     # uses all MC samples from Config
+//   ./exe_MakeJSON TTToHadronic ttbb   # specific samples only
 //
 // IMPORTANT:
-//   This executable and exe_BTagSF MUST be compiled with the same
-//   Config::useHTForReweight setting. If they disagree, the histogram
-//   names inside the ROOT files will not match and an error will be raised.
+//   exe_BTagSF and exe_MakeJSON MUST be compiled with the same
+//   Config::useHTForReweight setting. Histogram names differ by 1D/2D.
 //
 // Author: Junghyun Lee
 // ============================================================================
@@ -35,6 +41,7 @@
 #include <string>
 #include <vector>
 #include <iomanip>
+#include <map>
 
 #include <TFile.h>
 #include <TH1D.h>
@@ -42,33 +49,39 @@
 #include <TString.h>
 
 #include "Config.hh"
+#include "Config_TtCatGroup.hh"
 #include "nlohmann/json.hpp"
 
 using json = nlohmann::json;
 
 int main(int argc, char** argv)
 {
-    // ── Determine sample list ──
+    // ────────────────────────────────────────────────────────────────────
+    // Determine sample list
+    // ────────────────────────────────────────────────────────────────────
     std::vector<std::string> mcSamples;
-
     if (argc > 1) {
-        // User-specified samples
         for (int i = 1; i < argc; ++i)
             mcSamples.emplace_back(argv[i]);
     } else {
-        // All MC from Config registry
         mcSamples = Config::GetMCSampleNames();
     }
 
     const auto& systematics = Config::btagSystematics;
-    const int maxBin  = Config::btagMaxNJetsBin;
-    const int nHTBins = Config::getNumHTBins();
-    const bool use2D  = Config::useHTForReweight;
+    const int   maxBin      = Config::btagMaxNJetsBin;
+    const int   nHTBins     = Config::getNumHTBins();
+    const bool  use2D       = Config::useHTForReweight;
+    const int   totalBins   = use2D ? (maxBin + 1) * nHTBins : (maxBin + 1);
 
+    const auto allGroups = TtCatGroup::AllProcessGroupKeys();
+
+    // ────────────────────────────────────────────────────────────────────
+    // Banner
+    // ────────────────────────────────────────────────────────────────────
     std::cout << "╔══════════════════════════════════════════════════════════════╗\n";
-    std::cout << "║  makeReweightJSON: correctionlib JSON writer                 ║\n";
+    std::cout << "║  makeReweightJSON: per-process-group ratio aggregator        ║\n";
     std::cout << "╠══════════════════════════════════════════════════════════════╣\n";
-    std::cout << "  MC samples    : " << mcSamples.size() << "\n";
+    std::cout << "  Input samples : " << mcSamples.size() << "\n";
     std::cout << "  Systematics   : " << systematics.size() << "\n";
     std::cout << "  Reweight mode : " << (use2D ? "2D (nJets × HT)" : "1D (nJets)") << "\n";
     std::cout << "  nJets bins    : 0 to " << maxBin << "\n";
@@ -80,133 +93,228 @@ int main(int argc, char** argv)
         }
         std::cout << "]\n";
     }
-    std::cout << "  Total bins/proc: " << Config::getTotalReweightBins() << "\n";
-    std::cout << "  Output        : " << Config::btagReweightJSON << "\n";
+    std::cout << "  Process groups: " << allGroups.size() << "  (";
+    for (size_t i = 0; i < allGroups.size(); ++i) {
+        std::cout << allGroups[i];
+        if (i + 1 < allGroups.size()) std::cout << ", ";
+    }
+    std::cout << ")\n";
     std::cout << "╚══════════════════════════════════════════════════════════════╝\n\n";
 
-    // ── Build nJets edges: [0.0, 1.0, 2.0, ..., maxBin+1.0] ──
-    // [중요] correctionlib Binning/MultiBinning은 edge를 반드시 float로 요구.
-    //        int를 넣으면 JSON에서 0, 1, 2 (소수점 없음)로 직렬화되어
-    //        "Invalid edge type" 에러가 발생한다.
+    // ────────────────────────────────────────────────────────────────────
+    // Build edges (correctionlib requires double for Binning/MultiBinning)
+    // ────────────────────────────────────────────────────────────────────
     json nJetsEdges = json::array();
-    for (int b = 0; b <= maxBin + 1; ++b) nJetsEdges.push_back(static_cast<double>(b));
+    for (int b = 0; b <= maxBin + 1; ++b)
+        nJetsEdges.push_back(static_cast<double>(b));
 
-    // ── Build HT edges (only used in 2D mode) ──
     json htEdgesJSON = json::array();
     if (use2D) {
         for (double e : Config::reweightHT_edges) htEdgesJSON.push_back(e);
     }
 
-// ── Track which process keys were actually loaded ──
-    std::vector<std::string> loadedSamples;
+    // ────────────────────────────────────────────────────────────────────
+    // Phase 1: Group sums across samples
+    //
+    //   For each (group, syst, bin) accumulate sumNoSF and sumWithSF
+    //   from every sample whose process key resolves to that group.
+    // ────────────────────────────────────────────────────────────────────
+    using BinVec = std::vector<double>;
+    std::map<std::string, std::map<std::string, BinVec>> groupSumNoSF;
+    std::map<std::string, std::map<std::string, BinVec>> groupSumWithSF;
 
-    // ── Build: systematic → process_key → binning/multibinning → ratio ──
-    // [ttH AN App. A.2] inclusive ttbar samples produce 3 process keys each
-    // (LF / cc / B), other samples produce a single key = sample name.
-    // The hist names inside each ROOT file are now:
-    //   2D: "NormRatios/h_normRatio_nJets_HT_<pkey>_<syst>"
-    //   1D: "NormRatios/h_normRatio_nJets_<pkey>_<syst>"
+    for (const auto& g : allGroups) {
+        for (const auto& s : systematics) {
+            groupSumNoSF  [g][s].assign(totalBins, 0.0);
+            groupSumWithSF[g][s].assign(totalBins, 0.0);
+        }
+    }
+
+    int nReadOK = 0, nReadFail = 0;
+    std::map<std::string, std::vector<std::string>> groupSources;  // for reporting
+
+    for (const auto& sample : mcSamples) {
+        TString fname = TString(Config::btagOutPrefix) + sample.c_str() + ".root";
+        TFile* f = TFile::Open(fname, "READ");
+        if (!f || f->IsZombie()) {
+            std::cerr << "  [WARN] Cannot open " << fname << ", skipping\n";
+            if (f) { f->Close(); delete f; }
+            ++nReadFail;
+            continue;
+        }
+
+        // Process keys this sample contributes to
+        const auto pkeys = TtCatGroup::ProcessKeysForSample(sample);
+
+        bool sampleHasAnyHist = false;
+
+        for (const auto& pkey : pkeys) {
+            const std::string skey = TtCatGroup::SanitizeKey(pkey);
+            bool foundForThisPkey = false;
+
+            for (const auto& syst : systematics) {
+                TString hNameNo, hNameWi;
+                if (use2D) {
+                    hNameNo = "NormSums/h_sumNoSF_nJets_HT_"
+                            + TString(skey.c_str()) + "_" + TString(syst.c_str());
+                    hNameWi = "NormSums/h_sumWithSF_nJets_HT_"
+                            + TString(skey.c_str()) + "_" + TString(syst.c_str());
+                } else {
+                    hNameNo = "NormSums/h_sumNoSF_nJets_"
+                            + TString(skey.c_str()) + "_" + TString(syst.c_str());
+                    hNameWi = "NormSums/h_sumWithSF_nJets_"
+                            + TString(skey.c_str()) + "_" + TString(syst.c_str());
+                }
+
+                if (use2D) {
+                    auto* hNo = dynamic_cast<TH2D*>(f->Get(hNameNo));
+                    auto* hWi = dynamic_cast<TH2D*>(f->Get(hNameWi));
+                    if (!hNo || !hWi) {
+                        if (syst == "central") {
+                            std::cerr << "  [WARN] " << sample
+                                      << " missing " << hNameNo
+                                      << " or " << hNameWi << "\n";
+                        }
+                        continue;
+                    }
+                    for (int nj = 0; nj <= maxBin; ++nj) {
+                        for (int ht = 0; ht < nHTBins; ++ht) {
+                            const int idx = nj * nHTBins + ht;
+                            groupSumNoSF  [pkey][syst][idx] += hNo->GetBinContent(nj+1, ht+1);
+                            groupSumWithSF[pkey][syst][idx] += hWi->GetBinContent(nj+1, ht+1);
+                        }
+                    }
+                    foundForThisPkey = true;
+                    sampleHasAnyHist = true;
+                } else {
+                    auto* hNo = dynamic_cast<TH1D*>(f->Get(hNameNo));
+                    auto* hWi = dynamic_cast<TH1D*>(f->Get(hNameWi));
+                    if (!hNo || !hWi) {
+                        if (syst == "central") {
+                            std::cerr << "  [WARN] " << sample
+                                      << " missing " << hNameNo
+                                      << " or " << hNameWi << "\n";
+                        }
+                        continue;
+                    }
+                    for (int b = 0; b <= maxBin; ++b) {
+                        groupSumNoSF  [pkey][syst][b] += hNo->GetBinContent(b+1);
+                        groupSumWithSF[pkey][syst][b] += hWi->GetBinContent(b+1);
+                    }
+                    foundForThisPkey = true;
+                    sampleHasAnyHist = true;
+                }
+            } // syst loop
+
+            if (foundForThisPkey) {
+                groupSources[pkey].push_back(sample);
+            }
+        } // pkey loop
+
+        f->Close(); delete f;
+        if (sampleHasAnyHist) ++nReadOK; else ++nReadFail;
+    } // sample loop
+
+    std::cout << ">>> Read " << nReadOK << " samples successfully, "
+              << nReadFail << " failed/empty\n";
+
+    // ── Per-group source breakdown ──
+    std::cout << "\n>>> Process group composition:\n";
+    for (const auto& g : allGroups) {
+        const auto& srcList = groupSources[g];
+        std::cout << "  " << std::left << std::setw(10) << g << " <- ";
+        if (srcList.empty()) {
+            std::cout << "(no samples — group will be all-1.0!)";
+        } else {
+            for (size_t i = 0; i < srcList.size(); ++i) {
+                std::cout << srcList[i];
+                if (i + 1 < srcList.size()) std::cout << ", ";
+            }
+        }
+        std::cout << "\n";
+    }
+    std::cout << "\n";
+
+    // ────────────────────────────────────────────────────────────────────
+    // Phase 2: Compute ratios = Σ_noSF / Σ_withSF per (group, syst, bin)
+    // ────────────────────────────────────────────────────────────────────
+    std::map<std::string, std::map<std::string, BinVec>> groupRatio;
+    for (const auto& g : allGroups) {
+        for (const auto& s : systematics) {
+            groupRatio[g][s].assign(totalBins, 1.0);
+            for (int b = 0; b < totalBins; ++b) {
+                const double sN = groupSumNoSF  [g][s][b];
+                const double sW = groupSumWithSF[g][s][b];
+                groupRatio[g][s][b] = (sW > 0.0) ? sN / sW : 1.0;
+            }
+        }
+    }
+
+    // ── Print central ratios for inspection ──
+    std::cout << ">>> Central ratios per group (representative bins):\n";
+    for (const auto& g : allGroups) {
+        // Pick two representative bins to display
+        const int sample_idx_7  = use2D ? (7  * nHTBins) : 7;
+        const int sample_idx_10 = use2D ? (10 * nHTBins) : 10;
+        const double r7  = (sample_idx_7  < totalBins) ? groupRatio[g]["central"][sample_idx_7]  : 1.0;
+        const double r10 = (sample_idx_10 < totalBins) ? groupRatio[g]["central"][sample_idx_10] : 1.0;
+        std::cout << "  " << std::left << std::setw(10) << g
+                  << "  r(nJ=7" << (use2D ? ",HT0" : "")
+                  << ")=" << std::fixed << std::setprecision(5) << r7
+                  << "  r(nJ=10" << (use2D ? ",HT0" : "")
+                  << ")=" << r10 << "\n";
+    }
+    std::cout << "\n";
+
+    // ────────────────────────────────────────────────────────────────────
+    // Phase 3: Build correctionlib JSON (schema v2)
+    //
+    //   systematic (Category) → process (Category) → Binning/MultiBinning
+    // ────────────────────────────────────────────────────────────────────
     json systContent = json::array();
+
+    int nGroupsLoaded = 0;
+    for (const auto& g : allGroups) {
+        if (!groupSources[g].empty()) ++nGroupsLoaded;
+    }
+    if (nGroupsLoaded == 0) {
+        std::cerr << "\n[FATAL] No process group received any sample data.\n"
+                     "        Run exe_BTagSF first to produce the input ROOT files.\n";
+        return 1;
+    }
 
     for (const auto& syst : systematics) {
         json processContent = json::array();
 
-        for (const auto& sample : mcSamples) {
-            TString fname = TString(Config::btagOutPrefix) + sample.c_str() + ".root";
-            TFile* f = TFile::Open(fname, "READ");
-            if (!f || f->IsZombie()) {
-                if (syst == "central")
-                    std::cerr << "  [WARN] Cannot open " << fname << ", skipping\n";
-                if (f) { f->Close(); delete f; }
-                continue;
-            }
+        for (const auto& pkey : allGroups) {
+            json binningNode;
 
-            // For inclusive ttbar: 3 process keys per sample (LF/cc/B)
-            // For others: 1 process key (== sample name)
-            const auto pkeys = TtCat::AllProcessKeysForSample(sample);
-
-            for (const auto& pkey : pkeys) {
-                json binningNode;
-
-                if (use2D) {
-                    // ── 2D: Read TH2D, write MultiBinning ──
-                    TString hname = "NormRatios/h_normRatio_nJets_HT_"
-                                  + TString(pkey.c_str()) + "_"
-                                  + TString(syst.c_str());
-                    TH2D* h = dynamic_cast<TH2D*>(f->Get(hname));
-                    if (!h) {
-                        if (syst == "central")
-                            std::cerr << "  [WARN] Missing " << hname << " in " << fname
-                                      << " (was exe_BTagSF compiled with useHTForReweight=true,"
-                                      << " or did this event-class have zero events?)\n";
-                        continue;
-                    }
-
-                    // Flatten content: nJets row-major, HT fast axis
-                    json content = json::array();
-                    for (int nj = 0; nj <= maxBin; ++nj) {
-                        for (int ht = 0; ht < nHTBins; ++ht) {
-                            content.push_back(h->GetBinContent(nj + 1, ht + 1));
-                        }
-                    }
-
-                    binningNode["nodetype"] = "multibinning";
-                    binningNode["inputs"]   = json::array({"nJets", "HT"});
-                    binningNode["edges"]    = json::array({nJetsEdges, htEdgesJSON});
-                    binningNode["content"]  = content;
-                    binningNode["flow"]     = "clamp";
-
-                    if (syst == "central") {
-                        double r7  = h->GetBinContent(8, 1);
-                        double r10 = h->GetBinContent(11, 1);
-                        std::cout << "  " << std::left << std::setw(28) << pkey
-                                  << "  r(nJ=7,HT0)=" << std::fixed
-                                  << std::setprecision(5) << r7
-                                  << "  r(nJ=10,HT0)=" << r10 << "\n";
-                        loadedSamples.push_back(pkey);
-                    }
-
-                } else {
-                    // ── 1D: Read TH1D, write Binning ──
-                    TString hname = "NormRatios/h_normRatio_nJets_"
-                                  + TString(pkey.c_str()) + "_"
-                                  + TString(syst.c_str());
-                    TH1D* h = dynamic_cast<TH1D*>(f->Get(hname));
-                    if (!h) {
-                        if (syst == "central")
-                            std::cerr << "  [WARN] Missing " << hname << " in " << fname
-                                      << " (was exe_BTagSF compiled with useHTForReweight=false,"
-                                      << " or did this event-class have zero events?)\n";
-                        continue;
-                    }
-
-                    json content = json::array();
-                    for (int b = 0; b <= maxBin; ++b) {
-                        content.push_back(h->GetBinContent(b + 1));
-                    }
-
-                    binningNode["nodetype"] = "binning";
-                    binningNode["input"]    = "nJets";
-                    binningNode["edges"]    = nJetsEdges;
-                    binningNode["content"]  = content;
-                    binningNode["flow"]     = "clamp";
-
-                    if (syst == "central") {
-                        double r7  = (h->GetNbinsX() >= 8)  ? h->GetBinContent(8)  : 1.0;
-                        double r10 = (h->GetNbinsX() >= 11) ? h->GetBinContent(11) : 1.0;
-                        std::cout << "  " << std::left << std::setw(28) << pkey
-                                  << "  r(nJ=7)=" << std::fixed << std::setprecision(5) << r7
-                                  << "  r(nJ=10)=" << r10 << "\n";
-                        loadedSamples.push_back(pkey);
+            json content = json::array();
+            if (use2D) {
+                for (int nj = 0; nj <= maxBin; ++nj) {
+                    for (int ht = 0; ht < nHTBins; ++ht) {
+                        const int idx = nj * nHTBins + ht;
+                        content.push_back(groupRatio[pkey][syst][idx]);
                     }
                 }
+                binningNode["nodetype"] = "multibinning";
+                binningNode["inputs"]   = json::array({"nJets", "HT"});
+                binningNode["edges"]    = json::array({nJetsEdges, htEdgesJSON});
+                binningNode["content"]  = content;
+                binningNode["flow"]     = "clamp";
+            } else {
+                for (int b = 0; b <= maxBin; ++b) {
+                    content.push_back(groupRatio[pkey][syst][b]);
+                }
+                binningNode["nodetype"] = "binning";
+                binningNode["input"]    = "nJets";
+                binningNode["edges"]    = nJetsEdges;
+                binningNode["content"]  = content;
+                binningNode["flow"]     = "clamp";
+            }
 
-                // Push into JSON: process key, not sample name
-                processContent.push_back({{"key", pkey}, {"value", binningNode}});
-            } // end pkey loop
-
-            f->Close(); delete f;
-        } // end sample loop
+            processContent.push_back({{"key", pkey}, {"value", binningNode}});
+        }
 
         json processCategory;
         processCategory["nodetype"] = "category";
@@ -214,36 +322,40 @@ int main(int argc, char** argv)
         processCategory["content"]  = processContent;
 
         systContent.push_back({{"key", syst}, {"value", processCategory}});
-    } // end syst loop
-
-    if (loadedSamples.empty()) {
-        std::cerr << "\n[FATAL] No samples loaded. Run exe_BTagSF first.\n";
-        return 1;
     }
 
     // ── Assemble correctionlib correction object ──
     json correction;
-    correction["name"]        = "btagNormReweight";
+    correction["name"]    = "btagNormReweight";
+    correction["version"] = 1;
 
     if (use2D) {
         correction["description"] =
-            "Per-process, per-(nJets,HT) normalization ratio for b-tag shape SF reweighting. "
-            "Usage: finalWeight = btagEventWeight * evaluate({systematic, process, nJets, HT}). "
-            "Preserves event yields before b-tag selection per (nJets,HT) bin.";
+            "Per-process-group, per-(nJets,HT) normalization ratio for b-tag "
+            "shape SF reweighting. Process groups: tt+LF, tt+cc, tt+B, ttH, "
+            "ttHH, ttZH4b, ttZZ4b. Inclusive ttbar dispatched by genTtbarId. "
+            "Minor backgrounds (QCD, V+jets, ...) borrow tt+LF (ttH AN App. A.2.1). "
+            "Usage: finalWeight = btagEventWeight * "
+            "evaluate({systematic, process, nJets, HT}). "
+            "Caller must compute process via TtCatGroup::MakeProcessKey().";
     } else {
         correction["description"] =
-            "Per-process, per-nJets normalization ratio for b-tag shape SF reweighting. "
-            "Usage: finalWeight = btagEventWeight * evaluate({systematic, process, nJets}). "
-            "Preserves event yields before b-tag selection per nJets bin.";
+            "Per-process-group, per-nJets normalization ratio for b-tag shape SF "
+            "reweighting. Process groups: tt+LF, tt+cc, tt+B, ttH, ttHH, ttZH4b, "
+            "ttZZ4b. Inclusive ttbar dispatched by genTtbarId. Minor backgrounds "
+            "borrow tt+LF (ttH AN App. A.2.1). "
+            "Usage: finalWeight = btagEventWeight * "
+            "evaluate({systematic, process, nJets}). "
+            "Caller must compute process via TtCatGroup::MakeProcessKey().";
     }
-    correction["version"] = 1;
 
     // ── Inputs ──
     json inputsArray = json::array({
         {{"name", "systematic"}, {"type", "string"},
          {"description", "Systematic variation: central, up_lf, down_lf, ..."}},
         {{"name", "process"}, {"type", "string"},
-         {"description", "MC process name (e.g. TTToHadronic, ttHH)"}},
+         {"description", "Process group key (one of tt+LF, tt+cc, tt+B, ttH, "
+                         "ttHH, ttZH4b, ttZZ4b). Use TtCatGroup::MakeProcessKey()."}},
         {{"name", "nJets"}, {"type", "int"},
          {"description", "Number of jets in the event"}}
     });
@@ -259,7 +371,7 @@ int main(int argc, char** argv)
 
     correction["output"] = {
         {"name", "weight"}, {"type", "real"},
-        {"description", "Normalization ratio"}
+        {"description", "Normalization ratio (preserves yield within process group)"}
     };
 
     json dataNode;
@@ -274,16 +386,20 @@ int main(int argc, char** argv)
 
     if (use2D) {
         root["description"] =
-            "B-tag shape SF normalization reweight factors, derived per MC process "
-            "per (nJets, HT) bin. Produced by makeReweightJSON.";
+            "B-tag shape SF per-process-group normalization reweight factors, "
+            "derived per (nJets, HT) bin via cross-sample sum within each "
+            "process group (ttH AN-19-094 App. A.2.1). Produced by makeReweightJSON.";
     } else {
         root["description"] =
-            "B-tag shape SF normalization reweight factors, derived per MC process "
-            "per nJets bin. Produced by makeReweightJSON.";
+            "B-tag shape SF per-process-group normalization reweight factors, "
+            "derived per nJets bin via cross-sample sum within each process group "
+            "(ttH AN-19-094 App. A.2.1). Produced by makeReweightJSON.";
     }
     root["corrections"] = json::array({correction});
 
-    // ── Write output ──
+    // ────────────────────────────────────────────────────────────────────
+    // Write output
+    // ────────────────────────────────────────────────────────────────────
     std::string outPath = Config::btagReweightJSON;
     std::ofstream out(outPath);
     if (!out.is_open()) {
@@ -294,18 +410,24 @@ int main(int argc, char** argv)
     out.close();
 
     std::cout << "\n>>> Written: " << outPath
-              << " (" << loadedSamples.size() << " processes × "
+              << " (" << allGroups.size() << " process groups × "
               << systematics.size() << " systematics)\n\n";
 
+    // ────────────────────────────────────────────────────────────────────
+    // Usage hints for downstream code
+    // ────────────────────────────────────────────────────────────────────
     std::cout << "  Usage in downstream code:\n";
     std::cout << "    auto cs = correction::CorrectionSet::from_file(\""
               << outPath << "\");\n";
     std::cout << "    auto rw = cs->at(\"btagNormReweight\");\n";
+    std::cout << "    // process key from sample name + genTtbarId:\n";
+    std::cout << "    std::string pkey = TtCatGroup::MakeProcessKey(sampleName, genTtbarId);\n";
     if (use2D) {
-        std::cout << "    double r = rw->evaluate({\"central\", \"TTToHadronic\", 8, 750.0});\n";
+        std::cout << "    double r = rw->evaluate({\"central\", pkey, nJets, HT});\n";
     } else {
-        std::cout << "    double r = rw->evaluate({\"central\", \"TTToHadronic\", 8});\n";
+        std::cout << "    double r = rw->evaluate({\"central\", pkey, nJets});\n";
     }
+
     std::cout << "\n  To compress: gzip " << outPath << "\n";
     std::cout << "  (correctionlib reads .json.gz natively)\n";
 

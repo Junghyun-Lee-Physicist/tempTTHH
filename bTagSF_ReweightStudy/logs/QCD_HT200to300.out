@@ -2,7 +2,7 @@
 
   [BTagSFProcessor] b-tag JSON: /Users/jhlee/correctionLib/corrections/jsonpog-integration/POG/BTV/2017_UL/btagging.json.gz
   [BTagSFProcessor] deepJet_shape inputs (5): systematic flavor abseta pt discriminant 
-  [BTagSFProcessor] trigger SF JSON: ../DerivedCorr/TriggerSF/trigger_sf.json.gz
+  [BTagSFProcessor] trigger SF JSON: TriggerSF/trigger_sf.json.gz
   [BTagSFProcessor] Init complete.
 
 
@@ -13,7 +13,7 @@
 ╟──────────────────────────────────────────────────────────────╢
   Input base dir : /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/
   Tree path      : Tree/Tree
-  Trigger SF JSON: ../DerivedCorr/TriggerSF/trigger_sf.json.gz
+  Trigger SF JSON: TriggerSF/trigger_sf.json.gz
 ╟──────────────────────────────────────────────────────────────╢
 ║ [Section 1-C] B-Tag Reweight                                 ║
 ╟──────────────────────────────────────────────────────────────╢
@@ -60,21 +60,31 @@ Sample Name: QCD_HT200to300
   nHTBins        : 15
 
 ╔══════════════════════════════════════════════════════════════╗
-║  Pass 1: Computing Normalization Ratios                      ║
-║  Process keys: 1 (QCD_HT200to300)
+║  Pass 1: Accumulating per-process (Σω_noSF, Σω_withSF)       ║
+║  Process groups for this sample: tt+LF
 ╚══════════════════════════════════════════════════════════════╝
     [Pass 1] 0 / 75 (0.0%)
 
-  Normalization ratios (central):
-  ── Process: QCD_HT200to300 ──
-  nJets/HT  |       HT0       HT1       HT2       HT3       HT4       HT5       HT6       HT7       HT8       HT9      HT10      HT11      HT12      HT13      HT14
-  ----------+------------------------------------------------------------------------------------------------------------------------------------------------------
-      8        |   0.37883   0.45449   0.41445   0.65441   0.36205   0.53725   0.39406   1.00000   1.00000   0.47478   1.00000   1.00000   1.00000   1.00000   1.00000
-      9        |   1.18624   1.00000   0.47341   1.00000   0.32836   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000
-     10        |   1.00000   0.46841   1.00000   1.00000   1.00000   1.00000   0.47413   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000   1.00000
+  Per-process accumulators (central):
+  ── tt+LF ──
+  bin  | sumNoSF        | sumWithSF      | local r (preview)
+  -----+----------------+----------------+---------
+   120 |      1843.7762 |      4830.6630 | 0.381682
+   121 |      3696.4348 |      8188.2053 | 0.451434
+   122 |      2700.8035 |      6523.1969 | 0.414031
+   123 |      1486.9758 |      2271.5038 | 0.654622
+   124 |      1516.4813 |      4184.0527 | 0.362443
+   125 |       802.6724 |      1494.0398 | 0.537250
+   126 |      2666.7724 |      6778.2027 | 0.393434
+   129 |       914.7633 |      1926.7103 | 0.474780
+   135 |       615.1812 |       518.5961 | 1.186243
+   137 |       633.7089 |      1338.6070 | 0.473409
+   139 |      1192.4613 |      3635.9644 | 0.327963
+   151 |       627.1711 |      1338.9377 | 0.468409
+   156 |       951.5940 |      2007.0274 | 0.474131
 
 ╔══════════════════════════════════════════════════════════════╗
-║  Pass 2: Applying B-Tag Reweight & Filling Histograms        ║
+║  Pass 2: Filling validation histograms (3-tier)              ║
 ╚══════════════════════════════════════════════════════════════╝
     [Pass 2] 0 / 75 (0.0%)
 
@@ -83,10 +93,13 @@ Sample Name: QCD_HT200to300
 ╠══════════════════════════════════════════════════════════════╣
   Events processed : 75
   Events passed    : 27
-  Σ weight (noSF)      : 19124.3050
-  Σ weight (withSF)    : 43682.8574
-  Σ weight (reweighted): 19124.3050
-  Deviation: 0.0000 %  [OK]
+  Σ weight (noSF)      : 19648.7962
+  Σ weight (withSF)    : 45035.7072
+  Σ weight (reweighted): 19648.7962
+  Deviation (in-sample): 0.0000 %  [OK]
+  Note: this is a sample-local closure preview. The true
+  per-group closure is verified after group-sum in makeReweightJSON
+  and JSON-based application downstream.
 ╚══════════════════════════════════════════════════════════════╝
 
 >>> Writing output to: bTagReweight_QCD_HT200to300.root

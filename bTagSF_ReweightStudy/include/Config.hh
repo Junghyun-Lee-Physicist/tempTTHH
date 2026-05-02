@@ -57,7 +57,7 @@ public:
     // ========================================================================
 
     static inline const std::string sfOutputJSON =
-        "../DerivedCorr/TriggerSF/trigger_sf.json.gz";
+        "TriggerSF/trigger_sf.json.gz";
 
     // ========================================================================
     // [Section 1-B] Sample Registry

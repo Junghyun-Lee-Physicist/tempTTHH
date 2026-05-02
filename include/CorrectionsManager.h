@@ -151,10 +151,18 @@ public:
     };
 
     // ═══════════════════════════════════════════════════════════════════════
-    // B-tag Normalization Reweight API
+    // B-tag Normalization Reweight (per process group)
+    // ═══════════════════════════════════════════════════════════════════════
     //
-    // b-tag shape SF 적용 후 yield 보존을 위한 정규화 비율 (normalization ratio).
-    // makeReweightJSON이 생성한 correctionlib JSON에서 로드.
+    // ttH AN-19-094 §A.2.1: b-tag normalization SF is derived per process group:
+    //   tt+LF, tt+cc, tt+B (= tt+b + tt+2b + tt+bb), ttH, ttHH, ttZH4b, ttZZ4b.
+    // Minor backgrounds (V+jets, single t, ttV, QCD, ...) borrow tt+LF.
+    //
+    // Process key dispatch (per event):
+    //   inclusive ttbar (TTToHadronic / SemiLep / 2L2Nu) → tt+LF/tt+cc/tt+B
+    //                                                     by genTtbarId
+    //   other samples → fixed mapping by sample name
+    //   See Config_TtCatGroup.hh::MakeProcessKey().
     //
     // JSON 스키마 (correctionlib v2):
     //   correction name = "btagNormReweight"
@@ -162,14 +170,27 @@ public:
     //   output: normalization ratio (real)
     //
     // 사용법 (Usage):
-    //   double r = corrMgr->getBTagReweight("central", 8, 750.0);  // 2D
-    //   double r = corrMgr->getBTagReweight("central", 8);          // 1D
+    //   const std::string pkey = TtCatGroup::MakeProcessKey(_sampleName,
+    //                                                       _ev->genTtbarId);
+    //   double r = corrMgr->getBTagReweight("central", pkey, nJets, HT);  // 2D
+    //   double r = corrMgr->getBTagReweight("central", pkey, nJets);      // 1D
     //
-    // sampleName은 생성자에서 설정됨 (process 인자로 자동 전달)
+    // 인자 (Arguments):
+    //   systematic : "central", "up_lf", "down_lf", "up_hf", "down_hf",
+    //                "up_cferr1", "down_cferr1", "up_cferr2", "down_cferr2",
+    //                "up_lfstats1", "down_lfstats1", "up_lfstats2", "down_lfstats2",
+    //                "up_hfstats1", "down_hfstats1", "up_hfstats2", "down_hfstats2",
+    //                "up_jes", "down_jes"
+    //   processKey : process group key. Empty → returns 1.0 (safe fallback).
+    //   nJets      : 이벤트의 jet 개수
+    //   HT         : 이벤트의 HT [GeV]. 1D 모드에서는 무시됨. 2D 모드에서
+    //                음수이면 500.0으로 fallback.
     // ═══════════════════════════════════════════════════════════════════════
     double getBTagReweight(const std::string& systematic,
+                           const std::string& processKey,
                            int nJets,
                            double HT = -1.0) const;
+
 
     // ═══════════════════════════════════════════════════════════════════════
     // Golden JSON API (Data only)

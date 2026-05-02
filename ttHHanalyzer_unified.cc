@@ -882,13 +882,15 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
     //   1) B-tag event weight (bTagWeight_central_)
     //      → computeBTagWeight()에서 이미 계산됨 (per-jet SF의 곱)
     //   2) Trigger SF
-    //      → HT × jet6PT 의존, 2D 히스토그램 lookup
-    //   3) B-tag normalization reweight
-    //      → nJets [× HT] 의존, correctionlib JSON lookup
+    //      → HT × jet6PT × nbjet × eta 의존, correctionlib JSON lookup
+    //   3) B-tag normalization reweight  [ttH AN App. A.2.1]
+    //      → process group × (nJets [, HT]) 의존
+    //      → process group은 inclusive ttbar의 경우 genTtbarId로 분기
+    //        (TTToHadronic/SemiLep/2L2Nu → tt+LF / tt+cc / tt+B)
+    //      → ttbb dedicated, ttHH, ttH, ttZH4b, ttZZ4b는 별도 group
+    //      → minor BG (QCD, V+jets, ...)는 tt+LF 차용
     //
     // 이 보정들은 kTotal step 직전에 _evtWeight에 곱해진다.
-    // 따라서 cutflow의 중간 단계(kNoCut ~ kHiggsMass)는
-    // 보정 전 weight로 기록되어 selection efficiency를 순수하게 반영한다.
     // ══════════════════════════════════════════════════════════════════════
     triggerSF_        = 1.0f;
     triggerSF_up_     = 1.0f;
@@ -903,33 +905,36 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
         _evtWeight *= bTagWeight_central_;
 
         // ── (2) Trigger SF ──
-        // HT와 6번째 jet의 pT에 의존하는 2D scale factor.
-        // selection 을 통과한 이벤트에서만 의미 있는 kinematics이므로
-        // 여기서 적용하는 것이 올바르다.
-	int nbjet     = thisEvent->getnSelbJet();
-        double ht     = thisEvent->getSumSelJetScalarpT();
-        double jet6pt = thisEvent->getSelJets()->at(5)->getp4()->Pt();
-	double jet6eta =  thisEvent->getSelJets()->at(5)->getp4()->Eta();
+        // HT, 6th-jet pT, nbjet, eta에 의존하는 4D scale factor.
+        const int    nbjet    = thisEvent->getnSelbJet();
+        const double ht       = thisEvent->getSumSelJetScalarpT();
+        const double jet6pt   = thisEvent->getSelJets()->at(5)->getp4()->Pt();
+        const double jet6eta  = thisEvent->getSelJets()->at(5)->getp4()->Eta();
 
-        
-
-        triggerSF_      = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt, 0.0));   // central
-        triggerSF_up_   = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt, +1.0));  // +1σ
-        triggerSF_down_ = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt, -1.0));  // -1σ
+        triggerSF_      = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt,  0.0));
+        triggerSF_up_   = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt, +1.0));
+        triggerSF_down_ = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt, -1.0));
 
         _evtWeight *= triggerSF_;
 
-        // ── (3) B-tag normalization reweight ──
-        // b-tag shape SF 적용 후 yield가 변하지 않도록 보정하는 정규화 비율.
-        // nJets [× HT] 의존, correctionlib JSON에서 lookup.
-        int nJets = thisEvent->getnSelJet();
+        // ── (3) B-tag normalization reweight (per process group) ──
+        // [ttH AN App. A.2.1] inclusive ttbar는 genTtbarId로 LF/cc/B 분기,
+        //                     non-ttbar samples는 sample name 기반 fixed mapping.
+        const int nJets = thisEvent->getnSelJet();
+
+        const std::string processKey = TtCatGroup::MakeProcessKey(
+            _sampleName, _ev->genTtbarId);
+
         btagNormReweight_ = static_cast<float>(
-            corrMgr->getBTagReweight("central", nJets, ht));
+            corrMgr->getBTagReweight("central", processKey, nJets, ht));
 
         _evtWeight *= btagNormReweight_;
 
         if (debugCorrections) {
             std::cout << "[selectObjects] Corrections applied:"
+                      << " sample=" << _sampleName
+                      << " genTtbarId=" << _ev->genTtbarId
+                      << " processKey=" << processKey
                       << " btagSF=" << bTagWeight_central_
                       << " trigSF=" << triggerSF_
                       << " btagReweight=" << btagNormReweight_

@@ -2,7 +2,7 @@
 
   [BTagSFProcessor] b-tag JSON: /Users/jhlee/correctionLib/corrections/jsonpog-integration/POG/BTV/2017_UL/btagging.json.gz
   [BTagSFProcessor] deepJet_shape inputs (5): systematic flavor abseta pt discriminant 
-  [BTagSFProcessor] trigger SF JSON: ../DerivedCorr/TriggerSF/trigger_sf.json.gz
+  [BTagSFProcessor] trigger SF JSON: TriggerSF/trigger_sf.json.gz
   [BTagSFProcessor] Init complete.
 
 
@@ -13,7 +13,7 @@
 ╟──────────────────────────────────────────────────────────────╢
   Input base dir : /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/
   Tree path      : Tree/Tree
-  Trigger SF JSON: ../DerivedCorr/TriggerSF/trigger_sf.json.gz
+  Trigger SF JSON: TriggerSF/trigger_sf.json.gz
 ╟──────────────────────────────────────────────────────────────╢
 ║ [Section 1-C] B-Tag Reweight                                 ║
 ╟──────────────────────────────────────────────────────────────╢
@@ -61,7 +61,7 @@ Sample Name: BTagCSV_E
   nHTBins        : 15
 
 ╔══════════════════════════════════════════════════════════════╗
-║  Pass 2: Applying B-Tag Reweight & Filling Histograms        ║
+║  Pass 2: Filling validation histograms (3-tier)              ║
 ╚══════════════════════════════════════════════════════════════╝
     [Pass 2] 0 / 159339 (0.0%)
 
