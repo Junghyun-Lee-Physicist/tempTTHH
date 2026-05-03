@@ -14,7 +14,7 @@ public:
     Int_t GetEntry(Long64_t entry);
 
     // --- Accessor Functions (Get...) ---
-    
+
     // 1. Triggers
     bool   GetPassTrigger_IsoMu27() const { return passTrigger_HLT_IsoMu27; }
     bool   GetPassTrigger_PFHT1050() const { return passTrigger_HLT_PFHT1050; }
@@ -45,17 +45,18 @@ public:
     Bool_t  GetPassMETFilters() const { return passMETFilters; }
     Bool_t  GetPassHadTrig() const { return passHadTrig; }
 
-    // =========================================================================
     // 5. B-tagging variables
-    //    - bTagScore : DeepJet discriminant per jet
-    //    - hadronFlavor : hadron-level jet flavor (5=b, 4=c, 0=light)
-    // =========================================================================
     const std::vector<float>& GetBTagScore() const { return *bTagScore; }
     const std::vector<int>&   GetHadronFlavor() const { return *hadFlavs; }
 
+    // 6. ttbar categorization (per-event genTtbarId; -1 if branch absent)
+    //    Used by BTagSFProcessor to dispatch inclusive ttbar events into
+    //    LF / cc / B process keys (ttH AN App. A.2).
+    Int_t  GetGenTtbarId() const { return genTtbarId; }
+
 
 private:
-    TTree          *fChain;   //! pointer to the analyzed TTree or TChain
+    TTree          *fChain;   //!
 
     // --- Data Members ---
     Bool_t          passTrigger_HLT_IsoMu27;
@@ -76,7 +77,6 @@ private:
     std::vector<float> *jetPt = nullptr;
     std::vector<float> *jetEta = nullptr;
 
-    // B-tagging
     std::vector<float> *bTagScore = nullptr;
     std::vector<int>   *hadFlavs  = nullptr;
 
@@ -88,17 +88,10 @@ private:
     Bool_t          passMETFilters;
     Bool_t          passHadTrig;
 
-    // =========================================================================
-    // [Branch Pointers]
-    // 1. Speed: Passing these to SetBranchAddress allows ROOT to bypass 
-    //    string lookups (internal map search), speeding up initialization.
-    // 2. Flexibility: Enables calling b_Var->GetEntry(i) to read ONLY specific 
-    //    branches instead of the full tree (Lazy Loading).
-    //
-    // Note on '//!': This tells ROOT's I/O system NOT to save these pointers 
-    // to the output file (transient), avoiding invalid memory address issues.
-    // =========================================================================
-    
+    // ttbar category
+    Int_t           genTtbarId = -1;   // initialized to "not ttbar"
+
+    // [Branch Pointers] (transient, '//!' tells ROOT not to serialize)
     TBranch        *b_passTrigger_HLT_IsoMu27 = nullptr;   //!
     TBranch        *b_passTrigger_HLT_PFHT1050 = nullptr;  //!
     TBranch        *b_passTrigger_6J1T_B = nullptr;        //!
@@ -117,7 +110,6 @@ private:
     TBranch        *b_jetPt = nullptr;    //!
     TBranch        *b_jetEta = nullptr;   //!
 
-    // B-tagging
     TBranch        *b_bTagScore = nullptr;  //!
     TBranch        *b_hadFlavs  = nullptr;  //!
 
@@ -128,6 +120,8 @@ private:
     TBranch        *b_failGoldenJson = nullptr;    //!
     TBranch        *b_passMETFilters = nullptr;    //!
     TBranch        *b_passHadTrig    = nullptr;    //!
+
+    TBranch        *b_genTtbarId = nullptr;        //!
 };
 
 #endif

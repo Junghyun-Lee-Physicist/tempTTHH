@@ -107,6 +107,15 @@ NtupleReader::NtupleReader(TTree *tree) : fChain(tree) {
     fChain->SetBranchAddress("passMETFilters", &passMETFilters, &b_passMETFilters);
     fChain->SetBranchAddress("passHadTrig", &passHadTrig, &b_passHadTrig);
 
+    // ttbar categorization (only present in MC ntuples — Data ntuples skip silently).
+    // If the branch doesn't exist, ROOT will print a warning and genTtbarId
+    // stays at its initial value (-1, meaning "not ttbar"). That's the desired
+    // behaviour: non-ttbar samples and Data both pass IsInclusiveTtbar()=false
+    // downstream and use sample name as process key.
+    if (fChain->GetBranch("genTtbarId")) {
+        fChain->SetBranchAddress("genTtbarId", &genTtbarId, &b_genTtbarId);
+    }
+
 }
 
 NtupleReader::~NtupleReader() {
