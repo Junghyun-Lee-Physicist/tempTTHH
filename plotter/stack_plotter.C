@@ -1,14 +1,28 @@
 /**
- * CMS Stack Plotter (Smart Color & Label Edition)
+ * CMS Stack Plotter (Smart Color & Label Edition + Yield Legend + Cutflow)
  *
- * Features:
+ * Features (unchanged from previous version):
  *   - QCD: red gradient by HT bin (light → dark)
  *   - TTbar: hadronic = blue, semi = teal, 2l = green
  *   - Smart legend: QCD grouped into one entry, short LaTeX labels
  *   - Signal/rare BG: distinct, muted colors
  *
+ * NEW in this revision:
+ *   - Cutflow histograms (cutflow / cutflow_w) are NO LONGER skipped — they
+ *     are drawn just like any other hist. Bin labels from the analyzer are
+ *     used as the x-axis tick labels.
+ *   - Higgs mass plots (cutStep_<N>_higgs can01/02) are drawn as before;
+ *     output file names with spaces are now sanitized to underscores so the
+ *     PNGs land at  cutStep_8_higgs_can01.png  (space-free, easier to ls).
+ *   - Each MC entry in the legend now carries its integrated yield in
+ *     parentheses, e.g.  "t#bar{t} (had)   12345.6"
+ *   - Data legend entry shows the data yield as a bare integer.
+ *   - The MC-sum legend entry "Total MC" is added (yield only) so the total
+ *     SF-corrected prediction is readable at a glance.
+ *
  * [ Usage ]
  * $ root -l -b -q stack_plotter.C+
+ * (Or invoked from scenario_runner.py wrapper.)
  */
 
 #include <iostream>
@@ -34,7 +48,9 @@
 #include "TSystem.h"
 #include "TROOT.h"
 #include "TError.h"
+#include "TPad.h"
 #include "TString.h"
+#include "TAxis.h"
 
 // ============================================================================
 // 1. DATA STRUCTURES
@@ -49,8 +65,8 @@ struct SampleInfo {
 };
 
 struct HistInfo {
-    std::string key_path;
-    std::string clean_name;
+    std::string key_path;     // ROOT internal path, e.g. "CutflowKinematics/cutflow_w"
+    std::string clean_name;   // sanitized file-system name (no slashes, no spaces)
 };
 
 // ============================================================================
@@ -66,6 +82,35 @@ std::string trim(const std::string& str) {
 
 void Log(std::string msg) {
     std::cout << "[StackPlotter] " << msg << std::endl;
+}
+
+/**
+ * Sanitize a path string for use as a filesystem name.
+ *   '/' → '_',  ' ' → '_',  any other character kept as-is.
+ * (The plotter writes PNGs whose name comes from the histogram path; histogram
+ * names like "cutStep_8_higgs can01" would otherwise produce a filename with
+ * a space in it.)
+ */
+std::string SanitizeForFilename(const std::string& s) {
+    std::string out = s;
+    for (char& c : out) {
+        if (c == '/' || c == ' ' || c == '\t') c = '_';
+    }
+    return out;
+}
+
+/**
+ * Format a yield number for the legend.
+ *   < 1000        → "%.1f"      (e.g. 12.3)
+ *   < 1e6         → "%.0f"      (e.g. 12345)
+ *   >= 1e6        → "%.2e"      (e.g. 1.23e+06)
+ */
+std::string FormatYield(double y) {
+    char buf[32];
+    if (y < 1000.0)        std::snprintf(buf, sizeof(buf), "%.1f",  y);
+    else if (y < 1.0e6)    std::snprintf(buf, sizeof(buf), "%.0f",  y);
+    else                   std::snprintf(buf, sizeof(buf), "%.2e",  y);
+    return std::string(buf);
 }
 
 std::vector<SampleInfo> ParseSampleConfig(std::string filename) {
@@ -147,13 +192,20 @@ std::vector<HistInfo> ParseStructureConfig(std::string filename) {
             std::string path = trim(raw.substr(9));
             size_t bracketPos = path.find("()/");
             if (bracketPos != std::string::npos) path.replace(bracketPos, 3, "");
-            if (path.find("Tree") != std::string::npos || path.find("cutflow") != std::string::npos) continue;
+
+            // Skip TTree branches (we only plot histograms here).
+            // Cutflow histograms (cutflow / cutflow_w / hCutFlow_w) are NOW
+            // INCLUDED — previously they were filtered out, which silently
+            // dropped the headline summary plot.
+            if (path.find("Tree") != std::string::npos) continue;
 
             HistInfo hi;
             hi.key_path = path;
-            std::string safe = path;
-            std::replace(safe.begin(), safe.end(), '/', '_');
-            hi.clean_name = safe;
+            // ── Sanitize for filesystem use ──
+            //   slashes → underscores, spaces → underscores.
+            //   This stops paths like "cutStep_8_higgs can01" from producing
+            //   a PNG file name with an embedded space.
+            hi.clean_name = SanitizeForFilename(path);
             hists.push_back(hi);
         }
     }
@@ -162,13 +214,9 @@ std::vector<HistInfo> ParseStructureConfig(std::string filename) {
 }
 
 // ============================================================================
-// 2.5  SMART COLOR & LABEL FUNCTIONS
+// 2.5  SMART COLOR & LABEL FUNCTIONS  (unchanged)
 // ============================================================================
 
-/**
- * QCD 샘플 이름에서 HT 하한값 추출.
- *   "QCD_HT700to1000" → 700,  "QCD_HT-200to300" → 200
- */
 int GetQCDHTValue(const std::string& name) {
     size_t pos = name.find("HT");
     if (pos == std::string::npos) pos = name.find("Pt");
@@ -180,15 +228,7 @@ int GetQCDHTValue(const std::string& name) {
     return numStr.empty() ? 0 : std::stoi(numStr);
 }
 
-/**
- * 샘플 이름 기반 자동 색상 결정.
- *   QCD  → 빨간 계열 그라데이션 (HT 낮을수록 연함)
- *   TTbar → hadronic=파랑, semi=청록, 2l=녹색
- *   Signal/Rare → 각각 구별되는 색
- */
 int GetSmartColor(const std::string& name) {
-
-    // ── QCD: red gradient (light→dark by HT) ───────────────────────────
     if (name.find("QCD") != std::string::npos) {
         int ht = GetQCDHTValue(name);
         if (ht >= 2000) return TColor::GetColor("#440000");
@@ -202,47 +242,37 @@ int GetSmartColor(const std::string& name) {
         if (ht >= 50)   return TColor::GetColor("#FFCCCC");
         return TColor::GetColor("#FF0000");
     }
-
-    // ── TTbar ───────────────────────────────────────────────────────────
     if (name.find("TTTo") != std::string::npos || name.find("TTto") != std::string::npos) {
         if (name.find("Hadronic") != std::string::npos || name.find("hadronic") != std::string::npos)
-            return TColor::GetColor("#3366CC");   // blue
+            return TColor::GetColor("#3366CC");
         if (name.find("SemiLep")  != std::string::npos || name.find("semilep") != std::string::npos)
-            return TColor::GetColor("#44BBBB");   // teal
+            return TColor::GetColor("#44BBBB");
         if (name.find("2L2Nu")    != std::string::npos || name.find("2l2nu") != std::string::npos)
-            return TColor::GetColor("#66AA66");   // green
-        return TColor::GetColor("#6699CC");       // generic TT
+            return TColor::GetColor("#66AA66");
+        return TColor::GetColor("#6699CC");
     }
-
-    // ── Signals (구체적 패턴 먼저 검사) ─────────────────────────────────
     if (name.find("ttHH") != std::string::npos || name.find("TTHH") != std::string::npos)
-        return TColor::GetColor("#FF8C00");   // dark orange
+        return TColor::GetColor("#FF8C00");
     if (name.find("tttt") != std::string::npos || name.find("TTTT") != std::string::npos)
-        return TColor::GetColor("#9B59B6");   // purple
+        return TColor::GetColor("#9B59B6");
     if (name.find("ttH")  != std::string::npos || name.find("TTH") != std::string::npos)
-        return TColor::GetColor("#F1C40F");   // gold
-
-    // ── Rare backgrounds ────────────────────────────────────────────────
+        return TColor::GetColor("#F1C40F");
     if (name.find("TTZ") != std::string::npos || name.find("ttZ") != std::string::npos)
-        return TColor::GetColor("#27AE60");   // emerald
+        return TColor::GetColor("#27AE60");
     if (name.find("TTW") != std::string::npos || name.find("ttW") != std::string::npos)
-        return TColor::GetColor("#D4A03C");   // mustard
+        return TColor::GetColor("#D4A03C");
     if (name.find("WJets") != std::string::npos)
-        return TColor::GetColor("#1ABC9C");   // turquoise
+        return TColor::GetColor("#1ABC9C");
     if (name.find("DYJets") != std::string::npos || name.find("DY") != std::string::npos)
-        return TColor::GetColor("#E67E22");   // carrot
+        return TColor::GetColor("#E67E22");
     if (name.find("SingleTop") != std::string::npos || name.find("ST_") != std::string::npos)
-        return TColor::GetColor("#95A5A6");   // concrete
+        return TColor::GetColor("#95A5A6");
     if (name.find("ZZ") != std::string::npos || name.find("WZ") != std::string::npos ||
         name.find("WW") != std::string::npos || name.find("VV") != std::string::npos)
-        return TColor::GetColor("#85C1E9");   // pastel blue
-
-    return TColor::GetColor("#BDC3C7");       // default: silver
+        return TColor::GetColor("#85C1E9");
+    return TColor::GetColor("#BDC3C7");
 }
 
-/**
- * CMS 접두어 제거 (TuneCP5, 13TeV, powheg 등).
- */
 std::string StripCMSSuffix(const std::string& raw) {
     std::string s = raw;
     const char* suffixes[] = {"_TuneCP5", "_13TeV", "_powheg", "_pythia8",
@@ -255,20 +285,9 @@ std::string StripCMSSuffix(const std::string& raw) {
     return s;
 }
 
-/**
- * Legend용 짧은 라벨 생성.
- *   QCD 전체    → "QCD"  (그룹화)
- *   TTToHadronic → "t#bar{t} (had)"
- *   ttHH         → "t#bar{t}HH"
- *   길이 초과    → 앞 18자 자르기
- */
 std::string ShortenLabel(const std::string& rawName) {
     std::string name = StripCMSSuffix(rawName);
-
-    // ── QCD: 그룹화 → 하나의 legend entry ──
     if (name.find("QCD") != std::string::npos) return "QCD";
-
-    // ── TTbar ──
     if (name.find("TTTo") != std::string::npos || name.find("TTto") != std::string::npos) {
         if (name.find("Hadronic") != std::string::npos || name.find("hadronic") != std::string::npos)
             return "t#bar{t} (had)";
@@ -278,16 +297,12 @@ std::string ShortenLabel(const std::string& rawName) {
             return "t#bar{t} (2l)";
         return "t#bar{t}";
     }
-
-    // ── Signals (구체적 패턴 먼저) ──
     if (name.find("ttHH") != std::string::npos || name.find("TTHH") != std::string::npos)
         return "t#bar{t}HH";
     if (name.find("tttt") != std::string::npos || name.find("TTTT") != std::string::npos)
         return "t#bar{t}t#bar{t}";
     if (name.find("ttH")  != std::string::npos || name.find("TTH") != std::string::npos)
         return "t#bar{t}H";
-
-    // ── Rare backgrounds ──
     if (name.find("TTZ")  != std::string::npos || name.find("ttZ") != std::string::npos)
         return "t#bar{t}Z";
     if (name.find("TTW")  != std::string::npos || name.find("ttW") != std::string::npos)
@@ -299,10 +314,55 @@ std::string ShortenLabel(const std::string& rawName) {
     if (name.find("ZZ") != std::string::npos || name.find("WZ") != std::string::npos ||
         name.find("WW") != std::string::npos || name.find("VV") != std::string::npos)
         return "VV";
-
-    // ── Fallback: 너무 길면 자름 ──
     if (name.length() > 18) return name.substr(0, 18);
     return name;
+}
+
+/**
+ * Pretty-print an x-axis title from a hist's internal path.
+ *   "CutflowKinematics/cutflow_w"        → "cut step"
+ *   "CutflowKinematics/cutflow"          → "cut step"
+ *   "CutflowKinematics/cutStep_8_ht"     → "H_{T} [GeV] (step 8)"
+ *   "CutflowKinematics/cutStep_8_hadW"   → "had W mass [GeV] (step 8)"
+ *   "CutflowKinematics/cutStep_8_higgs can01"
+ *                                         → "Higgs candidate 1 mass [GeV] (step 8)"
+ *   any other path                        → returned as-is
+ *
+ * Used only as the x-axis title; the file-name still uses clean_name so this
+ * cosmetic remap does not impact saved file paths.
+ */
+std::string PrettyAxisTitle(const std::string& path) {
+    // grab the last path component
+    auto slash = path.find_last_of('/');
+    std::string tail = (slash == std::string::npos) ? path : path.substr(slash + 1);
+
+    if (tail == "cutflow" || tail == "cutflow_w" || tail == "hCutFlow"
+            || tail == "hCutFlow_w") {
+        return "cut step";
+    }
+
+    // cutStep_<N>_<var>
+    if (tail.rfind("cutStep_", 0) == 0) {
+        size_t p1 = tail.find('_');                    // _ after cutStep
+        size_t p2 = tail.find('_', p1 + 1);            // _ after step number
+        if (p1 != std::string::npos && p2 != std::string::npos) {
+            std::string stepNum = tail.substr(p1 + 1, p2 - p1 - 1);
+            std::string varTail = tail.substr(p2 + 1);
+            std::string varPretty;
+            if      (varTail == "ht")       varPretty = "H_{T} [GeV]";
+            else if (varTail == "hadW")     varPretty = "had W mass [GeV]";
+            else if (varTail.rfind("higgs can01", 0) == 0
+                  || varTail == "higgs_can01")
+                varPretty = "Higgs candidate 1 mass [GeV]";
+            else if (varTail.rfind("higgs can02", 0) == 0
+                  || varTail == "higgs_can02")
+                varPretty = "Higgs candidate 2 mass [GeV]";
+            else if (varTail.rfind("jet", 0) == 0)  varPretty = varTail;
+            else                                    varPretty = varTail;
+            return varPretty + " (step " + stepNum + ")";
+        }
+    }
+    return path;
 }
 
 // ============================================================================
@@ -342,7 +402,6 @@ TH1F* GetSummedHist(const SampleInfo& sample, const std::string& histPath) {
         delete f;
     }
 
-    // Data: 기존 스타일 유지.  MC: 색은 여기서 안 건드림 → main loop에서 override
     if (hTotal) {
         if (sample.type == "DATA") {
             hTotal->SetMarkerStyle(20); hTotal->SetMarkerSize(1.0); hTotal->SetLineColor(kBlack);
@@ -393,19 +452,24 @@ void stack_plotter() {
         TH1F* hData = nullptr;
         TH1F* hMcSum = nullptr;
 
-        // ── Legend: 기존보다 넓게, 폰트 키움 ──
-        TLegend* leg = new TLegend(0.48, 0.58, 0.93, 0.89);
+        // ── Legend (slightly taller to accommodate yields + Total MC row) ──
+        TLegend* leg = new TLegend(0.42, 0.55, 0.93, 0.89);
         leg->SetBorderSize(0);
         leg->SetFillStyle(0);
-        leg->SetTextSize(0.038);
+        leg->SetTextSize(0.034);
         leg->SetTextFont(42);
         leg->SetNColumns(2);
 
         bool hasData = false;
         bool hasMC = false;
 
-        // QCD/TTZ/TTW 등 같은 라벨끼리 legend에 한 번만 추가
-        std::set<std::string> legendAdded;
+        // Group same-label samples (e.g. all QCD HT slices) into one legend
+        // entry whose yield is summed across the group.
+        // Map: short label → (representative TH1F* for color, accumulated yield)
+        std::map<std::string, std::pair<TH1F*, double>> legendGroup;
+        // Insertion order kept separately so the legend appears in the order
+        // the first member of each group was encountered.
+        std::vector<std::string> legendOrder;
 
         for (const auto& sample : samples) {
             TH1F* h = GetSummedHist(sample, hInfo.key_path);
@@ -417,17 +481,21 @@ void stack_plotter() {
                 hasData = true; delete h;
             }
             else {
-                // ── Smart color override (YAML 색상 무시, 이름 기반 결정) ──
                 int smartColor = GetSmartColor(sample.name);
                 h->SetFillColor(smartColor);
 
                 hs->Add(h);
 
-                // ── Short label + 중복 그룹은 한 번만 legend 추가 ──
                 std::string shortLabel = ShortenLabel(sample.name);
-                if (legendAdded.find(shortLabel) == legendAdded.end()) {
-                    leg->AddEntry(h, shortLabel.c_str(), "f");
-                    legendAdded.insert(shortLabel);
+                double thisYield = h->Integral(0, h->GetNbinsX() + 1);
+                auto it = legendGroup.find(shortLabel);
+                if (it == legendGroup.end()) {
+                    legendGroup[shortLabel] = std::make_pair(h, thisYield);
+                    legendOrder.push_back(shortLabel);
+                } else {
+                    // Same legend group already seen — accumulate yield only
+                    // (color already set on the representative entry).
+                    it->second.second += thisYield;
                 }
 
                 if (!hMcSum) { hMcSum = (TH1F*)h->Clone("hMcSum"); hMcSum->SetDirectory(0); }
@@ -436,7 +504,35 @@ void stack_plotter() {
             }
         }
 
-        if (hasData) leg->AddEntry(hData, "Data", "lp");
+        // ── Build legend entries with yield strings ────────────────────────
+        // Order: Data first (top-right), then MC by insertion order (which
+        // mirrors YAML order — currently sample-name alphabetical). The MC-sum
+        // row is added at the end so it sits at the bottom of the legend.
+        if (hasData && hData) {
+            const double dataYield = hData->Integral(0, hData->GetNbinsX() + 1);
+            leg->AddEntry(hData,
+                          Form("Data   %s", FormatYield(dataYield).c_str()),
+                          "lp");
+        }
+        for (const auto& lbl : legendOrder) {
+            const auto& entry = legendGroup[lbl];
+            TH1F* representative = entry.first;
+            const double y       = entry.second;
+            leg->AddEntry(representative,
+                          Form("%s   %s", lbl.c_str(),
+                                          FormatYield(y).c_str()),
+                          "f");
+        }
+        if (hasMC && hMcSum) {
+            const double mcYield = hMcSum->Integral(0, hMcSum->GetNbinsX() + 1);
+            // Use a dummy invisible marker entry so only the text shows.
+            // (TLegend requires a TObject*; we pass hMcSum and hide the marker
+            // by using "" option — ROOT accepts empty option as "no draw".)
+            leg->AddEntry((TObject*)nullptr,
+                          Form("Total MC   %s",
+                               FormatYield(mcYield).c_str()),
+                          "");
+        }
 
         if (!hasMC) {
             delete hs; delete leg; if(hData) delete hData; if(hMcSum) delete hMcSum;
@@ -444,7 +540,6 @@ void stack_plotter() {
             continue;
         }
 
-        // [Fix] Check if Histogram is empty (Max <= 0) to avoid Log scale crash
         double yMaxMC = (hMcSum) ? hMcSum->GetMaximum() : 0.0;
         double yMaxData = (hasData && hData) ? hData->GetMaximum() : 0.0;
         double globalMax = std::max(yMaxMC, yMaxData);
@@ -487,6 +582,16 @@ void stack_plotter() {
         if (hasData) hData->Draw("SAME EP");
         leg->Draw(); DrawCMSLabel(LUMI);
 
+        // Detect whether this is a cutflow plot — used to widen the ratio
+        // range a touch (cutflows can swing more in early bins where stats
+        // are dominated by a few events) and to propagate per-bin labels
+        // from the histograms onto the ratio panel.
+        const std::string tail = (hInfo.key_path.find_last_of('/') == std::string::npos)
+            ? hInfo.key_path
+            : hInfo.key_path.substr(hInfo.key_path.find_last_of('/') + 1);
+        const bool isCutflow = (tail == "cutflow" || tail == "cutflow_w"
+                              || tail == "hCutFlow" || tail == "hCutFlow_w");
+
         pad2->cd(); pad2->SetGridy();
         if (hasData && hMcSum) {
             TH1F* hRatio = (TH1F*)hData->Clone("hRatio");
@@ -496,10 +601,21 @@ void stack_plotter() {
 
             hRatio->GetYaxis()->SetTitle("Data / Pred."); hRatio->GetYaxis()->SetNdivisions(505);
             hRatio->GetYaxis()->SetTitleSize(0.12); hRatio->GetYaxis()->SetTitleOffset(0.5); hRatio->GetYaxis()->SetLabelSize(0.1);
-            hRatio->GetYaxis()->SetRangeUser(0.0, 2.0);
 
-            hRatio->GetXaxis()->SetTitle(hInfo.key_path.c_str());
-            hRatio->GetXaxis()->SetTitleSize(0.14); hRatio->GetXaxis()->SetTitleOffset(1.0); hRatio->GetXaxis()->SetLabelSize(0.12);
+            // Cutflow: keep the wider panel; other vars: 0.0–2.0 as before.
+            if (isCutflow) hRatio->GetYaxis()->SetRangeUser(0.0, 2.5);
+            else           hRatio->GetYaxis()->SetRangeUser(0.0, 2.0);
+
+            hRatio->GetXaxis()->SetTitle(PrettyAxisTitle(hInfo.key_path).c_str());
+            hRatio->GetXaxis()->SetTitleSize(0.14); hRatio->GetXaxis()->SetTitleOffset(1.0); hRatio->GetXaxis()->SetLabelSize(0.10);
+
+            // Cutflow histograms have per-bin labels assigned by the analyzer
+            // (see ttHHanalyzer_unified.h::initHistograms _cutStepLabels).
+            // Force-show them on the ratio panel x-axis for readability.
+            if (isCutflow) {
+                hRatio->GetXaxis()->LabelsOption("v");   // vertical
+                hRatio->GetXaxis()->SetLabelSize(0.085);
+            }
 
             hRatio->Draw("EP");
             TLine* line = new TLine(hRatio->GetXaxis()->GetXmin(), 1, hRatio->GetXaxis()->GetXmax(), 1);

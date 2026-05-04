@@ -1377,8 +1377,8 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
         const bool mustAgreeBroken =
             !agreeAnaGenIdVsNtuPrim || !agreeAnaGenPartVsNtuXval;
         const bool shouldPrint =
-            (dbgCount < 20) ||
-            (dbgCount < 100 && (mustAgreeBroken || isHeavyFlav));
+            (dbgCount < 5) ||
+            (dbgCount < 10 && (mustAgreeBroken || isHeavyFlav));
 
         if (shouldPrint) {
             std::cout << "\n===== [ttCatDebug] Event #" << dbgCount
@@ -2493,15 +2493,28 @@ void ttHHanalyzer_unified::writeTree(){
     
 }
 
-//----------------------------------------------------------------------------
+
+// =============================================================================
+// main() — entry point for the ttHH(4b) FH analyzer
+// -----------------------------------------------------------------------------
+// All argument parsing is done by tnm.cc::commandLine::decode, including the
+// optional --val-* flags used by the kValidationStudy mode. The fields read
+// here are added in tnm.h (see commandLine struct) and parsed in tnm.cc
+// (see decode()).
+//
+// For non-validation modes the val* fields hold their default values (which
+// reproduce kMainAnalysis behaviour exactly), so the validation block below
+// is harmless even when entered defensively.
+// =============================================================================
 int main(int argc, char** argv){
+
     commandLine cl(argc, argv);
     vector<string> filenames = fileNames(cl.filelist);
-    double weight = cl.externalweight;   // Get global weight 
+    double weight = cl.externalweight;   // global per-sample weight
 
-    // ===========================================
-    // Parse and validate analysis mode
-    // ===========================================
+    // ─────────────────────────────────────────────────────────────────────
+    // 1. Parse and validate analysis mode
+    // ─────────────────────────────────────────────────────────────────────
     AnalysisMode mode;
     try {
         mode = parseAnalysisMode(cl.analysisMode);
@@ -2510,112 +2523,92 @@ int main(int argc, char** argv){
         std::cerr << e.what() << std::endl;
         return 1;
     }
-    // ===========================================
 
-    std::cout << "\n--------- Check arugments ---------------------------------------\n" << std::endl;
+    // ─────────────────────────────────────────────────────────────────────
+    // 2. Echo arguments for log
+    // ─────────────────────────────────────────────────────────────────────
+    std::cout << "\n--------- Check arguments ---------------------------------------\n" << std::endl;
     std::cout << "  - [ output file name ] --> " << cl.outputfilename << std::endl;
     std::cout << "  - [ runYear -string- ] --> " << cl.runYear << std::endl;
     std::cout << "  - [ DataOrMC -string- ] --> " << cl.DataOrMC << std::endl;
     std::cout << "  - [ sampleName ] --> " << cl.sampleName << std::endl;
     std::cout << "  - [ eraName ] --> " << cl.eraName << std::endl;
-    std::cout << "  - [ analysisMode ] --> " << analysisModeName(mode) << std::endl;  
-    std::cout << "\n--------- Check arugments ---------------------------------------\n" << std::endl;
+    std::cout << "  - [ analysisMode ] --> " << analysisModeName(mode) << std::endl;
+    std::cout << "\n--------- Check arguments ---------------------------------------\n" << std::endl;
 
-
-    // Create tree reader
+    // ─────────────────────────────────────────────────────────────────────
+    // 3. Open input ntuple stream
+    // ─────────────────────────────────────────────────────────────────────
     itreestream stream(filenames, "Events");
     if ( !stream.good() ) error("can't read root input files");
-
     eventBuffer ev(stream);
     std::cout << " Output filename: " << cl.outputfilename << std::endl;
-    ////ttHHanalyzer_unified analysis(cl.outputfilename, &ev, weight, true)
-  
-    // If you want to check or modify arguments,
-    // Please check the [ src/tnm.cc ]
-    // Arguments structure --> filelist, outputDirName, weight, Year, Data or MC, sampleName
 
+    // ─────────────────────────────────────────────────────────────────────
+    // 4. Construct the analyzer instance
+    //    constructor signature:
+    //      (outFile, eventBuffer, weight, sysToggle, year, dataOrMC,
+    //       sampleName, era, debug, mode)
+    // ─────────────────────────────────────────────────────────────────────
     bool debugVerbose = false;
+    ttHHanalyzer_unified analysis(
+        cl.outputfilename,
+        &ev,
+        weight,
+        true,               // legacy systematics toggle
+        cl.runYear,
+        cl.DataOrMC,
+        cl.sampleName,
+        cl.eraName,
+        debugVerbose,
+        mode
+    );
 
-    ttHHanalyzer_unified analysis(cl.outputfilename, &ev, weight, true, cl.runYear, cl.DataOrMC, cl.sampleName, cl.eraName, debugVerbose, mode);
-
+    // ─────────────────────────────────────────────────────────────────────
+    // 5. [Validation Study] — push --val-* flags into the analyzer
+    //
+    // tnm.cc::commandLine::decode has already read every --val-* flag and
+    // stored them in cl.val* fields. Defaults reproduce kMainAnalysis
+    // behaviour, so a user who passes no flags still gets a sane run.
+    //
+    // Block runs only when --mode validation; ignored otherwise.
+    // ─────────────────────────────────────────────────────────────────────
     if (mode == AnalysisMode::kValidationStudy) {
         ValidationConfig vcfg;
+        vcfg.scenarioName            = cl.valScenario;
+        vcfg.nbJetsCut               = cl.valNbJetsCut;
+        vcfg.forceHiggsRecoMinBjets  = cl.valHRecoMin;
+        vcfg.applyHadWWindow         = (cl.valApplyHadW      != 0);
+        vcfg.applyHiggsWindow        = (cl.valApplyHiggsWin  != 0);
+        vcfg.tightenJet8             = (cl.valTightenJet8    != 0);
+        vcfg.applyBtagShapeSF        = (cl.valApplyBtagShape != 0);
+        vcfg.applyBtagNormSF         = (cl.valApplyBtagNorm  != 0);
+        vcfg.applyTriggerSF          = (cl.valApplyTrig      != 0);
+        vcfg.applyTopPtSF            = (cl.valApplyTopPt     != 0);
+        vcfg.ttHVRStyle              = (cl.valTtHVRStyle     != 0);
 
-        auto findArgValue = [&](const std::string& key) -> std::string {
-            const std::string eqPrefix = key + "=";
-            for (int i = 1; i < argc; ++i) {
-                const std::string arg = argv[i];
-                if (arg == key && i + 1 < argc) {
-                    return argv[i + 1];
-                }
-                if (arg.rfind(eqPrefix, 0) == 0) {
-                    return arg.substr(eqPrefix.size());
-                }
-            }
-            return "";
-        };
-
-        auto getStringArg = [&](const std::string& key, const std::string& def) -> std::string {
-            const std::string v = findArgValue(key);
-            return v.empty() ? def : v;
-        };
-
-        auto getIntArg = [&](const std::string& key, int def) -> int {
-            const std::string v = findArgValue(key);
-            if (v.empty()) return def;
-            try {
-                return std::stoi(v);
-            }
-            catch (const std::exception&) {
-                std::cerr << "[Validation] invalid integer for " << key
-                          << ": " << v << "; using default " << def
-                          << std::endl;
-                return def;
-            }
-        };
-
-        auto getBoolArg = [&](const std::string& key, bool def) -> bool {
-            std::string v = findArgValue(key);
-            if (v.empty()) return def;
-            std::transform(v.begin(), v.end(), v.begin(),
-                           [](unsigned char c) { return std::tolower(c); });
-            if (v == "1" || v == "true" || v == "yes" || v == "on") return true;
-            if (v == "0" || v == "false" || v == "no" || v == "off") return false;
-            std::cerr << "[Validation] invalid bool for " << key
-                      << ": " << v << "; using default " << def
-                      << std::endl;
-            return def;
-        };
-
-        vcfg.scenarioName           = getStringArg("--val-scenario", vcfg.scenarioName);
-        vcfg.nbJetsCut             = getIntArg("--val-nbJetsCut", vcfg.nbJetsCut);
-        vcfg.applyHadWWindow       = getBoolArg("--val-hadWWindow", vcfg.applyHadWWindow);
-        vcfg.applyHiggsWindow      = getBoolArg("--val-higgsWindow", vcfg.applyHiggsWindow);
-        vcfg.tightenJet8           = getBoolArg("--val-tightenJet8", vcfg.tightenJet8);
-        vcfg.forceHiggsRecoMinBjets = getIntArg("--val-hRecoMin", vcfg.forceHiggsRecoMinBjets);
-        vcfg.applyBtagShapeSF      = getBoolArg("--val-btagShape", vcfg.applyBtagShapeSF);
-        vcfg.applyBtagNormSF       = getBoolArg("--val-btagNorm", vcfg.applyBtagNormSF);
-        vcfg.applyTriggerSF        = getBoolArg("--val-trig", vcfg.applyTriggerSF);
-        vcfg.applyTopPtSF          = getBoolArg("--val-topPt", vcfg.applyTopPtSF);
-        vcfg.ttHVRStyle            = getBoolArg("--val-ttHVR", vcfg.ttHVRStyle);
-
+        // ttH VR preset overrides individual fields when requested.
+        // Preserve the user-supplied scenario tag for log/output naming.
         if (vcfg.ttHVRStyle) {
-            vcfg.applyTtHVRPreset();
+            const std::string preservedName = vcfg.scenarioName;
+            vcfg.applyTtHVRPreset();   // resets fields, sets scenarioName="ttHVR"
+            if (!preservedName.empty() && preservedName != "default") {
+                vcfg.scenarioName = preservedName;
+            }
         }
 
+        // Push effective config; setValidationConfig prints it to stdout.
         analysis.setValidationConfig(vcfg);
     }
 
-
+    // ─────────────────────────────────────────────────────────────────────
+    // 6. Run the analysis
+    // ─────────────────────────────────────────────────────────────────────
     if(debugVerbose) std::cout<<"debug : Before [ performAnalysis ] in main() function"<<std::endl;
     analysis.performAnalysis();
     if(debugVerbose) std::cout<<"debug : After [ performAnalysis() ] and Before [ ev.close() ].. in main() function"<<std::endl;
-
     ev.close();
     if(debugVerbose) std::cout<<"debug : After [ ev.close() ] in main() function"<<std::endl;
-
-    //of.close();
-    if(debugVerbose) std::cout<<"debug : End of main() function"<<std::endl;
 
     return 0;
 }

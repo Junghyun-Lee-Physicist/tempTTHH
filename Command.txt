@@ -65,6 +65,17 @@
   --era D \
   --mode trigsf
 
+# 4. Validation check
+./ttHHanalyzer_unified \
+    --filelist filelistTest/file_tt4b_Tier3.txt \
+    --output test_validation_baseline.root \
+    --weight 0.001299971501 \
+    --year 2017 \
+    --dataOrMC MC \
+    --sample tt4b \
+    --mode validation \
+    --val-scenario sanity_test \
+    --val-nbJetsCut 2 
 
 no warning make
 --> 

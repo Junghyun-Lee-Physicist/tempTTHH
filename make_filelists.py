@@ -5,7 +5,7 @@ import shutil
 # [설정] 경로 확인
 # ==============================================================================
 ##SAMPLE_DIR = "/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2017UL_30thDec2025_v8"
-SAMPLE_DIR = "/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2017UL_09thMar2026_v9_AddttJetsBranches"
+SAMPLE_DIR = "/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2017UL_08thApr2026_v18"
 OUTPUT_DIR = "filelistTier3" 
 
 # ==============================================================================

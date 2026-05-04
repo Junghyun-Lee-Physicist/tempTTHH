@@ -59,6 +59,22 @@ struct commandLine
     std::string eraName; //Gamze
     std::string analysisMode;  // NEW: Add this member
 
+    // ── [Validation Study] optional fields ─────────────────────────────
+    // Populated only when running with --mode validation. If omitted from
+    // argv, sentinel values keep behaviour identical to kMainAnalysis.
+    std::string valScenario      = "default";
+    int         valNbJetsCut     = 4;
+    int         valHRecoMin      = 4;
+    int         valApplyHadW     = 1;
+    int         valApplyHiggsWin = 0;
+    int         valTightenJet8   = 0;
+    int         valApplyBtagShape = 1;
+    int         valApplyBtagNorm  = 1;
+    int         valApplyTrig     = 1;
+    int         valApplyTopPt    = 0;
+    int         valTtHVRStyle    = 0;
+
+
     
   void decode(int argc, char** argv);
 };

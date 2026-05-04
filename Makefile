@@ -11,6 +11,16 @@
 # Usage:
 #   make                # builds everything quietly
 #   make VERBOSE=1      # prints detailed info messages
+#
+# Shared headers from b-tag SF reweight tool:
+#   The header `Config_TtCatGroup.hh` (process group mapping for b-tag
+#   normalization SF, ttH AN App. A.2.1) is a single-source-of-truth shared
+#   between the b-tag SF tool and this analyzer. Resolved via the variable
+#   BTAGSF_INCDIR (default: ../bTagSF_ReweightStudy/include relative to this
+#   Makefile's directory). Override at the command line if your tool lives
+#   elsewhere:
+#       make BTAGSF_INCDIR=/abs/path/to/bTagSF_ReweightStudy/include
+#   or export it from your environment.
 # -----------------------------------------------------------------------------
 
 ifndef ROOTSYS
@@ -47,14 +57,33 @@ CORR_LDFLAGS   := $(shell correction config --ldflags)
 $(info [CorrectionLib] CFLAGS: $(CORR_CFLAGS))
 $(info [CorrectionLib] LDFLAGS: $(CORR_LDFLAGS))
 
+# ───────────────────────────────
+#  Shared headers from b-tag SF reweight tool
+#  (single source of truth for Config_TtCatGroup.hh — ttH AN App. A.2.1)
+# ───────────────────────────────
+# Default location: sibling directory of analyzer.
+# Override at the command line:  make BTAGSF_INCDIR=/abs/path/to/include
+BTAGSF_INCDIR  ?= ./bTagSF_ReweightStudy/include
+
+# Sanity check: warn (don't fail) if the expected header is missing.
+# This lets developers who don't use the shared header still build.
+ifeq ($(wildcard $(BTAGSF_INCDIR)/Config_TtCatGroup.hh),)
+  $(warning [BTagSF Headers] Config_TtCatGroup.hh NOT FOUND in $(BTAGSF_INCDIR))
+  $(warning [BTagSF Headers]   → Set BTAGSF_INCDIR to the b-tag SF tool's include/ dir.)
+  $(warning [BTagSF Headers]   → Build will fail if any source #include's it.)
+else
+  $(info [BTagSF Headers] Using shared header from $(BTAGSF_INCDIR))
+endif
+
 SRC_DIR        := src
 OBJ_DIR        := tmp
 LIB_DIR        := lib
 INC_DIR        := include
 LIB_NAME       := ToolsForAnalysis
 
-# Include both ROOT and correctionlib headers
-INCLUDE_FLAGS  := -I. -I$(INC_DIR) -I$(SRC_DIR) $(ROOT_CFLAGS) $(CORR_CFLAGS)
+# Include ROOT, correctionlib, AND the shared b-tag SF headers
+INCLUDE_FLAGS  := -I. -I$(INC_DIR) -I$(SRC_DIR) -I$(BTAGSF_INCDIR) \
+                  $(ROOT_CFLAGS) $(CORR_CFLAGS)
 COMPILE_FLAGS  := -c -O2 -Wall -fPIC
 
 # Link against ROOT, correctionlib, and our shared library
@@ -135,4 +164,3 @@ $(APPLICATIONS): % : $(OBJ_DIR)/%.o $(SHARED_LIB)
 # ----------------------
 clean:
 	$(HIDE) rm -rf $(OBJ_DIR) $(LIB_DIR) $(SRC_DIR)/dictionaryForROOT.cc $(APPLICATIONS)
-
