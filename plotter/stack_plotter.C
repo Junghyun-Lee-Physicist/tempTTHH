@@ -8,9 +8,17 @@
  *   - Signal/rare BG: distinct, muted colors
  *
  * NEW in this revision:
- *   - Cutflow histograms (cutflow / cutflow_w) are NO LONGER skipped — they
- *     are drawn just like any other hist. Bin labels from the analyzer are
- *     used as the x-axis tick labels.
+ *   - structure_info.yml is now a FLAT list of plottable histograms.
+ *     extract_structure.py is the single source of truth for the "what is
+ *     plottable" policy (it filters out TTree/TBranch/TDirectory/TGraph
+ *     before writing the yaml). The plotter trusts the yaml verbatim.
+ *     Older nested-style structure_info.yml files are NO LONGER accepted —
+ *     re-run extract_structure.py to migrate.
+ *   - Cutflow histograms are now drawn just like any other hist. Their
+ *     actual ROOT path is `Tree/cutflow{,_w}` in the current analyzer
+ *     (writeTree() leaves the cwd at the "Tree" TDirectory and
+ *     hCutFlow->Write() runs immediately afterwards in performAnalysis()).
+ *     Bin labels from the analyzer are used as the x-axis tick labels.
  *   - Higgs mass plots (cutStep_<N>_higgs can01/02) are drawn as before;
  *     output file names with spaces are now sanitized to underscores so the
  *     PNGs land at  cutStep_8_higgs_can01.png  (space-free, easier to ls).
@@ -185,30 +193,63 @@ std::vector<HistInfo> ParseStructureConfig(std::string filename) {
         return hists;
     }
 
+    // ── Format expected: flat list under `histograms:` ────────────────────
+    //   description: ...
+    //   input_file:  ...
+    //   total_count: N
+    //   histograms:
+    //     - key_path: <path>
+    //       classname: TH1F
+    //       title: <text>
+    //       nbins: N
+    //       xlow: <float>
+    //       xhigh: <float>
+    //     - key_path: ...
+    //
+    // The extract_structure.py stage is responsible for emitting ONLY the
+    // histograms that should be plotted; this parser does not apply any
+    // further filter. (Single source of truth for "what is plottable" lives
+    // in extract_structure.py.)
+    //
+    // Older nested-style yaml is no longer accepted — regenerate the file
+    // with the new extract_structure.py if you see "no histograms found".
+
     std::string line;
+    bool inHistogramsBlock = false;
+
     while (std::getline(file, line)) {
         std::string raw = trim(line);
-        if (raw.rfind("key_path:", 0) == 0) {
-            std::string path = trim(raw.substr(9));
-            size_t bracketPos = path.find("()/");
-            if (bracketPos != std::string::npos) path.replace(bracketPos, 3, "");
+        if (raw.empty() || raw[0] == '#') continue;
 
-            // Skip TTree branches (we only plot histograms here).
-            // Cutflow histograms (cutflow / cutflow_w / hCutFlow_w) are NOW
-            // INCLUDED — previously they were filtered out, which silently
-            // dropped the headline summary plot.
-            if (path.find("Tree") != std::string::npos) continue;
+        if (raw == "histograms:") {
+            inHistogramsBlock = true;
+            continue;
+        }
+        if (!inHistogramsBlock) continue;
+
+        // Each entry begins with "- key_path: <value>". We only need
+        // key_path; other metadata (classname/title/nbins/xlow/xhigh)
+        // is informative but not consumed in the current plotter.
+        const std::string keyPrefix = "- key_path:";
+        if (raw.rfind(keyPrefix, 0) == 0) {
+            std::string path = trim(raw.substr(keyPrefix.size()));
+            // strip surrounding single or double quotes if present
+            if (path.size() >= 2 &&
+                ((path.front() == '\'' && path.back() == '\'') ||
+                 (path.front() == '"'  && path.back() == '"'))) {
+                path = path.substr(1, path.size() - 2);
+            }
+            if (path.empty()) continue;
 
             HistInfo hi;
             hi.key_path = path;
             // ── Sanitize for filesystem use ──
             //   slashes → underscores, spaces → underscores.
-            //   This stops paths like "cutStep_8_higgs can01" from producing
-            //   a PNG file name with an embedded space.
             hi.clean_name = SanitizeForFilename(path);
             hists.push_back(hi);
         }
     }
+
     std::cout << "   -> Found " << hists.size() << " target histograms." << std::endl;
     return hists;
 }
@@ -336,6 +377,13 @@ std::string PrettyAxisTitle(const std::string& path) {
     auto slash = path.find_last_of('/');
     std::string tail = (slash == std::string::npos) ? path : path.substr(slash + 1);
 
+    // Cutflow histograms.  In the current analyzer they live at
+    //   Tree/cutflow      (← actual location: writeTree() leaves the cwd
+    //   Tree/cutflow_w     at the "Tree" TDirectory in performAnalysis(),
+    //                      and hCutFlow->Write() is called immediately
+    //                      afterwards).
+    // We treat the histograms generically by their tail name so the plotter
+    // stays correct even if the analyzer relocates them later.
     if (tail == "cutflow" || tail == "cutflow_w" || tail == "hCutFlow"
             || tail == "hCutFlow_w") {
         return "cut step";

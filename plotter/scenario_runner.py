@@ -185,122 +185,138 @@ def scan_scenario(scenario_dir: Path) -> dict:
 
 # -----------------------------------------------------------------------------
 # structure_info.yml extraction.
-# We import the user's extract_structure.py logic if importable; otherwise
-# fall back to a minimal inline scanner.
+#
+# Strategy:
+#   (1) If the user's extract_structure.py is importable, invoke it as a
+#       subprocess so its filtering/CLI flags govern the result. This keeps
+#       the scenario_runner from re-implementing the policy (the policy
+#       belongs in extract_structure.py per single-source-of-truth).
+#   (2) Otherwise fall back to a minimal inline extractor that emits the
+#       same flat yaml shape.
 # -----------------------------------------------------------------------------
 def extract_structure_yaml(reference_root_file: Path,
                            out_path: Path,
                            helper_dir: Path | None = None) -> bool:
     """
-    Extract the histogram/directory structure of one ROOT file and write
-    structure_info.yml in the format stack_plotter.C expects.
-
-    Returns True on success, False on failure.
+    Produce a structure_info.yml describing the plottable histograms inside
+    the given ROOT file. Returns True on success, False on failure.
     """
-    # Try to import user's helper if its directory was provided
+    # ── (1) Prefer the user's helper script ───────────────────────────────
     if helper_dir and (helper_dir / "extract_structure.py").exists():
-        sys.path.insert(0, str(helper_dir))
+        helper_script = helper_dir / "extract_structure.py"
+        cmd = [sys.executable, str(helper_script),
+               "--input",  str(reference_root_file),
+               "--output", str(out_path)]
+        print(f"    invoking helper: {' '.join(cmd)}")
         try:
-            import importlib
-            import extract_structure as es     # noqa: F401
-            # We intentionally do NOT call es directly because its INPUT_FILE
-            # / OUTPUT_FILE are hardcoded module-level constants. We instead
-            # reuse only its classification helpers (get_object_group,
-            # recursive_scan).
-            try:
-                import uproot
-            except ImportError:
-                print("    [error] uproot not available; cannot extract structure")
-                return False
-            with uproot.open(str(reference_root_file)) as f:
-                struct = es.recursive_scan(f)
-            yaml_text = _struct_to_yaml(struct, reference_root_file)
-            out_path.write_text(yaml_text)
-            return True
+            proc = subprocess.run(
+                cmd,
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                text=True, check=False
+            )
+            if proc.returncode == 0 and out_path.exists():
+                return True
+            print(f"    [warn] helper exited {proc.returncode}; tail:")
+            for ln in proc.stdout.splitlines()[-10:]:
+                print(f"      {ln}")
         except Exception as e:
-            print(f"    [warn] helper-based extraction failed ({e}); "
-                  "falling back to inline")
-        finally:
-            if str(helper_dir) in sys.path:
-                sys.path.remove(str(helper_dir))
+            print(f"    [warn] failed to invoke helper: {e}")
 
-    # Fallback: minimal inline structure extractor
+    # ── (2) Fallback: inline minimal extractor ────────────────────────────
+    print("    using inline structure extractor (fallback)")
     try:
         import uproot
     except ImportError:
         print("    [error] uproot not installed: pip install uproot")
         return False
 
-    def get_group(classname: str) -> str:
-        if classname.startswith(("TH", "TProfile")): return "Histogram"
-        if classname.startswith("TGraph"):           return "Graph"
-        if classname.startswith(("TTree", "TNtuple")): return "Tree"
-        if classname.startswith("TDirectory"):       return "Directory"
-        return "Unknown"
+    # Mirror the policy in extract_structure.py: keep TH1*, skip everything
+    # structural / non-stackable.
+    ALWAYS_SKIP = ("TTree", "TBranch", "TLeaf", "TNtuple",
+                   "TDirectoryFile", "TDirectory", "TList", "TKey",
+                   "TGraph")
+    KEEP_1D = ("TH1F", "TH1D", "TH1S", "TH1I", "TH1C", "TH1")
 
-    def scan(node, prefix=""):
-        out = {"directories": {}, "trees": {}, "histograms": []}
+    def is_keep(cls: str) -> bool:
+        if any(cls.startswith(p) for p in ALWAYS_SKIP):
+            return False
+        return any(cls.startswith(p) for p in KEEP_1D)
+
+    items: list[dict] = []
+
+    def walk(node, prefix=""):
         for key in node.keys(cycle=False):
-            obj = node[key]
-            cls = obj.classname if hasattr(obj, "classname") else type(obj).__name__
-            grp = get_group(cls)
-            if grp == "Directory":
-                out["directories"][key] = scan(obj, prefix + key + "/")
-            elif grp == "Tree":
-                out["trees"][key] = {
-                    "branches": [b for b in obj.keys()] if hasattr(obj, "keys") else []
-                }
-            elif grp == "Histogram":
-                out["histograms"].append({
-                    "name": key,
-                    "key_path": (prefix + key).lstrip("/"),
-                    "clean_name": (prefix + key).lstrip("/").replace("/", "_"),
-                    "class": cls,
-                })
-        return out
+            clean = key.split(";")[0]
+            try:
+                obj = node[clean]
+            except Exception:
+                continue
+            cls = getattr(obj, "classname", obj.__class__.__name__)
+            if cls.startswith(("TDirectoryFile", "TDirectory")):
+                walk(obj, prefix + clean + "/")
+                continue
+            if not is_keep(cls):
+                continue
+            title = ""
+            try:
+                title = obj.title or ""
+            except Exception:
+                pass
+            nbins = xlow = xhigh = None
+            try:
+                edges = obj.axis(0).edges()
+                nbins = len(edges) - 1
+                xlow = float(edges[0]); xhigh = float(edges[-1])
+            except Exception:
+                pass
+            items.append({
+                "key_path": (prefix + clean).lstrip("/"),
+                "classname": cls,
+                "title": title,
+                "nbins": nbins,
+                "xlow": xlow,
+                "xhigh": xhigh,
+            })
 
     with uproot.open(str(reference_root_file)) as f:
-        struct = scan(f)
-    yaml_text = _struct_to_yaml(struct, reference_root_file)
+        walk(f)
+
+    yaml_text = _flat_struct_to_yaml(items, reference_root_file)
     out_path.write_text(yaml_text)
     return True
 
 
-def _struct_to_yaml(struct: dict, ref_file: Path) -> str:
-    """Hand-write YAML for the structure dict, format matching the existing
-    extract_structure.py output."""
+def _flat_struct_to_yaml(items: list[dict], ref_file: Path) -> str:
+    """Emit the same flat yaml format as extract_structure.py."""
+    def quote(value):
+        if value is None:
+            return "null"
+        if isinstance(value, bool):
+            return "true" if value else "false"
+        if isinstance(value, (int, float)):
+            return f"{value}"
+        s = str(value)
+        if s == "":
+            return "''"
+        needs_quote = any(c in s for c in ":#[]{},&*!|>'\"%@`") or \
+                      s.lower() in ("yes", "no", "true", "false", "null", "~")
+        if needs_quote:
+            return "'" + s.replace("'", "''") + "'"
+        return s
+
     lines = [
-        f"description: 'Auto-generated by scenario_runner.py from "
-        f"{ref_file}'",
-        "structure:",
+        f"description: {quote(f'Plottable histograms extracted from {ref_file}')}",
+        f"input_file: {quote(str(ref_file))}",
+        f"total_count: {len(items)}",
+        "histograms:",
     ]
-
-    def write_node(node: dict, indent: int):
-        pad = "  " * indent
-        # directories
-        if node.get("directories"):
-            lines.append(f"{pad}directories:")
-            for dname, dnode in node["directories"].items():
-                lines.append(f"{pad}  {dname}:")
-                write_node(dnode, indent + 2)
-        # trees
-        if node.get("trees"):
-            lines.append(f"{pad}trees:")
-            for tname, tinfo in node["trees"].items():
-                lines.append(f"{pad}  {tname}:")
-                lines.append(f"{pad}    branches:")
-                for b in tinfo.get("branches", []):
-                    lines.append(f"{pad}      - {b}")
-        # histograms (this is the section the plotter actually consumes)
-        if node.get("histograms"):
-            lines.append(f"{pad}histograms:")
-            for h in node["histograms"]:
-                lines.append(f"{pad}  - name: {h['name']}")
-                lines.append(f"{pad}    key_path: {h['key_path']}")
-                lines.append(f"{pad}    clean_name: {h['clean_name']}")
-                lines.append(f"{pad}    class: {h['class']}")
-
-    write_node(struct, 1)
+    for h in items:
+        lines.append(f"  - key_path: {quote(h['key_path'])}")
+        lines.append(f"    classname: {quote(h['classname'])}")
+        lines.append(f"    title: {quote(h['title'])}")
+        lines.append(f"    nbins: {quote(h['nbins'])}")
+        lines.append(f"    xlow: {quote(h['xlow'])}")
+        lines.append(f"    xhigh: {quote(h['xhigh'])}")
     return "\n".join(lines) + "\n"
 
 

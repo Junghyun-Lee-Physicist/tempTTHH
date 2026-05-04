@@ -1,9 +1,30 @@
 
-python3 extract_structure.py
-# and you can get structure_info.yml
 # open configure file and delete unused histogram or leaf etc
+python3 extract_structure.py \
+    --input /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTToHadronic.root \
+    --output structure_info.yml
 
 
 python3 python3 create_sample_config.py
 # and you can get samples_config.yml
 # open configure file, and you can modify color info and etc
+
+
+
+
+# 디버그 hist 제외:
+python3 extract_structure.py --exclude '^PerJet/'
+
+# Cutflow 와 Tree 디렉토리 만:
+bashpython3 extract_structure.py \
+    --include '^Tree/' \
+    --include '^CutflowKinematics/'
+
+# 2D map 도 포함 (향후 2D plotter 용):
+python3 extract_structure.py --include-2d
+
+# scenario_runner 와 호환
+python3 scenario_runner.py \
+    --base /pnfs/.../AnalyzerOutput_validation \
+    --plotter ./stack_plotter.C \
+    --jobs 4
