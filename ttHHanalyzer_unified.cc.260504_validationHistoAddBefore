@@ -707,20 +707,10 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
 
     auto* bjets = thisEvent->getSelbJets();
 
-    // [Validation] In kValidationStudy mode the b-jet cut may be loosened
-    // (e.g. nbJetsCut=2). We still want to run Higgs reco only when there
-    // are enough b-jets; when there aren't, leave _minChi2Higgs at the
-    // sentinel value (cLargeValue) so downstream fillCutStepHist treats
-    // these events as "no Higgs reco available".
-    const int hRecoMin =
-        (_analysisMode == AnalysisMode::kValidationStudy)
-            ? _valCfg.forceHiggsRecoMinBjets
-            : 4;  // unchanged behaviour for all other modes
     if (_policy.doHiggsReconstruction) {
         const size_t nb = bjets->size();
-        // Also guard against hRecoMin <= 0 (effectively disabled by user).
 
-        if (hRecoMin > 0 && nb >= static_cast<size_t>(hRecoMin)) {
+        if (nb >= 4) {
             // ═════════════════════════════════════════════════════════════
             // Step 1: Pair Cache 구축 (Build pair cache)
             //
@@ -791,7 +781,7 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
                     }
                 }
             }
-        } // end if (hRecoMin > 0 && nb >= hRecoMin)
+        } // end if (nb >= 4)
     } // end if doHiggsReconstruction
 
 
@@ -863,39 +853,59 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
     }
     processStep(CutStep::kHT, hadWMass);
 
+    // Step 8: nbJets >= 4 — 최소 b-jet 수 요구
+    if (_policy.applyBJetCut) {
+        if(!(thisEvent->getnSelbJet() >= cut["nbJets"] )){
+            return false;
+        }
+    }
+    processStep(CutStep::kNumbJets, hadWMass);
+
+    // Step 9: Hadronic W Mass — W boson 질량 윈도우
+    if (_policy.applyHadWMassCut) {
+        if (hadWMass < 0.0f || hadWMass > 250.0f || hadWMass < 30.0f) {
+            return false;
+        }
+    }
+    processStep(CutStep::kHadWMass, hadWMass);
+
+    // Step 10: Higgs Mass Window (현재 사용하지 않음, 05 Jan 2026)
+    processStep(CutStep::kHiggsMass, hadWMass);
+
+
     // ══════════════════════════════════════════════════════════════════════
-    // [MOVED from post-step-10 to pre-step-8]
-    // Event-level corrections applied here — between HT cut (step 7) and
-    // nbjet cut (step 8) — so cutflow histograms from step 8 onwards see
-    // the SF-corrected MC. This is required to read the b-tag SF / trigger
-    // SF / norm reweight effect from the cutflow ratios.
+    // [NEW] 이벤트-레벨 보정 적용 (Event-level corrections)
     //
-    // Each SF can be individually disabled in kValidationStudy mode via
-    // _valCfg toggles; the unmodified main analysis runs the full chain.
+    // 모든 selection cut을 통과한 이벤트에 대해서만 적용한다.
     //
-    // [ttH AN A.2.1] inclusive ttbar dispatched by genTtbarId; non-ttbar
-    // by sample name. See Config_TtCatGroup.hh::MakeProcessKey().
+    // 적용 순서:
+    //   1) B-tag event weight (bTagWeight_central_)
+    //      → computeBTagWeight()에서 이미 계산됨 (per-jet SF의 곱)
+    //   2) Trigger SF
+    //      → HT × jet6PT × nbjet × eta 의존, correctionlib JSON lookup
+    //   3) B-tag normalization reweight  [ttH AN App. A.2.1]
+    //      → process group × (nJets [, HT]) 의존
+    //      → process group은 inclusive ttbar의 경우 genTtbarId로 분기
+    //        (TTToHadronic/SemiLep/2L2Nu → tt+LF / tt+cc / tt+B)
+    //      → ttbb dedicated, ttHH, ttH, ttZH4b, ttZZ4b는 별도 group
+    //      → minor BG (QCD, V+jets, ...)는 tt+LF 차용
+    //
+    // 이 보정들은 kTotal step 직전에 _evtWeight에 곱해진다.
     // ══════════════════════════════════════════════════════════════════════
     triggerSF_        = 1.0f;
     triggerSF_up_     = 1.0f;
     triggerSF_down_   = 1.0f;
     btagNormReweight_ = 1.0f;
 
-    // Track whether each SF is enabled for this run.
-    const bool isVal = (_analysisMode == AnalysisMode::kValidationStudy);
-    const bool useBtagShape = isVal ? _valCfg.applyBtagShapeSF : true;
-    const bool useTrigSF    = isVal ? _valCfg.applyTriggerSF   : true;
-    const bool useBtagNorm  = isVal ? _valCfg.applyBtagNormSF  : true;
-    // (top-pT reweight: not yet wired through corrMgr; placeholder.)
-
     if (_DataOrMC != "Data") {
 
-        // ── (1) B-tag event weight (shape SF) ──
-        if (useBtagShape) {
-            _evtWeight *= bTagWeight_central_;
-        }
+        // ── (1) B-tag event weight ──
+        // process()에서 computeBTagWeight()가 이미 호출되었으므로
+        // bTagWeight_central_ 에 값이 들어있다.
+        _evtWeight *= bTagWeight_central_;
 
         // ── (2) Trigger SF ──
+        // HT, 6th-jet pT, nbjet, eta에 의존하는 4D scale factor.
         const int    nbjet    = thisEvent->getnSelbJet();
         const double ht       = thisEvent->getSumSelJetScalarpT();
         const double jet6pt   = thisEvent->getSelJets()->at(5)->getp4()->Pt();
@@ -905,73 +915,33 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
         triggerSF_up_   = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt, +1.0));
         triggerSF_down_ = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt, -1.0));
 
-        if (useTrigSF) {
-            _evtWeight *= triggerSF_;
-        }
+        _evtWeight *= triggerSF_;
 
         // ── (3) B-tag normalization reweight (per process group) ──
+        // [ttH AN App. A.2.1] inclusive ttbar는 genTtbarId로 LF/cc/B 분기,
+        //                     non-ttbar samples는 sample name 기반 fixed mapping.
         const int nJets = thisEvent->getnSelJet();
+
         const std::string processKey = TtCatGroup::MakeProcessKey(
             _sampleName, _ev->genTtbarId);
+
         btagNormReweight_ = static_cast<float>(
             corrMgr->getBTagReweight("central", processKey, nJets, ht));
 
-        if (useBtagNorm) {
-            _evtWeight *= btagNormReweight_;
-        }
+        _evtWeight *= btagNormReweight_;
 
         if (debugCorrections) {
-            std::cout << "[selectObjects] Corrections (mode="
-                      << analysisModeName(_analysisMode) << "):"
+            std::cout << "[selectObjects] Corrections applied:"
                       << " sample=" << _sampleName
                       << " genTtbarId=" << _ev->genTtbarId
                       << " processKey=" << processKey
-                      << " btagSF=" << (useBtagShape ? bTagWeight_central_ : 1.0f)
-                      << " trigSF=" << (useTrigSF    ? triggerSF_         : 1.0f)
-                      << " btagRW=" << (useBtagNorm  ? btagNormReweight_  : 1.0f)
+                      << " btagSF=" << bTagWeight_central_
+                      << " trigSF=" << triggerSF_
+                      << " btagReweight=" << btagNormReweight_
                       << " finalWeight=" << _evtWeight
                       << std::endl;
         }
     }
-
-
-    // Step 8: nbJets cut — applied either with the policy (main mode)
-    // or via the validation config (validation mode).
-    {
-        const int needNb =
-            (_analysisMode == AnalysisMode::kValidationStudy)
-                ? _valCfg.nbJetsCut
-                : static_cast<int>(cut["nbJets"]);
-        const bool cutEnabled =
-            (_analysisMode == AnalysisMode::kValidationStudy)
-                ? (_valCfg.nbJetsCut >= 0)
-                : _policy.applyBJetCut;
-        if (cutEnabled) {
-            if (!(thisEvent->getnSelbJet() >= needNb)) {
-                return false;
-            }
-        }
-    }
-    processStep(CutStep::kNumbJets, hadWMass);
-
-    // Step 9: Hadronic W Mass window
-    {
-        const bool hadWEnabled =
-            (_analysisMode == AnalysisMode::kValidationStudy)
-                ? _valCfg.applyHadWWindow
-                : _policy.applyHadWMassCut;
-        if (hadWEnabled) {
-            if (hadWMass < 30.0f || hadWMass > 250.0f) {
-                return false;
-            }
-        }
-    }
-    processStep(CutStep::kHadWMass, hadWMass);
-
-    // Step 10: Higgs Mass Window (현재 사용하지 않음, 05 Jan 2026)
-    processStep(CutStep::kHiggsMass, hadWMass);
-
-
 
     // Step 11: Total — 최종 이벤트 (모든 cut + 모든 보정 적용)
     processStep(CutStep::kTotal, hadWMass);
@@ -2537,74 +2507,6 @@ int main(int argc, char** argv){
     bool debugVerbose = false;
 
     ttHHanalyzer_unified analysis(cl.outputfilename, &ev, weight, true, cl.runYear, cl.DataOrMC, cl.sampleName, cl.eraName, debugVerbose, mode);
-
-    if (mode == AnalysisMode::kValidationStudy) {
-        ValidationConfig vcfg;
-
-        auto findArgValue = [&](const std::string& key) -> std::string {
-            const std::string eqPrefix = key + "=";
-            for (int i = 1; i < argc; ++i) {
-                const std::string arg = argv[i];
-                if (arg == key && i + 1 < argc) {
-                    return argv[i + 1];
-                }
-                if (arg.rfind(eqPrefix, 0) == 0) {
-                    return arg.substr(eqPrefix.size());
-                }
-            }
-            return "";
-        };
-
-        auto getStringArg = [&](const std::string& key, const std::string& def) -> std::string {
-            const std::string v = findArgValue(key);
-            return v.empty() ? def : v;
-        };
-
-        auto getIntArg = [&](const std::string& key, int def) -> int {
-            const std::string v = findArgValue(key);
-            if (v.empty()) return def;
-            try {
-                return std::stoi(v);
-            }
-            catch (const std::exception&) {
-                std::cerr << "[Validation] invalid integer for " << key
-                          << ": " << v << "; using default " << def
-                          << std::endl;
-                return def;
-            }
-        };
-
-        auto getBoolArg = [&](const std::string& key, bool def) -> bool {
-            std::string v = findArgValue(key);
-            if (v.empty()) return def;
-            std::transform(v.begin(), v.end(), v.begin(),
-                           [](unsigned char c) { return std::tolower(c); });
-            if (v == "1" || v == "true" || v == "yes" || v == "on") return true;
-            if (v == "0" || v == "false" || v == "no" || v == "off") return false;
-            std::cerr << "[Validation] invalid bool for " << key
-                      << ": " << v << "; using default " << def
-                      << std::endl;
-            return def;
-        };
-
-        vcfg.scenarioName           = getStringArg("--val-scenario", vcfg.scenarioName);
-        vcfg.nbJetsCut             = getIntArg("--val-nbJetsCut", vcfg.nbJetsCut);
-        vcfg.applyHadWWindow       = getBoolArg("--val-hadWWindow", vcfg.applyHadWWindow);
-        vcfg.applyHiggsWindow      = getBoolArg("--val-higgsWindow", vcfg.applyHiggsWindow);
-        vcfg.tightenJet8           = getBoolArg("--val-tightenJet8", vcfg.tightenJet8);
-        vcfg.forceHiggsRecoMinBjets = getIntArg("--val-hRecoMin", vcfg.forceHiggsRecoMinBjets);
-        vcfg.applyBtagShapeSF      = getBoolArg("--val-btagShape", vcfg.applyBtagShapeSF);
-        vcfg.applyBtagNormSF       = getBoolArg("--val-btagNorm", vcfg.applyBtagNormSF);
-        vcfg.applyTriggerSF        = getBoolArg("--val-trig", vcfg.applyTriggerSF);
-        vcfg.applyTopPtSF          = getBoolArg("--val-topPt", vcfg.applyTopPtSF);
-        vcfg.ttHVRStyle            = getBoolArg("--val-ttHVR", vcfg.ttHVRStyle);
-
-        if (vcfg.ttHVRStyle) {
-            vcfg.applyTtHVRPreset();
-        }
-
-        analysis.setValidationConfig(vcfg);
-    }
 
 
     if(debugVerbose) std::cout<<"debug : Before [ performAnalysis ] in main() function"<<std::endl;

@@ -51,8 +51,7 @@ const float cZMass = 91.;
 enum class AnalysisMode {
     kMainAnalysis,
     kBTagAndTriggerStudy,
-    kTriggerSFStudy,
-    kValidationStudy   // [NEW] N-1 / weight-ablation study
+    kTriggerSFStudy
 };
 
 // Argument로 받는 문자열 → AnalysisMode class 변환 함수
@@ -62,7 +61,7 @@ inline AnalysisMode parseAnalysisMode(const std::string& modeStr) {
         throw std::invalid_argument(
             "[ERROR] Analysis mode not specified!\n"
             "        You MUST provide --mode argument.\n"
-            "        Valid modes: main, btagtrig, trigsf, validation"
+            "        Valid modes: main, btagtrig, trigsf"
         );
     }
     
@@ -75,9 +74,6 @@ inline AnalysisMode parseAnalysisMode(const std::string& modeStr) {
     else if (modeStr == "trigsf" || modeStr == "TriggerSFStudy") {
         return AnalysisMode::kTriggerSFStudy;
     }
-    else if (modeStr == "validation" || modeStr == "ValidationStudy") {
-        return AnalysisMode::kValidationStudy;
-    }
     throw std::invalid_argument("[ERROR] Unknown analysis mode: " + modeStr);
 
 }
@@ -87,7 +83,6 @@ inline std::string analysisModeName(AnalysisMode mode) {
         case AnalysisMode::kMainAnalysis:        return "MainAnalysis";
         case AnalysisMode::kBTagAndTriggerStudy: return "BTagAndTriggerStudy";
         case AnalysisMode::kTriggerSFStudy:      return "TriggerSFStudy";
-        case AnalysisMode::kValidationStudy:     return "ValidationStudy";
         default: return "Unknown";
     }
 }
@@ -117,13 +112,6 @@ struct SelectionPolicy {
                 break;
             case AnalysisMode::kTriggerSFStudy:
                 p = {false, false, true, false, true, true, false, true};
-                break;
-            case AnalysisMode::kValidationStudy:
-                // Identical to kMainAnalysis by default; specific cuts and SF
-                // applications are toggled via _validationConfig at run time.
-                // HiggsReco kept ON so we can reconstruct when nbJets>=4 events
-                // exist; selectObjects gates the actual reco call.
-                p = {true, true, true, true, false, false, true, false};
                 break;
         }
         return p;
@@ -1032,90 +1020,6 @@ class event{
     TLorentzVector _sumJetp4, _sumSelJetp4, _sumSelbJetp4, _sumHadronicHiggsp4, _sumLightJetp4, _sumSelMuonp4, _sumSelElectronp4; 
 };
 
-// ============================================================
-// [NEW] ValidationConfig: per-scenario cut/SF toggle bundle
-// ------------------------------------------------------------
-// Used only when _analysisMode == kValidationStudy.
-// Defaults reproduce kMainAnalysis behaviour exactly when all
-// booleans are at their default values.
-//
-// The four knobs that change CUT behaviour:
-//   nbJetsCut         : minimum b-jet count required at step 8
-//                       (-1 means "skip the cut entirely")
-//   applyHadWWindow   : turn ON/OFF the 30 < hadWMass < 250 cut
-//   applyHiggsWindow  : turn ON/OFF a Higgs mass window
-//                       (cut value: cMHWindowLo, cMHWindowHi)
-//   tightenJet8       : if true, raise the nJets cut to >=8
-//                       (default ≥7 in the existing analyzer)
-//
-// The four knobs that change WEIGHT behaviour (additive ablation):
-//   applyBtagShapeSF  : enable/disable b-tag shape SF
-//   applyBtagNormSF   : enable/disable b-tag norm reweight ratio
-//   applyTriggerSF    : enable/disable trigger SF
-//   applyTopPtSF      : enable/disable top-pT reweight (default OFF;
-//                       reserved for when corrMgr supports it)
-//
-// The single knob that changes RECO behaviour:
-//   forceHiggsRecoMinBjets : minimum b-jet count needed to attempt
-//                            Higgs reconstruction; reco is skipped
-//                            (chi2 left at sentinel) if event has fewer.
-//                            Default = 4. Set to 0 to disable.
-// ============================================================
-struct ValidationConfig {
-    // --- Cut toggles ---
-    int   nbJetsCut             = 4;     // -1 disables, otherwise nbJets >= value
-    bool  applyHadWWindow       = true;
-    bool  applyHiggsWindow      = false; // off by default to match current analyzer
-    bool  tightenJet8           = false; // raise nJets cut to >=8 if true
-
-    // --- Higgs reco gating ---
-    int   forceHiggsRecoMinBjets = 4;    // require >=4 b-jets to run Higgs reco
-
-    // --- SF on/off ---
-    bool  applyBtagShapeSF = true;
-    bool  applyBtagNormSF  = true;
-    bool  applyTriggerSF   = true;
-    bool  applyTopPtSF     = false;
-
-    // --- ttH VR style preset (overrides everything when true) ---
-    bool  ttHVRStyle       = false;
-
-    // --- Histogram suffix to disambiguate parallel scenarios ---
-    // (used only as a courtesy log message; output dir naming is
-    // controlled by submit script)
-    std::string scenarioName = "default";
-
-    void applyTtHVRPreset() {
-        // ttH AN VR (4 jet, 3 b-tag, no Higgs window).
-        // Reference: AN-19-094 §6.x VR definition.
-        nbJetsCut             = 3;
-        applyHadWWindow       = false;
-        applyHiggsWindow      = false;
-        tightenJet8           = false;
-        forceHiggsRecoMinBjets = 4; // still need 4 to reco
-        applyBtagShapeSF = true;
-        applyBtagNormSF  = true;
-        applyTriggerSF   = true;
-        applyTopPtSF     = false;
-        scenarioName = "ttHVR";
-    }
-
-    void print() const {
-        std::cout << "[ValidationConfig] scenario=" << scenarioName
-                  << " nbJetsCut=" << nbJetsCut
-                  << " hadWWin=" << applyHadWWindow
-                  << " higgsWin=" << applyHiggsWindow
-                  << " tightenJet8=" << tightenJet8
-                  << " hRecoMin=" << forceHiggsRecoMinBjets
-                  << " | SF: btagShape=" << applyBtagShapeSF
-                  << " btagNorm=" << applyBtagNormSF
-                  << " trig=" << applyTriggerSF
-                  << " topPt=" << applyTopPtSF
-                  << " ttHVR=" << ttHVRStyle
-                  << std::endl;
-    }
-};
-
 class ttHHanalyzer_unified {
  public:
     enum sysName { kJES, kJER, kbTag, noSys };
@@ -1191,18 +1095,6 @@ class ttHHanalyzer_unified {
     std::cout << "========================================" << std::endl;
     }
 
-
-
-    // [NEW] Set validation-mode parameters at run time.
-    // Caller (driver) parses YAML/argv and pushes them in.
-    void setValidationConfig(const ValidationConfig& cfg) {
-        _valCfg = cfg;
-        if (_analysisMode == AnalysisMode::kValidationStudy) {
-            std::cout << "  [Validation] applying scenario: ";
-            _valCfg.print();
-        }
-    }
-
     ~ttHHanalyzer_unified() {
         if(debugCorrections) std::cout<<"debug : Before [ delete corrMgr ] in the ~ttHHanalyzer_unified()"<<std::endl;	    
 	delete corrMgr;
@@ -1255,11 +1147,6 @@ class ttHHanalyzer_unified {
     // Analysis Mode Variable Declaration
 	AnalysisMode _analysisMode;
     SelectionPolicy _policy;    
-
-    // [NEW] Validation-mode runtime config — only used when
-    // _analysisMode == kValidationStudy. Filled by Init/loop from
-    // YAML-passed flags.
-    ValidationConfig _valCfg;
 
     TH1D * _hJES, * _hbJES, *_hbJetEff, *_hJetEff, *_hSysbTagM ;
 
