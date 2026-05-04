@@ -28,3 +28,10 @@ python3 scenario_runner.py \
     --base /pnfs/.../AnalyzerOutput_validation \
     --plotter ./stack_plotter.C \
     --jobs 4
+
+
+# 사용자가 condor 결과 모이면 그냥:
+python3 scenario_runner.py \
+    --base    /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation \
+    --plotter ./stack_plotter.C \
+    --jobs    4

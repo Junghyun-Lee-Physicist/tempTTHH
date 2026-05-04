@@ -1,0 +1,46 @@
+
+===============================================================
+  hadd worker
+===============================================================
+  PWD           : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/outputMerger
+  hostname      : cluster326.knu.ac.kr
+  date          : Mon May  4 18:48:45 KST 2026
+  argv          : /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH.root
+===============================================================
+[env] sourcing cmsset_default.sh
+[env] hadd: /cvmfs/cms.cern.ch/el9_amd64_gcc12/cms/cmssw/CMSSW_14_2_1/external/el9_amd64_gcc12/bin/hadd
+[env] root: /cvmfs/cms.cern.ch/el9_amd64_gcc12/cms/cmssw/CMSSW_14_2_1/external/el9_amd64_gcc12/bin/root
+[hadd] inputs: 11 files
+[hadd] target: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH.root
+[hadd] first few inputs:
+/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH/ttWH_0.root
+/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH/ttWH_1.root
+/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH/ttWH_10.root
+[hadd] starting
+Parallelizing  with 1 processes.
+hadd Target file: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH.root
+hadd compression setting for all output: 1
+Each process should handle at least 3 files for efficiency. Setting the number of processes to: 1
+hadd Source file 1: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH/ttWH_0.root
+hadd Source file 2: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH/ttWH_1.root
+hadd Source file 3: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH/ttWH_10.root
+hadd Source file 4: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH/ttWH_2.root
+hadd Source file 5: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH/ttWH_3.root
+hadd Source file 6: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH/ttWH_4.root
+hadd Source file 7: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH/ttWH_5.root
+hadd Source file 8: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH/ttWH_6.root
+hadd Source file 9: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH/ttWH_7.root
+hadd Source file 10: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH/ttWH_8.root
+hadd Source file 11: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH/ttWH_9.root
+hadd Target path: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH.root:/
+hadd Target path: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH.root:/jet
+hadd Target path: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH.root:/Lepton
+hadd Target path: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH.root:/CutflowKinematics
+hadd Target path: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH.root:/TtCatValidation
+hadd Target path: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH.root:/Tree
+[hadd] OK
+[hadd]   inputs   : 11 files
+[hadd]   target   : /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noBjetCut/ttWH.root
+[hadd]   size     : 8134164 bytes
+[hadd]   elapsed  : 3s
+

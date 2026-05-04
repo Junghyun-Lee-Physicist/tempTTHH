@@ -1,0 +1,72 @@
+
+===============================================================
+  hadd worker
+===============================================================
+  PWD           : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/outputMerger
+  hostname      : dm01.knu.ac.kr
+  date          : Mon May  4 18:46:31 KST 2026
+  argv          : /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D.root
+===============================================================
+[env] sourcing cmsset_default.sh
+[env] hadd: /cvmfs/cms.cern.ch/el9_amd64_gcc12/cms/cmssw/CMSSW_14_2_1/external/el9_amd64_gcc12/bin/hadd
+[env] root: /cvmfs/cms.cern.ch/el9_amd64_gcc12/cms/cmssw/CMSSW_14_2_1/external/el9_amd64_gcc12/bin/root
+[hadd] inputs: 37 files
+[hadd] target: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D.root
+[hadd] first few inputs:
+/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_0.root
+/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_1.root
+/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_10.root
+[hadd] starting
+Parallelizing  with 1 processes.
+hadd Target file: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D.root
+hadd compression setting for all output: 1
+Each process should handle at least 3 files for efficiency. Setting the number of processes to: 1
+hadd Source file 1: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_0.root
+hadd Source file 2: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_1.root
+hadd Source file 3: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_10.root
+hadd Source file 4: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_11.root
+hadd Source file 5: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_12.root
+hadd Source file 6: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_13.root
+hadd Source file 7: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_14.root
+hadd Source file 8: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_15.root
+hadd Source file 9: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_16.root
+hadd Source file 10: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_17.root
+hadd Source file 11: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_18.root
+hadd Source file 12: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_19.root
+hadd Source file 13: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_2.root
+hadd Source file 14: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_20.root
+hadd Source file 15: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_21.root
+hadd Source file 16: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_22.root
+hadd Source file 17: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_23.root
+hadd Source file 18: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_24.root
+hadd Source file 19: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_25.root
+hadd Source file 20: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_26.root
+hadd Source file 21: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_27.root
+hadd Source file 22: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_28.root
+hadd Source file 23: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_29.root
+hadd Source file 24: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_3.root
+hadd Source file 25: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_30.root
+hadd Source file 26: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_31.root
+hadd Source file 27: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_32.root
+hadd Source file 28: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_33.root
+hadd Source file 29: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_34.root
+hadd Source file 30: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_35.root
+hadd Source file 31: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_36.root
+hadd Source file 32: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_4.root
+hadd Source file 33: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_5.root
+hadd Source file 34: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_6.root
+hadd Source file 35: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_7.root
+hadd Source file 36: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_8.root
+hadd Source file 37: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D/JetHT_D_9.root
+hadd Target path: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D.root:/
+hadd Target path: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D.root:/jet
+hadd Target path: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D.root:/Lepton
+hadd Target path: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D.root:/CutflowKinematics
+hadd Target path: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D.root:/TtCatValidation
+hadd Target path: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D.root:/Tree
+[hadd] OK
+[hadd]   inputs   : 37 files
+[hadd]   target   : /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/baseline/JetHT_D.root
+[hadd]   size     : 593962 bytes
+[hadd]   elapsed  : 4s
+

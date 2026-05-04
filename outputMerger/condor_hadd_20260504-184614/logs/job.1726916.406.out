@@ -1,0 +1,65 @@
+
+===============================================================
+  hadd worker
+===============================================================
+  PWD           : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/outputMerger
+  hostname      : cluster281.knu.ac.kr
+  date          : Mon May  4 18:50:29 KST 2026
+  argv          : /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt.root
+===============================================================
+[env] sourcing cmsset_default.sh
+[env] hadd: /cvmfs/cms.cern.ch/el9_amd64_gcc12/cms/cmssw/CMSSW_14_2_1/external/el9_amd64_gcc12/bin/hadd
+[env] root: /cvmfs/cms.cern.ch/el9_amd64_gcc12/cms/cmssw/CMSSW_14_2_1/external/el9_amd64_gcc12/bin/root
+[hadd] inputs: 30 files
+[hadd] target: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt.root
+[hadd] first few inputs:
+/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_0.root
+/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_1.root
+/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_10.root
+[hadd] starting
+Parallelizing  with 1 processes.
+hadd Target file: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt.root
+hadd compression setting for all output: 1
+Each process should handle at least 3 files for efficiency. Setting the number of processes to: 1
+hadd Source file 1: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_0.root
+hadd Source file 2: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_1.root
+hadd Source file 3: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_10.root
+hadd Source file 4: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_11.root
+hadd Source file 5: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_12.root
+hadd Source file 6: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_13.root
+hadd Source file 7: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_14.root
+hadd Source file 8: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_15.root
+hadd Source file 9: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_16.root
+hadd Source file 10: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_17.root
+hadd Source file 11: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_18.root
+hadd Source file 12: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_19.root
+hadd Source file 13: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_2.root
+hadd Source file 14: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_20.root
+hadd Source file 15: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_21.root
+hadd Source file 16: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_22.root
+hadd Source file 17: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_23.root
+hadd Source file 18: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_24.root
+hadd Source file 19: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_25.root
+hadd Source file 20: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_26.root
+hadd Source file 21: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_27.root
+hadd Source file 22: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_28.root
+hadd Source file 23: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_29.root
+hadd Source file 24: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_3.root
+hadd Source file 25: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_4.root
+hadd Source file 26: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_5.root
+hadd Source file 27: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_6.root
+hadd Source file 28: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_7.root
+hadd Source file 29: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_8.root
+hadd Source file 30: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt/tttt_9.root
+hadd Target path: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt.root:/
+hadd Target path: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt.root:/jet
+hadd Target path: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt.root:/Lepton
+hadd Target path: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt.root:/CutflowKinematics
+hadd Target path: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt.root:/TtCatValidation
+hadd Target path: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt.root:/Tree
+[hadd] OK
+[hadd]   inputs   : 30 files
+[hadd]   target   : /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_validation/noTrigSF/tttt.root
+[hadd]   size     : 177767438 bytes
+[hadd]   elapsed  : 18s
+
