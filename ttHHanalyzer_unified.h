@@ -148,10 +148,10 @@ struct SelectionPolicy {
 
 
 std::map<std::string, float> cut { 
-    {"nJets", 8} // nJets higher than 
+    {"nJets", 6} // nJets higher than  // [round2] was 8; ttH AN / trigger SF baseline 
     , {"nLeptons", 0} // nLepton equals to
     //, {"nVetoLeptons", 0} // nVetoLepton equals to
-    , {"nbJets", 4}
+    , {"nbJets", 2}  // [round2] was 4; ttH AN / trigger SF baseline
     , {"jetPt", 30} // jet pT higher than
     , {"leadElePt", 30}     //// New Def for leptons to veto at Hadronic channel 
     , {"leadMuonPt", 29}    //// New Def for leptons to veto at Hadronic channel
@@ -545,6 +545,10 @@ class event{
 	return _selectbJets.size(); 
     }
 
+    int getnSelbJet() const {
+	return _selectbJets.size(); 
+    }
+
     int getnLightJet(){
     	return _selectLightJets.size(); 
     }
@@ -558,6 +562,10 @@ class event{
     }
 
     int getnSelJet(){
+	return _selectJets.size(); 
+    }
+
+    int getnSelJet() const {
 	return _selectJets.size(); 
     }
 
@@ -1224,6 +1232,7 @@ class ttHHanalyzer_unified {
     std::vector<TH1D*> h_JEC_Mass_DiffRatio; // Mass 변경 확인용
 
     TH1F * hmet,* hmetPhi, *hmetEta, *hAvgDeltaRjj, *hAvgDeltaRbb,*hAvgDeltaRbj, *hAvgDeltaEtajj, *hAvgDeltaEtabb, *hAvgDeltaEtabj, *hminDeltaRjj, *hminDeltaRbb, *hminDeltaRbj,  *hminDeltaRpTjj, *hminDeltaRpTbb, *hminDeltaRpTbj, *hminDeltaRMassjj, *hminDeltaRMassbb,*hminDeltaRMassbj, *hmaxDeltaEtajj, *hmaxDeltaEtabb, *hmaxDeltaEtabj, *hmaxPTmassjbb, *hmaxPTmassjjj, *hjetAverageMass, *hBjetAverageMass, *hHadronicHiggsAverageMass, *hLightJetAverageMass, *hBjetAverageMassSqr, *hHadronicHiggsSoftDropMass1, *hHadronicHiggsSoftDropMass2, *hjetHT, *hBjetHT, *hHadronicHiggsHT, *hLightJetHT, *hjetNumber, *hBjetNumber, *hHadronicHiggsNumber, *hLightJetNumber, *hInvMassHadW, *hInvMassZ1, *hInvMassZ2,*hInvMassZ1_zoomIn, *hInvMassZ2_zoomIn, *hInvMassHSingleMatched,*hInvMassHSingleNotMatched ,*hChi2HiggsSingleNotMatched, *hChi2HiggsSingleMatched , *hInvMassH1, *hInvMassH2,*hInvMassH1_zoomIn, *hInvMassH2_zoomIn, *hInvMassHZ1, *hInvMassHZ2, *hInvMassHZ1_zoomIn, *hInvMassHZ2_zoomIn, *hInvMassH1mChi, *hInvMassH2mChi,*hPTH1, *hPTH2, *hChi2Higgs, *hChi2HiggsZ, *hChi2HadW, *hChi2Z, *hAplanarity, *hSphericity, *hTransSphericity, *hCvalue, *hDvalue, *hBjetAplanarity, *hBjetSphericity, *hBjetTransSphericity ,*hBjetCvalue, *hBjetDvalue, *hCentralityjl, *hCentralityjb, *hleptonNumber, *hLeptonPT1, *hMuonPT1, *hElePT1, *hLeptonPhi1, *hMuonPhi1, *hElePhi1, *hLeptonEta1, *hMuonEta1, *hEleEta1, *hLeptonPT2, *hMuonPT2, *hElePT2, *hLeptonPhi2, *hMuonPhi2, *hElePhi2, *hLeptonEta2, *hMuonEta2, *hEleEta2, *hLepCharge1, *hLepCharge2, *hleptonHT, *hST, *hDiMuonMass, *hDiElectronMass, *hDiMuonPT, *hDiElectronPT, *hDiMuonEta, *hDiElectronEta, *hH0, *hH1, *hH2, *hH3, *hH4, *hR1, *hR2, * hR3, *hR4, *hBjetH0, *hBjetH1, *hBjetH2, *hBjetH3, *hBjetH4, *hBjetR1, *hBjetR2, * hBjetR3, *hBjetR4, *hCutFlow, *hCutFlow_w,
+    *hCutFlow_w_btagSF, *hCutFlow_w_full,    // [NEW] SF-aware cutflows
 	*hInvMassHH1Matched,
 	*hInvMassHH1NotMatched,
 	*hInvMassHH2Matched,
@@ -1244,6 +1253,13 @@ class ttHHanalyzer_unified {
     bool _sys;
     //float _weight;
     float _evtWeight;
+    // ── Per-chain event weights (new, for SF-aware cutflow) ───────────
+    // Filled inside selectObjects between step kHT and kNumbJets2.
+    // _evtWeight stays as the legacy per-step weight (post-Step8 SFs);
+    // these three additional fields drive the new parallel cutflows.
+    double _evtWeight_chain_raw      = 1.0;  // baseline weight only
+    double _evtWeight_chain_btagSF   = 1.0;  // + b-tag shape SF
+    double _evtWeight_chain_full     = 1.0;  // + trigSF + btagNormRW
     float _baseWeight; // [추가] 데이터셋 공통 상수 (CrossSection * Lumi / SumGenWeight)
     float _SampleWeight;
     float _PUWeight;
@@ -1314,18 +1330,20 @@ class ttHHanalyzer_unified {
     TRandom3 _rand;
 
     enum class CutStep {
-        kNoCut = 0,
-        kHadTrigger,
-        kNoiseFilter,
-        kPrimaryVertex,
-        kNumJets,
-        kSixthJetPt,
-        kLeptonVeto,
-        kHT,
-	kNumbJets,
-        kHadWMass,
-        kHiggsMass,
-        kTotal
+        kNoCut = 0,         //  0  no selection
+        kHadTrigger,        //  1  hadronic trigger fired
+        kNoiseFilter,       //  2  MET filter
+        kPrimaryVertex,     //  3  ≥1 primary vertex
+        kNumJets,           //  4  ≥6 jets  (baseline)
+        kSixthJetPt,        //  5  jet6 pT > 40
+        kLeptonVeto,        //  6  no veto lepton
+        kHT,                //  7  HT ≥ 500
+        kNumbJets2,         //  8  ≥2 b-tags  (ttH baseline)
+        kNumbJets3,         //  9  ≥3 b-tags
+        kNumbJets4,         // 10  ≥4 b-tags  (SR boundary)
+        kHadWMass,          // 11  30 < hadW < 250
+        kHiggsMass,         // 12  Higgs mass window (currently off in main)
+        kTotal              // 13  total
     };
 
     // cutStepLabels must match above CutStep!!!
@@ -1334,10 +1352,12 @@ class ttHHanalyzer_unified {
         "HadTrigger",
         "noiseFilter",
         "pv>=1",
-        "njets>=7",
+        "njets>=6",
         "6thJetsPT>40",
         "nlepton==0",
         "HT>500",
+        "nbjets>=2",
+        "nbjets>=3",
         "nbjets>=4",
         "30<HadW<250",
         "HiggsMassWindow",
@@ -1360,6 +1380,35 @@ class ttHHanalyzer_unified {
     std::vector<TH1F*> _cutStepHadWMass;
     std::vector<TH1F*> _cutStepHiggsMass01;
     std::vector<TH1F*> _cutStepHiggsMass02;
+
+    // [NEW] Per-step multiplicities — n(b-)jets distribution at each step
+    // Three parallel sets, one per weight chain (raw / btagSF / full).
+    std::vector<TH1F*> _cutStepNbJets_raw;
+    std::vector<TH1F*> _cutStepNbJets_btagSF;
+    std::vector<TH1F*> _cutStepNbJets_full;
+    std::vector<TH1F*> _cutStepNjets_raw;
+    std::vector<TH1F*> _cutStepNjets_btagSF;
+    std::vector<TH1F*> _cutStepNjets_full;
+
+    // [NEW] Per-step kinematics — second / third weight-chain copies of
+    // the existing _cutStepHT / _cutStepHadWMass / _cutStepHiggsMass01/02
+    // / _cutStepBTag / _cutStepJetPt etc. Only the WEIGHT differs at fill;
+    // we keep them as independent TH1Fs so the plotter can pick them up
+    // by suffix (_btagSF, _full).
+    //
+    // To avoid doubling code volume, we reuse arrays of identical shape:
+    std::vector<TH1F*> _cutStepHT_btagSF;
+    std::vector<TH1F*> _cutStepHT_full;
+    std::vector<TH1F*> _cutStepHadWMass_btagSF;
+    std::vector<TH1F*> _cutStepHadWMass_full;
+    std::vector<TH1F*> _cutStepHiggsMass01_btagSF;
+    std::vector<TH1F*> _cutStepHiggsMass01_full;
+    std::vector<TH1F*> _cutStepHiggsMass02_btagSF;
+    std::vector<TH1F*> _cutStepHiggsMass02_full;
+    // Per-jet (1..6) bTag, pT, eta, phi: keep only the existing _raw set
+    // for now — these are heavy (6 jets × N steps × 4 hists = 24×N).
+    // The user can extend to btagSF/full later if needed.
+
     // [추가] 카운터용 벡터 (Map 대신 사용)
     std::vector<double> _cutFlowCount;  // 갯수 (No Weight)
     std::vector<double> _cutFlowWeight; // 가중치 적용 (Weight)
@@ -1857,35 +1906,63 @@ class ttHHanalyzer_unified {
         if (idx >= _cutStepJetPt.size()) {
             return;
         }
-        const auto* jets = thisEvent->getSelJets();
-////        const auto* bjets = thisEvent->getSelbJets();
-        float weight = _evtWeight * thisEvent->getbTagSys();
+        const auto* jets  = thisEvent->getSelJets();
+
+        // Three weight chains — see PATCH H4 for definitions.
+        // The legacy `_evtWeight * getbTagSys()` factor is preserved for
+        // _cutStepBTag (shape-systematic histograms used elsewhere). The new
+        // per-chain hists use the explicit chain weights.
+        const float wRaw    = static_cast<float>(_evtWeight_chain_raw);
+        const float wBtagSF = static_cast<float>(_evtWeight_chain_btagSF);
+        const float wFull   = static_cast<float>(_evtWeight_chain_full);
+
+        // Legacy (kept as-is so the rest of the code that depends on it
+        // does not break). This is what the existing _cutStepBTag /
+        // _cutStepJet* arrays receive.
+        const float weightLegacy = _evtWeight * thisEvent->getbTagSys();
 
         if (!jets->empty()) {
-            // [수정] 상위 6개 jet의 kinematics를 각각 채움
-            //        jet이 6개 미만이면 있는 만큼만 채움
             const size_t nFill = std::min(jets->size(), kNJetsForCutStep);
             for (size_t j = 0; j < nFill; ++j) {
-                _cutStepJetPt.at(idx).at(j)->Fill(jets->at(j)->getp4()->Pt(), weight);
-                _cutStepJetEta.at(idx).at(j)->Fill(jets->at(j)->getp4()->Eta(), weight);
-                _cutStepJetPhi.at(idx).at(j)->Fill(jets->at(j)->getp4()->Phi(), weight);
-                _cutStepBTag.at(idx).at(j)->Fill(jets->at(j)->bTagCSV, weight);
+                _cutStepJetPt .at(idx).at(j)->Fill(jets->at(j)->getp4()->Pt(),  weightLegacy);
+                _cutStepJetEta.at(idx).at(j)->Fill(jets->at(j)->getp4()->Eta(), weightLegacy);
+                _cutStepJetPhi.at(idx).at(j)->Fill(jets->at(j)->getp4()->Phi(), weightLegacy);
+                _cutStepBTag  .at(idx).at(j)->Fill(jets->at(j)->bTagCSV,        weightLegacy);
             }
         }
 
-        _cutStepHT.at(idx)->Fill(thisEvent->getSumSelJetScalarpT(), weight);
-	
+        const double ht = thisEvent->getSumSelJetScalarpT();
+        _cutStepHT       .at(idx)->Fill(ht, wRaw);
+        _cutStepHT_btagSF.at(idx)->Fill(ht, wBtagSF);
+        _cutStepHT_full  .at(idx)->Fill(ht, wFull);
+
         if (hadWMass > 0.0f) {
-            _cutStepHadWMass.at(idx)->Fill(hadWMass, weight);
+            _cutStepHadWMass       .at(idx)->Fill(hadWMass, wRaw);
+            _cutStepHadWMass_btagSF.at(idx)->Fill(hadWMass, wBtagSF);
+            _cutStepHadWMass_full  .at(idx)->Fill(hadWMass, wFull);
         }
 
         if (_bbMassMin1Higgs > 0.0f) {
-            _cutStepHiggsMass01.at(idx)->Fill(_bbMassMin1Higgs, weight);
+            _cutStepHiggsMass01       .at(idx)->Fill(_bbMassMin1Higgs, wRaw);
+            _cutStepHiggsMass01_btagSF.at(idx)->Fill(_bbMassMin1Higgs, wBtagSF);
+            _cutStepHiggsMass01_full  .at(idx)->Fill(_bbMassMin1Higgs, wFull);
         }
         if (_bbMassMin2Higgs > 0.0f) {
-            _cutStepHiggsMass02.at(idx)->Fill(_bbMassMin2Higgs, weight);
+            _cutStepHiggsMass02       .at(idx)->Fill(_bbMassMin2Higgs, wRaw);
+            _cutStepHiggsMass02_btagSF.at(idx)->Fill(_bbMassMin2Higgs, wBtagSF);
+            _cutStepHiggsMass02_full  .at(idx)->Fill(_bbMassMin2Higgs, wFull);
         }
 
+        // [NEW] Multiplicities at this step — one entry per event into
+        // each of the 3 chains.
+        const int nbj = thisEvent->getnSelbJet();
+        const int nj  = thisEvent->getnSelJet();
+        _cutStepNbJets_raw   .at(idx)->Fill(nbj, wRaw);
+        _cutStepNbJets_btagSF.at(idx)->Fill(nbj, wBtagSF);
+        _cutStepNbJets_full  .at(idx)->Fill(nbj, wFull);
+        _cutStepNjets_raw    .at(idx)->Fill(nj,  wRaw);
+        _cutStepNjets_btagSF .at(idx)->Fill(nj,  wBtagSF);
+        _cutStepNjets_full   .at(idx)->Fill(nj,  wFull);
     }
 
     /*    std::vector<double> getJetCutFlow(event *thisevent){
@@ -2233,11 +2310,31 @@ class ttHHanalyzer_unified {
         _cutStepHadWMass.resize(cutStepCount);
         _cutStepHiggsMass01.resize(cutStepCount);
         _cutStepHiggsMass02.resize(cutStepCount);
+        _cutStepHT_btagSF.resize(cutStepCount);
+        _cutStepHT_full.resize(cutStepCount);
+        _cutStepHadWMass_btagSF.resize(cutStepCount);
+        _cutStepHadWMass_full.resize(cutStepCount);
+        _cutStepHiggsMass01_btagSF.resize(cutStepCount);
+        _cutStepHiggsMass01_full.resize(cutStepCount);
+        _cutStepHiggsMass02_btagSF.resize(cutStepCount);
+        _cutStepHiggsMass02_full.resize(cutStepCount);
+        _cutStepNbJets_raw.resize(cutStepCount);
+        _cutStepNbJets_btagSF.resize(cutStepCount);
+        _cutStepNbJets_full.resize(cutStepCount);
+        _cutStepNjets_raw.resize(cutStepCount);
+        _cutStepNjets_btagSF.resize(cutStepCount);
+        _cutStepNjets_full.resize(cutStepCount);
 
 
         // hCutFlow 히스토그램 생성 (라벨링 포함)
-        hCutFlow = new TH1F("cutflow", "N_{cutFlow}", cutStepCount, 0, cutStepCount);
-        hCutFlow_w = new TH1F("cutflow_w", "N_{weighted}", cutStepCount, 0, cutStepCount);
+        hCutFlow          = new TH1F("cutflow",          "N_{cutFlow}",        cutStepCount, 0, cutStepCount);
+        hCutFlow_w        = new TH1F("cutflow_w",        "N_{w (raw)}",        cutStepCount, 0, cutStepCount);
+        hCutFlow_w_btagSF = new TH1F("cutflow_w_btagSF", "N_{w (btag SF)}",    cutStepCount, 0, cutStepCount);
+        hCutFlow_w_full   = new TH1F("cutflow_w_full",   "N_{w (full SF+RW)}", cutStepCount, 0, cutStepCount);
+        hCutFlow         ->Sumw2();
+        hCutFlow_w       ->Sumw2();
+        hCutFlow_w_btagSF->Sumw2();
+        hCutFlow_w_full  ->Sumw2();
 
         for (size_t i = 0; i < cutStepCount; ++i) {
             const TString titleSuffix = TString::Format(" (%s)", _cutStepLabels.at(i).c_str());
@@ -2267,17 +2364,51 @@ class ttHHanalyzer_unified {
             // HT, hadW, Higgs mass는 이벤트 단위 → 기존대로 1개
             _cutStepHT.at(i) = new TH1F(TString::Format("cutStep_%zu_ht", i),
                                         "H_{T} [GeV]"+titleSuffix, 50, 0, 4000);
+            _cutStepHT_btagSF.at(i) = new TH1F(TString::Format("cutStep_%zu_ht_btagSF", i),
+                                               "H_{T} [GeV] (btagSF)"+titleSuffix, 50, 0, 4000);
+            _cutStepHT_full.at(i) = new TH1F(TString::Format("cutStep_%zu_ht_full", i),
+                                             "H_{T} [GeV] (full)"+titleSuffix, 50, 0, 4000);
+
             _cutStepHadWMass.at(i) = new TH1F(TString::Format("cutStep_%zu_hadW", i),
                                               "m_{W,had} [GeV]"+titleSuffix, 50, 0, 300);
+            _cutStepHadWMass_btagSF.at(i) = new TH1F(TString::Format("cutStep_%zu_hadW_btagSF", i),
+                                                     "m_{W,had} [GeV] (btagSF)"+titleSuffix, 50, 0, 300);
+            _cutStepHadWMass_full.at(i) = new TH1F(TString::Format("cutStep_%zu_hadW_full", i),
+                                                   "m_{W,had} [GeV] (full)"+titleSuffix, 50, 0, 300);
+
             _cutStepHiggsMass01.at(i) = new TH1F(TString::Format("cutStep_%zu_higgs can01", i),
                                                "m_{bb} closest to Higgs 1st candidate [GeV]"+titleSuffix, 50, 0, 300);
+            _cutStepHiggsMass01_btagSF.at(i) = new TH1F(TString::Format("cutStep_%zu_higgs can01_btagSF", i),
+                                                        "m_{bb} closest to Higgs 1st candidate [GeV] (btagSF)"+titleSuffix, 50, 0, 300);
+            _cutStepHiggsMass01_full.at(i) = new TH1F(TString::Format("cutStep_%zu_higgs can01_full", i),
+                                                      "m_{bb} closest to Higgs 1st candidate [GeV] (full)"+titleSuffix, 50, 0, 300);
+
             _cutStepHiggsMass02.at(i) = new TH1F(TString::Format("cutStep_%zu_higgs can02", i),
                                                "m_{bb} closest to Higgs 2nd candidate [GeV]"+titleSuffix, 50, 0, 300);
+            _cutStepHiggsMass02_btagSF.at(i) = new TH1F(TString::Format("cutStep_%zu_higgs can02_btagSF", i),
+                                                        "m_{bb} closest to Higgs 2nd candidate [GeV] (btagSF)"+titleSuffix, 50, 0, 300);
+            _cutStepHiggsMass02_full.at(i) = new TH1F(TString::Format("cutStep_%zu_higgs can02_full", i),
+                                                      "m_{bb} closest to Higgs 2nd candidate [GeV] (full)"+titleSuffix, 50, 0, 300);
+
+            _cutStepNbJets_raw.at(i) = new TH1F(TString::Format("cutStep_%zu_nbjets_raw", i),
+                                                "nbjets (raw)"+titleSuffix, 15, -0.5, 14.5);
+            _cutStepNbJets_btagSF.at(i) = new TH1F(TString::Format("cutStep_%zu_nbjets_btagSF", i),
+                                                   "nbjets (btagSF)"+titleSuffix, 15, -0.5, 14.5);
+            _cutStepNbJets_full.at(i) = new TH1F(TString::Format("cutStep_%zu_nbjets_full", i),
+                                                 "nbjets (full)"+titleSuffix, 15, -0.5, 14.5);
+            _cutStepNjets_raw.at(i) = new TH1F(TString::Format("cutStep_%zu_njets_raw", i),
+                                               "njets (raw)"+titleSuffix, 25, -0.5, 24.5);
+            _cutStepNjets_btagSF.at(i) = new TH1F(TString::Format("cutStep_%zu_njets_btagSF", i),
+                                                  "njets (btagSF)"+titleSuffix, 25, -0.5, 24.5);
+            _cutStepNjets_full.at(i) = new TH1F(TString::Format("cutStep_%zu_njets_full", i),
+                                                "njets (full)"+titleSuffix, 25, -0.5, 24.5);
 
             // hCutFlow 축 라벨 설정         
 	    if (i < _cutStepLabels.size()) {
                 hCutFlow->GetXaxis()->SetBinLabel(i + 1, _cutStepLabels[i].c_str());
                 hCutFlow_w->GetXaxis()->SetBinLabel(i + 1, _cutStepLabels[i].c_str());
+                hCutFlow_w_btagSF->GetXaxis()->SetBinLabel(i + 1, _cutStepLabels[i].c_str());
+                hCutFlow_w_full->GetXaxis()->SetBinLabel(i + 1, _cutStepLabels[i].c_str());
             }
 
         }
@@ -2727,3 +2858,4 @@ class ttHHanalyzer_unified {
     }
 };	
 #endif
+

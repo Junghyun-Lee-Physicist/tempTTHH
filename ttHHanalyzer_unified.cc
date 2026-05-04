@@ -184,10 +184,12 @@ void ttHHanalyzer_unified::loop(sysName sysType, bool up){
         // hCutFlow->SetBinContent(i+1, _cutFlowCount[i]);
     }
 
-    hCutFlow->Write();
-    if(debugCorrections) std::cout<<"debug : After hCutFlow() & Before hCutFlow_w()"<<std::endl;
-    hCutFlow_w->Write();
-    if(debugCorrections) std::cout<<"debug : After hCutFlow_w()"<<std::endl;
+    hCutFlow         ->Write();
+    if(debugCorrections) std::cout<<"debug : After hCutFlow() & Before SF-aware cutflows"<<std::endl;
+    hCutFlow_w       ->Write();
+    hCutFlow_w_btagSF->Write();
+    hCutFlow_w_full  ->Write();
+    if(debugCorrections) std::cout<<"debug : After SF-aware cutflows"<<std::endl;
 
 }
 
@@ -654,6 +656,12 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
 // ═══════════════════════════════════════════════════════════════════════════
 bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
      
+    // Initialize three diagnostic weight chains to the raw event weight so
+    // pre-SF cutflow steps (noCut through HT) are filled consistently.
+    _evtWeight_chain_raw    = _evtWeight;
+    _evtWeight_chain_btagSF = _evtWeight;
+    _evtWeight_chain_full   = _evtWeight;
+
     // ──────────────────────────────────────────────────────────────────────
     // processStep 람다 (lambda): cutflow 카운트 및 히스토그램 채우기
     // 각 selection cut 단계에서 호출하여 이벤트 수/가중치를 기록한다.
@@ -662,12 +670,14 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
         int idx = static_cast<int>(step);
         
         if (idx < _cutFlowCount.size()) {
-            _cutFlowCount[idx] += 1.0;
-            _cutFlowWeight[idx] += _evtWeight;
+            _cutFlowCount[idx]  += 1.0;
+            _cutFlowWeight[idx] += _evtWeight;   // legacy
         }
 
-        hCutFlow->Fill(idx); 
-        hCutFlow_w->Fill(idx, _evtWeight);
+        hCutFlow         ->Fill(idx);
+        hCutFlow_w       ->Fill(idx, _evtWeight_chain_raw);
+        hCutFlow_w_btagSF->Fill(idx, _evtWeight_chain_btagSF);
+        hCutFlow_w_full  ->Fill(idx, _evtWeight_chain_full);
 
         fillCutStepHist(step, thisEvent, wMassVal);
     };
@@ -826,7 +836,7 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
     }
     processStep(CutStep::kPrimaryVertex, hadWMass);
 
-    // Step 4: nJets >= 7 (또는 설정값) — 최소 jet 수 요구
+    // Step 4: nJets >= 6 (또는 설정값) — 최소 jet 수 요구
     if(!(thisEvent->getnSelJet() >= cut["nJets"] )){
         return false;
     }
@@ -881,44 +891,48 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
     triggerSF_down_   = 1.0f;
     btagNormReweight_ = 1.0f;
 
-    // Track whether each SF is enabled for this run.
     const bool isVal = (_analysisMode == AnalysisMode::kValidationStudy);
     const bool useBtagShape = isVal ? _valCfg.applyBtagShapeSF : true;
     const bool useTrigSF    = isVal ? _valCfg.applyTriggerSF   : true;
     const bool useBtagNorm  = isVal ? _valCfg.applyBtagNormSF  : true;
-    // (top-pT reweight: not yet wired through corrMgr; placeholder.)
+
+    // Always populate the 3 chain weights with the FULL meaning, regardless
+    // of validation toggles — they are diagnostic, not the production path.
+    _evtWeight_chain_raw    = _evtWeight;     // baseline only
+    _evtWeight_chain_btagSF = _evtWeight;     // will multiply btagShape below
+    _evtWeight_chain_full   = _evtWeight;     // will multiply all SFs below
 
     if (_DataOrMC != "Data") {
 
-        // ── (1) B-tag event weight (shape SF) ──
-        if (useBtagShape) {
-            _evtWeight *= bTagWeight_central_;
-        }
+        // ── b-tag shape SF ─────────────────────────────────────────────
+        // Both chains get it (even if legacy _evtWeight skips it in
+        // validation when toggle is off).
+        _evtWeight_chain_btagSF *= bTagWeight_central_;
+        _evtWeight_chain_full   *= bTagWeight_central_;
+        if (useBtagShape) _evtWeight *= bTagWeight_central_;
 
-        // ── (2) Trigger SF ──
-        const int    nbjet    = thisEvent->getnSelbJet();
-        const double ht       = thisEvent->getSumSelJetScalarpT();
-        const double jet6pt   = thisEvent->getSelJets()->at(5)->getp4()->Pt();
-        const double jet6eta  = thisEvent->getSelJets()->at(5)->getp4()->Eta();
+        // ── Trigger SF ────────────────────────────────────────────────
+        const int    nbjet   = thisEvent->getnSelbJet();
+        const double ht      = thisEvent->getSumSelJetScalarpT();
+        const double jet6pt  = thisEvent->getSelJets()->at(5)->getp4()->Pt();
+        const double jet6eta = thisEvent->getSelJets()->at(5)->getp4()->Eta();
 
         triggerSF_      = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt,  0.0));
         triggerSF_up_   = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt, +1.0));
         triggerSF_down_ = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt, -1.0));
 
-        if (useTrigSF) {
-            _evtWeight *= triggerSF_;
-        }
+        _evtWeight_chain_full *= triggerSF_;
+        if (useTrigSF) _evtWeight *= triggerSF_;
 
-        // ── (3) B-tag normalization reweight (per process group) ──
+        // ── b-tag normalization reweight ──────────────────────────────
         const int nJets = thisEvent->getnSelJet();
         const std::string processKey = TtCatGroup::MakeProcessKey(
             _sampleName, _ev->genTtbarId);
         btagNormReweight_ = static_cast<float>(
             corrMgr->getBTagReweight("central", processKey, nJets, ht));
 
-        if (useBtagNorm) {
-            _evtWeight *= btagNormReweight_;
-        }
+        _evtWeight_chain_full *= btagNormReweight_;
+        if (useBtagNorm) _evtWeight *= btagNormReweight_;
 
         if (debugCorrections) {
             std::cout << "[selectObjects] Corrections (mode="
@@ -926,35 +940,67 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
                       << " sample=" << _sampleName
                       << " genTtbarId=" << _ev->genTtbarId
                       << " processKey=" << processKey
-                      << " btagSF=" << (useBtagShape ? bTagWeight_central_ : 1.0f)
-                      << " trigSF=" << (useTrigSF    ? triggerSF_         : 1.0f)
-                      << " btagRW=" << (useBtagNorm  ? btagNormReweight_  : 1.0f)
-                      << " finalWeight=" << _evtWeight
+                      << " btagSF=" << bTagWeight_central_
+                      << " trigSF=" << triggerSF_
+                      << " btagRW=" << btagNormReweight_
+                      << " w_raw="    << _evtWeight_chain_raw
+                      << " w_btagSF=" << _evtWeight_chain_btagSF
+                      << " w_full="   << _evtWeight_chain_full
+                      << " _evtWeight=" << _evtWeight
                       << std::endl;
         }
     }
 
 
-    // Step 8: nbJets cut — applied either with the policy (main mode)
-    // or via the validation config (validation mode).
-    {
-        const int needNb =
-            (_analysisMode == AnalysisMode::kValidationStudy)
-                ? _valCfg.nbJetsCut
-                : static_cast<int>(cut["nbJets"]);
-        const bool cutEnabled =
-            (_analysisMode == AnalysisMode::kValidationStudy)
-                ? (_valCfg.nbJetsCut >= 0)
-                : _policy.applyBJetCut;
+    // ─── b-tag cut sequence — three steps (≥2, ≥3, ≥4) ────────────────
+    // Each step is a SEPARATE cut + processStep so the cutflow and per-step
+    // distributions show the impact of every increment.
+    //
+    // In main mode (and other non-validation modes) the loosest cut here
+    // is applyBJetCut → ≥2 (per cut["nbJets"]). The tighter steps (≥3,
+    // ≥4) are processed for histograms first, then enforced as cuts only
+    // for the kTotal "SR" semantics. This way:
+    //   - main mode SR is ≥2 b-tags (matches ttH AN baseline)
+    //   - looking at cutStep ≥3 / ≥4 histograms tells you what the SR
+    //     would look like if tightened
+    //
+    // In validation mode the legacy single-cut behaviour is preserved.
+
+    if (_analysisMode == AnalysisMode::kValidationStudy) {
+        // Validation mode: single cut at _valCfg.nbJetsCut (existing logic)
+        const int needNb = _valCfg.nbJetsCut;
+        const bool cutEnabled = (_valCfg.nbJetsCut >= 0);
         if (cutEnabled) {
-            if (!(thisEvent->getnSelbJet() >= needNb)) {
-                return false;
-            }
+            if (!(thisEvent->getnSelbJet() >= needNb)) return false;
+        }
+        // Fill all three b-tag step hists (the event passes here, so it
+        // is at least at the level the user requested — duplicating into
+        // the ≥2/≥3/≥4 step hists is harmless for validation purposes).
+        processStep(CutStep::kNumbJets2, hadWMass);
+        if (thisEvent->getnSelbJet() >= 3) processStep(CutStep::kNumbJets3, hadWMass);
+        if (thisEvent->getnSelbJet() >= 4) processStep(CutStep::kNumbJets4, hadWMass);
+    }
+    else {
+        // Production-mode three-tier b-tag cutflow.
+        // Loosest cut first (gates whether we proceed at all in this mode):
+        const int needNbBaseline = static_cast<int>(cut["nbJets"]);  // ≥2
+        if (_policy.applyBJetCut) {
+            if (!(thisEvent->getnSelbJet() >= needNbBaseline)) return false;
+        }
+        processStep(CutStep::kNumbJets2, hadWMass);
+
+        // ≥3 — record but do NOT cut; the user reads the cutflow ratio
+        // at this step to see the next-level effect.
+        if (thisEvent->getnSelbJet() >= 3) {
+            processStep(CutStep::kNumbJets3, hadWMass);
+        }
+        // ≥4 — same idea
+        if (thisEvent->getnSelbJet() >= 4) {
+            processStep(CutStep::kNumbJets4, hadWMass);
         }
     }
-    processStep(CutStep::kNumbJets, hadWMass);
 
-    // Step 9: Hadronic W Mass window
+    // Step kHadWMass: hadronic W mass window
     {
         const bool hadWEnabled =
             (_analysisMode == AnalysisMode::kValidationStudy)
@@ -1936,6 +1982,22 @@ void ttHHanalyzer_unified::writeHistos(){
         _cutStepHadWMass.at(i)->Write();
         _cutStepHiggsMass01.at(i)->Write();
         _cutStepHiggsMass02.at(i)->Write();
+
+        // [NEW] Three-chain per-step hists
+        _cutStepHT_btagSF       .at(i)->Write();
+        _cutStepHT_full         .at(i)->Write();
+        _cutStepHadWMass_btagSF .at(i)->Write();
+        _cutStepHadWMass_full   .at(i)->Write();
+        _cutStepHiggsMass01_btagSF.at(i)->Write();
+        _cutStepHiggsMass01_full  .at(i)->Write();
+        _cutStepHiggsMass02_btagSF.at(i)->Write();
+        _cutStepHiggsMass02_full  .at(i)->Write();
+        _cutStepNbJets_raw      .at(i)->Write();
+        _cutStepNbJets_btagSF   .at(i)->Write();
+        _cutStepNbJets_full     .at(i)->Write();
+        _cutStepNjets_raw       .at(i)->Write();
+        _cutStepNjets_btagSF    .at(i)->Write();
+        _cutStepNjets_full      .at(i)->Write();
     }
 
     // ── tt+jets categorization validation histograms (write + summary) ──
@@ -2612,3 +2674,4 @@ int main(int argc, char** argv){
 
     return 0;
 }
+
