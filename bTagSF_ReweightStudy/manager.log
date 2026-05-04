@@ -130,3 +130,254 @@
 [2026-05-02 14:43:18]   Passed : 32 / 32
 [2026-05-02 14:43:18]   Failed : 0 / 32
 [2026-05-02 14:43:18] ╚══════════════════════════════════════════════════════════════╝
+[2026-05-04 21:58:51] ╔══════════════════════════════════════════════════════════════╗
+[2026-05-04 21:58:51] ║  B-Tag Reweight: Python job pool                            ║
+[2026-05-04 21:58:51] ╠══════════════════════════════════════════════════════════════╣
+[2026-05-04 21:58:51]   Samples        : 32
+[2026-05-04 21:58:51]   Max parallel   : 10
+[2026-05-04 21:58:51]   Min free mem   : 4000 MB
+[2026-05-04 21:58:51]   Retries        : 1
+[2026-05-04 21:58:51]   Log dir        : logs/
+[2026-05-04 21:58:51] ╚══════════════════════════════════════════════════════════════╝
+[2026-05-04 21:58:51] 
+[2026-05-04 21:58:51]   [launch] BTagCSV_B  (PID 7665)
+[2026-05-04 21:58:51]   [launch] BTagCSV_C  (PID 7668)
+[2026-05-04 21:58:51]   [launch] BTagCSV_D  (PID 7671)
+[2026-05-04 21:58:51]   [launch] BTagCSV_E  (PID 7674)
+[2026-05-04 21:58:51]   [launch] BTagCSV_F  (PID 7677)
+[2026-05-04 21:58:51]   [launch] JetHT_B  (PID 7680)
+[2026-05-04 21:58:51]   [launch] JetHT_C  (PID 7683)
+[2026-05-04 21:58:51]   [launch] JetHT_D  (PID 7686)
+[2026-05-04 21:58:51]   [launch] JetHT_E  (PID 7689)
+[2026-05-04 21:58:51]   [launch] JetHT_F  (PID 7692)
+[2026-05-04 21:58:51]   [heartbeat] queue=22 running=10 done=0 fail=0 mem=21124MB | [BTagCSV_B(pid=7665), BTagCSV_C(pid=7668), BTagCSV_D(pid=7671), BTagCSV_E(pid=7674), BTagCSV_F(pid=7677), JetHT_B(pid=7680), JetHT_C(pid=7683), JetHT_D(pid=7686), JetHT_E(pid=7689), JetHT_F(pid=7692)]
+[2026-05-04 21:58:51]   [wait] concurrency limit (10/10)  (queue=22)
+[2026-05-04 21:58:53]   [wait] concurrency limit (10/10)  (queue=22)
+[2026-05-04 21:58:53]   ✓ BTagCSV_B  (rc=0, elapsed=2s)  [1/32]
+[2026-05-04 21:58:53]   ✓ BTagCSV_C  (rc=0, elapsed=2s)  [2/32]
+[2026-05-04 21:58:53]   ✓ BTagCSV_D  (rc=0, elapsed=2s)  [3/32]
+[2026-05-04 21:58:53]   ✓ BTagCSV_E  (rc=0, elapsed=2s)  [4/32]
+[2026-05-04 21:58:53]   [launch] TTToHadronic  (PID 7715)
+[2026-05-04 21:58:53]   [launch] TTTo2L2Nu  (PID 7718)
+[2026-05-04 21:58:53]   [launch] TTToSemiLeptonic  (PID 7721)
+[2026-05-04 21:58:53]   [launch] ttHH  (PID 7724)
+[2026-05-04 21:58:53]   [wait] concurrency limit (10/10)  (queue=18)
+[2026-05-04 21:58:55]   [wait] concurrency limit (10/10)  (queue=18)
+[2026-05-04 21:58:55]   ✓ JetHT_B  (rc=0, elapsed=4s)  [5/32]
+[2026-05-04 21:58:55]   ✓ JetHT_D  (rc=0, elapsed=4s)  [6/32]
+[2026-05-04 21:58:55]   [launch] tt4b  (PID 7729)
+[2026-05-04 21:58:55]   [launch] ttHtobb  (PID 7732)
+[2026-05-04 21:58:55]   [wait] concurrency limit (10/10)  (queue=16)
+[2026-05-04 21:58:57]   [wait] concurrency limit (10/10)  (queue=16)
+[2026-05-04 21:58:57]   ✓ BTagCSV_F  (rc=0, elapsed=6s)  [7/32]
+[2026-05-04 21:58:57]   [launch] tttt  (PID 7737)
+[2026-05-04 21:58:57]   [wait] concurrency limit (10/10)  (queue=15)
+[2026-05-04 21:58:59]   [wait] concurrency limit (10/10)  (queue=15)
+[2026-05-04 21:58:59]   ✓ JetHT_C  (rc=0, elapsed=8s)  [8/32]
+[2026-05-04 21:58:59]   [launch] tttW  (PID 7742)
+[2026-05-04 21:58:59]   [wait] concurrency limit (10/10)  (queue=14)
+[2026-05-04 21:59:01]   [wait] concurrency limit (10/10)  (queue=14)
+[2026-05-04 21:59:01]   ✓ JetHT_E  (rc=0, elapsed=10s)  [9/32]
+[2026-05-04 21:59:01]   [launch] ttWH  (PID 7747)
+[2026-05-04 21:59:01]   [wait] concurrency limit (10/10)  (queue=13)
+[2026-05-04 21:59:03]   [wait] concurrency limit (10/10)  (queue=13)
+[2026-05-04 21:59:03]   ✓ JetHT_F  (rc=0, elapsed=12s)  [10/32]
+[2026-05-04 21:59:04]   [launch] ttWW  (PID 7752)
+[2026-05-04 21:59:04]   [wait] concurrency limit (10/10)  (queue=12)
+[2026-05-04 21:59:06]   [wait] concurrency limit (10/10)  (queue=12)
+[2026-05-04 21:59:08]   [wait] concurrency limit (10/10)  (queue=12)
+[2026-05-04 21:59:10]   [wait] concurrency limit (10/10)  (queue=12)
+[2026-05-04 21:59:10]   ✓ tttW  (rc=0, elapsed=18s)  [11/32]
+[2026-05-04 21:59:10]   ✓ ttWH  (rc=0, elapsed=18s)  [12/32]
+[2026-05-04 21:59:10]   [launch] ttWZ  (PID 7761)
+[2026-05-04 21:59:10]   [launch] ttZHto4b  (PID 7764)
+[2026-05-04 21:59:10]   [wait] concurrency limit (10/10)  (queue=10)
+[2026-05-04 21:59:12]   [wait] concurrency limit (10/10)  (queue=10)
+[2026-05-04 21:59:14]   [wait] concurrency limit (10/10)  (queue=10)
+[2026-05-04 21:59:16]   [wait] concurrency limit (10/10)  (queue=10)
+[2026-05-04 21:59:16]   ✓ ttWW  (rc=0, elapsed=24s)  [13/32]
+[2026-05-04 21:59:16]   ✓ ttWZ  (rc=0, elapsed=24s)  [14/32]
+[2026-05-04 21:59:16]   [launch] ttZtobb  (PID 7773)
+[2026-05-04 21:59:16]   [launch] ttZZto4b  (PID 7776)
+[2026-05-04 21:59:16]   [wait] concurrency limit (10/10)  (queue=8)
+[2026-05-04 21:59:18]   [wait] concurrency limit (10/10)  (queue=8)
+[2026-05-04 21:59:18]   ✓ TTTo2L2Nu  (rc=0, elapsed=26s)  [15/32]
+[2026-05-04 21:59:18]   ✗ ttZZto4b  (rc=1, see logs/ttZZto4b.err)  [16/32]
+[2026-05-04 21:59:18]   [retry] re-queue ttZZto4b (1/1)
+[2026-05-04 21:59:18]   [launch] ttbb  (PID 7781)
+[2026-05-04 21:59:18]   [launch] QCD_HT200to300  (PID 7784)
+[2026-05-04 21:59:18]   [wait] concurrency limit (10/10)  (queue=7)
+[2026-05-04 21:59:20]   [wait] concurrency limit (10/10)  (queue=7)
+[2026-05-04 21:59:20]   ✓ QCD_HT200to300  (rc=0, elapsed=28s)  [16/32]
+[2026-05-04 21:59:20]   [launch] QCD_HT300to500  (PID 7789)
+[2026-05-04 21:59:20]   [wait] concurrency limit (10/10)  (queue=6)
+[2026-05-04 21:59:22]   [wait] concurrency limit (10/10)  (queue=6)
+[2026-05-04 21:59:22]   ✓ QCD_HT300to500  (rc=0, elapsed=30s)  [17/32]
+[2026-05-04 21:59:22]   [heartbeat] queue=6 running=9 done=17 fail=0 mem=19566MB | [TTToHadronic(pid=7715), TTToSemiLeptonic(pid=7721), ttHH(pid=7724), tt4b(pid=7729), ttHtobb(pid=7732), tttt(pid=7737), ttZHto4b(pid=7764), ttZtobb(pid=7773), ttbb(pid=7781)]
+[2026-05-04 21:59:22]   [launch] QCD_HT500to700  (PID 7796)
+[2026-05-04 21:59:22]   [wait] concurrency limit (10/10)  (queue=5)
+[2026-05-04 21:59:24]   [wait] concurrency limit (10/10)  (queue=5)
+[2026-05-04 21:59:26]   [wait] concurrency limit (10/10)  (queue=5)
+[2026-05-04 21:59:28]   [wait] concurrency limit (10/10)  (queue=5)
+[2026-05-04 21:59:30]   [wait] concurrency limit (10/10)  (queue=5)
+[2026-05-04 21:59:32]   [wait] concurrency limit (10/10)  (queue=5)
+[2026-05-04 21:59:34]   [wait] concurrency limit (10/10)  (queue=5)
+[2026-05-04 21:59:36]   [wait] concurrency limit (10/10)  (queue=5)
+[2026-05-04 21:59:36]   ✓ QCD_HT500to700  (rc=0, elapsed=44s)  [18/32]
+[2026-05-04 21:59:36]   [launch] QCD_HT700to1000  (PID 7813)
+[2026-05-04 21:59:36]   [wait] concurrency limit (10/10)  (queue=4)
+[2026-05-04 21:59:38]   [wait] concurrency limit (10/10)  (queue=4)
+[2026-05-04 21:59:40]   [wait] concurrency limit (10/10)  (queue=4)
+[2026-05-04 21:59:42]   [wait] concurrency limit (10/10)  (queue=4)
+[2026-05-04 21:59:44]   [wait] concurrency limit (10/10)  (queue=4)
+[2026-05-04 21:59:46]   [wait] concurrency limit (10/10)  (queue=4)
+[2026-05-04 21:59:48]   [wait] concurrency limit (10/10)  (queue=4)
+[2026-05-04 21:59:50]   [wait] concurrency limit (10/10)  (queue=4)
+[2026-05-04 21:59:52]   [wait] concurrency limit (10/10)  (queue=4)
+[2026-05-04 21:59:52]   ✓ ttbb  (rc=0, elapsed=60s)  [19/32]
+[2026-05-04 21:59:52]   [heartbeat] queue=4 running=9 done=19 fail=0 mem=19205MB | [TTToHadronic(pid=7715), TTToSemiLeptonic(pid=7721), ttHH(pid=7724), tt4b(pid=7729), ttHtobb(pid=7732), tttt(pid=7737), ttZHto4b(pid=7764), ttZtobb(pid=7773), QCD_HT700to1000(pid=7813)]
+[2026-05-04 21:59:52]   [launch] QCD_HT1000to1500  (PID 7837)
+[2026-05-04 21:59:52]   [wait] concurrency limit (10/10)  (queue=3)
+[2026-05-04 21:59:54]   [wait] concurrency limit (10/10)  (queue=3)
+[2026-05-04 21:59:56]   [wait] concurrency limit (10/10)  (queue=3)
+[2026-05-04 21:59:58]   [wait] concurrency limit (10/10)  (queue=3)
+[2026-05-04 22:00:00]   [wait] concurrency limit (10/10)  (queue=3)
+[2026-05-04 22:00:02]   [wait] concurrency limit (10/10)  (queue=3)
+[2026-05-04 22:00:04]   [wait] concurrency limit (10/10)  (queue=3)
+[2026-05-04 22:00:06]   [wait] concurrency limit (10/10)  (queue=3)
+[2026-05-04 22:00:08]   [wait] concurrency limit (10/10)  (queue=3)
+[2026-05-04 22:00:10]   [wait] concurrency limit (10/10)  (queue=3)
+[2026-05-04 22:00:10]   ✓ QCD_HT700to1000  (rc=0, elapsed=78s)  [20/32]
+[2026-05-04 22:00:10]   [launch] QCD_HT1500to2000  (PID 7984)
+[2026-05-04 22:00:10]   [wait] concurrency limit (10/10)  (queue=2)
+[2026-05-04 22:00:12]   [wait] concurrency limit (10/10)  (queue=2)
+[2026-05-04 22:00:14]   [wait] concurrency limit (10/10)  (queue=2)
+[2026-05-04 22:00:16]   [wait] concurrency limit (10/10)  (queue=2)
+[2026-05-04 22:00:18]   [wait] concurrency limit (10/10)  (queue=2)
+[2026-05-04 22:00:20]   [wait] concurrency limit (10/10)  (queue=2)
+[2026-05-04 22:00:22]   [wait] concurrency limit (10/10)  (queue=2)
+[2026-05-04 22:00:22]   [heartbeat] queue=2 running=10 done=20 fail=0 mem=19031MB | [TTToHadronic(pid=7715), TTToSemiLeptonic(pid=7721), ttHH(pid=7724), tt4b(pid=7729), ttHtobb(pid=7732), tttt(pid=7737), ttZHto4b(pid=7764), ttZtobb(pid=7773), QCD_HT1000to1500(pid=7837), QCD_HT1500to2000(pid=7984)]
+[2026-05-04 22:00:24]   [wait] concurrency limit (10/10)  (queue=2)
+[2026-05-04 22:00:26]   [wait] concurrency limit (10/10)  (queue=2)
+[2026-05-04 22:00:26]   ✓ ttHtobb  (rc=0, elapsed=95s)  [21/32]
+[2026-05-04 22:00:26]   [launch] QCD_HT2000toInf  (PID 8210)
+[2026-05-04 22:00:26]   [wait] concurrency limit (10/10)  (queue=1)
+[2026-05-04 22:00:28]   [wait] concurrency limit (10/10)  (queue=1)
+[2026-05-04 22:00:28]   ✓ ttZtobb  (rc=0, elapsed=97s)  [22/32]
+[2026-05-04 22:00:28]   [launch] ttZZto4b  (PID 8216)
+[2026-05-04 22:00:30]   ✗ ttZZto4b  (rc=1, see logs/ttZZto4b.err)  [23/32]
+[2026-05-04 22:00:34]   ✓ tt4b  (rc=0, elapsed=103s)  [24/32]
+[2026-05-04 22:00:34]   ✓ QCD_HT1000to1500  (rc=0, elapsed=103s)  [25/32]
+[2026-05-04 22:00:52]   [heartbeat] queue=0 running=7 done=24 fail=1 mem=19610MB | [TTToHadronic(pid=7715), TTToSemiLeptonic(pid=7721), ttHH(pid=7724), tttt(pid=7737), ttZHto4b(pid=7764), QCD_HT1500to2000(pid=7984), QCD_HT2000toInf(pid=8210)]
+[2026-05-04 22:00:58]   ✓ QCD_HT2000toInf  (rc=0, elapsed=127s)  [26/32]
+[2026-05-04 22:01:10]   ✓ QCD_HT1500to2000  (rc=0, elapsed=139s)  [27/32]
+[2026-05-04 22:01:12]   ✓ ttZHto4b  (rc=0, elapsed=141s)  [28/32]
+[2026-05-04 22:01:22]   [heartbeat] queue=0 running=4 done=27 fail=1 mem=20023MB | [TTToHadronic(pid=7715), TTToSemiLeptonic(pid=7721), ttHH(pid=7724), tttt(pid=7737)]
+[2026-05-04 22:01:52]   [heartbeat] queue=0 running=4 done=27 fail=1 mem=19996MB | [TTToHadronic(pid=7715), TTToSemiLeptonic(pid=7721), ttHH(pid=7724), tttt(pid=7737)]
+[2026-05-04 22:02:22]   [heartbeat] queue=0 running=4 done=27 fail=1 mem=19041MB | [TTToHadronic(pid=7715), TTToSemiLeptonic(pid=7721), ttHH(pid=7724), tttt(pid=7737)]
+[2026-05-04 22:02:46]   ✓ ttHH  (rc=0, elapsed=235s)  [29/32]
+[2026-05-04 22:02:52]   [heartbeat] queue=0 running=3 done=28 fail=1 mem=19193MB | [TTToHadronic(pid=7715), TTToSemiLeptonic(pid=7721), tttt(pid=7737)]
+[2026-05-04 22:03:02]   ✓ TTToSemiLeptonic  (rc=0, elapsed=251s)  [30/32]
+[2026-05-04 22:03:22]   [heartbeat] queue=0 running=2 done=29 fail=1 mem=19472MB | [TTToHadronic(pid=7715), tttt(pid=7737)]
+[2026-05-04 22:03:52]   [heartbeat] queue=0 running=2 done=29 fail=1 mem=19727MB | [TTToHadronic(pid=7715), tttt(pid=7737)]
+[2026-05-04 22:04:22]   [heartbeat] queue=0 running=2 done=29 fail=1 mem=19774MB | [TTToHadronic(pid=7715), tttt(pid=7737)]
+[2026-05-04 22:04:34]   ✓ tttt  (rc=0, elapsed=343s)  [31/32]
+[2026-05-04 22:04:53]   [heartbeat] queue=0 running=1 done=30 fail=1 mem=19716MB | [TTToHadronic(pid=7715)]
+[2026-05-04 22:05:23]   [heartbeat] queue=0 running=1 done=30 fail=1 mem=18497MB | [TTToHadronic(pid=7715)]
+[2026-05-04 22:05:53]   [heartbeat] queue=0 running=1 done=30 fail=1 mem=19041MB | [TTToHadronic(pid=7715)]
+[2026-05-04 22:06:23]   [heartbeat] queue=0 running=1 done=30 fail=1 mem=19166MB | [TTToHadronic(pid=7715)]
+[2026-05-04 22:06:53]   [heartbeat] queue=0 running=1 done=30 fail=1 mem=19291MB | [TTToHadronic(pid=7715)]
+[2026-05-04 22:07:17]   ✓ TTToHadronic  (rc=0, elapsed=506s)  [32/32]
+[2026-05-04 22:07:17] 
+[2026-05-04 22:07:17] ╔══════════════════════════════════════════════════════════════╗
+[2026-05-04 22:07:17] ║  Summary                                                     ║
+[2026-05-04 22:07:17] ╠══════════════════════════════════════════════════════════════╣
+[2026-05-04 22:07:17]   Total elapsed : 505.6s  (8.4 min)
+[2026-05-04 22:07:17]   Passed : 31 / 32
+[2026-05-04 22:07:17]   Failed : 1 / 32
+[2026-05-04 22:07:17]   Failed samples:
+[2026-05-04 22:07:17]     - ttZZto4b  (rc=1)
+[2026-05-04 22:07:17] ╚══════════════════════════════════════════════════════════════╝
+[2026-05-04 22:08:46] ╔══════════════════════════════════════════════════════════════╗
+[2026-05-04 22:08:46] ║  B-Tag Reweight: Python job pool                            ║
+[2026-05-04 22:08:46] ╠══════════════════════════════════════════════════════════════╣
+[2026-05-04 22:08:46]   Samples        : 1
+[2026-05-04 22:08:46]   Max parallel   : 10
+[2026-05-04 22:08:46]   Min free mem   : 4000 MB
+[2026-05-04 22:08:46]   Retries        : 1
+[2026-05-04 22:08:46]   Log dir        : logs/
+[2026-05-04 22:08:46] ╚══════════════════════════════════════════════════════════════╝
+[2026-05-04 22:08:46] 
+[2026-05-04 22:08:46]   [launch] ttZZto4b  (PID 9816)
+[2026-05-04 22:08:46]   [heartbeat] queue=0 running=1 done=0 fail=0 mem=19127MB | [ttZZto4b(pid=9816)]
+[2026-05-04 22:08:48]   ✗ ttZZto4b  (rc=1, see logs/ttZZto4b.err)  [1/1]
+[2026-05-04 22:08:48]   [retry] re-queue ttZZto4b (1/1)
+[2026-05-04 22:08:48]   [launch] ttZZto4b  (PID 9823)
+[2026-05-04 22:08:50]   ✗ ttZZto4b  (rc=1, see logs/ttZZto4b.err)  [1/1]
+[2026-05-04 22:08:50] 
+[2026-05-04 22:08:50] ╔══════════════════════════════════════════════════════════════╗
+[2026-05-04 22:08:50] ║  Summary                                                     ║
+[2026-05-04 22:08:50] ╠══════════════════════════════════════════════════════════════╣
+[2026-05-04 22:08:50]   Total elapsed : 4.0s  (0.1 min)
+[2026-05-04 22:08:50]   Passed : 0 / 1
+[2026-05-04 22:08:50]   Failed : 1 / 1
+[2026-05-04 22:08:50]   Failed samples:
+[2026-05-04 22:08:50]     - ttZZto4b  (rc=1)
+[2026-05-04 22:08:50] ╚══════════════════════════════════════════════════════════════╝
+[2026-05-04 22:12:32] ╔══════════════════════════════════════════════════════════════╗
+[2026-05-04 22:12:32] ║  B-Tag Reweight: Python job pool                            ║
+[2026-05-04 22:12:32] ╠══════════════════════════════════════════════════════════════╣
+[2026-05-04 22:12:32]   Samples        : 1
+[2026-05-04 22:12:32]   Max parallel   : 10
+[2026-05-04 22:12:32]   Min free mem   : 4000 MB
+[2026-05-04 22:12:32]   Retries        : 1
+[2026-05-04 22:12:32]   Log dir        : logs/
+[2026-05-04 22:12:32] ╚══════════════════════════════════════════════════════════════╝
+[2026-05-04 22:12:32] 
+[2026-05-04 22:12:32]   [launch] ttZZto4b  (PID 10503)
+[2026-05-04 22:12:32]   [heartbeat] queue=0 running=1 done=0 fail=0 mem=18958MB | [ttZZto4b(pid=10503)]
+[2026-05-04 22:12:54]   ✗ ttZZto4b  (rc=1, see logs/ttZZto4b.err)  [1/1]
+[2026-05-04 22:12:54]   [retry] re-queue ttZZto4b (1/1)
+[2026-05-04 22:12:54]   [launch] ttZZto4b  (PID 10532)
+[2026-05-04 22:13:02]   [heartbeat] queue=0 running=1 done=0 fail=0 mem=18806MB | [ttZZto4b(pid=10532)]
+[2026-05-04 22:13:16]   ✗ ttZZto4b  (rc=1, see logs/ttZZto4b.err)  [1/1]
+[2026-05-04 22:13:16] 
+[2026-05-04 22:13:16] ╔══════════════════════════════════════════════════════════════╗
+[2026-05-04 22:13:16] ║  Summary                                                     ║
+[2026-05-04 22:13:16] ╠══════════════════════════════════════════════════════════════╣
+[2026-05-04 22:13:16]   Total elapsed : 44.1s  (0.7 min)
+[2026-05-04 22:13:16]   Passed : 0 / 1
+[2026-05-04 22:13:16]   Failed : 1 / 1
+[2026-05-04 22:13:16]   Failed samples:
+[2026-05-04 22:13:16]     - ttZZto4b  (rc=1)
+[2026-05-04 22:13:16] ╚══════════════════════════════════════════════════════════════╝
+[2026-05-04 22:14:19] ╔══════════════════════════════════════════════════════════════╗
+[2026-05-04 22:14:19] ║  B-Tag Reweight: Python job pool                            ║
+[2026-05-04 22:14:19] ╠══════════════════════════════════════════════════════════════╣
+[2026-05-04 22:14:19]   Samples        : 1
+[2026-05-04 22:14:19]   Max parallel   : 10
+[2026-05-04 22:14:19]   Min free mem   : 4000 MB
+[2026-05-04 22:14:19]   Retries        : 1
+[2026-05-04 22:14:19]   Log dir        : logs/
+[2026-05-04 22:14:19] ╚══════════════════════════════════════════════════════════════╝
+[2026-05-04 22:14:19] 
+[2026-05-04 22:14:19]   [launch] ttZZto4b  (PID 10835)
+[2026-05-04 22:14:19]   [heartbeat] queue=0 running=1 done=0 fail=0 mem=18992MB | [ttZZto4b(pid=10835)]
+[2026-05-04 22:14:49]   [heartbeat] queue=0 running=1 done=0 fail=0 mem=18822MB | [ttZZto4b(pid=10835)]
+[2026-05-04 22:15:19]   [heartbeat] queue=0 running=1 done=0 fail=0 mem=19368MB | [ttZZto4b(pid=10835)]
+[2026-05-04 22:15:33]   ✗ ttZZto4b  (rc=1, see logs/ttZZto4b.err)  [1/1]
+[2026-05-04 22:15:33]   [retry] re-queue ttZZto4b (1/1)
+[2026-05-04 22:15:33]   [launch] ttZZto4b  (PID 10922)
+[2026-05-04 22:15:50]   [heartbeat] queue=0 running=1 done=0 fail=0 mem=19379MB | [ttZZto4b(pid=10922)]
+[2026-05-04 22:16:20]   [heartbeat] queue=0 running=1 done=0 fail=0 mem=19555MB | [ttZZto4b(pid=10922)]
+[2026-05-04 22:16:48]   ✗ ttZZto4b  (rc=1, see logs/ttZZto4b.err)  [1/1]
+[2026-05-04 22:16:48] 
+[2026-05-04 22:16:48] ╔══════════════════════════════════════════════════════════════╗
+[2026-05-04 22:16:48] ║  Summary                                                     ║
+[2026-05-04 22:16:48] ╠══════════════════════════════════════════════════════════════╣
+[2026-05-04 22:16:48]   Total elapsed : 148.4s  (2.5 min)
+[2026-05-04 22:16:48]   Passed : 0 / 1
+[2026-05-04 22:16:48]   Failed : 1 / 1
+[2026-05-04 22:16:48]   Failed samples:
+[2026-05-04 22:16:48]     - ttZZto4b  (rc=1)
+[2026-05-04 22:16:48] ╚══════════════════════════════════════════════════════════════╝

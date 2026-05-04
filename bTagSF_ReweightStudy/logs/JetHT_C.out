@@ -54,7 +54,7 @@ Sample Name: JetHT_C
   Weight : 1
   DataSet: JetHT, Era: C
 
->>> Total entries: 1084995
+>>> Total entries: 4751824
 
   Reweight mode  : 2D (nJets × HT)
   Total flat bins: 390
@@ -63,13 +63,13 @@ Sample Name: JetHT_C
 ╔══════════════════════════════════════════════════════════════╗
 ║  Pass 2: Filling validation histograms (3-tier)              ║
 ╚══════════════════════════════════════════════════════════════╝
-    [Pass 2] 0 / 1084995 (0.0%)
+    [Pass 2] 0 / 4751824 (0.0%)
 
 ╔══════════════════════════════════════════════════════════════╗
 ║  B-Tag Reweight Summary                                      ║
 ╠══════════════════════════════════════════════════════════════╣
-  Events processed : 1084995
-  Events passed    : 662195
+  Events processed : 4751824
+  Events passed    : 2552067
 ╚══════════════════════════════════════════════════════════════╝
 
 >>> Writing output to: bTagReweight_JetHT_C.root
