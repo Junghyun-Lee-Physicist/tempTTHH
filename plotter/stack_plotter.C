@@ -519,6 +519,17 @@ void stack_plotter() {
         // the first member of each group was encountered.
         std::vector<std::string> legendOrder;
 
+        // Collect MC histograms first, then add them to THStack in
+        // ascending-yield order.  Everything else is kept identical to the
+        // old plotter: no stitching/category regrouping, no `group:` field,
+        // and labels are inferred only from the sample name via ShortenLabel().
+        struct MCStackEntry {
+            TH1F* hist;
+            std::string shortLabel;
+            double yield;
+        };
+        std::vector<MCStackEntry> mcStackEntries;
+
         for (const auto& sample : samples) {
             TH1F* h = GetSummedHist(sample, hInfo.key_path);
             if (!h) continue;
@@ -532,23 +543,36 @@ void stack_plotter() {
                 int smartColor = GetSmartColor(sample.name);
                 h->SetFillColor(smartColor);
 
-                hs->Add(h);
+                const std::string shortLabel = ShortenLabel(sample.name);
+                const double thisYield = h->Integral(0, h->GetNbinsX() + 1);
 
-                std::string shortLabel = ShortenLabel(sample.name);
-                double thisYield = h->Integral(0, h->GetNbinsX() + 1);
-                auto it = legendGroup.find(shortLabel);
-                if (it == legendGroup.end()) {
-                    legendGroup[shortLabel] = std::make_pair(h, thisYield);
-                    legendOrder.push_back(shortLabel);
-                } else {
-                    // Same legend group already seen — accumulate yield only
-                    // (color already set on the representative entry).
-                    it->second.second += thisYield;
-                }
+                mcStackEntries.push_back({h, shortLabel, thisYield});
 
                 if (!hMcSum) { hMcSum = (TH1F*)h->Clone("hMcSum"); hMcSum->SetDirectory(0); }
                 else hMcSum->Add(h);
                 hasMC = true;
+            }
+        }
+
+        // Requested stack-order-only change:
+        // smaller-yield MC processes are added first, larger-yield processes
+        // later.  This deliberately does NOT merge ttbar stitching categories.
+        std::sort(mcStackEntries.begin(), mcStackEntries.end(),
+                  [](const MCStackEntry& a, const MCStackEntry& b) {
+                      return a.yield < b.yield;
+                  });
+
+        for (const auto& entry : mcStackEntries) {
+            hs->Add(entry.hist);
+
+            auto it = legendGroup.find(entry.shortLabel);
+            if (it == legendGroup.end()) {
+                legendGroup[entry.shortLabel] = std::make_pair(entry.hist, entry.yield);
+                legendOrder.push_back(entry.shortLabel);
+            } else {
+                // Same legend group already seen — accumulate yield only
+                // (color already set on the representative entry).
+                it->second.second += entry.yield;
             }
         }
 

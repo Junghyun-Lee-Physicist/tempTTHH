@@ -1,6 +1,6 @@
 description: Plottable histograms extracted from /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTToHadronic.root
 input_file: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTToHadronic.root
-total_count: 366
+total_count: 620
 histograms:
   - key_path: jet/h_JEC_DiffRatio_0
     classname: TH1D
@@ -314,6 +314,90 @@ histograms:
     nbins: 50
     xlow: 0.0
     xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_0_ht_btagSF
+    classname: TH1F
+    title: 'H_{T} [GeV] (btagSF) (noCut)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_0_ht_full
+    classname: TH1F
+    title: 'H_{T} [GeV] (full) (noCut)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_0_hadW_btagSF
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (btagSF) (noCut)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_0_hadW_full
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (full) (noCut)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_0_higgs can01_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (btagSF) (noCut)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_0_higgs can01_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (full) (noCut)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_0_higgs can02_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (btagSF) (noCut)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_0_higgs can02_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (full) (noCut)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_0_nbjets_raw
+    classname: TH1F
+    title: nbjets (raw) (noCut)
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_0_nbjets_btagSF
+    classname: TH1F
+    title: nbjets (btagSF) (noCut)
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_0_nbjets_full
+    classname: TH1F
+    title: nbjets (full) (noCut)
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_0_njets_raw
+    classname: TH1F
+    title: njets (raw) (noCut)
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_0_njets_btagSF
+    classname: TH1F
+    title: njets (btagSF) (noCut)
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_0_njets_full
+    classname: TH1F
+    title: njets (full) (noCut)
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
   - key_path: CutflowKinematics/cutStep_1_jet1_Pt
     classname: TH1F
     title: 'jet_{1} p_{T} [GeV] (HadTrigger)'
@@ -482,6 +566,90 @@ histograms:
     nbins: 50
     xlow: 0.0
     xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_1_ht_btagSF
+    classname: TH1F
+    title: 'H_{T} [GeV] (btagSF) (HadTrigger)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_1_ht_full
+    classname: TH1F
+    title: 'H_{T} [GeV] (full) (HadTrigger)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_1_hadW_btagSF
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (btagSF) (HadTrigger)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_1_hadW_full
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (full) (HadTrigger)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_1_higgs can01_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (btagSF) (HadTrigger)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_1_higgs can01_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (full) (HadTrigger)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_1_higgs can02_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (btagSF) (HadTrigger)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_1_higgs can02_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (full) (HadTrigger)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_1_nbjets_raw
+    classname: TH1F
+    title: nbjets (raw) (HadTrigger)
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_1_nbjets_btagSF
+    classname: TH1F
+    title: nbjets (btagSF) (HadTrigger)
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_1_nbjets_full
+    classname: TH1F
+    title: nbjets (full) (HadTrigger)
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_1_njets_raw
+    classname: TH1F
+    title: njets (raw) (HadTrigger)
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_1_njets_btagSF
+    classname: TH1F
+    title: njets (btagSF) (HadTrigger)
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_1_njets_full
+    classname: TH1F
+    title: njets (full) (HadTrigger)
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
   - key_path: CutflowKinematics/cutStep_2_jet1_Pt
     classname: TH1F
     title: 'jet_{1} p_{T} [GeV] (noiseFilter)'
@@ -650,6 +818,90 @@ histograms:
     nbins: 50
     xlow: 0.0
     xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_2_ht_btagSF
+    classname: TH1F
+    title: 'H_{T} [GeV] (btagSF) (noiseFilter)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_2_ht_full
+    classname: TH1F
+    title: 'H_{T} [GeV] (full) (noiseFilter)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_2_hadW_btagSF
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (btagSF) (noiseFilter)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_2_hadW_full
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (full) (noiseFilter)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_2_higgs can01_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (btagSF) (noiseFilter)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_2_higgs can01_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (full) (noiseFilter)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_2_higgs can02_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (btagSF) (noiseFilter)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_2_higgs can02_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (full) (noiseFilter)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_2_nbjets_raw
+    classname: TH1F
+    title: nbjets (raw) (noiseFilter)
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_2_nbjets_btagSF
+    classname: TH1F
+    title: nbjets (btagSF) (noiseFilter)
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_2_nbjets_full
+    classname: TH1F
+    title: nbjets (full) (noiseFilter)
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_2_njets_raw
+    classname: TH1F
+    title: njets (raw) (noiseFilter)
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_2_njets_btagSF
+    classname: TH1F
+    title: njets (btagSF) (noiseFilter)
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_2_njets_full
+    classname: TH1F
+    title: njets (full) (noiseFilter)
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
   - key_path: CutflowKinematics/cutStep_3_jet1_Pt
     classname: TH1F
     title: 'jet_{1} p_{T} [GeV] (pv>=1)'
@@ -818,174 +1070,342 @@ histograms:
     nbins: 50
     xlow: 0.0
     xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_3_ht_btagSF
+    classname: TH1F
+    title: 'H_{T} [GeV] (btagSF) (pv>=1)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_3_ht_full
+    classname: TH1F
+    title: 'H_{T} [GeV] (full) (pv>=1)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_3_hadW_btagSF
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (btagSF) (pv>=1)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_3_hadW_full
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (full) (pv>=1)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_3_higgs can01_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (btagSF) (pv>=1)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_3_higgs can01_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (full) (pv>=1)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_3_higgs can02_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (btagSF) (pv>=1)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_3_higgs can02_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (full) (pv>=1)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_3_nbjets_raw
+    classname: TH1F
+    title: 'nbjets (raw) (pv>=1)'
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_3_nbjets_btagSF
+    classname: TH1F
+    title: 'nbjets (btagSF) (pv>=1)'
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_3_nbjets_full
+    classname: TH1F
+    title: 'nbjets (full) (pv>=1)'
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_3_njets_raw
+    classname: TH1F
+    title: 'njets (raw) (pv>=1)'
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_3_njets_btagSF
+    classname: TH1F
+    title: 'njets (btagSF) (pv>=1)'
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_3_njets_full
+    classname: TH1F
+    title: 'njets (full) (pv>=1)'
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
   - key_path: CutflowKinematics/cutStep_4_jet1_Pt
     classname: TH1F
-    title: 'jet_{1} p_{T} [GeV] (njets>=7)'
+    title: 'jet_{1} p_{T} [GeV] (njets>=6)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_4_jet1_Eta
     classname: TH1F
-    title: 'jet_{1} #eta (njets>=7)'
+    title: 'jet_{1} #eta (njets>=6)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_4_jet1_Phi
     classname: TH1F
-    title: 'jet_{1} #phi (njets>=7)'
+    title: 'jet_{1} #phi (njets>=6)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_4_jet1_BTag
     classname: TH1F
-    title: 'jet_{1} b-tag disc. (njets>=7)'
+    title: 'jet_{1} b-tag disc. (njets>=6)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_4_jet2_Pt
     classname: TH1F
-    title: 'jet_{2} p_{T} [GeV] (njets>=7)'
+    title: 'jet_{2} p_{T} [GeV] (njets>=6)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_4_jet2_Eta
     classname: TH1F
-    title: 'jet_{2} #eta (njets>=7)'
+    title: 'jet_{2} #eta (njets>=6)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_4_jet2_Phi
     classname: TH1F
-    title: 'jet_{2} #phi (njets>=7)'
+    title: 'jet_{2} #phi (njets>=6)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_4_jet2_BTag
     classname: TH1F
-    title: 'jet_{2} b-tag disc. (njets>=7)'
+    title: 'jet_{2} b-tag disc. (njets>=6)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_4_jet3_Pt
     classname: TH1F
-    title: 'jet_{3} p_{T} [GeV] (njets>=7)'
+    title: 'jet_{3} p_{T} [GeV] (njets>=6)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_4_jet3_Eta
     classname: TH1F
-    title: 'jet_{3} #eta (njets>=7)'
+    title: 'jet_{3} #eta (njets>=6)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_4_jet3_Phi
     classname: TH1F
-    title: 'jet_{3} #phi (njets>=7)'
+    title: 'jet_{3} #phi (njets>=6)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_4_jet3_BTag
     classname: TH1F
-    title: 'jet_{3} b-tag disc. (njets>=7)'
+    title: 'jet_{3} b-tag disc. (njets>=6)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_4_jet4_Pt
     classname: TH1F
-    title: 'jet_{4} p_{T} [GeV] (njets>=7)'
+    title: 'jet_{4} p_{T} [GeV] (njets>=6)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_4_jet4_Eta
     classname: TH1F
-    title: 'jet_{4} #eta (njets>=7)'
+    title: 'jet_{4} #eta (njets>=6)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_4_jet4_Phi
     classname: TH1F
-    title: 'jet_{4} #phi (njets>=7)'
+    title: 'jet_{4} #phi (njets>=6)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_4_jet4_BTag
     classname: TH1F
-    title: 'jet_{4} b-tag disc. (njets>=7)'
+    title: 'jet_{4} b-tag disc. (njets>=6)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_4_jet5_Pt
     classname: TH1F
-    title: 'jet_{5} p_{T} [GeV] (njets>=7)'
+    title: 'jet_{5} p_{T} [GeV] (njets>=6)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_4_jet5_Eta
     classname: TH1F
-    title: 'jet_{5} #eta (njets>=7)'
+    title: 'jet_{5} #eta (njets>=6)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_4_jet5_Phi
     classname: TH1F
-    title: 'jet_{5} #phi (njets>=7)'
+    title: 'jet_{5} #phi (njets>=6)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_4_jet5_BTag
     classname: TH1F
-    title: 'jet_{5} b-tag disc. (njets>=7)'
+    title: 'jet_{5} b-tag disc. (njets>=6)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_4_jet6_Pt
     classname: TH1F
-    title: 'jet_{6} p_{T} [GeV] (njets>=7)'
+    title: 'jet_{6} p_{T} [GeV] (njets>=6)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_4_jet6_Eta
     classname: TH1F
-    title: 'jet_{6} #eta (njets>=7)'
+    title: 'jet_{6} #eta (njets>=6)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_4_jet6_Phi
     classname: TH1F
-    title: 'jet_{6} #phi (njets>=7)'
+    title: 'jet_{6} #phi (njets>=6)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_4_jet6_BTag
     classname: TH1F
-    title: 'jet_{6} b-tag disc. (njets>=7)'
+    title: 'jet_{6} b-tag disc. (njets>=6)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_4_ht
     classname: TH1F
-    title: 'H_{T} [GeV] (njets>=7)'
+    title: 'H_{T} [GeV] (njets>=6)'
     nbins: 50
     xlow: 0.0
     xhigh: 4000.0
   - key_path: CutflowKinematics/cutStep_4_hadW
     classname: TH1F
-    title: 'm_{W,had} [GeV] (njets>=7)'
+    title: 'm_{W,had} [GeV] (njets>=6)'
     nbins: 50
     xlow: 0.0
     xhigh: 300.0
   - key_path: CutflowKinematics/cutStep_4_higgs can01
     classname: TH1F
-    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (njets>=7)'
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (njets>=6)'
     nbins: 50
     xlow: 0.0
     xhigh: 300.0
   - key_path: CutflowKinematics/cutStep_4_higgs can02
     classname: TH1F
-    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (njets>=7)'
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (njets>=6)'
     nbins: 50
     xlow: 0.0
     xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_4_ht_btagSF
+    classname: TH1F
+    title: 'H_{T} [GeV] (btagSF) (njets>=6)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_4_ht_full
+    classname: TH1F
+    title: 'H_{T} [GeV] (full) (njets>=6)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_4_hadW_btagSF
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (btagSF) (njets>=6)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_4_hadW_full
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (full) (njets>=6)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_4_higgs can01_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (btagSF) (njets>=6)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_4_higgs can01_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (full) (njets>=6)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_4_higgs can02_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (btagSF) (njets>=6)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_4_higgs can02_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (full) (njets>=6)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_4_nbjets_raw
+    classname: TH1F
+    title: 'nbjets (raw) (njets>=6)'
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_4_nbjets_btagSF
+    classname: TH1F
+    title: 'nbjets (btagSF) (njets>=6)'
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_4_nbjets_full
+    classname: TH1F
+    title: 'nbjets (full) (njets>=6)'
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_4_njets_raw
+    classname: TH1F
+    title: 'njets (raw) (njets>=6)'
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_4_njets_btagSF
+    classname: TH1F
+    title: 'njets (btagSF) (njets>=6)'
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_4_njets_full
+    classname: TH1F
+    title: 'njets (full) (njets>=6)'
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
   - key_path: CutflowKinematics/cutStep_5_jet1_Pt
     classname: TH1F
     title: 'jet_{1} p_{T} [GeV] (6thJetsPT>40)'
@@ -1154,6 +1574,90 @@ histograms:
     nbins: 50
     xlow: 0.0
     xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_5_ht_btagSF
+    classname: TH1F
+    title: 'H_{T} [GeV] (btagSF) (6thJetsPT>40)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_5_ht_full
+    classname: TH1F
+    title: 'H_{T} [GeV] (full) (6thJetsPT>40)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_5_hadW_btagSF
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (btagSF) (6thJetsPT>40)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_5_hadW_full
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (full) (6thJetsPT>40)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_5_higgs can01_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (btagSF) (6thJetsPT>40)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_5_higgs can01_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (full) (6thJetsPT>40)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_5_higgs can02_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (btagSF) (6thJetsPT>40)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_5_higgs can02_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (full) (6thJetsPT>40)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_5_nbjets_raw
+    classname: TH1F
+    title: 'nbjets (raw) (6thJetsPT>40)'
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_5_nbjets_btagSF
+    classname: TH1F
+    title: 'nbjets (btagSF) (6thJetsPT>40)'
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_5_nbjets_full
+    classname: TH1F
+    title: 'nbjets (full) (6thJetsPT>40)'
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_5_njets_raw
+    classname: TH1F
+    title: 'njets (raw) (6thJetsPT>40)'
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_5_njets_btagSF
+    classname: TH1F
+    title: 'njets (btagSF) (6thJetsPT>40)'
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_5_njets_full
+    classname: TH1F
+    title: 'njets (full) (6thJetsPT>40)'
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
   - key_path: CutflowKinematics/cutStep_6_jet1_Pt
     classname: TH1F
     title: 'jet_{1} p_{T} [GeV] (nlepton==0)'
@@ -1322,6 +1826,90 @@ histograms:
     nbins: 50
     xlow: 0.0
     xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_6_ht_btagSF
+    classname: TH1F
+    title: 'H_{T} [GeV] (btagSF) (nlepton==0)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_6_ht_full
+    classname: TH1F
+    title: 'H_{T} [GeV] (full) (nlepton==0)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_6_hadW_btagSF
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (btagSF) (nlepton==0)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_6_hadW_full
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (full) (nlepton==0)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_6_higgs can01_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (btagSF) (nlepton==0)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_6_higgs can01_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (full) (nlepton==0)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_6_higgs can02_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (btagSF) (nlepton==0)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_6_higgs can02_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (full) (nlepton==0)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_6_nbjets_raw
+    classname: TH1F
+    title: nbjets (raw) (nlepton==0)
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_6_nbjets_btagSF
+    classname: TH1F
+    title: nbjets (btagSF) (nlepton==0)
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_6_nbjets_full
+    classname: TH1F
+    title: nbjets (full) (nlepton==0)
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_6_njets_raw
+    classname: TH1F
+    title: njets (raw) (nlepton==0)
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_6_njets_btagSF
+    classname: TH1F
+    title: njets (btagSF) (nlepton==0)
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_6_njets_full
+    classname: TH1F
+    title: njets (full) (nlepton==0)
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
   - key_path: CutflowKinematics/cutStep_7_jet1_Pt
     classname: TH1F
     title: 'jet_{1} p_{T} [GeV] (HT>500)'
@@ -1490,678 +2078,1602 @@ histograms:
     nbins: 50
     xlow: 0.0
     xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_7_ht_btagSF
+    classname: TH1F
+    title: 'H_{T} [GeV] (btagSF) (HT>500)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_7_ht_full
+    classname: TH1F
+    title: 'H_{T} [GeV] (full) (HT>500)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_7_hadW_btagSF
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (btagSF) (HT>500)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_7_hadW_full
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (full) (HT>500)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_7_higgs can01_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (btagSF) (HT>500)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_7_higgs can01_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (full) (HT>500)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_7_higgs can02_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (btagSF) (HT>500)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_7_higgs can02_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (full) (HT>500)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_7_nbjets_raw
+    classname: TH1F
+    title: 'nbjets (raw) (HT>500)'
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_7_nbjets_btagSF
+    classname: TH1F
+    title: 'nbjets (btagSF) (HT>500)'
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_7_nbjets_full
+    classname: TH1F
+    title: 'nbjets (full) (HT>500)'
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_7_njets_raw
+    classname: TH1F
+    title: 'njets (raw) (HT>500)'
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_7_njets_btagSF
+    classname: TH1F
+    title: 'njets (btagSF) (HT>500)'
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_7_njets_full
+    classname: TH1F
+    title: 'njets (full) (HT>500)'
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
   - key_path: CutflowKinematics/cutStep_8_jet1_Pt
     classname: TH1F
-    title: 'jet_{1} p_{T} [GeV] (nbjets>=4)'
+    title: 'jet_{1} p_{T} [GeV] (nbjets>=2)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_8_jet1_Eta
     classname: TH1F
-    title: 'jet_{1} #eta (nbjets>=4)'
+    title: 'jet_{1} #eta (nbjets>=2)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_8_jet1_Phi
     classname: TH1F
-    title: 'jet_{1} #phi (nbjets>=4)'
+    title: 'jet_{1} #phi (nbjets>=2)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_8_jet1_BTag
     classname: TH1F
-    title: 'jet_{1} b-tag disc. (nbjets>=4)'
+    title: 'jet_{1} b-tag disc. (nbjets>=2)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_8_jet2_Pt
     classname: TH1F
-    title: 'jet_{2} p_{T} [GeV] (nbjets>=4)'
+    title: 'jet_{2} p_{T} [GeV] (nbjets>=2)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_8_jet2_Eta
     classname: TH1F
-    title: 'jet_{2} #eta (nbjets>=4)'
+    title: 'jet_{2} #eta (nbjets>=2)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_8_jet2_Phi
     classname: TH1F
-    title: 'jet_{2} #phi (nbjets>=4)'
+    title: 'jet_{2} #phi (nbjets>=2)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_8_jet2_BTag
     classname: TH1F
-    title: 'jet_{2} b-tag disc. (nbjets>=4)'
+    title: 'jet_{2} b-tag disc. (nbjets>=2)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_8_jet3_Pt
     classname: TH1F
-    title: 'jet_{3} p_{T} [GeV] (nbjets>=4)'
+    title: 'jet_{3} p_{T} [GeV] (nbjets>=2)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_8_jet3_Eta
     classname: TH1F
-    title: 'jet_{3} #eta (nbjets>=4)'
+    title: 'jet_{3} #eta (nbjets>=2)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_8_jet3_Phi
     classname: TH1F
-    title: 'jet_{3} #phi (nbjets>=4)'
+    title: 'jet_{3} #phi (nbjets>=2)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_8_jet3_BTag
     classname: TH1F
-    title: 'jet_{3} b-tag disc. (nbjets>=4)'
+    title: 'jet_{3} b-tag disc. (nbjets>=2)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_8_jet4_Pt
     classname: TH1F
-    title: 'jet_{4} p_{T} [GeV] (nbjets>=4)'
+    title: 'jet_{4} p_{T} [GeV] (nbjets>=2)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_8_jet4_Eta
     classname: TH1F
-    title: 'jet_{4} #eta (nbjets>=4)'
+    title: 'jet_{4} #eta (nbjets>=2)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_8_jet4_Phi
     classname: TH1F
-    title: 'jet_{4} #phi (nbjets>=4)'
+    title: 'jet_{4} #phi (nbjets>=2)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_8_jet4_BTag
     classname: TH1F
-    title: 'jet_{4} b-tag disc. (nbjets>=4)'
+    title: 'jet_{4} b-tag disc. (nbjets>=2)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_8_jet5_Pt
     classname: TH1F
-    title: 'jet_{5} p_{T} [GeV] (nbjets>=4)'
+    title: 'jet_{5} p_{T} [GeV] (nbjets>=2)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_8_jet5_Eta
     classname: TH1F
-    title: 'jet_{5} #eta (nbjets>=4)'
+    title: 'jet_{5} #eta (nbjets>=2)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_8_jet5_Phi
     classname: TH1F
-    title: 'jet_{5} #phi (nbjets>=4)'
+    title: 'jet_{5} #phi (nbjets>=2)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_8_jet5_BTag
     classname: TH1F
-    title: 'jet_{5} b-tag disc. (nbjets>=4)'
+    title: 'jet_{5} b-tag disc. (nbjets>=2)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_8_jet6_Pt
     classname: TH1F
-    title: 'jet_{6} p_{T} [GeV] (nbjets>=4)'
+    title: 'jet_{6} p_{T} [GeV] (nbjets>=2)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_8_jet6_Eta
     classname: TH1F
-    title: 'jet_{6} #eta (nbjets>=4)'
+    title: 'jet_{6} #eta (nbjets>=2)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_8_jet6_Phi
     classname: TH1F
-    title: 'jet_{6} #phi (nbjets>=4)'
+    title: 'jet_{6} #phi (nbjets>=2)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_8_jet6_BTag
     classname: TH1F
-    title: 'jet_{6} b-tag disc. (nbjets>=4)'
+    title: 'jet_{6} b-tag disc. (nbjets>=2)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_8_ht
     classname: TH1F
-    title: 'H_{T} [GeV] (nbjets>=4)'
+    title: 'H_{T} [GeV] (nbjets>=2)'
     nbins: 50
     xlow: 0.0
     xhigh: 4000.0
   - key_path: CutflowKinematics/cutStep_8_hadW
     classname: TH1F
-    title: 'm_{W,had} [GeV] (nbjets>=4)'
+    title: 'm_{W,had} [GeV] (nbjets>=2)'
     nbins: 50
     xlow: 0.0
     xhigh: 300.0
   - key_path: CutflowKinematics/cutStep_8_higgs can01
     classname: TH1F
-    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (nbjets>=4)'
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (nbjets>=2)'
     nbins: 50
     xlow: 0.0
     xhigh: 300.0
   - key_path: CutflowKinematics/cutStep_8_higgs can02
     classname: TH1F
-    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (nbjets>=4)'
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (nbjets>=2)'
     nbins: 50
     xlow: 0.0
     xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_8_ht_btagSF
+    classname: TH1F
+    title: 'H_{T} [GeV] (btagSF) (nbjets>=2)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_8_ht_full
+    classname: TH1F
+    title: 'H_{T} [GeV] (full) (nbjets>=2)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_8_hadW_btagSF
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (btagSF) (nbjets>=2)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_8_hadW_full
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (full) (nbjets>=2)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_8_higgs can01_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (btagSF) (nbjets>=2)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_8_higgs can01_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (full) (nbjets>=2)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_8_higgs can02_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (btagSF) (nbjets>=2)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_8_higgs can02_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (full) (nbjets>=2)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_8_nbjets_raw
+    classname: TH1F
+    title: 'nbjets (raw) (nbjets>=2)'
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_8_nbjets_btagSF
+    classname: TH1F
+    title: 'nbjets (btagSF) (nbjets>=2)'
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_8_nbjets_full
+    classname: TH1F
+    title: 'nbjets (full) (nbjets>=2)'
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_8_njets_raw
+    classname: TH1F
+    title: 'njets (raw) (nbjets>=2)'
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_8_njets_btagSF
+    classname: TH1F
+    title: 'njets (btagSF) (nbjets>=2)'
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_8_njets_full
+    classname: TH1F
+    title: 'njets (full) (nbjets>=2)'
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
   - key_path: CutflowKinematics/cutStep_9_jet1_Pt
     classname: TH1F
-    title: 'jet_{1} p_{T} [GeV] (30<HadW<250)'
+    title: 'jet_{1} p_{T} [GeV] (nbjets>=3)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_9_jet1_Eta
     classname: TH1F
-    title: 'jet_{1} #eta (30<HadW<250)'
+    title: 'jet_{1} #eta (nbjets>=3)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_9_jet1_Phi
     classname: TH1F
-    title: 'jet_{1} #phi (30<HadW<250)'
+    title: 'jet_{1} #phi (nbjets>=3)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_9_jet1_BTag
     classname: TH1F
-    title: 'jet_{1} b-tag disc. (30<HadW<250)'
+    title: 'jet_{1} b-tag disc. (nbjets>=3)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_9_jet2_Pt
     classname: TH1F
-    title: 'jet_{2} p_{T} [GeV] (30<HadW<250)'
+    title: 'jet_{2} p_{T} [GeV] (nbjets>=3)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_9_jet2_Eta
     classname: TH1F
-    title: 'jet_{2} #eta (30<HadW<250)'
+    title: 'jet_{2} #eta (nbjets>=3)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_9_jet2_Phi
     classname: TH1F
-    title: 'jet_{2} #phi (30<HadW<250)'
+    title: 'jet_{2} #phi (nbjets>=3)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_9_jet2_BTag
     classname: TH1F
-    title: 'jet_{2} b-tag disc. (30<HadW<250)'
+    title: 'jet_{2} b-tag disc. (nbjets>=3)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_9_jet3_Pt
     classname: TH1F
-    title: 'jet_{3} p_{T} [GeV] (30<HadW<250)'
+    title: 'jet_{3} p_{T} [GeV] (nbjets>=3)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_9_jet3_Eta
     classname: TH1F
-    title: 'jet_{3} #eta (30<HadW<250)'
+    title: 'jet_{3} #eta (nbjets>=3)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_9_jet3_Phi
     classname: TH1F
-    title: 'jet_{3} #phi (30<HadW<250)'
+    title: 'jet_{3} #phi (nbjets>=3)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_9_jet3_BTag
     classname: TH1F
-    title: 'jet_{3} b-tag disc. (30<HadW<250)'
+    title: 'jet_{3} b-tag disc. (nbjets>=3)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_9_jet4_Pt
     classname: TH1F
-    title: 'jet_{4} p_{T} [GeV] (30<HadW<250)'
+    title: 'jet_{4} p_{T} [GeV] (nbjets>=3)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_9_jet4_Eta
     classname: TH1F
-    title: 'jet_{4} #eta (30<HadW<250)'
+    title: 'jet_{4} #eta (nbjets>=3)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_9_jet4_Phi
     classname: TH1F
-    title: 'jet_{4} #phi (30<HadW<250)'
+    title: 'jet_{4} #phi (nbjets>=3)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_9_jet4_BTag
     classname: TH1F
-    title: 'jet_{4} b-tag disc. (30<HadW<250)'
+    title: 'jet_{4} b-tag disc. (nbjets>=3)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_9_jet5_Pt
     classname: TH1F
-    title: 'jet_{5} p_{T} [GeV] (30<HadW<250)'
+    title: 'jet_{5} p_{T} [GeV] (nbjets>=3)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_9_jet5_Eta
     classname: TH1F
-    title: 'jet_{5} #eta (30<HadW<250)'
+    title: 'jet_{5} #eta (nbjets>=3)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_9_jet5_Phi
     classname: TH1F
-    title: 'jet_{5} #phi (30<HadW<250)'
+    title: 'jet_{5} #phi (nbjets>=3)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_9_jet5_BTag
     classname: TH1F
-    title: 'jet_{5} b-tag disc. (30<HadW<250)'
+    title: 'jet_{5} b-tag disc. (nbjets>=3)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_9_jet6_Pt
     classname: TH1F
-    title: 'jet_{6} p_{T} [GeV] (30<HadW<250)'
+    title: 'jet_{6} p_{T} [GeV] (nbjets>=3)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_9_jet6_Eta
     classname: TH1F
-    title: 'jet_{6} #eta (30<HadW<250)'
+    title: 'jet_{6} #eta (nbjets>=3)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_9_jet6_Phi
     classname: TH1F
-    title: 'jet_{6} #phi (30<HadW<250)'
+    title: 'jet_{6} #phi (nbjets>=3)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_9_jet6_BTag
     classname: TH1F
-    title: 'jet_{6} b-tag disc. (30<HadW<250)'
+    title: 'jet_{6} b-tag disc. (nbjets>=3)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_9_ht
     classname: TH1F
-    title: 'H_{T} [GeV] (30<HadW<250)'
+    title: 'H_{T} [GeV] (nbjets>=3)'
     nbins: 50
     xlow: 0.0
     xhigh: 4000.0
   - key_path: CutflowKinematics/cutStep_9_hadW
     classname: TH1F
-    title: 'm_{W,had} [GeV] (30<HadW<250)'
+    title: 'm_{W,had} [GeV] (nbjets>=3)'
     nbins: 50
     xlow: 0.0
     xhigh: 300.0
   - key_path: CutflowKinematics/cutStep_9_higgs can01
     classname: TH1F
-    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (30<HadW<250)'
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (nbjets>=3)'
     nbins: 50
     xlow: 0.0
     xhigh: 300.0
   - key_path: CutflowKinematics/cutStep_9_higgs can02
     classname: TH1F
-    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (30<HadW<250)'
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (nbjets>=3)'
     nbins: 50
     xlow: 0.0
     xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_9_ht_btagSF
+    classname: TH1F
+    title: 'H_{T} [GeV] (btagSF) (nbjets>=3)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_9_ht_full
+    classname: TH1F
+    title: 'H_{T} [GeV] (full) (nbjets>=3)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_9_hadW_btagSF
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (btagSF) (nbjets>=3)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_9_hadW_full
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (full) (nbjets>=3)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_9_higgs can01_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (btagSF) (nbjets>=3)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_9_higgs can01_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (full) (nbjets>=3)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_9_higgs can02_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (btagSF) (nbjets>=3)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_9_higgs can02_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (full) (nbjets>=3)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_9_nbjets_raw
+    classname: TH1F
+    title: 'nbjets (raw) (nbjets>=3)'
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_9_nbjets_btagSF
+    classname: TH1F
+    title: 'nbjets (btagSF) (nbjets>=3)'
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_9_nbjets_full
+    classname: TH1F
+    title: 'nbjets (full) (nbjets>=3)'
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_9_njets_raw
+    classname: TH1F
+    title: 'njets (raw) (nbjets>=3)'
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_9_njets_btagSF
+    classname: TH1F
+    title: 'njets (btagSF) (nbjets>=3)'
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_9_njets_full
+    classname: TH1F
+    title: 'njets (full) (nbjets>=3)'
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
   - key_path: CutflowKinematics/cutStep_10_jet1_Pt
     classname: TH1F
-    title: 'jet_{1} p_{T} [GeV] (HiggsMassWindow)'
+    title: 'jet_{1} p_{T} [GeV] (nbjets>=4)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_10_jet1_Eta
     classname: TH1F
-    title: 'jet_{1} #eta (HiggsMassWindow)'
+    title: 'jet_{1} #eta (nbjets>=4)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_10_jet1_Phi
     classname: TH1F
-    title: 'jet_{1} #phi (HiggsMassWindow)'
+    title: 'jet_{1} #phi (nbjets>=4)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_10_jet1_BTag
     classname: TH1F
-    title: 'jet_{1} b-tag disc. (HiggsMassWindow)'
+    title: 'jet_{1} b-tag disc. (nbjets>=4)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_10_jet2_Pt
     classname: TH1F
-    title: 'jet_{2} p_{T} [GeV] (HiggsMassWindow)'
+    title: 'jet_{2} p_{T} [GeV] (nbjets>=4)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_10_jet2_Eta
     classname: TH1F
-    title: 'jet_{2} #eta (HiggsMassWindow)'
+    title: 'jet_{2} #eta (nbjets>=4)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_10_jet2_Phi
     classname: TH1F
-    title: 'jet_{2} #phi (HiggsMassWindow)'
+    title: 'jet_{2} #phi (nbjets>=4)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_10_jet2_BTag
     classname: TH1F
-    title: 'jet_{2} b-tag disc. (HiggsMassWindow)'
+    title: 'jet_{2} b-tag disc. (nbjets>=4)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_10_jet3_Pt
     classname: TH1F
-    title: 'jet_{3} p_{T} [GeV] (HiggsMassWindow)'
+    title: 'jet_{3} p_{T} [GeV] (nbjets>=4)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_10_jet3_Eta
     classname: TH1F
-    title: 'jet_{3} #eta (HiggsMassWindow)'
+    title: 'jet_{3} #eta (nbjets>=4)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_10_jet3_Phi
     classname: TH1F
-    title: 'jet_{3} #phi (HiggsMassWindow)'
+    title: 'jet_{3} #phi (nbjets>=4)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_10_jet3_BTag
     classname: TH1F
-    title: 'jet_{3} b-tag disc. (HiggsMassWindow)'
+    title: 'jet_{3} b-tag disc. (nbjets>=4)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_10_jet4_Pt
     classname: TH1F
-    title: 'jet_{4} p_{T} [GeV] (HiggsMassWindow)'
+    title: 'jet_{4} p_{T} [GeV] (nbjets>=4)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_10_jet4_Eta
     classname: TH1F
-    title: 'jet_{4} #eta (HiggsMassWindow)'
+    title: 'jet_{4} #eta (nbjets>=4)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_10_jet4_Phi
     classname: TH1F
-    title: 'jet_{4} #phi (HiggsMassWindow)'
+    title: 'jet_{4} #phi (nbjets>=4)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_10_jet4_BTag
     classname: TH1F
-    title: 'jet_{4} b-tag disc. (HiggsMassWindow)'
+    title: 'jet_{4} b-tag disc. (nbjets>=4)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_10_jet5_Pt
     classname: TH1F
-    title: 'jet_{5} p_{T} [GeV] (HiggsMassWindow)'
+    title: 'jet_{5} p_{T} [GeV] (nbjets>=4)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_10_jet5_Eta
     classname: TH1F
-    title: 'jet_{5} #eta (HiggsMassWindow)'
+    title: 'jet_{5} #eta (nbjets>=4)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_10_jet5_Phi
     classname: TH1F
-    title: 'jet_{5} #phi (HiggsMassWindow)'
+    title: 'jet_{5} #phi (nbjets>=4)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_10_jet5_BTag
     classname: TH1F
-    title: 'jet_{5} b-tag disc. (HiggsMassWindow)'
+    title: 'jet_{5} b-tag disc. (nbjets>=4)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_10_jet6_Pt
     classname: TH1F
-    title: 'jet_{6} p_{T} [GeV] (HiggsMassWindow)'
+    title: 'jet_{6} p_{T} [GeV] (nbjets>=4)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_10_jet6_Eta
     classname: TH1F
-    title: 'jet_{6} #eta (HiggsMassWindow)'
+    title: 'jet_{6} #eta (nbjets>=4)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_10_jet6_Phi
     classname: TH1F
-    title: 'jet_{6} #phi (HiggsMassWindow)'
+    title: 'jet_{6} #phi (nbjets>=4)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_10_jet6_BTag
     classname: TH1F
-    title: 'jet_{6} b-tag disc. (HiggsMassWindow)'
+    title: 'jet_{6} b-tag disc. (nbjets>=4)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_10_ht
     classname: TH1F
-    title: 'H_{T} [GeV] (HiggsMassWindow)'
+    title: 'H_{T} [GeV] (nbjets>=4)'
     nbins: 50
     xlow: 0.0
     xhigh: 4000.0
   - key_path: CutflowKinematics/cutStep_10_hadW
     classname: TH1F
-    title: 'm_{W,had} [GeV] (HiggsMassWindow)'
+    title: 'm_{W,had} [GeV] (nbjets>=4)'
     nbins: 50
     xlow: 0.0
     xhigh: 300.0
   - key_path: CutflowKinematics/cutStep_10_higgs can01
     classname: TH1F
-    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (HiggsMassWindow)'
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (nbjets>=4)'
     nbins: 50
     xlow: 0.0
     xhigh: 300.0
   - key_path: CutflowKinematics/cutStep_10_higgs can02
     classname: TH1F
-    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (HiggsMassWindow)'
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (nbjets>=4)'
     nbins: 50
     xlow: 0.0
     xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_10_ht_btagSF
+    classname: TH1F
+    title: 'H_{T} [GeV] (btagSF) (nbjets>=4)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_10_ht_full
+    classname: TH1F
+    title: 'H_{T} [GeV] (full) (nbjets>=4)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_10_hadW_btagSF
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (btagSF) (nbjets>=4)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_10_hadW_full
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (full) (nbjets>=4)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_10_higgs can01_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (btagSF) (nbjets>=4)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_10_higgs can01_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (full) (nbjets>=4)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_10_higgs can02_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (btagSF) (nbjets>=4)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_10_higgs can02_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (full) (nbjets>=4)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_10_nbjets_raw
+    classname: TH1F
+    title: 'nbjets (raw) (nbjets>=4)'
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_10_nbjets_btagSF
+    classname: TH1F
+    title: 'nbjets (btagSF) (nbjets>=4)'
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_10_nbjets_full
+    classname: TH1F
+    title: 'nbjets (full) (nbjets>=4)'
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_10_njets_raw
+    classname: TH1F
+    title: 'njets (raw) (nbjets>=4)'
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_10_njets_btagSF
+    classname: TH1F
+    title: 'njets (btagSF) (nbjets>=4)'
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_10_njets_full
+    classname: TH1F
+    title: 'njets (full) (nbjets>=4)'
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
   - key_path: CutflowKinematics/cutStep_11_jet1_Pt
     classname: TH1F
-    title: 'jet_{1} p_{T} [GeV] (nTotal)'
+    title: 'jet_{1} p_{T} [GeV] (30<HadW<250)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_11_jet1_Eta
     classname: TH1F
-    title: 'jet_{1} #eta (nTotal)'
+    title: 'jet_{1} #eta (30<HadW<250)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_11_jet1_Phi
     classname: TH1F
-    title: 'jet_{1} #phi (nTotal)'
+    title: 'jet_{1} #phi (30<HadW<250)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_11_jet1_BTag
     classname: TH1F
-    title: 'jet_{1} b-tag disc. (nTotal)'
+    title: 'jet_{1} b-tag disc. (30<HadW<250)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_11_jet2_Pt
     classname: TH1F
-    title: 'jet_{2} p_{T} [GeV] (nTotal)'
+    title: 'jet_{2} p_{T} [GeV] (30<HadW<250)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_11_jet2_Eta
     classname: TH1F
-    title: 'jet_{2} #eta (nTotal)'
+    title: 'jet_{2} #eta (30<HadW<250)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_11_jet2_Phi
     classname: TH1F
-    title: 'jet_{2} #phi (nTotal)'
+    title: 'jet_{2} #phi (30<HadW<250)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_11_jet2_BTag
     classname: TH1F
-    title: 'jet_{2} b-tag disc. (nTotal)'
+    title: 'jet_{2} b-tag disc. (30<HadW<250)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_11_jet3_Pt
     classname: TH1F
-    title: 'jet_{3} p_{T} [GeV] (nTotal)'
+    title: 'jet_{3} p_{T} [GeV] (30<HadW<250)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_11_jet3_Eta
     classname: TH1F
-    title: 'jet_{3} #eta (nTotal)'
+    title: 'jet_{3} #eta (30<HadW<250)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_11_jet3_Phi
     classname: TH1F
-    title: 'jet_{3} #phi (nTotal)'
+    title: 'jet_{3} #phi (30<HadW<250)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_11_jet3_BTag
     classname: TH1F
-    title: 'jet_{3} b-tag disc. (nTotal)'
+    title: 'jet_{3} b-tag disc. (30<HadW<250)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_11_jet4_Pt
     classname: TH1F
-    title: 'jet_{4} p_{T} [GeV] (nTotal)'
+    title: 'jet_{4} p_{T} [GeV] (30<HadW<250)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_11_jet4_Eta
     classname: TH1F
-    title: 'jet_{4} #eta (nTotal)'
+    title: 'jet_{4} #eta (30<HadW<250)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_11_jet4_Phi
     classname: TH1F
-    title: 'jet_{4} #phi (nTotal)'
+    title: 'jet_{4} #phi (30<HadW<250)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_11_jet4_BTag
     classname: TH1F
-    title: 'jet_{4} b-tag disc. (nTotal)'
+    title: 'jet_{4} b-tag disc. (30<HadW<250)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_11_jet5_Pt
     classname: TH1F
-    title: 'jet_{5} p_{T} [GeV] (nTotal)'
+    title: 'jet_{5} p_{T} [GeV] (30<HadW<250)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_11_jet5_Eta
     classname: TH1F
-    title: 'jet_{5} #eta (nTotal)'
+    title: 'jet_{5} #eta (30<HadW<250)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_11_jet5_Phi
     classname: TH1F
-    title: 'jet_{5} #phi (nTotal)'
+    title: 'jet_{5} #phi (30<HadW<250)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_11_jet5_BTag
     classname: TH1F
-    title: 'jet_{5} b-tag disc. (nTotal)'
+    title: 'jet_{5} b-tag disc. (30<HadW<250)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_11_jet6_Pt
     classname: TH1F
-    title: 'jet_{6} p_{T} [GeV] (nTotal)'
+    title: 'jet_{6} p_{T} [GeV] (30<HadW<250)'
     nbins: 50
     xlow: 0.0
     xhigh: 2000.0
   - key_path: CutflowKinematics/cutStep_11_jet6_Eta
     classname: TH1F
-    title: 'jet_{6} #eta (nTotal)'
+    title: 'jet_{6} #eta (30<HadW<250)'
     nbins: 50
     xlow: -3.0
     xhigh: 3.0
   - key_path: CutflowKinematics/cutStep_11_jet6_Phi
     classname: TH1F
-    title: 'jet_{6} #phi (nTotal)'
+    title: 'jet_{6} #phi (30<HadW<250)'
     nbins: 50
     xlow: -3.2
     xhigh: 3.2
   - key_path: CutflowKinematics/cutStep_11_jet6_BTag
     classname: TH1F
-    title: 'jet_{6} b-tag disc. (nTotal)'
+    title: 'jet_{6} b-tag disc. (30<HadW<250)'
     nbins: 50
     xlow: 0.0
     xhigh: 1.0
   - key_path: CutflowKinematics/cutStep_11_ht
     classname: TH1F
-    title: 'H_{T} [GeV] (nTotal)'
+    title: 'H_{T} [GeV] (30<HadW<250)'
     nbins: 50
     xlow: 0.0
     xhigh: 4000.0
   - key_path: CutflowKinematics/cutStep_11_hadW
     classname: TH1F
-    title: 'm_{W,had} [GeV] (nTotal)'
+    title: 'm_{W,had} [GeV] (30<HadW<250)'
     nbins: 50
     xlow: 0.0
     xhigh: 300.0
   - key_path: CutflowKinematics/cutStep_11_higgs can01
     classname: TH1F
-    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (nTotal)'
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (30<HadW<250)'
     nbins: 50
     xlow: 0.0
     xhigh: 300.0
   - key_path: CutflowKinematics/cutStep_11_higgs can02
     classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (30<HadW<250)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_11_ht_btagSF
+    classname: TH1F
+    title: 'H_{T} [GeV] (btagSF) (30<HadW<250)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_11_ht_full
+    classname: TH1F
+    title: 'H_{T} [GeV] (full) (30<HadW<250)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_11_hadW_btagSF
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (btagSF) (30<HadW<250)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_11_hadW_full
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (full) (30<HadW<250)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_11_higgs can01_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (btagSF) (30<HadW<250)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_11_higgs can01_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (full) (30<HadW<250)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_11_higgs can02_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (btagSF) (30<HadW<250)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_11_higgs can02_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (full) (30<HadW<250)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_11_nbjets_raw
+    classname: TH1F
+    title: nbjets (raw) (30<HadW<250)
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_11_nbjets_btagSF
+    classname: TH1F
+    title: nbjets (btagSF) (30<HadW<250)
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_11_nbjets_full
+    classname: TH1F
+    title: nbjets (full) (30<HadW<250)
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_11_njets_raw
+    classname: TH1F
+    title: njets (raw) (30<HadW<250)
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_11_njets_btagSF
+    classname: TH1F
+    title: njets (btagSF) (30<HadW<250)
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_11_njets_full
+    classname: TH1F
+    title: njets (full) (30<HadW<250)
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_12_jet1_Pt
+    classname: TH1F
+    title: 'jet_{1} p_{T} [GeV] (HiggsMassWindow)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 2000.0
+  - key_path: CutflowKinematics/cutStep_12_jet1_Eta
+    classname: TH1F
+    title: 'jet_{1} #eta (HiggsMassWindow)'
+    nbins: 50
+    xlow: -3.0
+    xhigh: 3.0
+  - key_path: CutflowKinematics/cutStep_12_jet1_Phi
+    classname: TH1F
+    title: 'jet_{1} #phi (HiggsMassWindow)'
+    nbins: 50
+    xlow: -3.2
+    xhigh: 3.2
+  - key_path: CutflowKinematics/cutStep_12_jet1_BTag
+    classname: TH1F
+    title: 'jet_{1} b-tag disc. (HiggsMassWindow)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 1.0
+  - key_path: CutflowKinematics/cutStep_12_jet2_Pt
+    classname: TH1F
+    title: 'jet_{2} p_{T} [GeV] (HiggsMassWindow)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 2000.0
+  - key_path: CutflowKinematics/cutStep_12_jet2_Eta
+    classname: TH1F
+    title: 'jet_{2} #eta (HiggsMassWindow)'
+    nbins: 50
+    xlow: -3.0
+    xhigh: 3.0
+  - key_path: CutflowKinematics/cutStep_12_jet2_Phi
+    classname: TH1F
+    title: 'jet_{2} #phi (HiggsMassWindow)'
+    nbins: 50
+    xlow: -3.2
+    xhigh: 3.2
+  - key_path: CutflowKinematics/cutStep_12_jet2_BTag
+    classname: TH1F
+    title: 'jet_{2} b-tag disc. (HiggsMassWindow)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 1.0
+  - key_path: CutflowKinematics/cutStep_12_jet3_Pt
+    classname: TH1F
+    title: 'jet_{3} p_{T} [GeV] (HiggsMassWindow)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 2000.0
+  - key_path: CutflowKinematics/cutStep_12_jet3_Eta
+    classname: TH1F
+    title: 'jet_{3} #eta (HiggsMassWindow)'
+    nbins: 50
+    xlow: -3.0
+    xhigh: 3.0
+  - key_path: CutflowKinematics/cutStep_12_jet3_Phi
+    classname: TH1F
+    title: 'jet_{3} #phi (HiggsMassWindow)'
+    nbins: 50
+    xlow: -3.2
+    xhigh: 3.2
+  - key_path: CutflowKinematics/cutStep_12_jet3_BTag
+    classname: TH1F
+    title: 'jet_{3} b-tag disc. (HiggsMassWindow)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 1.0
+  - key_path: CutflowKinematics/cutStep_12_jet4_Pt
+    classname: TH1F
+    title: 'jet_{4} p_{T} [GeV] (HiggsMassWindow)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 2000.0
+  - key_path: CutflowKinematics/cutStep_12_jet4_Eta
+    classname: TH1F
+    title: 'jet_{4} #eta (HiggsMassWindow)'
+    nbins: 50
+    xlow: -3.0
+    xhigh: 3.0
+  - key_path: CutflowKinematics/cutStep_12_jet4_Phi
+    classname: TH1F
+    title: 'jet_{4} #phi (HiggsMassWindow)'
+    nbins: 50
+    xlow: -3.2
+    xhigh: 3.2
+  - key_path: CutflowKinematics/cutStep_12_jet4_BTag
+    classname: TH1F
+    title: 'jet_{4} b-tag disc. (HiggsMassWindow)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 1.0
+  - key_path: CutflowKinematics/cutStep_12_jet5_Pt
+    classname: TH1F
+    title: 'jet_{5} p_{T} [GeV] (HiggsMassWindow)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 2000.0
+  - key_path: CutflowKinematics/cutStep_12_jet5_Eta
+    classname: TH1F
+    title: 'jet_{5} #eta (HiggsMassWindow)'
+    nbins: 50
+    xlow: -3.0
+    xhigh: 3.0
+  - key_path: CutflowKinematics/cutStep_12_jet5_Phi
+    classname: TH1F
+    title: 'jet_{5} #phi (HiggsMassWindow)'
+    nbins: 50
+    xlow: -3.2
+    xhigh: 3.2
+  - key_path: CutflowKinematics/cutStep_12_jet5_BTag
+    classname: TH1F
+    title: 'jet_{5} b-tag disc. (HiggsMassWindow)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 1.0
+  - key_path: CutflowKinematics/cutStep_12_jet6_Pt
+    classname: TH1F
+    title: 'jet_{6} p_{T} [GeV] (HiggsMassWindow)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 2000.0
+  - key_path: CutflowKinematics/cutStep_12_jet6_Eta
+    classname: TH1F
+    title: 'jet_{6} #eta (HiggsMassWindow)'
+    nbins: 50
+    xlow: -3.0
+    xhigh: 3.0
+  - key_path: CutflowKinematics/cutStep_12_jet6_Phi
+    classname: TH1F
+    title: 'jet_{6} #phi (HiggsMassWindow)'
+    nbins: 50
+    xlow: -3.2
+    xhigh: 3.2
+  - key_path: CutflowKinematics/cutStep_12_jet6_BTag
+    classname: TH1F
+    title: 'jet_{6} b-tag disc. (HiggsMassWindow)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 1.0
+  - key_path: CutflowKinematics/cutStep_12_ht
+    classname: TH1F
+    title: 'H_{T} [GeV] (HiggsMassWindow)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_12_hadW
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (HiggsMassWindow)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_12_higgs can01
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (HiggsMassWindow)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_12_higgs can02
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (HiggsMassWindow)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_12_ht_btagSF
+    classname: TH1F
+    title: 'H_{T} [GeV] (btagSF) (HiggsMassWindow)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_12_ht_full
+    classname: TH1F
+    title: 'H_{T} [GeV] (full) (HiggsMassWindow)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_12_hadW_btagSF
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (btagSF) (HiggsMassWindow)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_12_hadW_full
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (full) (HiggsMassWindow)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_12_higgs can01_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (btagSF) (HiggsMassWindow)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_12_higgs can01_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (full) (HiggsMassWindow)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_12_higgs can02_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (btagSF) (HiggsMassWindow)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_12_higgs can02_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (full) (HiggsMassWindow)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_12_nbjets_raw
+    classname: TH1F
+    title: nbjets (raw) (HiggsMassWindow)
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_12_nbjets_btagSF
+    classname: TH1F
+    title: nbjets (btagSF) (HiggsMassWindow)
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_12_nbjets_full
+    classname: TH1F
+    title: nbjets (full) (HiggsMassWindow)
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_12_njets_raw
+    classname: TH1F
+    title: njets (raw) (HiggsMassWindow)
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_12_njets_btagSF
+    classname: TH1F
+    title: njets (btagSF) (HiggsMassWindow)
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_12_njets_full
+    classname: TH1F
+    title: njets (full) (HiggsMassWindow)
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_13_jet1_Pt
+    classname: TH1F
+    title: 'jet_{1} p_{T} [GeV] (nTotal)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 2000.0
+  - key_path: CutflowKinematics/cutStep_13_jet1_Eta
+    classname: TH1F
+    title: 'jet_{1} #eta (nTotal)'
+    nbins: 50
+    xlow: -3.0
+    xhigh: 3.0
+  - key_path: CutflowKinematics/cutStep_13_jet1_Phi
+    classname: TH1F
+    title: 'jet_{1} #phi (nTotal)'
+    nbins: 50
+    xlow: -3.2
+    xhigh: 3.2
+  - key_path: CutflowKinematics/cutStep_13_jet1_BTag
+    classname: TH1F
+    title: 'jet_{1} b-tag disc. (nTotal)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 1.0
+  - key_path: CutflowKinematics/cutStep_13_jet2_Pt
+    classname: TH1F
+    title: 'jet_{2} p_{T} [GeV] (nTotal)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 2000.0
+  - key_path: CutflowKinematics/cutStep_13_jet2_Eta
+    classname: TH1F
+    title: 'jet_{2} #eta (nTotal)'
+    nbins: 50
+    xlow: -3.0
+    xhigh: 3.0
+  - key_path: CutflowKinematics/cutStep_13_jet2_Phi
+    classname: TH1F
+    title: 'jet_{2} #phi (nTotal)'
+    nbins: 50
+    xlow: -3.2
+    xhigh: 3.2
+  - key_path: CutflowKinematics/cutStep_13_jet2_BTag
+    classname: TH1F
+    title: 'jet_{2} b-tag disc. (nTotal)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 1.0
+  - key_path: CutflowKinematics/cutStep_13_jet3_Pt
+    classname: TH1F
+    title: 'jet_{3} p_{T} [GeV] (nTotal)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 2000.0
+  - key_path: CutflowKinematics/cutStep_13_jet3_Eta
+    classname: TH1F
+    title: 'jet_{3} #eta (nTotal)'
+    nbins: 50
+    xlow: -3.0
+    xhigh: 3.0
+  - key_path: CutflowKinematics/cutStep_13_jet3_Phi
+    classname: TH1F
+    title: 'jet_{3} #phi (nTotal)'
+    nbins: 50
+    xlow: -3.2
+    xhigh: 3.2
+  - key_path: CutflowKinematics/cutStep_13_jet3_BTag
+    classname: TH1F
+    title: 'jet_{3} b-tag disc. (nTotal)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 1.0
+  - key_path: CutflowKinematics/cutStep_13_jet4_Pt
+    classname: TH1F
+    title: 'jet_{4} p_{T} [GeV] (nTotal)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 2000.0
+  - key_path: CutflowKinematics/cutStep_13_jet4_Eta
+    classname: TH1F
+    title: 'jet_{4} #eta (nTotal)'
+    nbins: 50
+    xlow: -3.0
+    xhigh: 3.0
+  - key_path: CutflowKinematics/cutStep_13_jet4_Phi
+    classname: TH1F
+    title: 'jet_{4} #phi (nTotal)'
+    nbins: 50
+    xlow: -3.2
+    xhigh: 3.2
+  - key_path: CutflowKinematics/cutStep_13_jet4_BTag
+    classname: TH1F
+    title: 'jet_{4} b-tag disc. (nTotal)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 1.0
+  - key_path: CutflowKinematics/cutStep_13_jet5_Pt
+    classname: TH1F
+    title: 'jet_{5} p_{T} [GeV] (nTotal)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 2000.0
+  - key_path: CutflowKinematics/cutStep_13_jet5_Eta
+    classname: TH1F
+    title: 'jet_{5} #eta (nTotal)'
+    nbins: 50
+    xlow: -3.0
+    xhigh: 3.0
+  - key_path: CutflowKinematics/cutStep_13_jet5_Phi
+    classname: TH1F
+    title: 'jet_{5} #phi (nTotal)'
+    nbins: 50
+    xlow: -3.2
+    xhigh: 3.2
+  - key_path: CutflowKinematics/cutStep_13_jet5_BTag
+    classname: TH1F
+    title: 'jet_{5} b-tag disc. (nTotal)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 1.0
+  - key_path: CutflowKinematics/cutStep_13_jet6_Pt
+    classname: TH1F
+    title: 'jet_{6} p_{T} [GeV] (nTotal)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 2000.0
+  - key_path: CutflowKinematics/cutStep_13_jet6_Eta
+    classname: TH1F
+    title: 'jet_{6} #eta (nTotal)'
+    nbins: 50
+    xlow: -3.0
+    xhigh: 3.0
+  - key_path: CutflowKinematics/cutStep_13_jet6_Phi
+    classname: TH1F
+    title: 'jet_{6} #phi (nTotal)'
+    nbins: 50
+    xlow: -3.2
+    xhigh: 3.2
+  - key_path: CutflowKinematics/cutStep_13_jet6_BTag
+    classname: TH1F
+    title: 'jet_{6} b-tag disc. (nTotal)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 1.0
+  - key_path: CutflowKinematics/cutStep_13_ht
+    classname: TH1F
+    title: 'H_{T} [GeV] (nTotal)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_13_hadW
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (nTotal)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_13_higgs can01
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (nTotal)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_13_higgs can02
+    classname: TH1F
     title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (nTotal)'
     nbins: 50
     xlow: 0.0
     xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_13_ht_btagSF
+    classname: TH1F
+    title: 'H_{T} [GeV] (btagSF) (nTotal)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_13_ht_full
+    classname: TH1F
+    title: 'H_{T} [GeV] (full) (nTotal)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 4000.0
+  - key_path: CutflowKinematics/cutStep_13_hadW_btagSF
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (btagSF) (nTotal)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_13_hadW_full
+    classname: TH1F
+    title: 'm_{W,had} [GeV] (full) (nTotal)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_13_higgs can01_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (btagSF) (nTotal)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_13_higgs can01_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 1st candidate [GeV] (full) (nTotal)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_13_higgs can02_btagSF
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (btagSF) (nTotal)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_13_higgs can02_full
+    classname: TH1F
+    title: 'm_{bb} closest to Higgs 2nd candidate [GeV] (full) (nTotal)'
+    nbins: 50
+    xlow: 0.0
+    xhigh: 300.0
+  - key_path: CutflowKinematics/cutStep_13_nbjets_raw
+    classname: TH1F
+    title: nbjets (raw) (nTotal)
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_13_nbjets_btagSF
+    classname: TH1F
+    title: nbjets (btagSF) (nTotal)
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_13_nbjets_full
+    classname: TH1F
+    title: nbjets (full) (nTotal)
+    nbins: 15
+    xlow: -0.5
+    xhigh: 14.5
+  - key_path: CutflowKinematics/cutStep_13_njets_raw
+    classname: TH1F
+    title: njets (raw) (nTotal)
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_13_njets_btagSF
+    classname: TH1F
+    title: njets (btagSF) (nTotal)
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
+  - key_path: CutflowKinematics/cutStep_13_njets_full
+    classname: TH1F
+    title: njets (full) (nTotal)
+    nbins: 25
+    xlow: -0.5
+    xhigh: 24.5
   - key_path: TtCatValidation/ttCat_Counts_AnaGenPart
     classname: TH1F
     title: Events per category (analyzer GenPart)
@@ -2189,12 +3701,24 @@ histograms:
   - key_path: Tree/cutflow
     classname: TH1F
     title: 'N_{cutFlow}'
-    nbins: 12
+    nbins: 14
     xlow: 0.0
-    xhigh: 12.0
+    xhigh: 14.0
   - key_path: Tree/cutflow_w
     classname: TH1F
-    title: 'N_{weighted}'
-    nbins: 12
+    title: 'N_{w (raw)}'
+    nbins: 14
     xlow: 0.0
-    xhigh: 12.0
+    xhigh: 14.0
+  - key_path: Tree/cutflow_w_btagSF
+    classname: TH1F
+    title: 'N_{w (btag SF)}'
+    nbins: 14
+    xlow: 0.0
+    xhigh: 14.0
+  - key_path: Tree/cutflow_w_full
+    classname: TH1F
+    title: 'N_{w (full SF+RW)}'
+    nbins: 14
+    xlow: 0.0
+    xhigh: 14.0
