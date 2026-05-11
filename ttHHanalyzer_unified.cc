@@ -2642,7 +2642,7 @@ void ttHHanalyzer_unified::readRunsTreeSums() {
 
         Double_t  sumW_one   = 0.0;
         Double_t  sumW2_one  = 0.0;
-        ULong64_t count_one  = 0;
+        Long64_t count_one  = 0;
 
         if (runs->GetBranch("genEventSumw"))
             runs->SetBranchAddress("genEventSumw",  &sumW_one);
@@ -2739,7 +2739,7 @@ void ttHHanalyzer_unified::writeNormalizationCheckTree() {
     // String branches need local std::string variables addressable from TBranch
     std::string sName  = _sampleName;
     std::string rYear  = _runYear;
-    std::string dEra   = _eraName;
+    std::string dEra   = _era;
     bool        isData = (_DataOrMC == "Data");
     double      xsec_used = _baseWeight;   // analyzer's effective per-event base
 
@@ -2759,7 +2759,7 @@ void ttHHanalyzer_unified::writeNormalizationCheckTree() {
     // NanoAOD Runs tree (skim-independent)
     nct->Branch("genEventSumw_runs",  &_norm_runs_sumW,  "genEventSumw_runs/D");
     nct->Branch("genEventSumw2_runs", &_norm_runs_sumW2, "genEventSumw2_runs/D");
-    nct->Branch("genEventCount_runs", &_norm_runs_count, "genEventCount_runs/l");
+    nct->Branch("genEventCount_runs", &_norm_runs_count, "genEventCount_runs/L");
 
     // Cross-check: skim attrition (Events - Runs). Usually ≤ 0 (skim removed events).
     double diff = _norm_sumGW_total - _norm_runs_sumW;

@@ -1286,7 +1286,7 @@ class ttHHanalyzer_unified {
 // Runs tree sums (NanoAOD original, skim-independent)
 Double_t   _norm_runs_sumW    = 0.0;
 Double_t   _norm_runs_sumW2   = 0.0;
-ULong64_t  _norm_runs_count   = 0;
+Long64_t  _norm_runs_count   = 0;
 Int_t      _norm_nFilesProcessed = 0;
 
 // Events tree direct sum (== Runs sumW iff no skim was applied upstream)

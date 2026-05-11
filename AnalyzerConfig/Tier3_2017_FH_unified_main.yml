@@ -231,7 +231,7 @@ samples:
     era: ""
   - filelist: "filelist_ttbb.txt"
     output_dir: "ttbb"
-    weight: 0.0005295497645
+    weight: 0.0002406331374
     data_or_mc: "MC"
     sample_name: "ttbb"
     era: ""
