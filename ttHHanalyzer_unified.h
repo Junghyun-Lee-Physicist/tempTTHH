@@ -46,40 +46,35 @@ const float cZMass = 91.;
 
 // =============================================================================
 // Analysis Mode Definition
-// 분석 목적에 따라 세 가지 모드 정의
 // =============================================================================
 enum class AnalysisMode {
     kMainAnalysis,
     kBTagAndTriggerStudy,
     kTriggerSFStudy,
-    kValidationStudy   // [NEW] N-1 / weight-ablation study
+    kValidationStudy,        // N-1 / weight-ablation study
+    kNormalizationCheck      // [NEW] gen-level Σ genWeight + genTtbarId breakdown
+                             //       (no selection, no object building)
+                             // ⚠ TEMPORARY — to be migrated to NtupleForge
+                             //   (ntuplizer can dump the same info as a
+                             //    friend tree alongside the Events tree,
+                             //    eliminating the need for the analyzer to
+                             //    re-open files and read the Runs tree).
 };
 
 // Argument로 받는 문자열 → AnalysisMode class 변환 함수
 inline AnalysisMode parseAnalysisMode(const std::string& modeStr) {
-
     if (modeStr.empty()) {
         throw std::invalid_argument(
             "[ERROR] Analysis mode not specified!\n"
-            "        You MUST provide --mode argument.\n"
-            "        Valid modes: main, btagtrig, trigsf, validation"
+            "        Valid modes: main, btagtrig, trigsf, validation, normcheck"
         );
     }
-    
-    if (modeStr == "main" || modeStr == "MainAnalysis") {
-        return AnalysisMode::kMainAnalysis;
-    }
-    else if (modeStr == "btagtrig" || modeStr == "BTagAndTriggerStudy") {
-        return AnalysisMode::kBTagAndTriggerStudy;
-    }
-    else if (modeStr == "trigsf" || modeStr == "TriggerSFStudy") {
-        return AnalysisMode::kTriggerSFStudy;
-    }
-    else if (modeStr == "validation" || modeStr == "ValidationStudy") {
-        return AnalysisMode::kValidationStudy;
-    }
+    if (modeStr == "main"       || modeStr == "MainAnalysis")        return AnalysisMode::kMainAnalysis;
+    if (modeStr == "btagtrig"   || modeStr == "BTagAndTriggerStudy") return AnalysisMode::kBTagAndTriggerStudy;
+    if (modeStr == "trigsf"     || modeStr == "TriggerSFStudy")      return AnalysisMode::kTriggerSFStudy;
+    if (modeStr == "validation" || modeStr == "ValidationStudy")     return AnalysisMode::kValidationStudy;
+    if (modeStr == "normcheck"  || modeStr == "NormalizationCheck")  return AnalysisMode::kNormalizationCheck;
     throw std::invalid_argument("[ERROR] Unknown analysis mode: " + modeStr);
-
 }
 
 inline std::string analysisModeName(AnalysisMode mode) {
@@ -88,6 +83,7 @@ inline std::string analysisModeName(AnalysisMode mode) {
         case AnalysisMode::kBTagAndTriggerStudy: return "BTagAndTriggerStudy";
         case AnalysisMode::kTriggerSFStudy:      return "TriggerSFStudy";
         case AnalysisMode::kValidationStudy:     return "ValidationStudy";
+        case AnalysisMode::kNormalizationCheck:  return "NormalizationCheck";
         default: return "Unknown";
     }
 }
@@ -124,6 +120,10 @@ struct SelectionPolicy {
                 // HiggsReco kept ON so we can reconstruct when nbJets>=4 events
                 // exist; selectObjects gates the actual reco call.
                 p = {true, true, true, true, false, false, true, false};
+                break;
+            case AnalysisMode::kNormalizationCheck:
+                // No selection at all — accumulator only.
+                p = {false, false, false, false, false, false, false, false};
                 break;
         }
         return p;
@@ -1269,8 +1269,68 @@ class ttHHanalyzer_unified {
     bool  _passMETFilters;
     std::string _DataOrMC, _runYear, _sampleName, _era;
     // Analysis Mode Variable Declaration
-	AnalysisMode _analysisMode;
+    AnalysisMode _analysisMode;
     SelectionPolicy _policy;    
+
+// ═══════════════════════════════════════════════════════════════════════
+// [kNormalizationCheck] Gen-level accumulators
+// ⚠ TEMPORARY — to be migrated to NtupleForge (Runs friend tree).
+// ⚠ Active only when _analysisMode == kNormalizationCheck.
+//
+// AN ref: ttHH AN-2022/122 §3.3, ttH AN-19-094 §6.2.1.
+//         Stitching factors r_B, r_4b require gen-level Σ genWeight
+//         per genTtbarId %% 100 bin — partition decision is made by
+//         post-processing on hadded normCheck trees.
+// ═══════════════════════════════════════════════════════════════════════
+
+// Runs tree sums (NanoAOD original, skim-independent)
+Double_t   _norm_runs_sumW    = 0.0;
+Double_t   _norm_runs_sumW2   = 0.0;
+ULong64_t  _norm_runs_count   = 0;
+Int_t      _norm_nFilesProcessed = 0;
+
+// Events tree direct sum (== Runs sumW iff no skim was applied upstream)
+Long64_t  _norm_nEvents_total = 0;
+Double_t  _norm_sumGW_total = 0.0;
+Double_t  _norm_sumGW_pos   = 0.0;
+Double_t  _norm_sumGW_neg   = 0.0;
+
+// 11-bin raw by genTtbarId %% 100 (the actual stitching-decision input)
+Double_t _norm_sumGW_id_lt0   = 0.0;   // id < 0 or branch absent
+Double_t _norm_sumGW_id_0     = 0.0;   // tt+LF
+Double_t _norm_sumGW_id_41    = 0.0;
+Double_t _norm_sumGW_id_42    = 0.0;
+Double_t _norm_sumGW_id_43    = 0.0;
+Double_t _norm_sumGW_id_44    = 0.0;
+Double_t _norm_sumGW_id_45    = 0.0;   // tt+cc (41-45)
+Double_t _norm_sumGW_id_51    = 0.0;   // tt+b (1 b-jet, 1 b-hadron)
+Double_t _norm_sumGW_id_52    = 0.0;   // tt+b (1 b-jet, ≥2 b-hadrons)
+Double_t _norm_sumGW_id_53    = 0.0;   // tt+2b
+Double_t _norm_sumGW_id_54    = 0.0;   // tt+bb
+Double_t _norm_sumGW_id_55    = 0.0;   // tt+4b
+Double_t _norm_sumGW_id_other = 0.0;   // safety net
+
+// 5-bucket ntuple ttCat_* cross-check (weighted + raw count)
+Double_t _norm_sumGW_ttCat_LF    = 0.0;
+Double_t _norm_sumGW_ttCat_Cj    = 0.0;
+Double_t _norm_sumGW_ttCat_1B1H  = 0.0;
+Double_t _norm_sumGW_ttCat_1B2H  = 0.0;
+Double_t _norm_sumGW_ttCat_2B    = 0.0;
+Double_t _norm_sumGW_ttCat_NoTT  = 0.0;
+
+Long64_t _norm_n_ttCat_LF    = 0;
+Long64_t _norm_n_ttCat_Cj    = 0;
+Long64_t _norm_n_ttCat_1B1H  = 0;
+Long64_t _norm_n_ttCat_1B2H  = 0;
+Long64_t _norm_n_ttCat_2B    = 0;
+Long64_t _norm_n_ttCat_NoTT  = 0;
+
+// Helpers
+void runNormalizationCheck();
+void readRunsTreeSums();
+void accumulateNormCheckEvent();
+void writeNormalizationCheckTree();
+
 
     // [NEW] Validation-mode runtime config — only used when
     // _analysisMode == kValidationStudy. Filled by Init/loop from

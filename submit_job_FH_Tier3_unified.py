@@ -42,7 +42,7 @@ class CondorJobManager:
         # Variables for jobs, please check before running
         self.analyzer_path = f"{script_dir}"
         self.nameofExe = "ttHHanalyzer_unified"
-        self.AnalyzerMode = "main"  # main / btagtrig / trigsf / validation
+        self.AnalyzerMode = "normcheck"  # main / btagtrig / trigsf / validation / normcheck
         self.path_output_base = (
             f"/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/"
             f"AnalyzerOutput_{self.AnalyzerMode}"

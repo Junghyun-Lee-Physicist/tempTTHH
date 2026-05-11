@@ -105,8 +105,16 @@ void ttHHanalyzer_unified::computeBTagWeight(event* thisEvent) {
 
 void ttHHanalyzer_unified::performAnalysis(){
 
-    loop(noSys, false);
+    if (_analysisMode == AnalysisMode::kNormalizationCheck) {
+        // ⚠ TEMPORARY mode — migrate to NtupleForge eventually.
+        // Skips the full selection/object pipeline; pure gen-level counter.
+        runNormalizationCheck();
+    } else {
+        loop(noSys, false);
+    }
+
     _of->file->Close();
+
 }
 
 void ttHHanalyzer_unified::loop(sysName sysType, bool up){
@@ -2553,6 +2561,308 @@ void ttHHanalyzer_unified::writeTree(){
     _inputTree->Write();
     //    _inputTree->Delete();
     
+}
+
+// ============================================================================
+// [kNormalizationCheck] mode — gen-level accumulators
+//
+// ⚠ TEMPORARY IMPLEMENTATION.
+// This logic should eventually live inside NtupleForge so that the
+// per-sample Σ genWeight, the per-(genTtbarId %% 100) breakdown, and
+// the NanoAOD Runs tree numbers are written into the produced ntuple
+// as a tiny friend tree alongside the Events tree. That removes the
+// need to re-open files in the analyzer just to read the Runs tree,
+// and guarantees consistency between skim-stage counting and the
+// downstream normalisation.
+//
+// AN refs:
+//   ttHH AN-2022/122 §3.3   (SL Option1 — gen-level partition for stitching)
+//   ttHH AN-2022/122 §3.4   (DL — gen-level 4b exclusion)
+//   ttH  AN-19-094  §6.2.1  (FH/SL/DL — NNLO+NNLL anchoring procedure)
+//   ttH  AN-19-094  App. C  (rate/shape uncertainty treatment)
+// ============================================================================
+
+void ttHHanalyzer_unified::runNormalizationCheck() {
+    print("--------------------------------------------------------------------------", "b");
+    print("[NormCheck] Running kNormalizationCheck mode — no selection applied.", "b");
+    print("[NormCheck] Sample: " + _sampleName, "b");
+    print("--------------------------------------------------------------------------", "b");
+
+    // 1) Read the Runs tree(s) BEFORE the Events loop.
+    //    Uses a fresh TFile per input file; never touches eventBuffer's TFile.
+    readRunsTreeSums();
+
+    // 2) Events loop — gen-level scalars only (no createObjects / selectObjects).
+    const long long nEv = _ev->size();
+    std::cout << "[NormCheck] Events tree: " << nEv << " entries" << std::endl;
+    for (long long i = 0; i < nEv; ++i) {
+        _ev->read(i);
+        accumulateNormCheckEvent();
+
+        if (i % 200000 == 0) {
+            std::cout << "[NormCheck] processed " << i << " / " << nEv << std::endl;
+        }
+    }
+
+    // 3) Dump one-row TTree + console summary.
+    writeNormalizationCheckTree();
+}
+
+// ----------------------------------------------------------------------------
+
+void ttHHanalyzer_unified::readRunsTreeSums() {
+    // Acquire the input file list via itreestream's public accessor.
+    // (See treestream.h: std::vector<std::string> itreestream::filenames();)
+    const std::vector<std::string> fnames = _ev->input->filenames();
+    std::cout << "[NormCheck] Runs tree: scanning " << fnames.size()
+              << " input file(s)" << std::endl;
+
+    _norm_runs_sumW          = 0.0;
+    _norm_runs_sumW2         = 0.0;
+    _norm_runs_count         = 0;
+    _norm_nFilesProcessed    = 0;
+
+    for (const auto& fn : fnames) {
+        // Fresh TFile, disjoint from eventBuffer's file handle.
+        std::unique_ptr<TFile> f(TFile::Open(fn.c_str(), "READ"));
+        if (!f || f->IsZombie()) {
+            std::cerr << "[NormCheck][WARN] cannot open: " << fn << std::endl;
+            continue;
+        }
+
+        TTree* runs = nullptr;
+        f->GetObject("Runs", runs);
+        if (!runs) {
+            // Data NanoAOD has no Runs/genEventSumw — that's fine.
+            if (_DataOrMC != "Data") {
+                std::cerr << "[NormCheck][WARN] no Runs tree in: " << fn << std::endl;
+            }
+            continue;
+        }
+
+        Double_t  sumW_one   = 0.0;
+        Double_t  sumW2_one  = 0.0;
+        ULong64_t count_one  = 0;
+
+        if (runs->GetBranch("genEventSumw"))
+            runs->SetBranchAddress("genEventSumw",  &sumW_one);
+        if (runs->GetBranch("genEventSumw2"))
+            runs->SetBranchAddress("genEventSumw2", &sumW2_one);
+        if (runs->GetBranch("genEventCount"))
+            runs->SetBranchAddress("genEventCount", &count_one);
+
+        const Long64_t nR = runs->GetEntries();
+        for (Long64_t r = 0; r < nR; ++r) {
+            // Reset before each entry in case some branches are absent
+            sumW_one = 0.0; sumW2_one = 0.0; count_one = 0;
+            runs->GetEntry(r);
+            _norm_runs_sumW  += sumW_one;
+            _norm_runs_sumW2 += sumW2_one;
+            _norm_runs_count += count_one;
+        }
+        ++_norm_nFilesProcessed;
+        // unique_ptr<TFile>::Close() happens here at scope exit.
+    }
+
+    std::cout << "[NormCheck] Runs tree totals: "
+              << "Σgenw=" << _norm_runs_sumW
+              << "  Σgenw²=" << _norm_runs_sumW2
+              << "  count=" << _norm_runs_count
+              << "  (over " << _norm_nFilesProcessed << " files)" << std::endl;
+}
+
+// ----------------------------------------------------------------------------
+
+void ttHHanalyzer_unified::accumulateNormCheckEvent() {
+    // Treat Data as gw=1 so nEvents_total is still meaningful.
+    const double gw = (_DataOrMC != "Data") ? _ev->genWeight : 1.0;
+
+    ++_norm_nEvents_total;
+    _norm_sumGW_total += gw;
+    if      (gw > 0) _norm_sumGW_pos += gw;
+    else if (gw < 0) _norm_sumGW_neg += gw;
+
+    if (_DataOrMC == "Data") return;
+
+    // --- 11-bin raw genTtbarId %% 100 (stitching-partition input) ---
+    const int gtid = _ev->genTtbarId;
+    if (gtid < 0) {
+        _norm_sumGW_id_lt0 += gw;
+    } else {
+        switch (gtid % 100) {
+            case  0: _norm_sumGW_id_0     += gw; break;
+            case 41: _norm_sumGW_id_41    += gw; break;
+            case 42: _norm_sumGW_id_42    += gw; break;
+            case 43: _norm_sumGW_id_43    += gw; break;
+            case 44: _norm_sumGW_id_44    += gw; break;
+            case 45: _norm_sumGW_id_45    += gw; break;
+            case 51: _norm_sumGW_id_51    += gw; break;
+            case 52: _norm_sumGW_id_52    += gw; break;
+            case 53: _norm_sumGW_id_53    += gw; break;
+            case 54: _norm_sumGW_id_54    += gw; break;
+            case 55: _norm_sumGW_id_55    += gw; break;
+            default: _norm_sumGW_id_other += gw; break;
+        }
+    }
+
+    // --- 5-bucket ttCat (ntuple primary) cross-check ---
+    // Sanity: sum over id-bins must equal the corresponding ttCat-bucket sum
+    // (within float rounding). If not, ntuplizer↔analyzer categorization
+    // disagreement — see ttHHanalyzer_unified.h::readNtuplePrimaryCategory.
+    const TtCat cat = readNtuplePrimaryCategory();
+    switch (cat) {
+        case TtCat::kLightFlavour:
+            _norm_sumGW_ttCat_LF   += gw; ++_norm_n_ttCat_LF;   break;
+        case TtCat::kAddCjet:
+            _norm_sumGW_ttCat_Cj   += gw; ++_norm_n_ttCat_Cj;   break;
+        case TtCat::kAdd1Bjet1Had:
+            _norm_sumGW_ttCat_1B1H += gw; ++_norm_n_ttCat_1B1H; break;
+        case TtCat::kAdd1Bjet2Had:
+            _norm_sumGW_ttCat_1B2H += gw; ++_norm_n_ttCat_1B2H; break;
+        case TtCat::kAdd2Bjet:
+            _norm_sumGW_ttCat_2B   += gw; ++_norm_n_ttCat_2B;   break;
+        case TtCat::kNoTTJets:
+            _norm_sumGW_ttCat_NoTT += gw; ++_norm_n_ttCat_NoTT; break;
+        default: break;   // kUnknown → leave uncounted (will show up as diff)
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+void ttHHanalyzer_unified::writeNormalizationCheckTree() {
+    _of->file->cd();
+
+    TTree* nct = new TTree("normCheck",
+        "Per-sample gen-level normalization check (1 row per file; "
+        "hadd-friendly — post-process to compute r_B, r_4b).");
+
+    // String branches need local std::string variables addressable from TBranch
+    std::string sName  = _sampleName;
+    std::string rYear  = _runYear;
+    std::string dEra   = _eraName;
+    bool        isData = (_DataOrMC == "Data");
+    double      xsec_used = _baseWeight;   // analyzer's effective per-event base
+
+    nct->Branch("sampleName",      &sName);
+    nct->Branch("runYear",         &rYear);
+    nct->Branch("dataEra",         &dEra);
+    nct->Branch("isData",          &isData,            "isData/O");
+    nct->Branch("xsec_used",       &xsec_used,         "xsec_used/D");
+    nct->Branch("nFiles",          &_norm_nFilesProcessed, "nFiles/I");
+
+    // Events tree direct sums (skim-affected)
+    nct->Branch("nEvents_total",   &_norm_nEvents_total, "nEvents_total/L");
+    nct->Branch("sumGenW_total",   &_norm_sumGW_total,   "sumGenW_total/D");
+    nct->Branch("sumGenW_pos",     &_norm_sumGW_pos,     "sumGenW_pos/D");
+    nct->Branch("sumGenW_neg",     &_norm_sumGW_neg,     "sumGenW_neg/D");
+
+    // NanoAOD Runs tree (skim-independent)
+    nct->Branch("genEventSumw_runs",  &_norm_runs_sumW,  "genEventSumw_runs/D");
+    nct->Branch("genEventSumw2_runs", &_norm_runs_sumW2, "genEventSumw2_runs/D");
+    nct->Branch("genEventCount_runs", &_norm_runs_count, "genEventCount_runs/l");
+
+    // Cross-check: skim attrition (Events - Runs). Usually ≤ 0 (skim removed events).
+    double diff = _norm_sumGW_total - _norm_runs_sumW;
+    nct->Branch("diff_eventsVsRuns",  &diff,             "diff_eventsVsRuns/D");
+
+    // 11-bin raw genTtbarId %% 100
+    nct->Branch("sumGenW_id_lt0",   &_norm_sumGW_id_lt0,   "sumGenW_id_lt0/D");
+    nct->Branch("sumGenW_id_0",     &_norm_sumGW_id_0,     "sumGenW_id_0/D");
+    nct->Branch("sumGenW_id_41",    &_norm_sumGW_id_41,    "sumGenW_id_41/D");
+    nct->Branch("sumGenW_id_42",    &_norm_sumGW_id_42,    "sumGenW_id_42/D");
+    nct->Branch("sumGenW_id_43",    &_norm_sumGW_id_43,    "sumGenW_id_43/D");
+    nct->Branch("sumGenW_id_44",    &_norm_sumGW_id_44,    "sumGenW_id_44/D");
+    nct->Branch("sumGenW_id_45",    &_norm_sumGW_id_45,    "sumGenW_id_45/D");
+    nct->Branch("sumGenW_id_51",    &_norm_sumGW_id_51,    "sumGenW_id_51/D");
+    nct->Branch("sumGenW_id_52",    &_norm_sumGW_id_52,    "sumGenW_id_52/D");
+    nct->Branch("sumGenW_id_53",    &_norm_sumGW_id_53,    "sumGenW_id_53/D");
+    nct->Branch("sumGenW_id_54",    &_norm_sumGW_id_54,    "sumGenW_id_54/D");
+    nct->Branch("sumGenW_id_55",    &_norm_sumGW_id_55,    "sumGenW_id_55/D");
+    nct->Branch("sumGenW_id_other", &_norm_sumGW_id_other, "sumGenW_id_other/D");
+
+    // 5-bucket ttCat (ntuple primary) — Σ genWeight
+    nct->Branch("sumGenW_ttCat_LightFlavour",  &_norm_sumGW_ttCat_LF,   "sumGenW_ttCat_LightFlavour/D");
+    nct->Branch("sumGenW_ttCat_AddCjet",       &_norm_sumGW_ttCat_Cj,   "sumGenW_ttCat_AddCjet/D");
+    nct->Branch("sumGenW_ttCat_Add1Bjet_1Had", &_norm_sumGW_ttCat_1B1H, "sumGenW_ttCat_Add1Bjet_1Had/D");
+    nct->Branch("sumGenW_ttCat_Add1Bjet_2Had", &_norm_sumGW_ttCat_1B2H, "sumGenW_ttCat_Add1Bjet_2Had/D");
+    nct->Branch("sumGenW_ttCat_Add2Bjet",      &_norm_sumGW_ttCat_2B,   "sumGenW_ttCat_Add2Bjet/D");
+    nct->Branch("sumGenW_ttCat_NoTT",          &_norm_sumGW_ttCat_NoTT, "sumGenW_ttCat_NoTT/D");
+
+    // 5-bucket ttCat — unweighted counts
+    nct->Branch("n_ttCat_LightFlavour",  &_norm_n_ttCat_LF,   "n_ttCat_LightFlavour/L");
+    nct->Branch("n_ttCat_AddCjet",       &_norm_n_ttCat_Cj,   "n_ttCat_AddCjet/L");
+    nct->Branch("n_ttCat_Add1Bjet_1Had", &_norm_n_ttCat_1B1H, "n_ttCat_Add1Bjet_1Had/L");
+    nct->Branch("n_ttCat_Add1Bjet_2Had", &_norm_n_ttCat_1B2H, "n_ttCat_Add1Bjet_2Had/L");
+    nct->Branch("n_ttCat_Add2Bjet",      &_norm_n_ttCat_2B,   "n_ttCat_Add2Bjet/L");
+    nct->Branch("n_ttCat_NoTT",          &_norm_n_ttCat_NoTT, "n_ttCat_NoTT/L");
+
+    nct->Fill();
+    nct->Write();
+
+    // --- Console summary ---
+    std::cout << "\n══════════════════════════════════════════════════════════════════\n";
+    std::cout << "[NormCheck] Summary — " << _sampleName << "\n";
+    std::cout << "------------------------------------------------------------------\n";
+    std::cout << "  nEvents (Events tree)  : " << _norm_nEvents_total << "\n";
+    std::cout << "  Σgenw  (Events tree)   : " << _norm_sumGW_total
+              << "   (pos=" << _norm_sumGW_pos
+              << ", neg=" << _norm_sumGW_neg << ")\n";
+    std::cout << "  Σgenw  (Runs tree)     : " << _norm_runs_sumW << "\n";
+    std::cout << "  Σgenw² (Runs tree)     : " << _norm_runs_sumW2 << "\n";
+    std::cout << "  count  (Runs tree)     : " << _norm_runs_count << "\n";
+    std::cout << "  diff (Events - Runs)   : " << diff
+              << "   ← non-zero = skim attrition (expected if ntuplizer skimmed)\n";
+
+    if (_DataOrMC != "Data") {
+        const double sum_cc = _norm_sumGW_id_41 + _norm_sumGW_id_42 + _norm_sumGW_id_43
+                            + _norm_sumGW_id_44 + _norm_sumGW_id_45;
+        std::cout << "  --- by genTtbarId %% 100 (raw, weighted) ---\n";
+        std::cout << "    id < 0    (no/none)  : " << _norm_sumGW_id_lt0   << "\n";
+        std::cout << "    id =  0   (LF)       : " << _norm_sumGW_id_0     << "\n";
+        std::cout << "    id 41-45  (cc total) : " << sum_cc << "\n";
+        std::cout << "    id = 51   (1b/1H)    : " << _norm_sumGW_id_51    << "\n";
+        std::cout << "    id = 52   (1b/2H)    : " << _norm_sumGW_id_52    << "\n";
+        std::cout << "    id = 53   (2b)       : " << _norm_sumGW_id_53    << "\n";
+        std::cout << "    id = 54   (bb)       : " << _norm_sumGW_id_54    << "\n";
+        std::cout << "    id = 55   (4b)       : " << _norm_sumGW_id_55    << "\n";
+        std::cout << "    id  other            : " << _norm_sumGW_id_other << "\n";
+        std::cout << "  --- ntuple ttCat cross-check (Σ genw should match id sums) ---\n";
+        std::cout << "    LF       : " << _norm_sumGW_ttCat_LF
+                  << "   (n=" << _norm_n_ttCat_LF << ")\n";
+        std::cout << "    AddCjet  : " << _norm_sumGW_ttCat_Cj
+                  << "   (n=" << _norm_n_ttCat_Cj << ")\n";
+        std::cout << "    1B/1H    : " << _norm_sumGW_ttCat_1B1H
+                  << "   (n=" << _norm_n_ttCat_1B1H << ")\n";
+        std::cout << "    1B/2H    : " << _norm_sumGW_ttCat_1B2H
+                  << "   (n=" << _norm_n_ttCat_1B2H << ")\n";
+        std::cout << "    Add2Bjet : " << _norm_sumGW_ttCat_2B
+                  << "   (n=" << _norm_n_ttCat_2B << ")\n";
+        std::cout << "    NoTT     : " << _norm_sumGW_ttCat_NoTT
+                  << "   (n=" << _norm_n_ttCat_NoTT << ")\n";
+
+        // Inline cross-check warnings (loose tolerance — float rounding)
+        const double tol = 1e-3 * std::max(1.0, std::abs(_norm_sumGW_total));
+        if (std::abs(_norm_sumGW_id_0 - _norm_sumGW_ttCat_LF) > tol) {
+            std::cerr << "[NormCheck][WARN] id=0 (" << _norm_sumGW_id_0
+                      << ") != ttCat_LF (" << _norm_sumGW_ttCat_LF << ")\n";
+        }
+        if (std::abs(sum_cc - _norm_sumGW_ttCat_Cj) > tol) {
+            std::cerr << "[NormCheck][WARN] id∈41-45 (" << sum_cc
+                      << ") != ttCat_AddCjet (" << _norm_sumGW_ttCat_Cj << ")\n";
+        }
+        if (std::abs(_norm_sumGW_id_51 - _norm_sumGW_ttCat_1B1H) > tol) {
+            std::cerr << "[NormCheck][WARN] id=51 vs ttCat_1B1H drift\n";
+        }
+        if (std::abs(_norm_sumGW_id_52 - _norm_sumGW_ttCat_1B2H) > tol) {
+            std::cerr << "[NormCheck][WARN] id=52 vs ttCat_1B2H drift\n";
+        }
+        const double sum_2b_or_more = _norm_sumGW_id_53 + _norm_sumGW_id_54 + _norm_sumGW_id_55;
+        if (std::abs(sum_2b_or_more - _norm_sumGW_ttCat_2B) > tol) {
+            std::cerr << "[NormCheck][WARN] id∈53-55 (" << sum_2b_or_more
+                      << ") != ttCat_Add2Bjet (" << _norm_sumGW_ttCat_2B << ")\n";
+        }
+    }
+    std::cout << "══════════════════════════════════════════════════════════════════\n";
 }
 
 
