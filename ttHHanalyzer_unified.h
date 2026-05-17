@@ -52,7 +52,7 @@ enum class AnalysisMode {
     kBTagAndTriggerStudy,
     kTriggerSFStudy,
     kValidationStudy,        // N-1 / weight-ablation study
-    kNormalizationCheck      // [NEW] gen-level Σ genWeight + genTtbarId breakdown
+    kPrescan      // [NEW] gen-level Σ genWeight + genTtbarId breakdown
                              //       (no selection, no object building)
                              // ⚠ TEMPORARY — to be migrated to NtupleForge
                              //   (ntuplizer can dump the same info as a
@@ -66,14 +66,14 @@ inline AnalysisMode parseAnalysisMode(const std::string& modeStr) {
     if (modeStr.empty()) {
         throw std::invalid_argument(
             "[ERROR] Analysis mode not specified!\n"
-            "        Valid modes: main, btagtrig, trigsf, validation, normcheck"
+            "        Valid modes: main, btagtrig, trigsf, validation, prescan"
         );
     }
     if (modeStr == "main"       || modeStr == "MainAnalysis")        return AnalysisMode::kMainAnalysis;
     if (modeStr == "btagtrig"   || modeStr == "BTagAndTriggerStudy") return AnalysisMode::kBTagAndTriggerStudy;
     if (modeStr == "trigsf"     || modeStr == "TriggerSFStudy")      return AnalysisMode::kTriggerSFStudy;
     if (modeStr == "validation" || modeStr == "ValidationStudy")     return AnalysisMode::kValidationStudy;
-    if (modeStr == "normcheck"  || modeStr == "NormalizationCheck")  return AnalysisMode::kNormalizationCheck;
+    if (modeStr == "prescan"  || modeStr == "Prescan")  return AnalysisMode::kPrescan;
     throw std::invalid_argument("[ERROR] Unknown analysis mode: " + modeStr);
 }
 
@@ -83,7 +83,7 @@ inline std::string analysisModeName(AnalysisMode mode) {
         case AnalysisMode::kBTagAndTriggerStudy: return "BTagAndTriggerStudy";
         case AnalysisMode::kTriggerSFStudy:      return "TriggerSFStudy";
         case AnalysisMode::kValidationStudy:     return "ValidationStudy";
-        case AnalysisMode::kNormalizationCheck:  return "NormalizationCheck";
+        case AnalysisMode::kPrescan:  return "Prescan";
         default: return "Unknown";
     }
 }
@@ -121,7 +121,7 @@ struct SelectionPolicy {
                 // exist; selectObjects gates the actual reco call.
                 p = {true, true, true, true, false, false, true, false};
                 break;
-            case AnalysisMode::kNormalizationCheck:
+            case AnalysisMode::kPrescan:
                 // No selection at all — accumulator only.
                 p = {false, false, false, false, false, false, false, false};
                 break;
@@ -1273,63 +1273,80 @@ class ttHHanalyzer_unified {
     SelectionPolicy _policy;    
 
 // ═══════════════════════════════════════════════════════════════════════
-// [kNormalizationCheck] Gen-level accumulators
+// [kPrescan] Gen-level accumulators
 // ⚠ TEMPORARY — to be migrated to NtupleForge (Runs friend tree).
-// ⚠ Active only when _analysisMode == kNormalizationCheck.
+// ⚠ Active only when _analysisMode == kPrescan.
 //
 // AN ref: ttHH AN-2022/122 §3.3, ttH AN-19-094 §6.2.1.
 //         Stitching factors r_B, r_4b require gen-level Σ genWeight
 //         per genTtbarId %% 100 bin — partition decision is made by
-//         post-processing on hadded normCheck trees.
+//         post-processing on hadded prescan trees.
 // ═══════════════════════════════════════════════════════════════════════
 
 // Runs tree sums (NanoAOD original, skim-independent)
-Double_t   _norm_runs_sumW    = 0.0;
-Double_t   _norm_runs_sumW2   = 0.0;
-Long64_t  _norm_runs_count   = 0;
-Int_t      _norm_nFilesProcessed = 0;
+Double_t   _prescan_runs_sumW    = 0.0;
+Double_t   _prescan_runs_sumW2   = 0.0;
+Long64_t  _prescan_runs_count   = 0;
+Int_t      _prescan_nFilesProcessed = 0;
 
 // Events tree direct sum (== Runs sumW iff no skim was applied upstream)
-Long64_t  _norm_nEvents_total = 0;
-Double_t  _norm_sumGW_total = 0.0;
-Double_t  _norm_sumGW_pos   = 0.0;
-Double_t  _norm_sumGW_neg   = 0.0;
+Long64_t  _prescan_nEvents_total = 0;
+Double_t  _prescan_sumGW_total = 0.0;
+Double_t  _prescan_sumGW_pos   = 0.0;
+Double_t  _prescan_sumGW_neg   = 0.0;
 
 // 11-bin raw by genTtbarId %% 100 (the actual stitching-decision input)
-Double_t _norm_sumGW_id_lt0   = 0.0;   // id < 0 or branch absent
-Double_t _norm_sumGW_id_0     = 0.0;   // tt+LF
-Double_t _norm_sumGW_id_41    = 0.0;
-Double_t _norm_sumGW_id_42    = 0.0;
-Double_t _norm_sumGW_id_43    = 0.0;
-Double_t _norm_sumGW_id_44    = 0.0;
-Double_t _norm_sumGW_id_45    = 0.0;   // tt+cc (41-45)
-Double_t _norm_sumGW_id_51    = 0.0;   // tt+b (1 b-jet, 1 b-hadron)
-Double_t _norm_sumGW_id_52    = 0.0;   // tt+b (1 b-jet, ≥2 b-hadrons)
-Double_t _norm_sumGW_id_53    = 0.0;   // tt+2b
-Double_t _norm_sumGW_id_54    = 0.0;   // tt+bb
-Double_t _norm_sumGW_id_55    = 0.0;   // tt+4b
-Double_t _norm_sumGW_id_other = 0.0;   // safety net
+Double_t _prescan_sumGW_id_lt0   = 0.0;   // id < 0 or branch absent
+Double_t _prescan_sumGW_id_0     = 0.0;   // tt+LF
+Double_t _prescan_sumGW_id_41    = 0.0;
+Double_t _prescan_sumGW_id_42    = 0.0;
+Double_t _prescan_sumGW_id_43    = 0.0;
+Double_t _prescan_sumGW_id_44    = 0.0;
+Double_t _prescan_sumGW_id_45    = 0.0;   // tt+cc (41-45)
+Double_t _prescan_sumGW_id_51    = 0.0;   // tt+b (1 b-jet, 1 b-hadron)
+Double_t _prescan_sumGW_id_52    = 0.0;   // tt+b (1 b-jet, ≥2 b-hadrons)
+Double_t _prescan_sumGW_id_53    = 0.0;   // tt+2b
+Double_t _prescan_sumGW_id_54    = 0.0;   // tt+bb
+Double_t _prescan_sumGW_id_55    = 0.0;   // tt+4b
+Double_t _prescan_sumGW_id_other = 0.0;   // safety net
+
+// 11-bin raw COUNT by genTtbarId %% 100 — unweighted companion to the
+// _prescan_sumGW_id_* bins above. Same partition; needed for the
+// stitching-partition event-count bookkeeping (entries per category).
+Long64_t _prescan_n_id_lt0   = 0;   // id < 0 or branch absent
+Long64_t _prescan_n_id_0     = 0;   // tt+LF
+Long64_t _prescan_n_id_41    = 0;
+Long64_t _prescan_n_id_42    = 0;
+Long64_t _prescan_n_id_43    = 0;
+Long64_t _prescan_n_id_44    = 0;
+Long64_t _prescan_n_id_45    = 0;   // tt+cc (41-45)
+Long64_t _prescan_n_id_51    = 0;   // tt+b (1 b-jet, 1 b-hadron)
+Long64_t _prescan_n_id_52    = 0;   // tt+b (1 b-jet, ≥2 b-hadrons)
+Long64_t _prescan_n_id_53    = 0;   // tt+2b
+Long64_t _prescan_n_id_54    = 0;   // tt+bb
+Long64_t _prescan_n_id_55    = 0;   // tt+4b
+Long64_t _prescan_n_id_other = 0;   // safety net
 
 // 5-bucket ntuple ttCat_* cross-check (weighted + raw count)
-Double_t _norm_sumGW_ttCat_LF    = 0.0;
-Double_t _norm_sumGW_ttCat_Cj    = 0.0;
-Double_t _norm_sumGW_ttCat_1B1H  = 0.0;
-Double_t _norm_sumGW_ttCat_1B2H  = 0.0;
-Double_t _norm_sumGW_ttCat_2B    = 0.0;
-Double_t _norm_sumGW_ttCat_NoTT  = 0.0;
+Double_t _prescan_sumGW_ttCat_LF    = 0.0;
+Double_t _prescan_sumGW_ttCat_Cj    = 0.0;
+Double_t _prescan_sumGW_ttCat_1B1H  = 0.0;
+Double_t _prescan_sumGW_ttCat_1B2H  = 0.0;
+Double_t _prescan_sumGW_ttCat_2B    = 0.0;
+Double_t _prescan_sumGW_ttCat_NoTT  = 0.0;
 
-Long64_t _norm_n_ttCat_LF    = 0;
-Long64_t _norm_n_ttCat_Cj    = 0;
-Long64_t _norm_n_ttCat_1B1H  = 0;
-Long64_t _norm_n_ttCat_1B2H  = 0;
-Long64_t _norm_n_ttCat_2B    = 0;
-Long64_t _norm_n_ttCat_NoTT  = 0;
+Long64_t _prescan_n_ttCat_LF    = 0;
+Long64_t _prescan_n_ttCat_Cj    = 0;
+Long64_t _prescan_n_ttCat_1B1H  = 0;
+Long64_t _prescan_n_ttCat_1B2H  = 0;
+Long64_t _prescan_n_ttCat_2B    = 0;
+Long64_t _prescan_n_ttCat_NoTT  = 0;
 
 // Helpers
-void runNormalizationCheck();
+void runPrescan();
 void readRunsTreeSums();
-void accumulateNormCheckEvent();
-void writeNormalizationCheckTree();
+void accumulatePrescanEvent();
+void writePrescanTree();
 
 
     // [NEW] Validation-mode runtime config — only used when
@@ -2918,4 +2935,3 @@ void writeNormalizationCheckTree();
     }
 };	
 #endif
-

@@ -2,7 +2,7 @@ common:
   year: "2017"
   # You can choose one of below analysis mode
   # main, btagtrig, trigsf, prescan
-  analysis_mode: "main" 
+  analysis_mode: "prescan" 
 
 samples:
   # ---------------------------------------------------------
