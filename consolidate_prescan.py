@@ -39,7 +39,8 @@ import os
 import re
 import sys
 import time
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
+from decimal import Decimal
 
 # --------------------------------------------------------------------------- #
 # Configuration defaults (override on the command line)
@@ -68,6 +69,46 @@ TTCAT_VS_ID = {
 }
 
 _FNAME_INDEX_RE = re.compile(r"_(\d+)\.root$")
+
+
+# --------------------------------------------------------------------------- #
+# Number formatting — every value is rendered in plain fixed-point decimal,
+# never scientific notation, for console / JSON / CSV alike.
+# --------------------------------------------------------------------------- #
+def fixed_str(x) -> str:
+    """Plain fixed-point decimal string for a number.
+
+    Never uses scientific notation. For floats it takes repr()'s shortest
+    round-trip form and, only if that carries an exponent, expands it
+    exactly via Decimal — so no precision is lost and no noise digits are
+    introduced. Integers and bools are returned verbatim.
+    """
+    if isinstance(x, bool):
+        return str(x)
+    if isinstance(x, int):
+        return str(x)
+    s = repr(float(x))
+    if "e" in s or "E" in s:
+        s = format(Decimal(s), "f")     # exact expansion, fixed-point
+    return s
+
+
+def grouped(x) -> str:
+    """fixed_str() with thousands separators on the integer part.
+
+    Used for console tables only; JSON/CSV use fixed_str() without
+    separators so the values stay machine-parseable.
+    """
+    s = fixed_str(x)
+    neg = s.startswith("-")
+    if neg:
+        s = s[1:]
+    if "." in s:
+        int_part, frac_part = s.split(".", 1)
+        out = f"{int(int_part):,}.{frac_part}"
+    else:
+        out = f"{int(s):,}"
+    return ("-" + out) if neg else out
 
 
 # --------------------------------------------------------------------------- #
@@ -280,8 +321,9 @@ def run_crosschecks(summ: SampleSummary, rel_tol: float) -> dict:
             f"vs nEvents={summ.n_events:,}")
     if not checks["id_partition_weight"]:
         summ.warnings.append(
-            f"genTtbarId weight partition mismatch: ΣsumGenW_id={id_w_sum:.6g} "
-            f"vs sumGenW={summ.sumGenW:.6g}")
+            f"genTtbarId weight partition mismatch: "
+            f"ΣsumGenW_id={fixed_str(id_w_sum)} "
+            f"vs sumGenW={fixed_str(summ.sumGenW)}")
 
     # (2) ntuple ttCat_* vs analyzer genTtbarId decode (count + weight).
     for cat, id_group in TTCAT_VS_ID.items():
@@ -298,7 +340,8 @@ def run_crosschecks(summ: SampleSummary, rel_tol: float) -> dict:
         if not ok_w:
             summ.warnings.append(
                 f"ttCat vs genTtbarId weight mismatch [{cat}]: "
-                f"w_ttCat={summ.ttcat_w[cat]:.6g} vs Σw_id={w_id:.6g}")
+                f"w_ttCat={fixed_str(summ.ttcat_w[cat])} "
+                f"vs Σw_id={fixed_str(w_id)}")
 
     # (3) Events-tree vs Runs-tree sum (informational; non-zero = skim).
     checks["events_vs_runs_match"] = close(summ.sumGenW, summ.runs_sumW)
@@ -309,17 +352,9 @@ def run_crosschecks(summ: SampleSummary, rel_tol: float) -> dict:
 # --------------------------------------------------------------------------- #
 # Reporting
 # --------------------------------------------------------------------------- #
-def _fmt_int(x) -> str:
-    return f"{int(x):,}"
-
-
-def _fmt_sci(x) -> str:
-    return f"{x:.6g}"
-
-
 def print_headline_table(records: list[tuple[SampleSummary, dict]]) -> None:
     hdr = (f"{'Sample':<24}{'Type':<6}{'Jobs ok/found':<16}"
-           f"{'nEvents':>15}{'ΣgenW(Events)':>18}{'ΣgenW(Runs)':>18}"
+           f"{'nEvents':>18}{'ΣgenW(Events)':>28}{'ΣgenW(Runs)':>28}"
            f"{'skim%':>10}{'chk':>6}")
     line = "─" * len(hdr)
     print("\n" + line)
@@ -333,8 +368,8 @@ def print_headline_table(records: list[tuple[SampleSummary, dict]]) -> None:
         chk = "OK" if all(checks.values()) else "FAIL"
         jobs = f"{summ.files_valid}/{summ.files_found}"
         print(f"{summ.sample:<24}{'Data' if summ.is_data else 'MC':<6}"
-              f"{jobs:<16}{_fmt_int(summ.n_events):>15}"
-              f"{_fmt_sci(summ.sumGenW):>18}{_fmt_sci(summ.runs_sumW):>18}"
+              f"{jobs:<16}{grouped(summ.n_events):>18}"
+              f"{grouped(summ.sumGenW):>28}{grouped(summ.runs_sumW):>28}"
               f"{skim_s:>10}{chk:>6}")
     print(line)
 
@@ -356,11 +391,11 @@ def print_ttbar_category_table(records: list[tuple[SampleSummary, dict]]) -> Non
     print(hdr)
     print(line)
     for s in rows:
-        print(f"{s.sample:<24}{_fmt_int(s.id_n['0']):>12}{_fmt_int(cc(s)):>12}"
-              f"{_fmt_int(s.id_n['51']):>12}{_fmt_int(s.id_n['52']):>12}"
-              f"{_fmt_int(s.id_n['53']):>12}{_fmt_int(s.id_n['54']):>12}"
-              f"{_fmt_int(s.id_n['55']):>12}{_fmt_int(s.id_n['lt0']):>10}"
-              f"{_fmt_int(s.id_n['other']):>9}")
+        print(f"{s.sample:<24}{grouped(s.id_n['0']):>12}{grouped(cc(s)):>12}"
+              f"{grouped(s.id_n['51']):>12}{grouped(s.id_n['52']):>12}"
+              f"{grouped(s.id_n['53']):>12}{grouped(s.id_n['54']):>12}"
+              f"{grouped(s.id_n['55']):>12}{grouped(s.id_n['lt0']):>10}"
+              f"{grouped(s.id_n['other']):>9}")
     print(line)
 
 
@@ -431,14 +466,44 @@ def summary_to_dict(summ: SampleSummary, checks: dict) -> dict:
     }
 
 
+# Sentinel wrapping each float so it can be re-emitted as a bare, plain-
+# decimal JSON number after json.dumps(). '@' is never escaped by the JSON
+# encoder and the tag cannot collide with any string value in the payload.
+_FLOAT_TAG = "@@FLOAT@@"
+
+
+def _tag_floats(obj):
+    """Recursively wrap every float in _FLOAT_TAG markers (ints/bools/str
+    untouched) so json.dumps emits them as tagged strings."""
+    if isinstance(obj, bool):
+        return obj
+    if isinstance(obj, float):
+        return f"{_FLOAT_TAG}{fixed_str(obj)}{_FLOAT_TAG}"
+    if isinstance(obj, dict):
+        return {k: _tag_floats(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_tag_floats(v) for v in obj]
+    return obj
+
+
 def write_json(path: str, records: list[tuple[SampleSummary, dict]],
                meta: dict) -> None:
     payload = {
         "meta": meta,
         "samples": {s.sample: summary_to_dict(s, c) for s, c in records},
     }
+    text = json.dumps(_tag_floats(payload), indent=2)
+    # Drop the quotes + tags around each tagged float so it lands in the
+    # file as a bare JSON number in plain-decimal (non-scientific) form.
+    text = re.sub(rf'"{_FLOAT_TAG}(-?[0-9.]+){_FLOAT_TAG}"', r"\1", text)
     with open(path, "w") as fh:
-        json.dump(payload, fh, indent=2)
+        fh.write(text + "\n")
+
+
+def _csv_cell(v):
+    """Render one CSV cell: floats as plain fixed-point decimals (no
+    scientific notation); ints, strings and bools pass through unchanged."""
+    return fixed_str(v) if isinstance(v, float) else v
 
 
 def write_csv(path: str, records: list[tuple[SampleSummary, dict]]) -> None:
@@ -454,7 +519,7 @@ def write_csv(path: str, records: list[tuple[SampleSummary, dict]]) -> None:
         for s, _ in records:
             cc = sum(s.id_n[k] for k in ("41", "42", "43", "44", "45"))
             skim = s.skim_attrition_rel
-            w.writerow([
+            row = [
                 s.sample, "Data" if s.is_data else "MC",
                 s.files_valid, s.files_found,
                 s.n_events, s.sumGenW, s.runs_sumW, s.runs_sumW2,
@@ -463,7 +528,8 @@ def write_csv(path: str, records: list[tuple[SampleSummary, dict]]) -> None:
                 s.id_n["53"], s.id_n["54"], s.id_n["55"],
                 s.id_n["lt0"], s.id_n["other"],
                 s.xsec_used, s.eff_yield,
-            ])
+            ]
+            w.writerow([_csv_cell(c) for c in row])
 
 
 # --------------------------------------------------------------------------- #

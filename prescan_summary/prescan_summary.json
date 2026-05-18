@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated": "2026-05-18 21:33:39",
+    "generated": "2026-05-18 21:59:12",
     "input_base": "/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan",
     "tree": "prescan",
-    "rel_tol": 1e-06,
+    "rel_tol": 0.000001,
     "n_samples": 39,
     "n_samples_with_anomaly": 0
   },
@@ -1957,7 +1957,7 @@
         "genEventSumw2": 564040910230.1125,
         "genEventCount": 106724000
       },
-      "skim_attrition_rel": 4.432918280219083e-08,
+      "skim_attrition_rel": 0.00000004432918280219083,
       "genTtbarId": {
         "n": {
           "lt0": 0,
@@ -2054,7 +2054,7 @@
         "genEventSumw2": 23335119793197.258,
         "genEventCount": 232999999
       },
-      "skim_attrition_rel": 1.0800428736833941e-08,
+      "skim_attrition_rel": 0.000000010800428736833941,
       "genTtbarId": {
         "n": {
           "lt0": 0,
@@ -2151,7 +2151,7 @@
         "genEventSumw2": 31845807708704.688,
         "genEventCount": 346052000
       },
-      "skim_attrition_rel": 5.6335554902772926e-09,
+      "skim_attrition_rel": 0.0000000056335554902772926,
       "genTtbarId": {
         "n": {
           "lt0": 0,
@@ -2325,7 +2325,7 @@
       "isData": false,
       "runYear": "",
       "dataEra": "",
-      "xsec_used": 1.097637778002536e-06,
+      "xsec_used": 0.000001097637778002536,
       "jobs": {
         "files_found": 32,
         "files_valid": 32,
@@ -2442,7 +2442,7 @@
         "genEventSumw2": 2048088.9451112994,
         "genEventCount": 7825000
       },
-      "skim_attrition_rel": -3.029525873803847e-08,
+      "skim_attrition_rel": -0.00000003029525873803847,
       "genTtbarId": {
         "n": {
           "lt0": 0,
@@ -2810,7 +2810,7 @@
       "isData": false,
       "runYear": "",
       "dataEra": "",
-      "xsec_used": 1.1124736829515314e-06,
+      "xsec_used": 0.0000011124736829515314,
       "jobs": {
         "files_found": 7,
         "files_valid": 7,
@@ -2907,7 +2907,7 @@
       "isData": false,
       "runYear": "",
       "dataEra": "",
-      "xsec_used": 3.8243666722337366e-07,
+      "xsec_used": 0.00000038243666722337366,
       "jobs": {
         "files_found": 33,
         "files_valid": 33,
@@ -3024,7 +3024,7 @@
         "genEventSumw2": 351656.8517915489,
         "genEventCount": 7074000
       },
-      "skim_attrition_rel": -2.2102178123208137e-08,
+      "skim_attrition_rel": -0.000000022102178123208137,
       "genTtbarId": {
         "n": {
           "lt0": 0,
@@ -3121,7 +3121,7 @@
         "genEventSumw2": 93982090.87864615,
         "genEventCount": 3472503
       },
-      "skim_attrition_rel": 3.2058189327198986e-08,
+      "skim_attrition_rel": 0.000000032058189327198986,
       "genTtbarId": {
         "n": {
           "lt0": 0,
@@ -3218,7 +3218,7 @@
         "genEventSumw2": 2920635425.649364,
         "genEventCount": 5694656
       },
-      "skim_attrition_rel": -4.177407798625102e-09,
+      "skim_attrition_rel": -0.000000004177407798625102,
       "genTtbarId": {
         "n": {
           "lt0": 0,
@@ -3315,7 +3315,7 @@
         "genEventSumw2": 4550384136.754364,
         "genEventCount": 7318891
       },
-      "skim_attrition_rel": 1.0521041956879557e-08,
+      "skim_attrition_rel": 0.000000010521041956879557,
       "genTtbarId": {
         "n": {
           "lt0": 0,
@@ -3392,7 +3392,7 @@
       "isData": false,
       "runYear": "",
       "dataEra": "",
-      "xsec_used": 8.453854388790205e-05,
+      "xsec_used": 0.00008453854388790205,
       "jobs": {
         "files_found": 5,
         "files_valid": 5,
@@ -3509,7 +3509,7 @@
         "genEventSumw2": 3568.5462159473627,
         "genEventCount": 10351000
       },
-      "skim_attrition_rel": -3.557469910674052e-08,
+      "skim_attrition_rel": -0.00000003557469910674052,
       "genTtbarId": {
         "n": {
           "lt0": 0,
