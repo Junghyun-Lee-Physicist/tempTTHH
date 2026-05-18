@@ -43,6 +43,14 @@ class CondorJobManager:
         self.analyzer_path = f"{script_dir}"
         self.nameofExe = "ttHHanalyzer_unified"
         self.AnalyzerMode = "prescan"  # main / btagtrig / trigsf / validation / prescan
+
+        # ── Resubmit control ──────────────────────────────────────────────
+        # False → normal run: queue every job (default; behaviour unchanged).
+        # True  → resubmit pass: skip jobs whose output ROOT is already a
+        #         complete analyzer output, re-queue only missing/incomplete
+        #         ones. Flip to True manually for a resubmission run.
+        self.resubmit_only = False
+
         self.path_output_base = (
             f"/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/"
             f"AnalyzerOutput_{self.AnalyzerMode}"
@@ -371,9 +379,61 @@ class CondorJobManager:
         return " ".join(parts)
 
     # -------------------------------------------------------------------------
+    def _output_is_complete(self, output_path):
+        """Return True iff `output_path` is a finished analyzer output ROOT file.
+
+        Used only when self.resubmit_only is True. Completeness criterion:
+          - prescan mode : file opens (non-zombie) and carries a 'prescan'
+                           TTree with exactly one entry — the single summary
+                           row written by writePrescanTree().
+          - other modes  : file opens (non-zombie) and carries at least one
+                           non-empty TTree.
+        Any failure to verify (missing file, zombie, unreadable, PyROOT not
+        available) is treated as 'not complete', so the job is conservatively
+        re-queued rather than silently dropped.
+        """
+        if not os.path.isfile(output_path):
+            return False
+        try:
+            import ROOT
+        except Exception as e:
+            print(f"  [resubmit][WARN] PyROOT unavailable ({e}); cannot verify "
+                  f"outputs — run the submitter inside `cmsenv`. "
+                  f"Treating as incomplete.")
+            return False
+
+        ROOT.gErrorIgnoreLevel = ROOT.kError
+        f = ROOT.TFile.Open(output_path, "READ")
+        if not f or f.IsZombie():
+            if f:
+                f.Close()
+            return False
+        try:
+            if self.analysis_mode == "prescan":
+                t = f.Get("prescan")
+                return bool(t) and t.InheritsFrom("TTree") and t.GetEntries() == 1
+            for key in f.GetListOfKeys():
+                obj = key.ReadObj()
+                if obj.InheritsFrom("TTree") and obj.GetEntries() > 0:
+                    return True
+            return False
+        finally:
+            f.Close()
+
+    # -------------------------------------------------------------------------
     def generate_argument_list(self):
+        """Write the per-job argument file. Returns the number of jobs queued.
+
+        When self.resubmit_only is True, jobs whose output ROOT file is
+        already a complete analyzer output are skipped (their per-job
+        filelist and argument line are not written). The running `count`
+        index still advances for every input file so that the output
+        filenames `<sample>_<count>.root` stay aligned with the input
+        filelist regardless of how many jobs are skipped.
+        """
         scen_argv = self._scenario_argv()
 
+        n_written = 0
         with open(self.arg_list_file, "w") as argout:
             count = 0
             sample_list_file_path = os.path.join(
@@ -383,16 +443,23 @@ class CondorJobManager:
                          if line.strip() and not line.startswith('#')]
                 for line in lines:
                     sanitized = self.output_dir.replace("/", "_")
-                    per_job_filelist_name = f"filelist_{sanitized}_{count}.txt"
-                    per_job_filelist_path = os.path.join(
-                        self.tmp_folder, per_job_filelist_name)
-                    with open(per_job_filelist_path, 'w') as per_job_filelist:
-                        per_job_filelist.write(line + '\n')
 
                     # Output file in the per-scenario per-sample dir
                     full_output_path = (
                         f"{self.path_output}{self.sample_output_dir}_{count}.root"
                     )
+
+                    # [resubmit-only] skip jobs already finished. `count` must
+                    # still advance to keep the <sample>_<count>.root mapping.
+                    if self.resubmit_only and self._output_is_complete(full_output_path):
+                        count += 1
+                        continue
+
+                    per_job_filelist_name = f"filelist_{sanitized}_{count}.txt"
+                    per_job_filelist_path = os.path.join(
+                        self.tmp_folder, per_job_filelist_name)
+                    with open(per_job_filelist_path, 'w') as per_job_filelist:
+                        per_job_filelist.write(line + '\n')
 
                     args = (
                         f"--filelist {per_job_filelist_path} "
@@ -409,7 +476,13 @@ class CondorJobManager:
                         args += " " + scen_argv
 
                     argout.write(args + "\n")
+                    n_written += 1
                     count += 1
+
+        if self.resubmit_only:
+            print(f"  [resubmit] {self.sample_name}: {n_written} job(s) to "
+                  f"re-queue out of {count} total.")
+        return n_written
 
     # -------------------------------------------------------------------------
     def write_condor_submission_file(self):
@@ -463,7 +536,11 @@ class CondorJobManager:
         scen = getattr(self, "_current_scenario", None)
         scen_label = ("[" + scen["name"] + "] ") if scen else ""
         print(f"\nSetting up job for sample: {scen_label}{self.sample_name}")
-        self.generate_argument_list()
+        n_jobs = self.generate_argument_list()
+        if n_jobs == 0:
+            print(f"  All outputs already complete for "
+                  f"{scen_label}{self.sample_name} — nothing to submit.")
+            return
         self.create_executable_script()
         self.write_condor_submission_file()
         self.submit_job()
