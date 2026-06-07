@@ -30,7 +30,6 @@
 
 #include "CorrectionsManager.h"
 #include "Config_TtCatGroup.hh"   // ttH AN App. A.2.1 process key mapping (LF/cc/B/ttH/ttHH/...)
-#include "ExpandedTtbarId.h"      // [tt+nb] Expanded_genTtbarId per-event lookup
 
 #include <nlohmann/json.hpp>
 
@@ -1202,21 +1201,6 @@ class ttHHanalyzer_unified {
 
 
 
-    // [tt+nb] Load the per-sample extended-ttbarId lookup (ttnb_<sample>.root).
-    // Empty path -> lookup INACTIVE (every event uses NanoAOD genTtbarId), which
-    // is safe for Data and for samples without a lookup. label = sampleName, used
-    // for log messages and the per-hit genTtbarId self-check.
-    void setExpandedTtbarIdFile(const std::string& path) {
-        _expTtbarId.load(path, _sampleName);
-    }
-
-    // [tt+nb] Resolve the lookup from the project directory by sampleName:
-    //   <dir>/ttnb_<sampleName>.root   (default dir DerivedCorr/expandedTtbarId).
-    // Missing file -> INACTIVE (logged). This is the normal entry point.
-    void setExpandedTtbarIdDir(const std::string& dir) {
-        _expTtbarId.loadFromDir(dir, _sampleName);
-    }
-
     // [NEW] Set validation-mode parameters at run time.
     // Caller (driver) parses YAML/argv and pushes them in.
     void setValidationConfig(const ValidationConfig& cfg) {
@@ -1284,11 +1268,6 @@ class ttHHanalyzer_unified {
     bool  _failGoldenJson;
     bool  _passMETFilters;
     std::string _DataOrMC, _runYear, _sampleName, _era;
-
-    // ── [tt+nb] extended ttbar-Id ────────────────────────────────────────
-    ExpandedTtbarId _expTtbarId;        // per-sample lookup; inactive until load()
-    Int_t _genTtbarIdNano  = -1;        // NanoAOD genTtbarId (mirror, for output tree)
-    Int_t _expandedTtbarId = -1;        // resolved id: Expanded if in lookup, else nano
     // Analysis Mode Variable Declaration
     AnalysisMode _analysisMode;
     SelectionPolicy _policy;    
@@ -1329,11 +1308,6 @@ Double_t _prescan_sumGW_id_52    = 0.0;   // tt+b (1 b-jet, ≥2 b-hadrons)
 Double_t _prescan_sumGW_id_53    = 0.0;   // tt+2b
 Double_t _prescan_sumGW_id_54    = 0.0;   // tt+bb
 Double_t _prescan_sumGW_id_55    = 0.0;   // tt+4b
-// [tt+nb] expanded partition (events moved out of 53/54/55 by the lookup)
-Double_t _prescan_sumGW_id_61    = 0.0;   // tt+bbb
-Double_t _prescan_sumGW_id_62    = 0.0;   // tt+bbb (multi)
-Double_t _prescan_sumGW_id_71    = 0.0;   // tt+4b
-Double_t _prescan_sumGW_id_72    = 0.0;   // tt+4b  (multi)
 Double_t _prescan_sumGW_id_other = 0.0;   // safety net
 
 // 11-bin raw COUNT by genTtbarId %% 100 — unweighted companion to the
@@ -1351,11 +1325,6 @@ Long64_t _prescan_n_id_52    = 0;   // tt+b (1 b-jet, ≥2 b-hadrons)
 Long64_t _prescan_n_id_53    = 0;   // tt+2b
 Long64_t _prescan_n_id_54    = 0;   // tt+bb
 Long64_t _prescan_n_id_55    = 0;   // tt+4b
-// [tt+nb] expanded partition counts
-Long64_t _prescan_n_id_61    = 0;   // tt+bbb
-Long64_t _prescan_n_id_62    = 0;   // tt+bbb (multi)
-Long64_t _prescan_n_id_71    = 0;   // tt+4b
-Long64_t _prescan_n_id_72    = 0;   // tt+4b  (multi)
 Long64_t _prescan_n_id_other = 0;   // safety net
 
 // 5-bucket ntuple ttCat_* cross-check (weighted + raw count)
@@ -2949,11 +2918,6 @@ void writePrescanTree();
 	_inputTree->Branch("PUWeight", &PUWeight, "PUWeight/F");
 	_inputTree->Branch("L1PrefiringWeight", &L1PrefiringWeight, "L1PrefiringWeight/F");
 	_inputTree->Branch("genWeight", &genWeight, "genWeight/F");
-	// [tt+nb] NanoAOD genTtbarId and the tt+nb-expanded id, stored per event.
-	// Downstream stitching / b-jet reweight bins on expandedTtbarId%100
-	// (which now includes 61/62=tt+bbb, 71/72=tt+4b). Both are -1 on non-MC.
-	_inputTree->Branch("genTtbarId",      &_genTtbarIdNano,  "genTtbarId/I");
-	_inputTree->Branch("expandedTtbarId", &_expandedTtbarId, "expandedTtbarId/I");
 	_inputTree->Branch("bTagWeight", &bTagWeight_central_, "bTagWeight/F");
 	_inputTree->Branch("failGoldenJson", &failGoldenJson, "failGoldenJson/O");
 	_inputTree->Branch("passMETFilters", &passMETFilters, "passMETFilters/O");

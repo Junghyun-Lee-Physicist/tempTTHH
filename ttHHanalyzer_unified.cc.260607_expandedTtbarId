@@ -7,7 +7,6 @@
 #include "ttHHanalyzer_unified.h"
 #include <iostream>
 #include <iomanip>
-#include <cstdlib>   // [tt+nb] std::getenv for EXPANDED_TTBARID_DIR override
 
 #include "correction.h"
 
@@ -175,8 +174,6 @@ void ttHHanalyzer_unified::loop(sysName sysType, bool up){
     }
 
     
-    _expTtbarId.printSummary();   // [tt+nb] hit/miss + genTtbarId self-check summary
-
     if(debugCorrections) std::cout<<"debug : Before [ writeHistos() ]"<<std::endl;
     writeHistos();
     if(debugCorrections) std::cout<<"debug : After writeHistos() & Before writeTree()"<<std::endl;
@@ -1277,11 +1274,6 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
         }
     }
 
-    // [tt+nb] per-event default. Overwritten in the MC block below for tt+nb
-    // hits. Data has no genTtbarId branch, so leave -1.
-    _genTtbarIdNano  = -1;
-    _expandedTtbarId = -1;
-
     if (debugCorrections) {
 	std::cout << "[process] : Current evtWeight="<< _evtWeight << std::endl;
     }
@@ -1403,15 +1395,6 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
             }
             std::cout << "[TTCAT_BRANCH_CHECK] ═══════════════════════════════\n\n";
         }
-
-        // ── [tt+nb] attach extended ttbar-Id from the per-sample lookup ──
-        //   in lookup -> Expanded_genTtbarId (sub-code 61/62/71/72)
-        //   not in    -> NanoAOD genTtbarId unchanged
-        // resolve() also self-checks the lookup's genTtbarId against NanoAOD's
-        // for this (run,lumi,event); a mismatch means the wrong ttnb file.
-        _genTtbarIdNano  = _ev->genTtbarId;
-        _expandedTtbarId = _expTtbarId.resolve(_ev->run, _ev->luminosityBlock,
-                                               _ev->event, _ev->genTtbarId);
 
         // ── Compute all four estimators ──
         const TtCat anaGenPart = computeTtCategoryFromGenPart();
@@ -2704,18 +2687,8 @@ void ttHHanalyzer_unified::accumulatePrescanEvent() {
     // --- 11-bin raw genTtbarId %% 100 (stitching-partition input) ---
     //     Σgenw bins and unweighted-count bins are accumulated together.
     const int gtid = _ev->genTtbarId;
-    // [tt+nb] resolve the expanded id; tt+nb events (sub 61/62/71/72) are routed
-    // to their own bins and REMOVED from the 53/54/55 bins, so 53/54/55 become
-    // the pure tt+bb remainder. Lookup is injected in main() regardless of mode.
-    const int eid  = _expTtbarId.resolve(_ev->run, _ev->luminosityBlock,
-                                         _ev->event, gtid);
-    const int esub = ((eid % 100) + 100) % 100;
     if (gtid < 0) {
         _prescan_sumGW_id_lt0 += gw; ++_prescan_n_id_lt0;
-    } else if (esub == 61) { _prescan_sumGW_id_61 += gw; ++_prescan_n_id_61;
-    } else if (esub == 62) { _prescan_sumGW_id_62 += gw; ++_prescan_n_id_62;
-    } else if (esub == 71) { _prescan_sumGW_id_71 += gw; ++_prescan_n_id_71;
-    } else if (esub == 72) { _prescan_sumGW_id_72 += gw; ++_prescan_n_id_72;
     } else {
         switch (gtid % 100) {
             case  0: _prescan_sumGW_id_0     += gw; ++_prescan_n_id_0;     break;
@@ -2806,11 +2779,6 @@ void ttHHanalyzer_unified::writePrescanTree() {
     nct->Branch("sumGenW_id_53",    &_prescan_sumGW_id_53,    "sumGenW_id_53/D");
     nct->Branch("sumGenW_id_54",    &_prescan_sumGW_id_54,    "sumGenW_id_54/D");
     nct->Branch("sumGenW_id_55",    &_prescan_sumGW_id_55,    "sumGenW_id_55/D");
-    // [tt+nb] expanded partition (tt+nb removed from 53/54/55 above)
-    nct->Branch("sumGenW_id_61",    &_prescan_sumGW_id_61,    "sumGenW_id_61/D");
-    nct->Branch("sumGenW_id_62",    &_prescan_sumGW_id_62,    "sumGenW_id_62/D");
-    nct->Branch("sumGenW_id_71",    &_prescan_sumGW_id_71,    "sumGenW_id_71/D");
-    nct->Branch("sumGenW_id_72",    &_prescan_sumGW_id_72,    "sumGenW_id_72/D");
     nct->Branch("sumGenW_id_other", &_prescan_sumGW_id_other, "sumGenW_id_other/D");
 
     // 11-bin raw genTtbarId %% 100 — unweighted event counts
@@ -2827,11 +2795,6 @@ void ttHHanalyzer_unified::writePrescanTree() {
     nct->Branch("n_id_53",    &_prescan_n_id_53,    "n_id_53/L");
     nct->Branch("n_id_54",    &_prescan_n_id_54,    "n_id_54/L");
     nct->Branch("n_id_55",    &_prescan_n_id_55,    "n_id_55/L");
-    // [tt+nb] expanded partition counts
-    nct->Branch("n_id_61",    &_prescan_n_id_61,    "n_id_61/L");
-    nct->Branch("n_id_62",    &_prescan_n_id_62,    "n_id_62/L");
-    nct->Branch("n_id_71",    &_prescan_n_id_71,    "n_id_71/L");
-    nct->Branch("n_id_72",    &_prescan_n_id_72,    "n_id_72/L");
     nct->Branch("n_id_other", &_prescan_n_id_other, "n_id_other/L");
 
     // 5-bucket ttCat (ntuple primary) — Σ genWeight
@@ -3001,21 +2964,6 @@ int main(int argc, char** argv){
         debugVerbose,
         mode
     );
-
-    // ─────────────────────────────────────────────────────────────────────
-    // [tt+nb] Load the per-sample Expanded_genTtbarId lookup from the project's
-    // DerivedCorr/expandedTtbarId/ directory: it picks ttnb_<sampleName>.root
-    // automatically. Override the directory with EXPANDED_TTBARID_DIR (e.g. an
-    // absolute path on a worker). Samples with no matching file -> INACTIVE
-    // (NanoAOD genTtbarId used; correct for Data and non-ttbar samples).
-    // Active in BOTH kPrescan and the main loop (it is set before
-    // performAnalysis), so the prescan partition sees the same lookup.
-    // ─────────────────────────────────────────────────────────────────────
-    {
-        const char* d = std::getenv("EXPANDED_TTBARID_DIR");
-        analysis.setExpandedTtbarIdDir(d ? std::string(d)
-                                         : std::string("/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/DerivedCorr/expandedTtbarId"));
-    }
 
     // ─────────────────────────────────────────────────────────────────────
     // 5. [Validation Study] — push --val-* flags into the analyzer
