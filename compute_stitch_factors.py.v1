@@ -3,7 +3,7 @@
 compute_stitch_factors_fixed_config.py
 ──────────────────────────────────────
 
-`ttHHanalyzer_unified --mode prescan` 출력 파일들을 모아서
+`ttHHanalyzer_unified --mode normcheck` 출력 파일들을 모아서
 
 ttbar stitching scaling factor (r_B, r_4b) 와 anchor normalization 을 계산한다.
 
@@ -11,16 +11,11 @@ ttbar stitching scaling factor (r_B, r_4b) 와 anchor normalization 을 계산�
 luminosity, cross section, 출력 JSON 위치 등은 전부 코드 최상단의 USER CONFIG
 블록에서 직접 수정한다.
 
-현재 analyzer 는 `--mode prescan` 으로 sample 당 1행짜리 `prescan` TTree 를
-파일마다 쓴다 (writePrescanTree). 이 스크립트는 그 행들을 sample 별로 합쳐
-stitching factor (r_B, r_4b) 와 per-event normalization 을 계산한다.
-
-★ EXPANDED:
-    analyzer 패치 §5 이후 prescan tree 에는 expanded id bin
-    (sumGenW_id_61/62/71/72 = tt+bbb/tt+4b) 이 들어 있다. tt+nb 이벤트는
-    53/54/55 에서 빠져 61-72 로 옮겨졌으므로, 이제 tt4b partition 을
-    "진짜 >=3 b-jet" (61-72) 으로 잡을 수 있다 — 예전처럼 54/55 를 tt+4b 로
-    근사하던 hack 이 더 이상 필요 없다 (option EXP).
+⚠ TEMPORARY:
+    `kNormalizationCheck` mode 자체와 마찬가지로, 본격적인 production
+    체계에서는 이 정보가 NtupleForge 단계에서 Runs friend tree 로 박혀야
+    한다. 이 스크립트는 그 전 단계의 standalone analyzer 결과를 모아
+    factor 를 계산하는 임시 후처리이다.
 
 AN reference
 ────────────
@@ -63,17 +58,11 @@ import uproot
 # ──────────────────────────────────────────────────────────────────────────────
 
 ANALYZER_OUTPUT_DIR = Path(
-    "/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan"
+    "/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_normcheck"
 )
 
-# Prescan TTree name written by the analyzer (writePrescanTree(): "prescan").
-# (The old standalone normcheck mode used "normCheck"; the unified analyzer
-#  writes "prescan". Change here only if you rename the tree.)
-PRESCAN_TREE = "prescan"
-
 # 출력 JSON 위치. 상대 경로면 현재 실행 디렉토리에 생성된다.
-# 권장: analyzer 가 읽는 DerivedCorr 아래에 둔다 (CorrectionsManager 와 같은 위치 관습).
-OUTPUT_JSON_PATH = Path("DerivedCorr/stitchFactors/stitch_factors_2017.json")
+OUTPUT_JSON_PATH = Path("stitch_factors_2017.json")
 
 # Partition option:
 #   A = ttHH AN SL Option1 차용: inclusive={LF+cc}, ttbb={51,52,53}, tt4b={54,55}
@@ -81,7 +70,7 @@ OUTPUT_JSON_PATH = Path("DerivedCorr/stitchFactors/stitch_factors_2017.json")
 #   B = ttH FH-style:           inclusive={LF+cc}, ttbb={51,52,53,54,55}, tt4b skip
 #   C = ttHH Option2:           현재 gen-level partition 기준으로 B와 동일
 #                                (Option2 의 차이는 reco-level DNN class 정의)
-PARTITION_OPTION = "EXP"
+PARTITION_OPTION = "A"
 
 # 2017 UL — 41.48 fb⁻¹ = 41480 pb⁻¹
 LUMI_PB_INV = 41480.0
@@ -123,19 +112,28 @@ EXPECTED_SAMPLE_DIRS = frozenset({
     "QCD_HT200to300", "QCD_HT300to500", "QCD_HT500to700",
     "QCD_HT700to1000", "QCD_HT1000to1500", "QCD_HT1500to2000", "QCD_HT2000toInf",
     "TTTo2L2Nu", "TTToHadronic", "TTToSemiLeptonic",
-    "ttHH", "ttbb_Hadronic", "ttbb_SemiLeptonic", "ttbb_2L2Nu",
-    "tt4b", "ttHtobb", "ttWH", "ttWW", "ttWZ",
+    "ttHH", "ttbb", "tt4b", "ttHtobb", "ttWH", "ttWW", "ttWZ",
     "ttZHto4b", "ttZZto4b", "ttZtobb", "tttW", "tttt",
 })
 
-# NOTE: anchoring is now PER-DEDICATED-SAMPLE and lives in STITCH_PLANS below
-# (each dedicated sample names its own `anchor` inclusive set + σ_inc). The old
-# single hadronic-only anchor was correct only when tt4b was hadronic-only; the
-# decay-channel census showed tt4b is DECAY-INCLUSIVE (~46/44/11 Had/SL/DL), so
-# tt4b anchors to the full Had+SL+DL inclusive (σ, no BR) while ttbb_Hadronic
-# still anchors to the hadronic inclusive (σ × BR_had).
-TTBB_SAMPLE_NAME = "ttbb_Hadronic"   # 4FS ttbb, hadronic-filtered
-TT4B_SAMPLE_NAME = "tt4b"            # dedicated tt+nb, decay-inclusive
+# Inclusive ttbar anchor base — TTToHadronic ONLY.
+# Reason: ttbb sample 은 hadronic-filtered 만 사용 가능. 따라서 anchor 도
+#         FH phase space 에 맞춰야 자기 일관적. SemiLep / 2L2Nu inclusive 는
+#         FH analysis 의 lepton veto 에 잘리는 영역이며, 그것을 anchor base 에
+#         포함시키면 r_B 분모가 inconsistent 해진다.
+# Future: ttbb_SL / ttbb_DL sample 도 production 되면 다시 합치는 식으로 확장.
+INCLUSIVE_TTBAR_NAMES = frozenset({
+    "TTToHadronic",
+})
+
+# 위 anchor 에서 제외되지만 normCheck report 에는 표시되는 sample 들 — 단순 시각화 목적
+ADDITIONAL_TTBAR_FOR_REPORT = frozenset({
+    "TTToSemiLeptonic",
+    "TTTo2L2Nu",
+})
+
+TTBB_SAMPLE_NAME = "ttbb"
+TT4B_SAMPLE_NAME = "tt4b"
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Constants / logger
@@ -143,74 +141,26 @@ TT4B_SAMPLE_NAME = "tt4b"            # dedicated tt+nb, decay-inclusive
 
 LOG = logging.getLogger("stitch")
 
-# ── Stitch plans ──────────────────────────────────────────────────────────────
-# A plan describes, per DEDICATED sample: which gen categories it OWNS, which
-# inclusive samples it is ANCHORED to (+ which σ_inc to use), its own LHE σ, and
-# which inclusive samples must have the owned categories REJECTED. This makes the
-# decay-channel structure explicit (channels are orthogonal: each
-# decay × HF cell is filled by exactly one sample).
-#
-# Confirmed for this analysis (decay-channel census on the TT4b NanoAOD:
-# full-had 45.6%, semi 43.8%, dilep 10.6%):
-#   ttbb_Hadronic : HADRONIC-ONLY  -> owns tt+2b in the hadronic channel only,
-#       anchored to TTToHadronic (σ_inc = σ_total × BR_had), rejected only from
-#       TTToHadronic. SL/DL tt+2b stay in their inclusive (no ttbb_SL/DL yet).
-#   tt4b          : DECAY-INCLUSIVE -> owns tt+bbb+tt+4b in ALL channels,
-#       anchored to the full Had+SL+DL inclusive merge (σ_inc = σ_total, NO BR),
-#       rejected from all three inclusive samples.
-STITCH_PLANS: dict[str, dict] = {
-    "EXP": {
-        "inclusive": ["TTToHadronic", "TTToSemiLeptonic", "TTTo2L2Nu"],
-        "dedicated": {
-            "ttbb_Hadronic": {
-                "owns":            ["tt2b"],
-                "anchor":          ["TTToHadronic"],
-                "sigma_inc":       SIGMA_INC_NNLO_TOTAL_PB * BR_HAD,   # hadronic phase space
-                "sigma_dedicated": SIGMA_TTBB_LHE,
-                "reject_from":     ["TTToHadronic"],
-            },
-            "tt4b": {
-                "owns":            ["ttbbb", "tt4b"],
-                "anchor":          ["TTToHadronic", "TTToSemiLeptonic", "TTTo2L2Nu"],
-                "sigma_inc":       SIGMA_INC_NNLO_TOTAL_PB,            # all channels, NO BR
-                "sigma_dedicated": SIGMA_TT4B_LHE,
-                "reject_from":     ["TTToHadronic", "TTToSemiLeptonic", "TTTo2L2Nu"],
-            },
-        },
+PARTITION_OPTIONS: dict[str, dict[str, frozenset[int]]] = {
+    "A": {
+        # ttHH AN SL Option1 을 FH 에 차용
+        "inclusive": frozenset({0, 41, 42, 43, 44, 45}),
+        "ttbb":      frozenset({51, 52, 53}),
+        "tt4b":      frozenset({54, 55}),
     },
-    # Use this instead if your tt4b is HADRONIC-ONLY (census ~100% full-had):
-    # tt4b then anchors/rejects only in the hadronic channel, like ttbb.
-    "EXP_HAD_TT4B": {
-        "inclusive": ["TTToHadronic", "TTToSemiLeptonic", "TTTo2L2Nu"],
-        "dedicated": {
-            "ttbb_Hadronic": {
-                "owns": ["tt2b"], "anchor": ["TTToHadronic"],
-                "sigma_inc": SIGMA_INC_NNLO_TOTAL_PB * BR_HAD,
-                "sigma_dedicated": SIGMA_TTBB_LHE, "reject_from": ["TTToHadronic"],
-            },
-            "tt4b": {
-                "owns": ["ttbbb", "tt4b"], "anchor": ["TTToHadronic"],
-                "sigma_inc": SIGMA_INC_NNLO_TOTAL_PB * BR_HAD,
-                "sigma_dedicated": SIGMA_TT4B_LHE, "reject_from": ["TTToHadronic"],
-            },
-        },
+    "B": {
+        # ttH AN FH 처방: ttbb 가 tt+B 전체 담당, tt4b 미사용
+        "inclusive": frozenset({0, 41, 42, 43, 44, 45}),
+        "ttbb":      frozenset({51, 52, 53, 54, 55}),
+        "tt4b":      frozenset(),
+    },
+    "C": {
+        # ttHH AN Option2: 현재 gen-level partition 은 옵션 B 와 동일
+        "inclusive": frozenset({0, 41, 42, 43, 44, 45}),
+        "ttbb":      frozenset({51, 52, 53, 54, 55}),
+        "tt4b":      frozenset(),
     },
 }
-
-# expanded genTtbarId %% 100 sub-code -> stitching category label.
-CAT_OF_SUB: dict[int, str] = {
-    0: "LF",
-    41: "cc", 42: "cc", 43: "cc", 44: "cc", 45: "cc",
-    51: "ttb", 52: "ttb",
-    53: "tt2b", 54: "tt2b", 55: "tt2b",
-    61: "ttbbb", 62: "ttbbb",
-    71: "tt4b", 72: "tt4b",
-}
-
-# inverse: category label -> the expandedTtbarId % 100 sub-codes mapping to it.
-CAT_TO_SUBS: dict[str, list[int]] = {}
-for _sub, _cat in CAT_OF_SUB.items():
-    CAT_TO_SUBS.setdefault(_cat, []).append(_sub)
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Data containers
@@ -234,7 +184,6 @@ class SampleSums:
         "lt0": 0.0, "0": 0.0,
         "41": 0.0, "42": 0.0, "43": 0.0, "44": 0.0, "45": 0.0,
         "51": 0.0, "52": 0.0, "53": 0.0, "54": 0.0, "55": 0.0,
-        "61": 0.0, "62": 0.0, "71": 0.0, "72": 0.0,   # tt+nb (expanded, §5)
         "other": 0.0,
     })
 
@@ -243,31 +192,31 @@ class SampleSums:
 
 
 @dataclass
-class DedicatedFactor:
-    """Stitching factor for one dedicated sample, anchored to its own phase space."""
-    sample: str
-    owns: list                 # category labels filled, e.g. ["tt2b"] or ["ttbbb","tt4b"]
-    owns_subs: list            # expandedTtbarId%100 codes for `owns`
-    anchor: list               # inclusive sample names it is anchored to
-    sigma_inc: float           # σ_inc used (× BR_had hadronic-only, NO BR decay-inclusive)
-    sigma_dedicated: float     # dedicated LHE σ (cancels against the YAML base weight)
-    sumGW_anchor_all: float
-    sumGW_anchor_owned: float
-    sumGW_dedicated_all: float
-    f: float                   # owned / all  in the anchor
-    r: float                   # σ_inc · f / σ_dedicated  (multiply dedicated YAML weight by this)
-    peF_full: float            # Lumi · σ_inc · f / Σ_dedicated  (full per-event factor, cross-check)
-
-
-@dataclass
 class StitchResult:
     option: str
     lumi_pb_inv: float
-    sigma_inc_total: float     # 831.76 pb (NNLO+NNLL)
-    br_had: float
-    inclusive: list            # inclusive sample names
-    dedicated: list            # list[DedicatedFactor]
-    reject_map: dict           # inclusive sample -> [category labels removed]
+    sigma_inc_NNLO_total: float        # 831.76 pb (참고용)
+    br_had: float                       # 0.45441081
+    sigma_inc_NNLO_hadronic: float      # 377.964 pb (실제 anchor 에 사용)
+    sigma_ttbb_LHE: float
+    sigma_tt4b_LHE: float
+
+    f_B: float
+    f_4b: float
+    r_B: float
+    r_4b: float
+
+    sumGW_inc_all: float
+    sumGW_inc_ttbb_partition: float
+    sumGW_inc_tt4b_partition: float
+    sumGW_ttbb_all: float
+    sumGW_tt4b_all: float
+
+    # analyzer 의 SampleRegistry weight field에 넣을 수 있는 값.
+    # event weight = perEvt_factor_* × genWeight × mask
+    perEvt_factor_inclusive: float = 0.0
+    perEvt_factor_ttbb: float = 0.0
+    perEvt_factor_tt4b: float = 0.0
 
 # ──────────────────────────────────────────────────────────────────────────────
 # IO
@@ -326,16 +275,16 @@ def read_normcheck_tree(path: Path) -> dict[str, float | int | str | bool] | Non
     """Open one ROOT file and read its `normCheck` tree, expected to contain one row."""
     try:
         with uproot.open(path) as f:
-            if PRESCAN_TREE not in f:
-                LOG.warning("no `%s` tree in %s — skipped", PRESCAN_TREE, path)
+            if "normCheck" not in f:
+                LOG.warning("no `normCheck` tree in %s — skipped", path)
                 return None
-            tree = f[PRESCAN_TREE]
+            tree = f["normCheck"]
             if tree.num_entries == 0:
-                LOG.warning("empty %s tree in %s — skipped", PRESCAN_TREE, path)
+                LOG.warning("empty normCheck tree in %s — skipped", path)
                 return None
             arrs = tree.arrays(library="np")
             if not arrs:
-                LOG.warning("%s tree has no readable branches in %s — skipped", PRESCAN_TREE, path)
+                LOG.warning("normCheck tree has no readable branches in %s — skipped", path)
                 return None
             # analyzer fills exactly one row per file. If more exist, use first row.
             return {k: _first_value_as_python(v[0]) for k, v in arrs.items()}
@@ -364,7 +313,7 @@ def aggregate_sample(name: str, paths: list[Path]) -> SampleSums:
 
         s.sumGW_id["lt0"]   += float(row.get("sumGenW_id_lt0",   0.0) or 0.0)
         s.sumGW_id["0"]     += float(row.get("sumGenW_id_0",     0.0) or 0.0)
-        for i in (41, 42, 43, 44, 45, 51, 52, 53, 54, 55, 61, 62, 71, 72):
+        for i in (41, 42, 43, 44, 45, 51, 52, 53, 54, 55):
             s.sumGW_id[str(i)] += float(row.get(f"sumGenW_id_{i}", 0.0) or 0.0)
         s.sumGW_id["other"] += float(row.get("sumGenW_id_other", 0.0) or 0.0)
 
@@ -413,16 +362,19 @@ def check_sample_consistency(s: SampleSums) -> list[str]:
 # Core calculation
 # ──────────────────────────────────────────────────────────────────────────────
 
-def merge_named(samples: dict[str, SampleSums], names: Iterable[str],
-                label: str) -> SampleSums | None:
-    """Sum the named samples into one SampleSums (generic anchor merge)."""
+def merge_inclusive(samples: dict[str, SampleSums]) -> SampleSums | None:
+    """Sum the inclusive-ttbar samples per INCLUSIVE_TTBAR_NAMES.
+
+    With current config (TTToHadronic only) this is effectively a passthrough
+    but kept as a generic merge for future extension (e.g., adding ttbb_SL/DL).
+    """
     merged: SampleSums | None = None
-    for name in names:
-        s = samples.get(name)
-        if s is None:
+    for name in sorted(INCLUSIVE_TTBAR_NAMES):
+        if name not in samples:
             continue
+        s = samples[name]
         if merged is None:
-            merged = SampleSums(sample_name=label)
+            merged = SampleSums(sample_name="<inclusive_ttbar_merged>")
         merged.n_files += s.n_files
         merged.n_events_total += s.n_events_total
         merged.sumGW_total += s.sumGW_total
@@ -435,115 +387,76 @@ def merge_named(samples: dict[str, SampleSums], names: Iterable[str],
     return merged
 
 
-def subs_of_cats(cats: Iterable[str]) -> list[int]:
-    """Expand category labels to their expandedTtbarId%100 sub-codes."""
-    out: list[int] = []
-    for c in cats:
-        out.extend(CAT_TO_SUBS.get(c, []))
-    return out
+def compute_factors(
+    samples: dict[str, SampleSums],
+    option: str,
+    lumi_pb_inv: float,
+    sigma_inc: float,
+    sigma_ttbb: float,
+    sigma_tt4b: float,
+) -> StitchResult:
+    if option not in PARTITION_OPTIONS:
+        raise ValueError(f"unknown option {option!r} (valid: A/B/C)")
+    part = PARTITION_OPTIONS[option]
 
+    inc_merged = merge_inclusive(samples)
+    if inc_merged is None or inc_merged.sumGW_total <= 0:
+        raise RuntimeError(
+            "No inclusive ttbar samples found — expected at least one of "
+            f"{sorted(INCLUSIVE_TTBAR_NAMES)}"
+        )
 
-def compute_plan(samples: dict[str, SampleSums], option: str,
-                 lumi_pb_inv: float) -> StitchResult:
-    """Compute per-dedicated stitching factors for a stitch plan.
+    sumGW_inc_all = inc_merged.sumGW_total
 
-    Each dedicated sample is anchored to ITS OWN inclusive phase space:
-    ttbb_Hadronic -> hadronic inclusive (σ × BR_had); a decay-inclusive tt4b
-    -> the full Had+SL+DL inclusive merge (σ, no BR). The reject map removes each
-    dedicated's owned categories from exactly the inclusive samples it replaces,
-    so every (decay-channel × HF-category) cell is filled once.
-    """
-    if option not in STITCH_PLANS:
-        raise ValueError(f"unknown option {option!r} (valid: {'/'.join(STITCH_PLANS)})")
-    plan = STITCH_PLANS[option]
-    inclusive = list(plan["inclusive"])
+    ids_ttbb = part["ttbb"]
+    ids_tt4b = part["tt4b"]
 
-    ded_results: list[DedicatedFactor] = []
-    for dname, spec in plan["dedicated"].items():
-        anchor = merge_named(samples, spec["anchor"], f"<anchor:{dname}>")
-        if anchor is None or anchor.sumGW_total <= 0:
-            raise RuntimeError(
-                f"empty anchor for dedicated {dname!r}: {spec['anchor']} "
-                f"(none found among aggregated samples)")
-        owns_subs = subs_of_cats(spec["owns"])
-        sumGW_anchor_all   = anchor.sumGW_total
-        sumGW_anchor_owned = anchor.sum_in(owns_subs)
-        f = sumGW_anchor_owned / sumGW_anchor_all if sumGW_anchor_all > 0 else 0.0
-        sig_inc = float(spec["sigma_inc"])
-        sig_ded = float(spec["sigma_dedicated"])
-        r = (sig_inc * f / sig_ded) if sig_ded > 0 else 0.0
-        ded = samples.get(dname)
-        sumGW_ded_all = ded.sumGW_total if ded else 0.0
-        peF_full = (lumi_pb_inv * sig_inc * f / sumGW_ded_all) if sumGW_ded_all > 0 else 0.0
-        ded_results.append(DedicatedFactor(
-            sample=dname, owns=list(spec["owns"]), owns_subs=sorted(owns_subs),
-            anchor=list(spec["anchor"]), sigma_inc=sig_inc, sigma_dedicated=sig_ded,
-            sumGW_anchor_all=sumGW_anchor_all, sumGW_anchor_owned=sumGW_anchor_owned,
-            sumGW_dedicated_all=sumGW_ded_all, f=f, r=r, peF_full=peF_full))
+    sumGW_inc_in_ttbb_part = inc_merged.sum_in(ids_ttbb)
+    sumGW_inc_in_tt4b_part = inc_merged.sum_in(ids_tt4b)
 
-    reject_map: dict[str, list[str]] = {inc: [] for inc in inclusive}
-    for dname, spec in plan["dedicated"].items():
-        for inc in spec["reject_from"]:
-            reject_map.setdefault(inc, [])
-            for c in spec["owns"]:
-                if c not in reject_map[inc]:
-                    reject_map[inc].append(c)
+    f_B  = sumGW_inc_in_ttbb_part / sumGW_inc_all if sumGW_inc_all > 0 else 0.0
+    f_4b = sumGW_inc_in_tt4b_part / sumGW_inc_all if sumGW_inc_all > 0 else 0.0
+
+    r_B  = (sigma_inc * f_B  / sigma_ttbb) if sigma_ttbb > 0 else 0.0
+    r_4b = (sigma_inc * f_4b / sigma_tt4b) if (sigma_tt4b > 0 and ids_tt4b) else 0.0
+
+    ttbb = samples.get(TTBB_SAMPLE_NAME)
+    tt4b = samples.get(TT4B_SAMPLE_NAME)
+
+    sumGW_ttbb_all = ttbb.sumGW_total if ttbb else 0.0
+    sumGW_tt4b_all = tt4b.sumGW_total if tt4b else 0.0
+
+    peF_inc = (lumi_pb_inv * sigma_inc) / sumGW_inc_all if sumGW_inc_all > 0 else 0.0
+    peF_ttbb = (
+        (lumi_pb_inv * sigma_inc * f_B) / sumGW_ttbb_all
+        if sumGW_ttbb_all > 0 else 0.0
+    )
+    peF_tt4b = (
+        (lumi_pb_inv * sigma_inc * f_4b) / sumGW_tt4b_all
+        if (sumGW_tt4b_all > 0 and ids_tt4b) else 0.0
+    )
 
     return StitchResult(
-        option=option, lumi_pb_inv=lumi_pb_inv,
-        sigma_inc_total=SIGMA_INC_NNLO_TOTAL_PB, br_had=BR_HAD,
-        inclusive=inclusive, dedicated=ded_results, reject_map=reject_map)
-
-
-# Analyzer-ready per-event factor table
-# ──────────────────────────────────────────────────────────────────────────────
-
-# Canonical category order (from expandedTtbarId % 100 via CAT_OF_SUB).
-STITCH_CATEGORIES = ["LF", "cc", "ttb", "tt2b", "ttbbb", "tt4b"]
-
-
-def build_analyzer_table(res: StitchResult) -> dict:
-    """Per-(sample, category) MULTIPLIER applied ON TOP of the YAML base weight:
-        final w = yaml_weight[sample] * multiplier[sample][category]
-                  * genWeight * (PU*btagSF*trigSF)
-    - inclusive samples: 1.0 on kept categories, 0.0 on rejected ones (a dedicated
-      sample fills those). The inclusive samples are the anchor; not rescaled.
-    - dedicated samples: the rescale factor r on OWNED categories, 0 elsewhere.
-      (r folds the anchor σ_inc and owned fraction f; the dedicated LHE σ cancels
-      against the YAML base weight, which must be the standard Lumi·σ_ded/Σgenw.)
-    - samples NOT listed keep their YAML weight unchanged (multiplier 1).
-    """
-    samples: dict[str, dict] = {}
-    for inc in res.inclusive:
-        rej = set(res.reject_map.get(inc, []))
-        samples[inc] = {
-            "role": "inclusive",
-            "by_category": {c: (0.0 if c in rej else 1.0) for c in STITCH_CATEGORIES},
-        }
-    for d in res.dedicated:
-        owned = set(d.owns)
-        samples[d.sample] = {
-            "role": "dedicated",
-            "r": d.r,
-            "by_category": {c: (d.r if c in owned else 0.0) for c in STITCH_CATEGORIES},
-        }
-    return {
-        "note": (
-            "Per-(sample,category) MULTIPLIER applied ON TOP of the YAML base weight. "
-            "final weight = yaml_weight[sample] * multiplier[sample][category] * genWeight "
-            "* (PU*btagSF*trigSF). category = sub_to_category[expandedTtbarId%100]. "
-            "inclusive: 1 on kept, 0 on rejected (filled by a dedicated). dedicated: r on "
-            "owned categories, 0 elsewhere (r rescales the dedicated sample to its inclusive "
-            "anchor; the dedicated LHE σ cancels against the YAML base weight). Samples NOT "
-            "listed keep their YAML weight (multiplier 1). REQUIREMENT: dedicated YAML weight "
-            "must be Lumi*sigma_dedicated/Sumgenw with sigma_ttbb=1.452pb, sigma_tt4b=0.296pb."
-        ),
-        "application": "final_weight = yaml_base_weight[sample] * multiplier[sample][category] * genWeight * (PU*btagSF*trigSF)",
-        "sub_to_category": {str(k): v for k, v in sorted(CAT_OF_SUB.items())},
-        "categories": STITCH_CATEGORIES,
-        "samples": samples,
-    }
-
+        option=option,
+        lumi_pb_inv=lumi_pb_inv,
+        sigma_inc_NNLO_total=SIGMA_INC_NNLO_TOTAL_PB,
+        br_had=BR_HAD,
+        sigma_inc_NNLO_hadronic=sigma_inc,
+        sigma_ttbb_LHE=sigma_ttbb,
+        sigma_tt4b_LHE=sigma_tt4b,
+        f_B=f_B,
+        f_4b=f_4b,
+        r_B=r_B,
+        r_4b=r_4b,
+        sumGW_inc_all=sumGW_inc_all,
+        sumGW_inc_ttbb_partition=sumGW_inc_in_ttbb_part,
+        sumGW_inc_tt4b_partition=sumGW_inc_in_tt4b_part,
+        sumGW_ttbb_all=sumGW_ttbb_all,
+        sumGW_tt4b_all=sumGW_tt4b_all,
+        perEvt_factor_inclusive=peF_inc,
+        perEvt_factor_ttbb=peF_ttbb,
+        perEvt_factor_tt4b=peF_tt4b,
+    )
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Reporting
@@ -555,7 +468,6 @@ def print_config() -> None:
     print(" Config")
     print("──────────────────────────────────────────────────────────────────")
     print(f"  ANALYZER_OUTPUT_DIR         = {ANALYZER_OUTPUT_DIR}")
-    print(f"  PRESCAN_TREE                = {PRESCAN_TREE}")
     print(f"  OUTPUT_JSON_PATH            = {OUTPUT_JSON_PATH}")
     print(f"  PARTITION_OPTION            = {PARTITION_OPTION}")
     print(f"  ONLY_USE_LISTED_SAMPLE_DIRS = {ONLY_USE_LISTED_SAMPLE_DIRS}")
@@ -563,14 +475,11 @@ def print_config() -> None:
     print(f"  LUMI_PB_INV                 = {LUMI_PB_INV}")
     print(f"  BR_HAD                      = {BR_HAD}")
     print(f"  σ_inc total (NNLO+NNLL)     = {SIGMA_INC_NNLO_TOTAL_PB} pb")
+    print(f"  σ_inc × BR_HAD              = {SIGMA_INC_NNLO:.6f} pb  ← used for anchor")
     print(f"  σ_ttbb (hadronic LHE)       = {SIGMA_TTBB_LHE} pb")
-    print(f"  σ_tt4b (LHE)                = {SIGMA_TT4B_LHE} pb")
-    _plan = STITCH_PLANS.get(PARTITION_OPTION, {})
-    print(f"  inclusive samples           = {_plan.get('inclusive')}")
-    for _dn, _sp in _plan.get("dedicated", {}).items():
-        _br = "x BR_had" if abs(_sp['sigma_inc'] - SIGMA_INC_NNLO_TOTAL_PB * BR_HAD) < 1e-6 else "(no BR)"
-        print(f"    dedicated {_dn:<15} owns={_sp['owns']} anchor={_sp['anchor']} "
-              f"sigma_inc={_sp['sigma_inc']:.3f}pb {_br}")
+    print(f"  σ_tt4b                      = {SIGMA_TT4B_LHE} pb")
+    print(f"  Inclusive ttbar anchor base = {sorted(INCLUSIVE_TTBAR_NAMES)}")
+    print(f"  (excluded from anchor)      = {sorted(ADDITIONAL_TTBAR_FOR_REPORT)}")
     print("══════════════════════════════════════════════════════════════════")
 
 
@@ -603,26 +512,26 @@ def print_id_breakdown(samples: dict[str, SampleSums]) -> None:
     print("══════════════════════════════════════════════════════════════════")
     print(" genTtbarId % 100 breakdown — Σ genW")
     print("──────────────────────────────────────────────────────────────────")
-    cols = ("LF(0)", "cc(41-45)", "tt+b(51,52)", "tt+2b(53-55)",
-            "tt+bbb(61,62)", "tt+4b(71,72)", "other", "lt0")
-    hdr = f"{'sample':<26}" + "".join(f"{c:>14}" for c in cols)
+    cols = ("0", "41-45", "51", "52", "53", "54", "55", "other", "lt0")
+    hdr = f"{'sample':<28}" + "".join(f"{c:>12}" for c in cols)
     print(hdr)
     print("─" * len(hdr))
-    g = lambda s, *ids: sum(s.sumGW_id.get(str(i), 0.0) for i in ids)
     for name in sorted(samples):
         s = samples[name]
         if s.is_data:
             continue
+        cc = sum(s.sumGW_id.get(str(i), 0.0) for i in (41, 42, 43, 44, 45))
         vals = [
-            g(s, 0), g(s, 41, 42, 43, 44, 45),
-            g(s, 51, 52), g(s, 53, 54, 55),
-            g(s, 61, 62), g(s, 71, 72),
-            g(s, "other"), g(s, "lt0"),
+            s.sumGW_id.get("0", 0.0), cc,
+            s.sumGW_id.get("51", 0.0), s.sumGW_id.get("52", 0.0),
+            s.sumGW_id.get("53", 0.0), s.sumGW_id.get("54", 0.0),
+            s.sumGW_id.get("55", 0.0),
+            s.sumGW_id.get("other", 0.0), s.sumGW_id.get("lt0", 0.0),
         ]
         if all(v == 0 for v in vals):
             continue
-        cells = "".join(f"{v:>14.4g}" for v in vals)
-        print(f"{name:<26}{cells}")
+        cells = "".join(f"{v:>12.4g}" for v in vals)
+        print(f"{name:<28}{cells}")
     print("══════════════════════════════════════════════════════════════════")
 
 
@@ -631,87 +540,59 @@ def print_result(res: StitchResult) -> None:
     print("══════════════════════════════════════════════════════════════════")
     print(f" Stitching result — option {res.option}")
     print("──────────────────────────────────────────────────────────────────")
-    print(f"  lumi                    = {res.lumi_pb_inv:>14.2f} pb⁻¹")
-    print(f"  σ_inc total (NNLO+NNLL) = {res.sigma_inc_total:>14.4f} pb")
-    print(f"  BR_had                  = {res.br_had:>14.6f}")
-    print(f"  inclusive samples       = {res.inclusive}")
+    print(f"  lumi                           = {res.lumi_pb_inv:>14.2f} pb⁻¹")
+    print(f"  σ_inc total (NNLO+NNLL)        = {res.sigma_inc_NNLO_total:>14.4f} pb")
+    print(f"  BR_HAD                         = {res.br_had:>14.6f}")
+    print(f"  σ_inc × BR_HAD (anchor)        = {res.sigma_inc_NNLO_hadronic:>14.4f} pb")
+    print(f"  σ_ttbb (LHE hadronic)          = {res.sigma_ttbb_LHE:>14.4f} pb  (cancels)")
+    print(f"  σ_tt4b (LHE)                   = {res.sigma_tt4b_LHE:>14.4f} pb  (cancels)")
     print()
-    print("  Per-dedicated anchoring (each rescaled to its own decay phase space):")
-    for d in res.dedicated:
-        print("  " + "-" * 64)
-        print(f"   [{d.sample}]  owns={d.owns}  anchor={d.anchor}")
-        print(f"     σ_inc(used)         = {d.sigma_inc:>14.4f} pb"
-              f"   σ_ded = {d.sigma_dedicated:>9.4f} pb (cancels)")
-        print(f"     Σgenw anchor(all)   = {d.sumGW_anchor_all:>14.6g}")
-        print(f"     Σgenw anchor(owned) = {d.sumGW_anchor_owned:>14.6g}")
-        print(f"     Σgenw dedicated     = {d.sumGW_dedicated_all:>14.6g}")
-        print(f"     f = owned/all       = {d.f:>14.6f}")
-        print(f"     r = σ_inc·f/σ_ded   = {d.r:>14.6f}"
-              f"   <- multiply this sample's YAML weight by r")
-        print(f"     (xcheck) Lumi·σ_inc·f/Σ_ded = {d.peF_full:>14.8g}")
-    print("  " + "-" * 64)
-    print("  Reject map (inclusive sample -> categories removed, filled by a dedicated):")
-    for inc, cats in res.reject_map.items():
-        print(f"     {inc:<22} reject {cats if cats else '(none)'}")
-    print("══════════════════════════════════════════════════════════════════")
-
-
-def print_analyzer_table(table: dict) -> None:
+    print(f"  Σgenw   inclusive (total)              = {res.sumGW_inc_all:>14.6g}")
+    print(f"  Σgenw   inclusive (in ttbb partition)  = {res.sumGW_inc_ttbb_partition:>14.6g}")
+    print(f"  Σgenw   inclusive (in tt4b partition)  = {res.sumGW_inc_tt4b_partition:>14.6g}")
+    print(f"  Σgenw   ttbb total                     = {res.sumGW_ttbb_all:>14.6g}")
+    print(f"  Σgenw   tt4b total                     = {res.sumGW_tt4b_all:>14.6g}")
     print()
-    print("══════════════════════════════════════════════════════════════════")
-    print(" Analyzer per-event MULTIPLIER table  (-> stitch_factors JSON)")
-    print(" rows = sampleName ; cols = category from expandedTtbarId % 100")
+    print(f"  f_B   = Σ_inc(ttbb_part) / Σ_inc(all)  = {res.f_B:>14.6f}")
+    print(f"  f_4b  = Σ_inc(tt4b_part) / Σ_inc(all)  = {res.f_4b:>14.6f}")
+    print(f"  r_B   = σ_inc · f_B  / σ_ttbb          = {res.r_B:>14.6f}")
+    print(f"  r_4b  = σ_inc · f_4b / σ_tt4b          = {res.r_4b:>14.6f}")
+    print()
     print("──────────────────────────────────────────────────────────────────")
-    cats = table["categories"]
-    hdr = f"{'sample':<20}{'role':<11}" + "".join(f"{c:>11}" for c in cats)
-    print(hdr)
-    print("─" * len(hdr))
-    for name in sorted(table["samples"]):
-        rec = table["samples"][name]
-        cells = "".join(f"{rec['by_category'][c]:>11.5g}" for c in cats)
-        print(f"{name:<20}{rec['role']:<11}{cells}")
+    print(" Final per-event factor, multiply by event genWeight")
+    print(" → drop into Config::SampleRegistry as `weight` field")
     print("──────────────────────────────────────────────────────────────────")
-    print(" 1 = keep (inclusive) ; r = dedicated rescale ; 0 = rejected.\n Applied ON TOP of YAML weight. Samples not shown keep YAML weight (x1).")
+    print(f"  inclusive ttbar  : {res.perEvt_factor_inclusive:>14.10g}")
+    print(f"  ttbb             : {res.perEvt_factor_ttbb:>14.10g}")
+    print(f"  tt4b             : {res.perEvt_factor_tt4b:>14.10g}"
+          + ("   (sample SKIPPED in this option)" if res.f_4b == 0.0 else ""))
     print("══════════════════════════════════════════════════════════════════")
 
 
-def write_json(out_path: Path, res: StitchResult, analyzer_table: dict) -> None:
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    plan = STITCH_PLANS[PARTITION_OPTION]
+def write_json(out_path: Path, res: StitchResult, partition_used: dict[str, frozenset[int]]) -> None:
     payload = {
         "_comment": (
-            "Stitching factors + per-event MULTIPLIER for the ttHH FH Run2 2017 UL "
-            "analysis. Computed by compute_stitch_factors.py from the analyzer "
-            "`prescan`-mode output (expanded genTtbarId, §5). The analyzer loads "
-            "`analyzer_perEvent_factor` and applies the multiplier per event via "
-            "expandedTtbarId % 100 (see that block's note). Each dedicated sample is "
-            "anchored to its OWN decay phase space (ttbb_Hadronic: hadronic, σ×BR_had; "
-            "decay-inclusive tt4b: all channels, σ no-BR), per ttHH AN-2022/122 §3.2-3.4 "
-            "(§3.3 SL Option1, §3.4 DL gen-level 4b exclusion). Per-dedicated f/r and Σgenw "
-            "are under `result` for traceability."
+            "Stitching factors for the ttHH FH Run2 2017 UL analysis. "
+            "Computed by compute_stitch_factors_fixed_config.py from kNormalizationCheck "
+            "analyzer output. Analyzer should read perEvt_factor_* directly into "
+            "the SampleRegistry weight field. "
+            "ttHH AN-2022/122 §3.3 Option1 / §3.2 (tt+bbb/tt+4b are constructed "
+            "at sample level — Option1 uses tt4b sample for both, no gen-level split)."
         ),
         "config": {
             "analyzer_output_dir": str(ANALYZER_OUTPUT_DIR),
-            "prescan_tree": PRESCAN_TREE,
-            "stitch_option": PARTITION_OPTION,
             "only_use_listed_sample_dirs": ONLY_USE_LISTED_SAMPLE_DIRS,
             "root_file_glob": ROOT_FILE_GLOB,
-            "lumi_pb_inv": LUMI_PB_INV,
+            "expected_sample_dirs": sorted(EXPECTED_SAMPLE_DIRS),
+            "inclusive_ttbar_names_used_for_anchor": sorted(INCLUSIVE_TTBAR_NAMES),
+            "inclusive_ttbar_names_excluded_from_anchor": sorted(ADDITIONAL_TTBAR_FOR_REPORT),
+            "ttbb_sample_name": TTBB_SAMPLE_NAME,
+            "tt4b_sample_name": TT4B_SAMPLE_NAME,
             "br_had": BR_HAD,
             "sigma_inc_total_pb": SIGMA_INC_NNLO_TOTAL_PB,
-            "sigma_ttbb_pb": SIGMA_TTBB_LHE,
-            "sigma_tt4b_pb": SIGMA_TT4B_LHE,
-        },
-        "plan": {
-            "inclusive": list(plan["inclusive"]),
-            "dedicated": {
-                k: {kk: (sorted(vv) if isinstance(vv, (set, frozenset)) else vv)
-                    for kk, vv in v.items()}
-                for k, v in plan["dedicated"].items()
-            },
         },
         "result": asdict(res),
-        "analyzer_perEvent_factor": analyzer_table,
+        "partition": {k: sorted(v) for k, v in partition_used.items()},
     }
     out_path.write_text(json.dumps(payload, indent=2))
     LOG.info("wrote %s", out_path)
@@ -726,9 +607,8 @@ def main() -> int:
         format="%(levelname)s  %(message)s",
     )
 
-    if PARTITION_OPTION not in STITCH_PLANS:
-        LOG.error("unknown PARTITION_OPTION=%r. Valid: %s",
-                  PARTITION_OPTION, "/".join(STITCH_PLANS))
+    if PARTITION_OPTION not in PARTITION_OPTIONS:
+        LOG.error("unknown PARTITION_OPTION=%r. Valid options are A/B/C", PARTITION_OPTION)
         return 2
 
     print_config()
@@ -764,16 +644,20 @@ def main() -> int:
             print(w)
 
     try:
-        res = compute_plan(samples, option=PARTITION_OPTION, lumi_pb_inv=LUMI_PB_INV)
+        res = compute_factors(
+            samples,
+            option=PARTITION_OPTION,
+            lumi_pb_inv=LUMI_PB_INV,
+            sigma_inc=SIGMA_INC_NNLO,
+            sigma_ttbb=SIGMA_TTBB_LHE,
+            sigma_tt4b=SIGMA_TT4B_LHE,
+        )
     except RuntimeError as e:
         LOG.error("%s", e)
         return 2
 
     print_result(res)
-
-    analyzer_table = build_analyzer_table(res)
-    print_analyzer_table(analyzer_table)
-    write_json(OUTPUT_JSON_PATH, res, analyzer_table)
+    write_json(OUTPUT_JSON_PATH, res, PARTITION_OPTIONS[PARTITION_OPTION])
 
     return 0
 

@@ -18,7 +18,7 @@
 #   metadata : sampleName, runYear, dataEra, isData, xsec_used, nFiles
 #   events   : nEvents_total, sumGenW_total, sumGenW_pos, sumGenW_neg
 #   runs     : genEventSumw_runs, genEventSumw2_runs, genEventCount_runs
-#   genTtbarId %% 100 (17 bins, incl. expanded 61/62/71/72) : sumGenW_id_* / n_id_*
+#   genTtbarId %% 100 (13 bins) : sumGenW_id_*  and  n_id_*
 #   ntuple ttCat_*    (6 bins)  : sumGenW_ttCat_*  and  n_ttCat_*
 #
 # Usage:
@@ -53,29 +53,20 @@ DEFAULT_TREE = "prescan"
 DEFAULT_REL_TOL = 1e-6          # relative tolerance for float cross-checks
 
 # Branch-key partitions (must mirror the analyzer's writePrescanTree()).
-# genTtbarId %% 100 partition. 61/62 = tt+bbb, 71/72 = tt+4b come from the
-# expanded-id reclassification done in the analyzer prescan (§5 of the analyzer
-# patch): tt+nb events are MOVED OUT of 53/54/55 into 61/62/71/72, so the
-# 53/54/55 bins here are the pure tt+2b remainder. Prescan files produced before
-# §5 simply lack these branches and contribute 0 to them (row.get(..., 0)).
 ID_KEYS = ["lt0", "0", "41", "42", "43", "44", "45",
-           "51", "52", "53", "54", "55",
-           "61", "62", "71", "72", "other"]
-EXPANDED_KEYS = ["61", "62", "71", "72"]   # tt+nb (tt+bbb = 61,62 ; tt+4b = 71,72)
+           "51", "52", "53", "54", "55", "other"]
 TTCAT_KEYS = ["LightFlavour", "AddCjet", "Add1Bjet_1Had",
               "Add1Bjet_2Had", "Add2Bjet", "NoTT"]
 
-# ntuple ttCat_* is NanoAOD-genTtbarId-based and does NOT know the expanded
-# split, so tt+nb events are still counted there as Add2Bjet (2b+). After §5 the
-# analyzer id bins are expanded-aware, so only LF and cc map cleanly 1:1 to a
-# ttCat bin -> those stay HARD checks. The b-enhanced phase space is verified by
-# aggregate reconciliation instead (tt+nb has been redistributed 51-55 -> 61-72).
-HARD_TTCAT_VS_ID = {
+# genTtbarId-group -> ntuple ttCat counterpart, for the ttCat-vs-id check.
+# (53/54/55 collapse into Add2Bjet; NoTT has no genTtbarId counterpart.)
+TTCAT_VS_ID = {
     "LightFlavour":  ["0"],
     "AddCjet":       ["41", "42", "43", "44", "45"],
+    "Add1Bjet_1Had": ["51"],
+    "Add1Bjet_2Had": ["52"],
+    "Add2Bjet":      ["53", "54", "55"],
 }
-RECON_1B_IDS  = ["51", "52"]                          # ttCat 1B1H+1B2H side
-RECON_2BP_IDS = ["53", "54", "55", "61", "62", "71", "72"]  # ttCat Add2Bjet side
 
 _FNAME_INDEX_RE = re.compile(r"_(\d+)\.root$")
 
@@ -319,11 +310,7 @@ def run_crosschecks(summ: SampleSummary, rel_tol: float) -> dict:
     if summ.is_data:
         return checks
 
-    # (1) genTtbarId partition is complete: Σ over ALL bins == totals. Now that
-    #     61/62/71/72 are included, this ALSO proves the §5 reclassification
-    #     conserved every event (nothing lost or double-counted moving tt+nb out
-    #     of 53/54/55). A failure here is the classic symptom of mixing pre-§5
-    #     and post-§5 prescan files in one sample.
+    # (1) genTtbarId partition is complete: Σ over bins == totals.
     id_n_sum = sum(summ.id_n.values())
     id_w_sum = sum(summ.id_w.values())
     checks["id_partition_count"] = (id_n_sum == summ.n_events)
@@ -331,25 +318,15 @@ def run_crosschecks(summ: SampleSummary, rel_tol: float) -> dict:
     if not checks["id_partition_count"]:
         summ.warnings.append(
             f"genTtbarId count partition mismatch: Σn_id={id_n_sum:,} "
-            f"vs nEvents={summ.n_events:,}  (pre-§5/post-§5 file mix?)")
+            f"vs nEvents={summ.n_events:,}")
     if not checks["id_partition_weight"]:
         summ.warnings.append(
             f"genTtbarId weight partition mismatch: "
-            f"ΣsumGenW_id={fixed_str(id_w_sum)} vs sumGenW={fixed_str(summ.sumGenW)}")
+            f"ΣsumGenW_id={fixed_str(id_w_sum)} "
+            f"vs sumGenW={fixed_str(summ.sumGenW)}")
 
-    # (2) ntuple ttCat_* partition is also complete (its 6 bins == totals).
-    tt_n_sum = sum(summ.ttcat_n.values())
-    tt_w_sum = sum(summ.ttcat_w.values())
-    checks["ttcat_partition_count"] = (tt_n_sum == summ.n_events)
-    checks["ttcat_partition_weight"] = close(tt_w_sum, summ.sumGenW)
-    if not checks["ttcat_partition_count"]:
-        summ.warnings.append(
-            f"ttCat count partition mismatch: Σn_ttCat={tt_n_sum:,} "
-            f"vs nEvents={summ.n_events:,}")
-
-    # (3) LF and cc map 1:1 between ttCat and the expanded id partition — tt+nb
-    #     never lands in LF/cc, so these stay exact. HARD.
-    for cat, id_group in HARD_TTCAT_VS_ID.items():
+    # (2) ntuple ttCat_* vs analyzer genTtbarId decode (count + weight).
+    for cat, id_group in TTCAT_VS_ID.items():
         n_id = sum(summ.id_n[k] for k in id_group)
         w_id = sum(summ.id_w[k] for k in id_group)
         ok_n = (summ.ttcat_n[cat] == n_id)
@@ -358,20 +335,17 @@ def run_crosschecks(summ: SampleSummary, rel_tol: float) -> dict:
         checks[f"ttcat_vs_id_weight[{cat}]"] = ok_w
         if not ok_n:
             summ.warnings.append(
-                f"ttCat vs id count mismatch [{cat}]: "
+                f"ttCat vs genTtbarId count mismatch [{cat}]: "
                 f"n_ttCat={summ.ttcat_n[cat]:,} vs Σn_id={n_id:,}")
         if not ok_w:
             summ.warnings.append(
-                f"ttCat vs id weight mismatch [{cat}]: "
-                f"w_ttCat={fixed_str(summ.ttcat_w[cat])} vs Σw_id={fixed_str(w_id)}")
+                f"ttCat vs genTtbarId weight mismatch [{cat}]: "
+                f"w_ttCat={fixed_str(summ.ttcat_w[cat])} "
+                f"vs Σw_id={fixed_str(w_id)}")
 
-    # (4) Events-tree vs Runs-tree sum (informational; non-zero = skim).
+    # (3) Events-tree vs Runs-tree sum (informational; non-zero = skim).
     checks["events_vs_runs_match"] = close(summ.sumGenW, summ.runs_sumW)
 
-    # NOTE: the b-enhanced reconciliation (ttCat 2b+  vs  expanded 2b + tt+nb)
-    # is reported by print_expanded_reconciliation() as INFO, not gated here:
-    # a small diff there is an expected official-vs-ghost algorithmic migration,
-    # not a job/bookkeeping error.
     return checks
 
 
@@ -401,61 +375,27 @@ def print_headline_table(records: list[tuple[SampleSummary, dict]]) -> None:
 
 
 def print_ttbar_category_table(records: list[tuple[SampleSummary, dict]]) -> None:
-    """Per-sample expanded-id raw event counts — the stitching-partition input.
-    Columns follow additional-b-jet multiplicity: 1b (51,52), 2b (53,54,55),
-    tt+bbb (61,62), tt+4b (71,72). Only ttbar-content samples are listed."""
-    cc  = lambda s: sum(s.id_n[k] for k in ("41", "42", "43", "44", "45"))
-    b1  = lambda s: s.id_n["51"] + s.id_n["52"]
-    b2  = lambda s: s.id_n["53"] + s.id_n["54"] + s.id_n["55"]
-    bbb = lambda s: s.id_n["61"] + s.id_n["62"]
-    b4  = lambda s: s.id_n["71"] + s.id_n["72"]
+    """Per-sample genTtbarId raw event counts — the stitching-partition input.
+    Only samples with ttbar content (Σ n_id > 0) are listed."""
+    cc = lambda s: s.id_n["41"] + s.id_n["42"] + s.id_n["43"] + s.id_n["44"] + s.id_n["45"]
     rows = [s for s, _ in records if sum(s.id_n.values()) > 0]
     if not rows:
         return
-    hdr = (f"{'Sample':<22}{'LF(0)':>11}{'cc(41-45)':>11}{'1b(51,52)':>12}"
-           f"{'2b(53-55)':>12}{'tt+bbb(61,62)':>15}{'tt+4b(71,72)':>14}"
-           f"{'lt0':>8}{'other':>8}")
+    hdr = (f"{'Sample':<24}{'LF(0)':>12}{'cc(41-45)':>12}{'b(51)':>12}"
+           f"{'b(52)':>12}{'2b(53)':>12}{'bb(54)':>12}{'4b(55)':>12}"
+           f"{'lt0':>10}{'other':>9}")
     line = "─" * len(hdr)
     print("\n" + line)
-    print("  EXPANDED genTtbarId %% 100 — RAW EVENT COUNTS (stitching partition)")
-    print("  1b/2b = additional b-jets; tt+bbb/tt+4b = expanded (>=3 b-jets, from §5)")
+    print("  genTtbarId %% 100 — RAW EVENT COUNTS (stitching partition)")
     print(line)
     print(hdr)
     print(line)
     for s in rows:
-        print(f"{s.sample:<22}{grouped(s.id_n['0']):>11}{grouped(cc(s)):>11}"
-              f"{grouped(b1(s)):>12}{grouped(b2(s)):>12}{grouped(bbb(s)):>15}"
-              f"{grouped(b4(s)):>14}{grouped(s.id_n['lt0']):>8}"
-              f"{grouped(s.id_n['other']):>8}")
-    print(line)
-
-
-def print_expanded_reconciliation(records: list[tuple[SampleSummary, dict]]) -> None:
-    """INFO: reconcile NanoAOD ttCat(2b+) against expanded id(pure 2b + tt+nb).
-    A nonzero diff = tt+nb events the official categorizer had labelled 1b/LF —
-    an expected, small official-vs-ghost-matching migration, not a bug."""
-    rows = [s for s, _ in records
-            if not s.is_data and sum(s.ttcat_n.values()) > 0]
-    if not rows:
-        return
-    hdr = (f"{'Sample':<22}{'ttCat 2b+':>14}{'id 2b+tt+nb':>16}"
-           f"{'tt+nb->1b':>10}{'tt+nb(61-72)':>15}{'tt+nb/2b+':>11}")
-    line = "─" * len(hdr)
-    print("\n" + line)
-    print("  EXPANDED PARTITION CHECK — NanoAOD ttCat(2b+)  vs  expanded id(2b + tt+nb)")
-    print("  diff>0 => some tt+nb had a NanoAOD 1b/LF label (expected, small, algorithmic)")
-    print(line)
-    print(hdr)
-    print(line)
-    for s in rows:
-        tt2bp = s.ttcat_n["Add2Bjet"]
-        id2bp = sum(s.id_n[k] for k in RECON_2BP_IDS)
-        ttnb  = sum(s.id_n[k] for k in EXPANDED_KEYS)
-        if tt2bp == 0 and id2bp == 0:
-            continue
-        frac = (ttnb / tt2bp) if tt2bp else 0.0
-        print(f"{s.sample:<22}{grouped(tt2bp):>14}{grouped(id2bp):>16}"
-              f"{grouped(id2bp - tt2bp):>10}{grouped(ttnb):>15}{frac:>11.4f}")
+        print(f"{s.sample:<24}{grouped(s.id_n['0']):>12}{grouped(cc(s)):>12}"
+              f"{grouped(s.id_n['51']):>12}{grouped(s.id_n['52']):>12}"
+              f"{grouped(s.id_n['53']):>12}{grouped(s.id_n['54']):>12}"
+              f"{grouped(s.id_n['55']):>12}{grouped(s.id_n['lt0']):>10}"
+              f"{grouped(s.id_n['other']):>9}")
     print(line)
 
 
@@ -571,9 +511,8 @@ def write_csv(path: str, records: list[tuple[SampleSummary, dict]]) -> None:
             "nEvents_total", "sumGenW_Events", "sumGenW_Runs",
             "sumGenW2_Runs", "genEventCount_Runs", "skim_attrition_rel",
             "n_id_LF", "n_id_cc", "n_id_b51", "n_id_b52",
-            "n_id_2b53", "n_id_2b54", "n_id_2b55",
-            "n_id_bbb61", "n_id_bbb62", "n_id_4b71", "n_id_4b72",
-            "n_id_lt0", "n_id_other", "xsec_used", "eff_yield"]
+            "n_id_2b53", "n_id_bb54", "n_id_4b55", "n_id_lt0", "n_id_other",
+            "xsec_used", "eff_yield"]
     with open(path, "w", newline="") as fh:
         w = csv.writer(fh)
         w.writerow(cols)
@@ -587,7 +526,6 @@ def write_csv(path: str, records: list[tuple[SampleSummary, dict]]) -> None:
                 s.runs_count, "" if skim is None else skim,
                 s.id_n["0"], cc, s.id_n["51"], s.id_n["52"],
                 s.id_n["53"], s.id_n["54"], s.id_n["55"],
-                s.id_n["61"], s.id_n["62"], s.id_n["71"], s.id_n["72"],
                 s.id_n["lt0"], s.id_n["other"],
                 s.xsec_used, s.eff_yield,
             ]
@@ -633,7 +571,6 @@ def main(argv=None) -> int:
 
     print_headline_table(records)
     print_ttbar_category_table(records)
-    print_expanded_reconciliation(records)
     print_anomaly_report(records)
 
     os.makedirs(args.outdir, exist_ok=True)

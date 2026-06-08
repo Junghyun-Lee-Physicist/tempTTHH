@@ -1,0 +1,169 @@
+{
+  "_comment": "Stitching factors + per-event normalization for the ttHH FH Run2 2017 UL analysis. Computed by compute_stitch_factors.py from the analyzer `prescan`-mode output (expanded genTtbarId, \u00a75). The analyzer loads `analyzer_perEvent_factor` and applies it per event via expandedTtbarId % 100 (see that block's note). r_B/r_4b and the underlying \u03a3genw are kept under `result` for traceability. ttHH AN-2022/122 \u00a73.2-3.4 anchoring; with the expanded id, tt+bbb/tt+4b are separated at gen level (no 54/55 stand-in).",
+  "config": {
+    "analyzer_output_dir": "/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan",
+    "prescan_tree": "prescan",
+    "partition_option": "EXP",
+    "only_use_listed_sample_dirs": false,
+    "root_file_glob": "*.root",
+    "expected_sample_dirs": [
+      "BTagCSV_B",
+      "BTagCSV_C",
+      "BTagCSV_D",
+      "BTagCSV_E",
+      "BTagCSV_F",
+      "JetHT_B",
+      "JetHT_C",
+      "JetHT_D",
+      "JetHT_E",
+      "JetHT_F",
+      "QCD_HT1000to1500",
+      "QCD_HT1500to2000",
+      "QCD_HT2000toInf",
+      "QCD_HT200to300",
+      "QCD_HT300to500",
+      "QCD_HT500to700",
+      "QCD_HT700to1000",
+      "SingleMuon_B",
+      "SingleMuon_C",
+      "SingleMuon_D",
+      "SingleMuon_E",
+      "SingleMuon_F",
+      "TTTo2L2Nu",
+      "TTToHadronic",
+      "TTToSemiLeptonic",
+      "tt4b",
+      "ttHH",
+      "ttHtobb",
+      "ttWH",
+      "ttWW",
+      "ttWZ",
+      "ttZHto4b",
+      "ttZZto4b",
+      "ttZtobb",
+      "ttbb_2L2Nu",
+      "ttbb_Hadronic",
+      "ttbb_SemiLeptonic",
+      "tttW",
+      "tttt"
+    ],
+    "inclusive_ttbar_names_used_for_anchor": [
+      "TTToHadronic"
+    ],
+    "inclusive_ttbar_names_excluded_from_anchor": [
+      "TTTo2L2Nu",
+      "TTToSemiLeptonic"
+    ],
+    "ttbb_sample_name": "ttbb_Hadronic",
+    "tt4b_sample_name": "tt4b",
+    "br_had": 0.45441081,
+    "sigma_inc_total_pb": 831.76
+  },
+  "result": {
+    "option": "EXP",
+    "lumi_pb_inv": 41480.0,
+    "sigma_inc_NNLO_total": 831.76,
+    "br_had": 0.45441081,
+    "sigma_inc_NNLO_hadronic": 377.9607353256,
+    "sigma_ttbb_LHE": 1.452,
+    "sigma_tt4b_LHE": 0.296,
+    "f_B": 0.00418743651356771,
+    "f_4b": 0.0001075774099900226,
+    "r_B": 1.090004534295674,
+    "r_4b": 0.1373649898116638,
+    "sumGW_inc_all": 73140766669.42169,
+    "sumGW_inc_ttbb_partition": 306272316.98187256,
+    "sumGW_inc_tt4b_partition": 7868294.242980957,
+    "sumGW_ttbb_all": 113736165.6780777,
+    "sumGW_tt4b_all": 9502000.0,
+    "perEvt_factor_inclusive": 0.00021435120269063825,
+    "perEvt_factor_ttbb": 0.0005772116468365047,
+    "perEvt_factor_tt4b": 0.0001774971936546825
+  },
+  "partition": {
+    "inclusive": [
+      0,
+      41,
+      42,
+      43,
+      44,
+      45,
+      51,
+      52
+    ],
+    "ttbb": [
+      53,
+      54,
+      55
+    ],
+    "tt4b": [
+      61,
+      62,
+      71,
+      72
+    ]
+  },
+  "analyzer_perEvent_factor": {
+    "note": "Per-event normalization for ttbar stitching. final weight = perEvent_factor[sampleName][category] * genWeight * (PU * btagSF * trigSF). This factor REPLACES the YAML base `weight` for the samples listed below. category = sub_to_category[expandedTtbarId%100]. 0 => sample does not own that category (event rejected), so tt+2b/tt+nb are filled by exactly one sample. Samples NOT listed keep their YAML weight.",
+    "sub_to_category": {
+      "0": "LF",
+      "41": "cc",
+      "42": "cc",
+      "43": "cc",
+      "44": "cc",
+      "45": "cc",
+      "51": "ttb",
+      "52": "ttb",
+      "53": "tt2b",
+      "54": "tt2b",
+      "55": "tt2b",
+      "61": "ttbbb",
+      "62": "ttbbb",
+      "71": "tt4b",
+      "72": "tt4b"
+    },
+    "categories": [
+      "LF",
+      "cc",
+      "ttb",
+      "tt2b",
+      "ttbbb",
+      "tt4b"
+    ],
+    "samples": {
+      "TTToHadronic": {
+        "role": "inclusive",
+        "by_category": {
+          "LF": 0.00021435120269063825,
+          "cc": 0.00021435120269063825,
+          "ttb": 0.00021435120269063825,
+          "tt2b": 0.0,
+          "ttbbb": 0.0,
+          "tt4b": 0.0
+        }
+      },
+      "ttbb_Hadronic": {
+        "role": "ttbb",
+        "by_category": {
+          "LF": 0.0,
+          "cc": 0.0,
+          "ttb": 0.0,
+          "tt2b": 0.0005772116468365047,
+          "ttbbb": 0.0,
+          "tt4b": 0.0
+        }
+      },
+      "tt4b": {
+        "role": "tt4b",
+        "by_category": {
+          "LF": 0.0,
+          "cc": 0.0,
+          "ttb": 0.0,
+          "tt2b": 0.0,
+          "ttbbb": 0.0001774971936546825,
+          "tt4b": 0.0001774971936546825
+        }
+      }
+    }
+  }
+}
