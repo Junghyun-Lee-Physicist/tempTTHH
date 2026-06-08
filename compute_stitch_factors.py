@@ -33,12 +33,23 @@ AN reference
     ttH  AN-19-094  §6.2.1     NNLO+NNLL anchoring procedure
     ttH  AN-19-094  Appendix C tt+jets background uncertainty treatment
 
-분석은 FH channel + ttbb_hadronic-filtered sample 을 사용한다. 따라서
-inclusive ttbar anchor base 는 TTToHadronic 만 사용하고, σ_inc 에도
-hadronic BR (0.45441081) 을 곱한다 — 그렇게 해야 phase space 가
-일치하고 anchoring 식이 자기 일관적이다. (SemiLep/2L2Nu inclusive 는
-별도 ttbb_SL/DL sample 이 부재한 상황에서는 어차피 FH analysis 의
-lepton veto 에 잘리므로 r_B 계산에서 제외하는 것이 맞다.)
+Anchoring 은 dedicated sample 의 decay-channel coverage 에 의해 결정된다
+(decay channel 은 orthogonal phase space 이므로 매칭되는 inclusive 채널에
+σ_total × BR_channel 로 anchor 하면 self-consistent 하다):
+
+  * ttbb : per-decay-channel 4FS sample 이 SE 채널 모두 존재한다
+           (ttbb_Hadronic / ttbb_SemiLeptonic / ttbb_2L2Nu). 각 ttbb_c 는
+           자기 채널의 tt+2b 만 owns 하고, 매칭 inclusive TTTo_c 에
+           σ_total × BR_c 로 anchor, TTTo_c 에서만 tt+2b 를 reject 한다.
+           → tt+2b 는 세 inclusive 전부에서 reject 되고 각각 dedicated 로 채워진다.
+  * tt4b : decay-inclusive (census Had/SL/DL ≈ 46/44/11). 세 채널 전부의
+           tt+nb 를 owns 하고, Had+SL+DL inclusive merge 에 σ_total (no BR) 로
+           anchor, 세 inclusive 전부에서 tt+nb 를 reject 한다.
+
+  [HISTORY] 이전 버전은 ttbb_Hadronic 하나만 써서 hadronic 채널의 tt+2b 만
+  교체하고 SL/DL tt+2b 는 5FS inclusive 로 남겼다 (보수적 잔재; option
+  EXP_TTBB_HAD_ONLY 로 보존). per-channel ttbb sample 이 확인되어 EXP 가
+  3-채널 ttbb stitch 로 갱신되었다 (2026-06).
 
 사용법
 ──────
@@ -75,12 +86,18 @@ PRESCAN_TREE = "prescan"
 # 권장: analyzer 가 읽는 DerivedCorr 아래에 둔다 (CorrectionsManager 와 같은 위치 관습).
 OUTPUT_JSON_PATH = Path("DerivedCorr/stitchFactors/stitch_factors_2017.json")
 
-# Partition option:
+# Partition option (current production uses the EXP family with expanded id §5):
+#   EXP               = per-channel ttbb (Had/SL/DL each anchored to its own
+#                       inclusive) + decay-inclusive tt4b. ← DEFAULT, physically
+#                       correct when all three 4FS ttbb samples exist.
+#   EXP_TTBB_HAD_ONLY = ttbb_Hadronic only (SL/DL tt+2b left as 5FS inclusive)
+#                       + decay-inclusive tt4b. Conservative fallback.
+#   EXP_HAD_TT4B      = ttbb_Hadronic + hadronic-only tt4b (use if tt4b census
+#                       is ~100% full-hadronic).
+# Legacy gen-partition options (pre-expanded-id, kept for reference):
 #   A = ttHH AN SL Option1 차용: inclusive={LF+cc}, ttbb={51,52,53}, tt4b={54,55}
-#       → ttbb 가 tt+b / tt+2b 담당, tt4b 가 tt+bbb / tt+4b (id 54,55) 담당
 #   B = ttH FH-style:           inclusive={LF+cc}, ttbb={51,52,53,54,55}, tt4b skip
 #   C = ttHH Option2:           현재 gen-level partition 기준으로 B와 동일
-#                                (Option2 의 차이는 reco-level DNN class 정의)
 PARTITION_OPTION = "EXP"
 
 # 2017 UL — 41.48 fb⁻¹ = 41480 pb⁻¹
@@ -88,21 +105,40 @@ LUMI_PB_INV = 41480.0
 
 # Cross sections, all converted to pb.
 #
-# σ_inc  : NNLO+NNLL inclusive ttbar (Top++ v2.0, m_top = 172.5 GeV) = 831.76 pb
-#          We anchor to TTToHadronic only (see header note) so multiply by
-#          hadronic branching fraction BR_HAD = 0.45441081
-#          → σ_inc_effective = 831.76 × 0.45441081 = 377.964 pb
-# σ_ttbb : 1452 fb (hadronic-filtered) = 1.452 pb
-# σ_tt4b : 296 fb (inclusive, not BR-filtered per the sample provider) = 0.296 pb
+# σ_inc  : NNLO+NNLL inclusive ttbar (Top++ v2.0, m_top = 172.5 GeV) = 831.76 pb.
+#          Each dedicated sample multiplies this by the BR of the decay phase
+#          space it is anchored to:
+#            ttbb_c (per channel) → σ_total × BR_c   (hadronic/SL/DL)
+#            tt4b  (decay-incl.)  → σ_total          (no BR; all channels)
+# σ_ttbb : per-channel 4FS ttbb LHE σ. Hadronic = 1452 fb = 1.452 pb.
+# σ_tt4b : 296 fb (decay-inclusive, not BR-filtered per the provider) = 0.296 pb
 #
-# Note:  r_B = σ_inc · f_B / σ_ttbb  → σ_ttbb 는 cancel.  σ_tt4b 도 same.
-#        BR 이 σ_inc 와 σ_ttbb 양쪽에 동일하게 들어가면 BR 도 cancel —
-#        anchoring 의 본질. 따라서 BR 적용 방식이 self-consistent 한지가
-#        중요하지 절대값은 결과에 영향 없음.
-BR_HAD                  = 0.45441081
+# ── BR decomposition (W hadronic BR = 0.6741; BR_HAD = 0.6741² exactly) ──────
+#   BR_HAD = W_had²         = 0.45441081   (fully hadronic)
+#   BR_SL  = 2·W_had·W_lep  = 0.43937838   (semi-leptonic)
+#   BR_DL  = W_lep²         = 0.10621081   (di-leptonic)         Σ = 1.00000000
+#
+# ── Why the dedicated σ values barely matter ────────────────────────────────
+#   r_d = σ_inc(d) · f_d / σ_ded(d), and the analyzer multiplies r_d ON TOP of
+#   the dedicated YAML base weight Lumi·σ_ded/Σgenw. So σ_ded CANCELS exactly:
+#       YAML · r = (Lumi·σ_ded/Σgenw) · (σ_inc·f/σ_ded) = Lumi·σ_inc·f/Σgenw.
+#   The ONLY requirement is that each σ_ded below equals the σ used in that
+#   sample's YAML weight. The per-channel ttbb defaults are BR-scaled from the
+#   hadronic value (σ_ttbb_total = 1.452/BR_HAD ≈ 3.195 pb, then × BR_c); replace
+#   with the official XSDB σ if your YAML uses those — result is unchanged as
+#   long as YAML and here agree.
+W_HAD = 0.6741
+W_LEP = 1.0 - W_HAD                                            # 0.3259
+BR_HAD                  = W_HAD * W_HAD                        # 0.45441081
+BR_SL                   = 2.0 * W_HAD * W_LEP                  # 0.43937838
+BR_DL                   = W_LEP * W_LEP                        # 0.10621081
 SIGMA_INC_NNLO_TOTAL_PB = 831.76
 SIGMA_INC_NNLO          = SIGMA_INC_NNLO_TOTAL_PB * BR_HAD    # ≈ 377.964 pb
-SIGMA_TTBB_LHE          = 1.452                                # pb (1452 fb)
+SIGMA_TTBB_HAD          = 1.452                                # pb (1452 fb, hadronic 4FS)
+SIGMA_TTBB_LHE          = SIGMA_TTBB_HAD                       # backward-compat alias
+_SIGMA_TTBB_TOTAL       = SIGMA_TTBB_HAD / BR_HAD              # ≈ 3.1953 pb (4FS, all channels)
+SIGMA_TTBB_SL           = _SIGMA_TTBB_TOTAL * BR_SL            # ≈ 1.4040 pb (verify vs XSDB)
+SIGMA_TTBB_DL           = _SIGMA_TTBB_TOTAL * BR_DL            # ≈ 0.3394 pb (verify vs XSDB)
 SIGMA_TT4B_LHE          = 0.296                                # pb (296 fb)
 
 # True면 아래 EXPECTED_SAMPLE_DIRS에 적힌 디렉토리만 scan한다.
@@ -128,14 +164,20 @@ EXPECTED_SAMPLE_DIRS = frozenset({
     "ttZHto4b", "ttZZto4b", "ttZtobb", "tttW", "tttt",
 })
 
-# NOTE: anchoring is now PER-DEDICATED-SAMPLE and lives in STITCH_PLANS below
-# (each dedicated sample names its own `anchor` inclusive set + σ_inc). The old
-# single hadronic-only anchor was correct only when tt4b was hadronic-only; the
-# decay-channel census showed tt4b is DECAY-INCLUSIVE (~46/44/11 Had/SL/DL), so
-# tt4b anchors to the full Had+SL+DL inclusive (σ, no BR) while ttbb_Hadronic
-# still anchors to the hadronic inclusive (σ × BR_had).
-TTBB_SAMPLE_NAME = "ttbb_Hadronic"   # 4FS ttbb, hadronic-filtered
-TT4B_SAMPLE_NAME = "tt4b"            # dedicated tt+nb, decay-inclusive
+# NOTE: anchoring is PER-DEDICATED-SAMPLE and lives in STITCH_PLANS below (each
+# dedicated sample names its own `anchor` inclusive set + σ_inc). The anchor
+# scope = the dedicated sample's decay-channel coverage:
+#   - ttbb_c (per-channel 4FS, one per W-decay channel) → anchors to TTTo_c with
+#     σ_total × BR_c, rejects tt+2b from TTTo_c only. All three channels covered.
+#   - tt4b (decay-inclusive census ~46/44/11 Had/SL/DL) → anchors to the full
+#     Had+SL+DL inclusive merge with σ_total (NO BR), rejects tt+nb from all three.
+# A single hadronic-only ttbb anchor (option EXP_TTBB_HAD_ONLY) was correct only
+# when SL/DL ttbb samples were unavailable; they exist, so EXP now stitches all
+# three ttbb channels.
+TTBB_HAD_SAMPLE_NAME = "ttbb_Hadronic"      # 4FS ttbb, fully-hadronic
+TTBB_SL_SAMPLE_NAME  = "ttbb_SemiLeptonic"  # 4FS ttbb, semi-leptonic
+TTBB_DL_SAMPLE_NAME  = "ttbb_2L2Nu"         # 4FS ttbb, di-leptonic
+TT4B_SAMPLE_NAME     = "tt4b"               # dedicated tt+nb, decay-inclusive
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Constants / logger
@@ -150,23 +192,65 @@ LOG = logging.getLogger("stitch")
 # decay-channel structure explicit (channels are orthogonal: each
 # decay × HF cell is filled by exactly one sample).
 #
-# Confirmed for this analysis (decay-channel census on the TT4b NanoAOD:
-# full-had 45.6%, semi 43.8%, dilep 10.6%):
-#   ttbb_Hadronic : HADRONIC-ONLY  -> owns tt+2b in the hadronic channel only,
-#       anchored to TTToHadronic (σ_inc = σ_total × BR_had), rejected only from
-#       TTToHadronic. SL/DL tt+2b stay in their inclusive (no ttbb_SL/DL yet).
-#   tt4b          : DECAY-INCLUSIVE -> owns tt+bbb+tt+4b in ALL channels,
+# Confirmed for this analysis (decay-channel census on the tt4b NanoAOD:
+# full-had 45.6%, semi 43.8%, dilep 10.6%; per-channel 4FS ttbb samples exist
+# for all three W-decay channels):
+#   ttbb_{Had,SL,DL} : PER-CHANNEL 4FS -> each owns tt+2b in its OWN channel,
+#       anchored to its matching inclusive TTTo_c (σ_inc = σ_total × BR_c),
+#       rejected from TTTo_c only. tt+2b is thus rejected from ALL THREE
+#       inclusive samples and filled by the matching dedicated.
+#   tt4b             : DECAY-INCLUSIVE -> owns tt+bbb+tt+4b in ALL channels,
 #       anchored to the full Had+SL+DL inclusive merge (σ_inc = σ_total, NO BR),
 #       rejected from all three inclusive samples.
 STITCH_PLANS: dict[str, dict] = {
     "EXP": {
         "inclusive": ["TTToHadronic", "TTToSemiLeptonic", "TTTo2L2Nu"],
         "dedicated": {
+            # ── per-channel 4FS ttbb: one dedicated per W-decay channel ──────────
+            # Each owns tt+2b in its OWN channel, anchors to the matching inclusive
+            # with σ_total × BR_channel, and rejects tt+2b from that inclusive only.
             "ttbb_Hadronic": {
                 "owns":            ["tt2b"],
                 "anchor":          ["TTToHadronic"],
                 "sigma_inc":       SIGMA_INC_NNLO_TOTAL_PB * BR_HAD,   # hadronic phase space
-                "sigma_dedicated": SIGMA_TTBB_LHE,
+                "sigma_dedicated": SIGMA_TTBB_HAD,
+                "reject_from":     ["TTToHadronic"],
+            },
+            "ttbb_SemiLeptonic": {
+                "owns":            ["tt2b"],
+                "anchor":          ["TTToSemiLeptonic"],
+                "sigma_inc":       SIGMA_INC_NNLO_TOTAL_PB * BR_SL,    # SL phase space
+                "sigma_dedicated": SIGMA_TTBB_SL,
+                "reject_from":     ["TTToSemiLeptonic"],
+            },
+            "ttbb_2L2Nu": {
+                "owns":            ["tt2b"],
+                "anchor":          ["TTTo2L2Nu"],
+                "sigma_inc":       SIGMA_INC_NNLO_TOTAL_PB * BR_DL,    # DL phase space
+                "sigma_dedicated": SIGMA_TTBB_DL,
+                "reject_from":     ["TTTo2L2Nu"],
+            },
+            # ── decay-inclusive tt4b: covers all three channels ─────────────────
+            "tt4b": {
+                "owns":            ["ttbbb", "tt4b"],
+                "anchor":          ["TTToHadronic", "TTToSemiLeptonic", "TTTo2L2Nu"],
+                "sigma_inc":       SIGMA_INC_NNLO_TOTAL_PB,            # all channels, NO BR
+                "sigma_dedicated": SIGMA_TT4B_LHE,
+                "reject_from":     ["TTToHadronic", "TTToSemiLeptonic", "TTTo2L2Nu"],
+            },
+        },
+    },
+    # Conservative fallback: use only when SL/DL 4FS ttbb samples are unavailable.
+    # ttbb_Hadronic covers the hadronic channel's tt+2b; SL/DL tt+2b stay as the
+    # 5FS inclusive fallback (kept in TTToSemiLeptonic/TTTo2L2Nu). tt4b unchanged.
+    "EXP_TTBB_HAD_ONLY": {
+        "inclusive": ["TTToHadronic", "TTToSemiLeptonic", "TTTo2L2Nu"],
+        "dedicated": {
+            "ttbb_Hadronic": {
+                "owns":            ["tt2b"],
+                "anchor":          ["TTToHadronic"],
+                "sigma_inc":       SIGMA_INC_NNLO_TOTAL_PB * BR_HAD,   # hadronic phase space
+                "sigma_dedicated": SIGMA_TTBB_HAD,
                 "reject_from":     ["TTToHadronic"],
             },
             "tt4b": {
@@ -536,7 +620,9 @@ def build_analyzer_table(res: StitchResult) -> dict:
             "owned categories, 0 elsewhere (r rescales the dedicated sample to its inclusive "
             "anchor; the dedicated LHE σ cancels against the YAML base weight). Samples NOT "
             "listed keep their YAML weight (multiplier 1). REQUIREMENT: dedicated YAML weight "
-            "must be Lumi*sigma_dedicated/Sumgenw with sigma_ttbb=1.452pb, sigma_tt4b=0.296pb."
+            "must be Lumi*sigma_dedicated/Sumgenw using the SAME per-channel sigma as this "
+            "config (sigma_ttbb_Had=1.452pb, sigma_ttbb_SL~1.404pb, sigma_ttbb_DL~0.339pb, "
+            "sigma_tt4b=0.296pb); sigma_dedicated cancels so only YAML-vs-config agreement matters."
         ),
         "application": "final_weight = yaml_base_weight[sample] * multiplier[sample][category] * genWeight * (PU*btagSF*trigSF)",
         "sub_to_category": {str(k): v for k, v in sorted(CAT_OF_SUB.items())},
@@ -685,8 +771,9 @@ def write_json(out_path: Path, res: StitchResult, analyzer_table: dict) -> None:
             "`prescan`-mode output (expanded genTtbarId, §5). The analyzer loads "
             "`analyzer_perEvent_factor` and applies the multiplier per event via "
             "expandedTtbarId % 100 (see that block's note). Each dedicated sample is "
-            "anchored to its OWN decay phase space (ttbb_Hadronic: hadronic, σ×BR_had; "
-            "decay-inclusive tt4b: all channels, σ no-BR), per ttHH AN-2022/122 §3.2-3.4 "
+            "anchored to its OWN decay phase space (per-channel ttbb_{Had,SL,DL}: "
+            "matching inclusive, σ×BR_c; decay-inclusive tt4b: all channels, σ no-BR), "
+            "per ttHH AN-2022/122 §3.2-3.4 "
             "(§3.3 SL Option1, §3.4 DL gen-level 4b exclusion). Per-dedicated f/r and Σgenw "
             "are under `result` for traceability."
         ),
