@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated": "2026-06-08 17:56:30",
+    "generated": "2026-05-18 21:59:12",
     "input_base": "/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan",
     "tree": "prescan",
     "rel_tol": 0.000001,
@@ -48,10 +48,6 @@
           "53": 0,
           "54": 0,
           "55": 0,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -67,10 +63,6 @@
           "53": 0.0,
           "54": 0.0,
           "55": 0.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -139,10 +131,6 @@
           "53": 0,
           "54": 0,
           "55": 0,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -158,10 +146,6 @@
           "53": 0.0,
           "54": 0.0,
           "55": 0.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -230,10 +214,6 @@
           "53": 0,
           "54": 0,
           "55": 0,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -249,10 +229,6 @@
           "53": 0.0,
           "54": 0.0,
           "55": 0.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -321,10 +297,6 @@
           "53": 0,
           "54": 0,
           "55": 0,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -340,10 +312,6 @@
           "53": 0.0,
           "54": 0.0,
           "55": 0.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -412,10 +380,6 @@
           "53": 0,
           "54": 0,
           "55": 0,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -431,10 +395,6 @@
           "53": 0.0,
           "54": 0.0,
           "55": 0.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -503,10 +463,6 @@
           "53": 0,
           "54": 0,
           "55": 0,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -522,10 +478,6 @@
           "53": 0.0,
           "54": 0.0,
           "55": 0.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -594,10 +546,6 @@
           "53": 0,
           "54": 0,
           "55": 0,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -613,10 +561,6 @@
           "53": 0.0,
           "54": 0.0,
           "55": 0.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -685,10 +629,6 @@
           "53": 0,
           "54": 0,
           "55": 0,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -704,10 +644,6 @@
           "53": 0.0,
           "54": 0.0,
           "55": 0.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -776,10 +712,6 @@
           "53": 0,
           "54": 0,
           "55": 0,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -795,10 +727,6 @@
           "53": 0.0,
           "54": 0.0,
           "55": 0.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -867,10 +795,6 @@
           "53": 0,
           "54": 0,
           "55": 0,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -886,10 +810,6 @@
           "53": 0.0,
           "54": 0.0,
           "55": 0.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -958,10 +878,6 @@
           "53": 543674,
           "54": 49898,
           "55": 13089,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -977,10 +893,6 @@
           "53": 543674.0,
           "54": 49898.0,
           "55": 13089.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -1008,12 +920,16 @@
       "crosschecks": {
         "id_partition_count": true,
         "id_partition_weight": true,
-        "ttcat_partition_count": true,
-        "ttcat_partition_weight": true,
         "ttcat_vs_id_count[LightFlavour]": true,
         "ttcat_vs_id_weight[LightFlavour]": true,
         "ttcat_vs_id_count[AddCjet]": true,
         "ttcat_vs_id_weight[AddCjet]": true,
+        "ttcat_vs_id_count[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_count[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_count[Add2Bjet]": true,
+        "ttcat_vs_id_weight[Add2Bjet]": true,
         "events_vs_runs_match": true
       },
       "crosschecks_all_ok": true,
@@ -1059,10 +975,6 @@
           "53": 482472,
           "54": 53168,
           "55": 16716,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -1078,10 +990,6 @@
           "53": 482472.0,
           "54": 53168.0,
           "55": 16716.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -1109,12 +1017,16 @@
       "crosschecks": {
         "id_partition_count": true,
         "id_partition_weight": true,
-        "ttcat_partition_count": true,
-        "ttcat_partition_weight": true,
         "ttcat_vs_id_count[LightFlavour]": true,
         "ttcat_vs_id_weight[LightFlavour]": true,
         "ttcat_vs_id_count[AddCjet]": true,
         "ttcat_vs_id_weight[AddCjet]": true,
+        "ttcat_vs_id_count[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_count[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_count[Add2Bjet]": true,
+        "ttcat_vs_id_weight[Add2Bjet]": true,
         "events_vs_runs_match": true
       },
       "crosschecks_all_ok": true,
@@ -1160,10 +1072,6 @@
           "53": 213941,
           "54": 26797,
           "55": 9869,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -1179,10 +1087,6 @@
           "53": 213941.0,
           "54": 26797.0,
           "55": 9869.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -1210,12 +1114,16 @@
       "crosschecks": {
         "id_partition_count": true,
         "id_partition_weight": true,
-        "ttcat_partition_count": true,
-        "ttcat_partition_weight": true,
         "ttcat_vs_id_count[LightFlavour]": true,
         "ttcat_vs_id_weight[LightFlavour]": true,
         "ttcat_vs_id_count[AddCjet]": true,
         "ttcat_vs_id_weight[AddCjet]": true,
+        "ttcat_vs_id_count[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_count[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_count[Add2Bjet]": true,
+        "ttcat_vs_id_weight[Add2Bjet]": true,
         "events_vs_runs_match": true
       },
       "crosschecks_all_ok": true,
@@ -1261,10 +1169,6 @@
           "53": 1194635,
           "54": 33862,
           "55": 3054,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -1280,10 +1184,6 @@
           "53": 1194635.0,
           "54": 33862.0,
           "55": 3054.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -1311,12 +1211,16 @@
       "crosschecks": {
         "id_partition_count": true,
         "id_partition_weight": true,
-        "ttcat_partition_count": true,
-        "ttcat_partition_weight": true,
         "ttcat_vs_id_count[LightFlavour]": true,
         "ttcat_vs_id_weight[LightFlavour]": true,
         "ttcat_vs_id_count[AddCjet]": true,
         "ttcat_vs_id_weight[AddCjet]": true,
+        "ttcat_vs_id_count[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_count[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_count[Add2Bjet]": true,
+        "ttcat_vs_id_weight[Add2Bjet]": true,
         "events_vs_runs_match": true
       },
       "crosschecks_all_ok": true,
@@ -1362,10 +1266,6 @@
           "53": 1481035,
           "54": 61581,
           "55": 7681,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -1381,10 +1281,6 @@
           "53": 1481035.0,
           "54": 61581.0,
           "55": 7681.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -1412,12 +1308,16 @@
       "crosschecks": {
         "id_partition_count": true,
         "id_partition_weight": true,
-        "ttcat_partition_count": true,
-        "ttcat_partition_weight": true,
         "ttcat_vs_id_count[LightFlavour]": true,
         "ttcat_vs_id_weight[LightFlavour]": true,
         "ttcat_vs_id_count[AddCjet]": true,
         "ttcat_vs_id_weight[AddCjet]": true,
+        "ttcat_vs_id_count[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_count[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_count[Add2Bjet]": true,
+        "ttcat_vs_id_weight[Add2Bjet]": true,
         "events_vs_runs_match": true
       },
       "crosschecks_all_ok": true,
@@ -1463,10 +1363,6 @@
           "53": 2010136,
           "54": 118832,
           "55": 20827,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -1482,10 +1378,6 @@
           "53": 2010136.0,
           "54": 118832.0,
           "55": 20827.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -1513,12 +1405,16 @@
       "crosschecks": {
         "id_partition_count": true,
         "id_partition_weight": true,
-        "ttcat_partition_count": true,
-        "ttcat_partition_weight": true,
         "ttcat_vs_id_count[LightFlavour]": true,
         "ttcat_vs_id_weight[LightFlavour]": true,
         "ttcat_vs_id_count[AddCjet]": true,
         "ttcat_vs_id_weight[AddCjet]": true,
+        "ttcat_vs_id_count[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_count[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_count[Add2Bjet]": true,
+        "ttcat_vs_id_weight[Add2Bjet]": true,
         "events_vs_runs_match": true
       },
       "crosschecks_all_ok": true,
@@ -1564,10 +1460,6 @@
           "53": 1731352,
           "54": 129155,
           "55": 27924,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -1583,10 +1475,6 @@
           "53": 1731352.0,
           "54": 129155.0,
           "55": 27924.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -1614,12 +1502,16 @@
       "crosschecks": {
         "id_partition_count": true,
         "id_partition_weight": true,
-        "ttcat_partition_count": true,
-        "ttcat_partition_weight": true,
         "ttcat_vs_id_count[LightFlavour]": true,
         "ttcat_vs_id_weight[LightFlavour]": true,
         "ttcat_vs_id_count[AddCjet]": true,
         "ttcat_vs_id_weight[AddCjet]": true,
+        "ttcat_vs_id_count[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_count[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_count[Add2Bjet]": true,
+        "ttcat_vs_id_weight[Add2Bjet]": true,
         "events_vs_runs_match": true
       },
       "crosschecks_all_ok": true,
@@ -1665,10 +1557,6 @@
           "53": 0,
           "54": 0,
           "55": 0,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -1684,10 +1572,6 @@
           "53": 0.0,
           "54": 0.0,
           "55": 0.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -1756,10 +1640,6 @@
           "53": 0,
           "54": 0,
           "55": 0,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -1775,10 +1655,6 @@
           "53": 0.0,
           "54": 0.0,
           "55": 0.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -1847,10 +1723,6 @@
           "53": 0,
           "54": 0,
           "55": 0,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -1866,10 +1738,6 @@
           "53": 0.0,
           "54": 0.0,
           "55": 0.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -1938,10 +1806,6 @@
           "53": 0,
           "54": 0,
           "55": 0,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -1957,10 +1821,6 @@
           "53": 0.0,
           "54": 0.0,
           "55": 0.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -2029,10 +1889,6 @@
           "53": 0,
           "54": 0,
           "55": 0,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -2048,10 +1904,6 @@
           "53": 0.0,
           "54": 0.0,
           "55": 0.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -2117,13 +1969,9 @@
           "45": 23812,
           "51": 1417426,
           "52": 384588,
-          "53": 363657,
-          "54": 9123,
-          "55": 1304,
-          "61": 5363,
-          "62": 2310,
-          "71": 824,
-          "72": 62,
+          "53": 369834,
+          "54": 11464,
+          "55": 1345,
           "other": 0
         },
         "sumGenW": {
@@ -2136,13 +1984,9 @@
           "45": 1716116.1458740234,
           "51": 102186188.97583008,
           "52": 27735711.248901367,
-          "53": 26216244.01324463,
-          "54": 657701.5492553711,
-          "55": 92908.43151855469,
-          "61": 386682.2748413086,
-          "62": 166479.1143798828,
-          "71": 59612.608642578125,
-          "72": 4507.2947998046875,
+          "53": 26661811.91369629,
+          "54": 826434.3110351562,
+          "55": 95889.0619506836,
           "other": 0.0
         }
       },
@@ -2170,12 +2014,16 @@
       "crosschecks": {
         "id_partition_count": true,
         "id_partition_weight": true,
-        "ttcat_partition_count": true,
-        "ttcat_partition_weight": true,
         "ttcat_vs_id_count[LightFlavour]": true,
         "ttcat_vs_id_weight[LightFlavour]": true,
         "ttcat_vs_id_count[AddCjet]": true,
         "ttcat_vs_id_weight[AddCjet]": true,
+        "ttcat_vs_id_count[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_count[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_count[Add2Bjet]": true,
+        "ttcat_vs_id_weight[Add2Bjet]": true,
         "events_vs_runs_match": true
       },
       "crosschecks_all_ok": true,
@@ -2218,13 +2066,9 @@
           "45": 89209,
           "51": 3634101,
           "52": 1058032,
-          "53": 946508,
-          "54": 25828,
-          "55": 3751,
-          "61": 15499,
-          "62": 6887,
-          "71": 2497,
-          "72": 214,
+          "53": 964490,
+          "54": 32795,
+          "55": 3899,
           "other": 0
         },
         "sumGenW": {
@@ -2237,13 +2081,9 @@
           "45": 27996797.92437744,
           "51": 1140777344.6948853,
           "52": 332019674.5539551,
-          "53": 296998913.6837158,
-          "54": 8099630.891479492,
-          "55": 1173772.406677246,
-          "61": 4864398.938537598,
-          "62": 2153551.1532592773,
-          "71": 783253.3584594727,
-          "72": 67090.79272460938,
+          "53": 302642135.45666504,
+          "54": 10277866.393005371,
+          "55": 1220609.3751831055,
           "other": 0.0
         }
       },
@@ -2271,12 +2111,16 @@
       "crosschecks": {
         "id_partition_count": true,
         "id_partition_weight": true,
-        "ttcat_partition_count": true,
-        "ttcat_partition_weight": true,
         "ttcat_vs_id_count[LightFlavour]": true,
         "ttcat_vs_id_weight[LightFlavour]": true,
         "ttcat_vs_id_count[AddCjet]": true,
         "ttcat_vs_id_weight[AddCjet]": true,
+        "ttcat_vs_id_count[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_count[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_count[Add2Bjet]": true,
+        "ttcat_vs_id_weight[Add2Bjet]": true,
         "events_vs_runs_match": true
       },
       "crosschecks_all_ok": true,
@@ -2319,13 +2163,9 @@
           "45": 102246,
           "51": 4997343,
           "52": 1407735,
-          "53": 1286689,
-          "54": 33880,
-          "55": 4785,
-          "61": 20205,
-          "62": 8608,
-          "71": 3112,
-          "72": 237,
+          "53": 1309986,
+          "54": 42566,
+          "55": 4964,
           "other": 0
         },
         "sumGenW": {
@@ -2338,13 +2178,9 @@
           "45": 30769602.113342285,
           "51": 1503617294.0367126,
           "52": 423545711.7640686,
-          "53": 387100888.15475464,
-          "54": 10186154.981384277,
-          "55": 1440040.4341125488,
-          "61": 6083844.724273682,
-          "62": 2583396.742553711,
-          "71": 937376.2252807617,
-          "72": 71895.8464050293,
+          "53": 394116041.9442749,
+          "54": 12793213.648071289,
+          "55": 1494341.516418457,
           "other": 0.0
         }
       },
@@ -2372,12 +2208,16 @@
       "crosschecks": {
         "id_partition_count": true,
         "id_partition_weight": true,
-        "ttcat_partition_count": true,
-        "ttcat_partition_weight": true,
         "ttcat_vs_id_count[LightFlavour]": true,
         "ttcat_vs_id_weight[LightFlavour]": true,
         "ttcat_vs_id_count[AddCjet]": true,
         "ttcat_vs_id_weight[AddCjet]": true,
+        "ttcat_vs_id_count[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_count[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_count[Add2Bjet]": true,
+        "ttcat_vs_id_weight[Add2Bjet]": true,
         "events_vs_runs_match": true
       },
       "crosschecks_all_ok": true,
@@ -2420,13 +2260,9 @@
           "45": 294,
           "51": 2461302,
           "52": 690983,
-          "53": 2485931,
-          "54": 903058,
-          "55": 93880,
-          "61": 1195032,
-          "62": 390778,
-          "71": 263976,
-          "72": 32384,
+          "53": 3944597,
+          "54": 1311174,
+          "55": 109268,
           "other": 0
         },
         "sumGenW": {
@@ -2439,13 +2275,9 @@
           "45": 294.0,
           "51": 2461302.0,
           "52": 690983.0,
-          "53": 2485931.0,
-          "54": 903058.0,
-          "55": 93880.0,
-          "61": 1195032.0,
-          "62": 390778.0,
-          "71": 263976.0,
-          "72": 32384.0,
+          "53": 3944597.0,
+          "54": 1311174.0,
+          "55": 109268.0,
           "other": 0.0
         }
       },
@@ -2473,12 +2305,16 @@
       "crosschecks": {
         "id_partition_count": true,
         "id_partition_weight": true,
-        "ttcat_partition_count": true,
-        "ttcat_partition_weight": true,
         "ttcat_vs_id_count[LightFlavour]": true,
         "ttcat_vs_id_weight[LightFlavour]": true,
         "ttcat_vs_id_count[AddCjet]": true,
         "ttcat_vs_id_weight[AddCjet]": true,
+        "ttcat_vs_id_count[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_count[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_count[Add2Bjet]": true,
+        "ttcat_vs_id_weight[Add2Bjet]": true,
         "events_vs_runs_match": true
       },
       "crosschecks_all_ok": true,
@@ -2524,10 +2360,6 @@
           "53": 8532151,
           "54": 1066737,
           "55": 30501,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -2543,10 +2375,6 @@
           "53": 8532151.0,
           "54": 1066737.0,
           "55": 30501.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -2574,12 +2402,16 @@
       "crosschecks": {
         "id_partition_count": true,
         "id_partition_weight": true,
-        "ttcat_partition_count": true,
-        "ttcat_partition_weight": true,
         "ttcat_vs_id_count[LightFlavour]": true,
         "ttcat_vs_id_weight[LightFlavour]": true,
         "ttcat_vs_id_count[AddCjet]": true,
         "ttcat_vs_id_weight[AddCjet]": true,
+        "ttcat_vs_id_count[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_count[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_count[Add2Bjet]": true,
+        "ttcat_vs_id_weight[Add2Bjet]": true,
         "events_vs_runs_match": true
       },
       "crosschecks_all_ok": true,
@@ -2625,10 +2457,6 @@
           "53": 4806866,
           "54": 71377,
           "55": 1408,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -2644,10 +2472,6 @@
           "53": 2408742.881098509,
           "54": 35672.47157329321,
           "55": 693.7322909832001,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -2675,12 +2499,16 @@
       "crosschecks": {
         "id_partition_count": true,
         "id_partition_weight": true,
-        "ttcat_partition_count": true,
-        "ttcat_partition_weight": true,
         "ttcat_vs_id_count[LightFlavour]": true,
         "ttcat_vs_id_weight[LightFlavour]": true,
         "ttcat_vs_id_count[AddCjet]": true,
         "ttcat_vs_id_weight[AddCjet]": true,
+        "ttcat_vs_id_count[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_count[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_count[Add2Bjet]": true,
+        "ttcat_vs_id_weight[Add2Bjet]": true,
         "events_vs_runs_match": true
       },
       "crosschecks_all_ok": true,
@@ -2726,10 +2554,6 @@
           "53": 130248,
           "54": 1699,
           "55": 38,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -2745,10 +2569,6 @@
           "53": 130248.0,
           "54": 1699.0,
           "55": 38.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -2776,12 +2596,16 @@
       "crosschecks": {
         "id_partition_count": true,
         "id_partition_weight": true,
-        "ttcat_partition_count": true,
-        "ttcat_partition_weight": true,
         "ttcat_vs_id_count[LightFlavour]": true,
         "ttcat_vs_id_weight[LightFlavour]": true,
         "ttcat_vs_id_count[AddCjet]": true,
         "ttcat_vs_id_weight[AddCjet]": true,
+        "ttcat_vs_id_count[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_count[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_count[Add2Bjet]": true,
+        "ttcat_vs_id_weight[Add2Bjet]": true,
         "events_vs_runs_match": true
       },
       "crosschecks_all_ok": true,
@@ -2827,10 +2651,6 @@
           "53": 3551,
           "54": 155,
           "55": 23,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -2846,10 +2666,6 @@
           "53": 3551.0,
           "54": 155.0,
           "55": 23.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -2877,12 +2693,16 @@
       "crosschecks": {
         "id_partition_count": true,
         "id_partition_weight": true,
-        "ttcat_partition_count": true,
-        "ttcat_partition_weight": true,
         "ttcat_vs_id_count[LightFlavour]": true,
         "ttcat_vs_id_weight[LightFlavour]": true,
         "ttcat_vs_id_count[AddCjet]": true,
         "ttcat_vs_id_weight[AddCjet]": true,
+        "ttcat_vs_id_count[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_count[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_count[Add2Bjet]": true,
+        "ttcat_vs_id_weight[Add2Bjet]": true,
         "events_vs_runs_match": true
       },
       "crosschecks_all_ok": true,
@@ -2928,10 +2748,6 @@
           "53": 28977,
           "54": 383,
           "55": 25,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -2947,10 +2763,6 @@
           "53": 28977.0,
           "54": 383.0,
           "55": 25.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -2978,12 +2790,16 @@
       "crosschecks": {
         "id_partition_count": true,
         "id_partition_weight": true,
-        "ttcat_partition_count": true,
-        "ttcat_partition_weight": true,
         "ttcat_vs_id_count[LightFlavour]": true,
         "ttcat_vs_id_weight[LightFlavour]": true,
         "ttcat_vs_id_count[AddCjet]": true,
         "ttcat_vs_id_weight[AddCjet]": true,
+        "ttcat_vs_id_count[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_count[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_count[Add2Bjet]": true,
+        "ttcat_vs_id_weight[Add2Bjet]": true,
         "events_vs_runs_match": true
       },
       "crosschecks_all_ok": true,
@@ -3029,10 +2845,6 @@
           "53": 4192704,
           "54": 594226,
           "55": 18263,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -3048,10 +2860,6 @@
           "53": 4192704.0,
           "54": 594226.0,
           "55": 18263.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -3079,12 +2887,16 @@
       "crosschecks": {
         "id_partition_count": true,
         "id_partition_weight": true,
-        "ttcat_partition_count": true,
-        "ttcat_partition_weight": true,
         "ttcat_vs_id_count[LightFlavour]": true,
         "ttcat_vs_id_weight[LightFlavour]": true,
         "ttcat_vs_id_count[AddCjet]": true,
         "ttcat_vs_id_weight[AddCjet]": true,
+        "ttcat_vs_id_count[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_count[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_count[Add2Bjet]": true,
+        "ttcat_vs_id_weight[Add2Bjet]": true,
         "events_vs_runs_match": true
       },
       "crosschecks_all_ok": true,
@@ -3130,10 +2942,6 @@
           "53": 3951826,
           "54": 568386,
           "55": 20187,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -3149,10 +2957,6 @@
           "53": 3951826.0,
           "54": 568386.0,
           "55": 20187.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -3180,12 +2984,16 @@
       "crosschecks": {
         "id_partition_count": true,
         "id_partition_weight": true,
-        "ttcat_partition_count": true,
-        "ttcat_partition_weight": true,
         "ttcat_vs_id_count[LightFlavour]": true,
         "ttcat_vs_id_weight[LightFlavour]": true,
         "ttcat_vs_id_count[AddCjet]": true,
         "ttcat_vs_id_weight[AddCjet]": true,
+        "ttcat_vs_id_count[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_count[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_count[Add2Bjet]": true,
+        "ttcat_vs_id_weight[Add2Bjet]": true,
         "events_vs_runs_match": true
       },
       "crosschecks_all_ok": true,
@@ -3231,10 +3039,6 @@
           "53": 4004088,
           "54": 55830,
           "55": 2274,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -3250,10 +3054,6 @@
           "53": 440256.4195873141,
           "54": 5217.264586687088,
           "55": 198.43442231416702,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -3281,12 +3081,16 @@
       "crosschecks": {
         "id_partition_count": true,
         "id_partition_weight": true,
-        "ttcat_partition_count": true,
-        "ttcat_partition_weight": true,
         "ttcat_vs_id_count[LightFlavour]": true,
         "ttcat_vs_id_weight[LightFlavour]": true,
         "ttcat_vs_id_count[AddCjet]": true,
         "ttcat_vs_id_weight[AddCjet]": true,
+        "ttcat_vs_id_count[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_count[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_count[Add2Bjet]": true,
+        "ttcat_vs_id_weight[Add2Bjet]": true,
         "events_vs_runs_match": true
       },
       "crosschecks_all_ok": true,
@@ -3329,13 +3133,9 @@
           "45": 427,
           "51": 1043690,
           "52": 336067,
-          "53": 299020,
-          "54": 10967,
-          "55": 1775,
-          "61": 6647,
-          "62": 3306,
-          "71": 1139,
-          "72": 146,
+          "53": 306805,
+          "54": 14311,
+          "55": 1884,
           "other": 0
         },
         "sumGenW": {
@@ -3348,13 +3148,9 @@
           "45": 2158.9836192131042,
           "51": 5016229.362211227,
           "52": 1470829.700662136,
-          "53": 1527436.6904468536,
-          "54": 53631.23404932022,
-          "55": 8838.826913356781,
-          "61": 33893.44163656235,
-          "62": 16793.250898361206,
-          "71": 5852.666437625885,
-          "72": 738.7365636825562,
+          "53": 1567177.596150875,
+          "54": 70632.57975435257,
+          "55": 9374.671040534973,
           "other": 0.0
         }
       },
@@ -3382,12 +3178,16 @@
       "crosschecks": {
         "id_partition_count": true,
         "id_partition_weight": true,
-        "ttcat_partition_count": true,
-        "ttcat_partition_weight": true,
         "ttcat_vs_id_count[LightFlavour]": true,
         "ttcat_vs_id_weight[LightFlavour]": true,
         "ttcat_vs_id_count[AddCjet]": true,
         "ttcat_vs_id_weight[AddCjet]": true,
+        "ttcat_vs_id_count[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_count[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_count[Add2Bjet]": true,
+        "ttcat_vs_id_weight[Add2Bjet]": true,
         "events_vs_runs_match": true
       },
       "crosschecks_all_ok": true,
@@ -3430,13 +3230,9 @@
           "45": 1094,
           "51": 1774721,
           "52": 551435,
-          "53": 537181,
-          "54": 21902,
-          "55": 3430,
-          "61": 13763,
-          "62": 6868,
-          "71": 2488,
-          "72": 271,
+          "53": 553427,
+          "54": 28837,
+          "55": 3639,
           "other": 0
         },
         "sumGenW": {
@@ -3449,13 +3245,9 @@
           "45": 23779.034900665283,
           "51": 37037658.59377861,
           "52": 10499893.297437668,
-          "53": 11887456.60064125,
-          "54": 463895.0008621216,
-          "55": 72152.38589859009,
-          "61": 302673.14423561096,
-          "62": 149875.85997390747,
-          "71": 55575.001567840576,
-          "72": 6001.37547492981,
+          "53": 12245591.512945175,
+          "54": 615378.7765293121,
+          "55": 76659.0791797638,
           "other": 0.0
         }
       },
@@ -3483,12 +3275,16 @@
       "crosschecks": {
         "id_partition_count": true,
         "id_partition_weight": true,
-        "ttcat_partition_count": true,
-        "ttcat_partition_weight": true,
         "ttcat_vs_id_count[LightFlavour]": true,
         "ttcat_vs_id_weight[LightFlavour]": true,
         "ttcat_vs_id_count[AddCjet]": true,
         "ttcat_vs_id_weight[AddCjet]": true,
+        "ttcat_vs_id_count[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_count[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_count[Add2Bjet]": true,
+        "ttcat_vs_id_weight[Add2Bjet]": true,
         "events_vs_runs_match": true
       },
       "crosschecks_all_ok": true,
@@ -3531,13 +3327,9 @@
           "45": 1131,
           "51": 2245047,
           "52": 709437,
-          "53": 659671,
-          "54": 25643,
-          "55": 4092,
-          "61": 15622,
-          "62": 7846,
-          "71": 2729,
-          "72": 347,
+          "53": 678015,
+          "54": 33613,
+          "55": 4322,
           "other": 0
         },
         "sumGenW": {
@@ -3550,13 +3342,9 @@
           "45": 26878.704790115356,
           "51": 49363400.06217384,
           "52": 14208053.610092163,
-          "53": 15399944.7178936,
-          "54": 572650.4747085571,
-          "55": 91220.53195953369,
-          "61": 363076.58263015747,
-          "62": 180966.61348724365,
-          "71": 64028.912563323975,
-          "72": 7872.811979293823,
+          "53": 15826870.40318489,
+          "54": 756460.4926242828,
+          "55": 96429.74941253662,
           "other": 0.0
         }
       },
@@ -3584,12 +3372,16 @@
       "crosschecks": {
         "id_partition_count": true,
         "id_partition_weight": true,
-        "ttcat_partition_count": true,
-        "ttcat_partition_weight": true,
         "ttcat_vs_id_count[LightFlavour]": true,
         "ttcat_vs_id_weight[LightFlavour]": true,
         "ttcat_vs_id_count[AddCjet]": true,
         "ttcat_vs_id_weight[AddCjet]": true,
+        "ttcat_vs_id_count[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_count[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_count[Add2Bjet]": true,
+        "ttcat_vs_id_weight[Add2Bjet]": true,
         "events_vs_runs_match": true
       },
       "crosschecks_all_ok": true,
@@ -3635,10 +3427,6 @@
           "53": 69847,
           "54": 2316,
           "55": 25,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -3654,10 +3442,6 @@
           "53": 69847.0,
           "54": 2316.0,
           "55": 25.0,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -3685,12 +3469,16 @@
       "crosschecks": {
         "id_partition_count": true,
         "id_partition_weight": true,
-        "ttcat_partition_count": true,
-        "ttcat_partition_weight": true,
         "ttcat_vs_id_count[LightFlavour]": true,
         "ttcat_vs_id_weight[LightFlavour]": true,
         "ttcat_vs_id_count[AddCjet]": true,
         "ttcat_vs_id_weight[AddCjet]": true,
+        "ttcat_vs_id_count[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_count[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_count[Add2Bjet]": true,
+        "ttcat_vs_id_weight[Add2Bjet]": true,
         "events_vs_runs_match": true
       },
       "crosschecks_all_ok": true,
@@ -3736,10 +3524,6 @@
           "53": 5420070,
           "54": 135482,
           "55": 3266,
-          "61": 0,
-          "62": 0,
-          "71": 0,
-          "72": 0,
           "other": 0
         },
         "sumGenW": {
@@ -3755,10 +3539,6 @@
           "53": 43487.56783083081,
           "54": 888.2713690400124,
           "55": 21.12986659631133,
-          "61": 0.0,
-          "62": 0.0,
-          "71": 0.0,
-          "72": 0.0,
           "other": 0.0
         }
       },
@@ -3786,12 +3566,16 @@
       "crosschecks": {
         "id_partition_count": true,
         "id_partition_weight": true,
-        "ttcat_partition_count": true,
-        "ttcat_partition_weight": true,
         "ttcat_vs_id_count[LightFlavour]": true,
         "ttcat_vs_id_weight[LightFlavour]": true,
         "ttcat_vs_id_count[AddCjet]": true,
         "ttcat_vs_id_weight[AddCjet]": true,
+        "ttcat_vs_id_count[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_1Had]": true,
+        "ttcat_vs_id_count[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_weight[Add1Bjet_2Had]": true,
+        "ttcat_vs_id_count[Add2Bjet]": true,
+        "ttcat_vs_id_weight[Add2Bjet]": true,
         "events_vs_runs_match": true
       },
       "crosschecks_all_ok": true,

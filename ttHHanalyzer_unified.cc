@@ -169,7 +169,7 @@ void ttHHanalyzer_unified::loop(sysName sysType, bool up){
                   << "plan (role " << _stitch.role() << ") but the Expanded_genTtbarId "
                   << "lookup is INACTIVE (no ttnb_<sample>.root loaded).\n"
                   << "  tt+nb (61/62/71/72) would never be tagged -> wrong stitch.\n"
-                  << "  Provide the lookup (DerivedCorr/expandedTtbarId or "
+                  << "  Provide the lookup (/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/DerivedCorr/expandedTtbarId or "
                   << "$EXPANDED_TTBARID_DIR). Aborting (exit 43).\n" << std::endl;
         std::exit(43);
     }
@@ -3108,7 +3108,7 @@ int main(int argc, char** argv){
     {
         const char* d = std::getenv("EXPANDED_TTBARID_DIR");
         analysis.setExpandedTtbarIdDir(d ? std::string(d)
-                                         : std::string("DerivedCorr/expandedTtbarId"));
+                                         : std::string("/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/DerivedCorr/expandedTtbarId"));
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -3123,7 +3123,7 @@ int main(int argc, char** argv){
         const char* sj = std::getenv("STITCH_FACTORS_JSON");
         analysis.setStitchFactorsFile(
             sj ? std::string(sj)
-               : std::string("DerivedCorr/stitchFactors/stitch_factors_2017.json"));
+               : std::string("/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/DerivedCorr/stitchFactors/stitch_factors_2017.json"));
     }
 
     // ─────────────────────────────────────────────────────────────────────

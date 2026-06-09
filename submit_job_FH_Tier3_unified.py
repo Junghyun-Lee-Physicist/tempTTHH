@@ -42,7 +42,7 @@ class CondorJobManager:
         # Variables for jobs, please check before running
         self.analyzer_path = f"{script_dir}"
         self.nameofExe = "ttHHanalyzer_unified"
-        self.AnalyzerMode = "prescan"  # main / btagtrig / trigsf / validation / prescan
+        self.AnalyzerMode = "btagtrig"  # main / btagtrig / trigsf (x) / validation / prescan
 
         # ── Resubmit control ──────────────────────────────────────────────
         # False → normal run: queue every job (default; behaviour unchanged).
