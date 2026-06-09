@@ -1,0 +1,199 @@
+# Analyzer stitching+categorization APPLICATION diff (2026-06)
+# base: outputs/ttHHanalyzer_unified.{cc,h} (Jun-7 integrated); adds StitchFactors apply + expandedTtbarId-keyed b-tag reweight + Condor-fatal guards + logging.
+# ---- ttHHanalyzer_unified.h ----
+--- /mnt/user-data/outputs/ttHHanalyzer_unified.h	2026-06-07 14:24:39.177987000 +0000
++++ py/ttHHanalyzer_unified.h	2026-06-08 18:06:25.979769067 +0000
+@@ -31,6 +31,8 @@
+ #include "CorrectionsManager.h"
+ #include "Config_TtCatGroup.hh"   // ttH AN App. A.2.1 process key mapping (LF/cc/B/ttH/ttHH/...)
+ #include "ExpandedTtbarId.h"      // [tt+nb] Expanded_genTtbarId per-event lookup
++#include "StitchFactors.h"        // [stitch] per-(sample,category) stitch multiplier
++#include <map>
+ 
+ #include <nlohmann/json.hpp>
+ 
+@@ -1217,6 +1219,14 @@
+         _expTtbarId.loadFromDir(dir, _sampleName);
+     }
+ 
++    // [stitch] Load the ttbar stitching multiplier JSON for this sample.
++    //   stitch_factors_2017.json (compute_stitch_factors.py). Fatal-exit on a
++    //   missing/garbled file (Condor-catchable). Call only for non-prescan modes
++    //   (prescan produces the inputs to this JSON, so it need not exist yet).
++    void setStitchFactorsFile(const std::string& path) {
++        _stitch.load(path, _sampleName);
++    }
++
+     // [NEW] Set validation-mode parameters at run time.
+     // Caller (driver) parses YAML/argv and pushes them in.
+     void setValidationConfig(const ValidationConfig& cfg) {
+@@ -1287,6 +1297,8 @@
+ 
+     // ── [tt+nb] extended ttbar-Id ────────────────────────────────────────
+     ExpandedTtbarId _expTtbarId;        // per-sample lookup; inactive until load()
++    StitchFactors   _stitch;            // [stitch] per-(sample,category) multiplier
++    std::map<int,std::string> _btagKeyByExpSub;  // [stitch] diag: expandedSub -> b-tag processKey
+     Int_t _genTtbarIdNano  = -1;        // NanoAOD genTtbarId (mirror, for output tree)
+     Int_t _expandedTtbarId = -1;        // resolved id: Expanded if in lookup, else nano
+     // Analysis Mode Variable Declaration
+
+# ---- ttHHanalyzer_unified.cc ----
+--- /mnt/user-data/outputs/ttHHanalyzer_unified.cc	2026-06-07 14:24:39.204759000 +0000
++++ py/ttHHanalyzer_unified.cc	2026-06-08 18:07:49.351039334 +0000
+@@ -156,6 +156,24 @@
+     cout<<endl;
+     if(exitFlag) std::exit(EXIT_FAILURE);
+ 
++    // ── [stitch] setup report + Condor-catchable prerequisite check ──────────
++    // loop() is the non-prescan path (main / btagtrig / trigsf / validation);
++    // every event here gets the stitch multiplier via process(). Print what was
++    // loaded, then HARD-FAIL if a stitch-plan ttbar sample is missing its
++    // Expanded_genTtbarId lookup: without it, tt+nb (61/62/71/72) is never
++    // tagged, so tt4b would be silently dropped and inclusive tt+nb would be
++    // mis-rejected as tt+2b. Better to die here than write wrong histograms.
++    _stitch.printConfigSummary();
++    if (_stitch.inPlan() && !_expTtbarId.active()) {
++        std::cerr << "\n[FATAL][stitch] sample '" << _sampleName << "' is in the stitch "
++                  << "plan (role " << _stitch.role() << ") but the Expanded_genTtbarId "
++                  << "lookup is INACTIVE (no ttnb_<sample>.root loaded).\n"
++                  << "  tt+nb (61/62/71/72) would never be tagged -> wrong stitch.\n"
++                  << "  Provide the lookup (DerivedCorr/expandedTtbarId or "
++                  << "$EXPANDED_TTBARID_DIR). Aborting (exit 43).\n" << std::endl;
++        std::exit(43);
++    }
++
+     if(debugCorrections) std::cout<<"debug : Before begin the entry.."<<std::endl;
+     std::string analysisInfo = _runYear + ", " + _DataOrMC + ", " + _sampleName;
+ 
+@@ -177,6 +195,31 @@
+     
+     _expTtbarId.printSummary();   // [tt+nb] hit/miss + genTtbarId self-check summary
+ 
++    // [stitch] per-category Sum(weight) before/after the multiplier, so the log
++    // shows exactly what the stitch did to this sample's composition.
++    _stitch.printRunSummary();
++
++    // [stitch] diagnostic — how this sample's events mapped expandedTtbarId%100
++    // to the b-tag-reweight processKey. If 61/62/71/72 share the 53/54/55 key,
++    // Config_TtCatGroup.hh::MakeProcessKey does NOT yet split tt+nb out of tt+2b
++    // for the reweight (see ttbarCategorization.md s11): extend it there if the
++    // AN's per-tt+nb b-tag reweight bin is required.
++    if (!_btagKeyByExpSub.empty()) {
++        std::cout << "[stitch] b-tag reweight processKey by expandedTtbarId%100 "
++                  << "(sample=" << _sampleName << "):\n";
++        std::string key2b;
++        for (const auto& kv : _btagKeyByExpSub) {
++            std::cout << "    sub=" << std::setw(3) << kv.first << " -> " << kv.second << "\n";
++            if (kv.first >= 53 && kv.first <= 55 && key2b.empty()) key2b = kv.second;
++        }
++        bool nbSplit = true;
++        for (const auto& kv : _btagKeyByExpSub)
++            if (kv.first >= 61 && !key2b.empty() && kv.second == key2b) nbSplit = false;
++        std::cout << "    -> tt+nb split from tt+2b in the b-tag key: "
++                  << (nbSplit ? "YES" : "NO (extend MakeProcessKey if AN requires it)")
++                  << "\n" << std::endl;
++    }
++
+     if(debugCorrections) std::cout<<"debug : Before [ writeHistos() ]"<<std::endl;
+     writeHistos();
+     if(debugCorrections) std::cout<<"debug : After writeHistos() & Before writeTree()"<<std::endl;
+@@ -936,11 +979,40 @@
+         if (useTrigSF) _evtWeight *= triggerSF_;
+ 
+         // ── b-tag normalization reweight ──────────────────────────────
++        // [ttHH AN-2022/122 / ttH AN App. A.2.1] the b-tag-shape SF distorts
++        // the per-category normalization, so it is restored per (sample, HF
++        // category). Key on the EXPANDED id (not NanoAOD genTtbarId) so tt+nb
++        // (61/62/71/72) carries its own reweight bin, distinct from tt+2b
++        // (53/54/55) — high b-jet multiplicity is exactly where tt+nb lives.
++        // The stitch multiplier above already fixed the MC composition feeding
++        // this derivation, so the reweight is computed on the stitched mix.
+         const int nJets = thisEvent->getnSelJet();
+         const std::string processKey = TtCatGroup::MakeProcessKey(
+-            _sampleName, _ev->genTtbarId);
++            _sampleName, _expandedTtbarId);
++        if (processKey.empty()) {
++            std::cerr << "\n[FATAL][btagRW] MakeProcessKey() returned an EMPTY key for"
++                      << " sample='" << _sampleName << "' expandedTtbarId="
++                      << _expandedTtbarId << " (sub="
++                      << (((_expandedTtbarId % 100) + 100) % 100) << ").\n"
++                      << "  Config_TtCatGroup.hh must map this code. Aborting (exit 45)"
++                      << " so the Condor job is flagged.\n" << std::endl;
++            std::exit(45);
++        }
++        // diagnostic: remember the (expandedSub -> processKey) mapping once, so
++        // the end-of-job log shows whether 61/62/71/72 get keys distinct from 53.
++        {
++            const int esub = ((_expandedTtbarId % 100) + 100) % 100;
++            if (_btagKeyByExpSub.find(esub) == _btagKeyByExpSub.end())
++                _btagKeyByExpSub[esub] = processKey;
++        }
+         btagNormReweight_ = static_cast<float>(
+             corrMgr->getBTagReweight("central", processKey, nJets, ht));
++        if (!std::isfinite(btagNormReweight_)) {
++            std::cerr << "\n[FATAL][btagRW] non-finite reweight (" << btagNormReweight_
++                      << ") for processKey='" << processKey << "' nJets=" << nJets
++                      << " ht=" << ht << ". Aborting (exit 46).\n" << std::endl;
++            std::exit(46);
++        }
+ 
+         _evtWeight_chain_full *= btagNormReweight_;
+         if (useBtagNorm) _evtWeight *= btagNormReweight_;
+@@ -950,6 +1022,7 @@
+                       << analysisModeName(_analysisMode) << "):"
+                       << " sample=" << _sampleName
+                       << " genTtbarId=" << _ev->genTtbarId
++                      << " expandedTtbarId=" << _expandedTtbarId
+                       << " processKey=" << processKey
+                       << " btagSF=" << bTagWeight_central_
+                       << " trigSF=" << triggerSF_
+@@ -1413,6 +1486,27 @@
+         _expandedTtbarId = _expTtbarId.resolve(_ev->run, _ev->luminosityBlock,
+                                                _ev->event, _ev->genTtbarId);
+ 
++        // ── [stitch] per-(sample,category) MULTIPLIER on top of the YAML base ──
++        // Applied HERE — after expandedTtbarId is resolved, before selectObjects
++        // seeds the SF chains — so BOTH the main analysis and the btagtrig
++        // reweight-derivation see the stitched MC composition.
++        //   category = sub_to_category[expandedTtbarId % 100]
++        //   inclusive : 1 on kept HF cats / 0 on rejected (filled by a dedicated)
++        //   dedicated : r on owned cats / 0 elsewhere
++        //   not in plan: 1 (untouched).  A 0 drops the event from THIS sample.
++        // See ttbarCategorization.md s10 (stitch) / s11 (this application).
++        if (_stitch.inPlan()) {
++            const double stitchMult = _stitch.factor(_expandedTtbarId, _evtWeight);
++            _evtWeight *= stitchMult;
++            if (debugCorrections) {
++                std::cout << "[stitch] sample=" << _sampleName
++                          << " expandedTtbarId=" << _expandedTtbarId
++                          << " cat=" << _stitch.category(_expandedTtbarId)
++                          << " mult=" << stitchMult
++                          << " -> _evtWeight=" << _evtWeight << std::endl;
++            }
++        }
++
+         // ── Compute all four estimators ──
+         const TtCat anaGenPart = computeTtCategoryFromGenPart();
+         const TtCat anaGenId   = computeTtCategoryFromGenTtbarId();
+@@ -3018,6 +3112,21 @@
+     }
+ 
+     // ─────────────────────────────────────────────────────────────────────
++    // [stitch] Load the ttbar stitching multiplier JSON (per-(sample,category)
++    // factor applied on top of the YAML base weight; see ttbarCategorization.md
++    // s10-s11). Skipped in kPrescan — prescan PRODUCES the inputs this JSON is
++    // computed from, so it need not exist yet. Override path with
++    // $STITCH_FACTORS_JSON (e.g. an absolute path on a worker). Missing/garbled
++    // file -> fatal-exit inside load() so a Condor job is flagged.
++    // ─────────────────────────────────────────────────────────────────────
++    if (mode != AnalysisMode::kPrescan) {
++        const char* sj = std::getenv("STITCH_FACTORS_JSON");
++        analysis.setStitchFactorsFile(
++            sj ? std::string(sj)
++               : std::string("DerivedCorr/stitchFactors/stitch_factors_2017.json"));
++    }
++
++    // ─────────────────────────────────────────────────────────────────────
+     // 5. [Validation Study] — push --val-* flags into the analyzer
+     //
+     // tnm.cc::commandLine::decode has already read every --val-* flag and

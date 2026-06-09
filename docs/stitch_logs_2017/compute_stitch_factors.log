@@ -1,0 +1,173 @@
+$ python3 compute_stitch_factors.py
+
+══════════════════════════════════════════════════════════════════
+ Config
+──────────────────────────────────────────────────────────────────
+  ANALYZER_OUTPUT_DIR         = /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan
+  PRESCAN_TREE                = prescan
+  OUTPUT_JSON_PATH            = DerivedCorr/stitchFactors/stitch_factors_2017.json
+  PARTITION_OPTION            = EXP
+  ONLY_USE_LISTED_SAMPLE_DIRS = False
+  ROOT_FILE_GLOB              = *.root
+  LUMI_PB_INV                 = 41480.0
+  BR_HAD                      = 0.45441081000000005
+  σ_inc total (NNLO+NNLL)     = 831.76 pb
+  σ_ttbb (hadronic LHE)       = 1.452 pb
+  σ_tt4b (LHE)                = 0.296 pb
+  inclusive samples           = ['TTToHadronic', 'TTToSemiLeptonic', 'TTTo2L2Nu']
+    dedicated ttbb_Hadronic   owns=['tt2b'] anchor=['TTToHadronic'] sigma_inc=377.961pb x BR_had
+    dedicated ttbb_SemiLeptonic owns=['tt2b'] anchor=['TTToSemiLeptonic'] sigma_inc=365.457pb (no BR)
+    dedicated ttbb_2L2Nu      owns=['tt2b'] anchor=['TTTo2L2Nu'] sigma_inc=88.342pb (no BR)
+    dedicated tt4b            owns=['ttbbb', 'tt4b'] anchor=['TTToHadronic', 'TTToSemiLeptonic', 'TTTo2L2Nu'] sigma_inc=831.760pb (no BR)
+══════════════════════════════════════════════════════════════════
+INFO  found 39 sample directories under /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan
+
+
+
+══════════════════════════════════════════════════════════════════
+ Sample summary
+──────────────────────────────────────────────────────────────────
+sample                           files           nEv           Σgenw   |neg|/pos
+────────────────────────────────────────────────────────────────────────────────
+BTagCSV_B                            3       1808836          (data)           -
+BTagCSV_C                           27      34491540          (data)           -
+BTagCSV_D                            8       7967055          (data)           -
+BTagCSV_E                           12      17175226          (data)           -
+BTagCSV_F                           78      75677461          (data)           -
+JetHT_B                             33      63043590          (data)           -
+JetHT_C                             66      96264601          (data)           -
+JetHT_D                             37      46145204          (data)           -
+JetHT_E                             58      89630771          (data)           -
+JetHT_F                             66     115429972          (data)           -
+QCD_HT1000to1500                    43      14164109     1.41641e+07      0.0000
+QCD_HT1500to2000                    46      12402197     1.24022e+07      0.0000
+QCD_HT2000toInf                     31       5614050     5.61405e+06      0.0000
+QCD_HT200to300                      77      60056309     6.00563e+07      0.0000
+QCD_HT300to500                      66      54770756     5.47708e+07      0.0000
+QCD_HT500to700                      74      60395873     6.03959e+07      0.0000
+QCD_HT700to1000                     85      47501834     4.75018e+07      0.0000
+SingleMuon_B                        79     136300266          (data)           -
+SingleMuon_C                       117     165652756          (data)           -
+SingleMuon_D                        47      70361660          (data)           -
+SingleMuon_E                        78     154618774          (data)           -
+SingleMuon_F                       115     242140980          (data)           -
+TTTo2L2Nu                           99     106724000     7.69584e+09      0.0041
+TTToHadronic                       199     232999999     7.31408e+10      0.0041
+TTToSemiLeptonic                   297     346052000      1.0413e+11      0.0041
+tt4b                                14       9502000       9.502e+06      0.0000
+ttHH                                32       9934000       9.934e+06      0.0000
+ttHtobb                             46       7825000     3.91978e+06      0.0105
+ttWH                                11        360000          360000      0.0000
+ttWW                                 9        698000          698000      0.0000
+ttWZ                                 2        350000          350000      0.0000
+ttZHto4b                             7       5000000           5e+06      0.0000
+ttZZto4b                            33       4832000       4.832e+06      0.0000
+ttZtobb                             26       7074000          794583      0.3300
+ttbb_2L2Nu                           7       3472503     1.59309e+07      0.0628
+ttbb_Hadronic                        9       5694656     1.13736e+08      0.0627
+ttbb_SemiLeptonic                   12       7318891     1.53798e+08      0.0626
+tttW                                 5        360000          360000      0.0000
+tttt                                30      10351000           84047      0.3915
+══════════════════════════════════════════════════════════════════
+
+══════════════════════════════════════════════════════════════════
+ genTtbarId % 100 breakdown — Σ genW
+──────────────────────────────────────────────────────────────────
+sample                             LF(0)     cc(41-45)   tt+b(51,52)  tt+2b(53-55) tt+bbb(61,62)  tt+4b(71,72)         other           lt0
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+QCD_HT1000to1500               8.778e+06     3.563e+06     1.216e+06     6.067e+05             0             0             0             0
+QCD_HT1500to2000               7.422e+06     3.289e+06     1.139e+06     5.524e+05             0             0             0             0
+QCD_HT2000toInf                3.292e+06     1.534e+06     5.367e+05     2.506e+05             0             0             0             0
+QCD_HT200to300                 4.597e+07     9.547e+06     3.303e+06     1.232e+06             0             0             0             0
+QCD_HT300to500                 3.948e+07     1.027e+07     3.466e+06      1.55e+06             0             0             0             0
+QCD_HT500to700                  4.08e+07     1.307e+07     4.381e+06      2.15e+06             0             0             0             0
+QCD_HT700to1000                 3.07e+07     1.115e+07     3.765e+06     1.888e+06             0             0             0             0
+TTTo2L2Nu                      7.042e+09      4.96e+08     1.299e+08     2.697e+07     5.532e+05     6.412e+04             0             0
+TTToHadronic                   6.493e+10      6.42e+09     1.473e+09     3.063e+08     7.018e+06     8.503e+05             0             0
+TTToSemiLeptonic               9.386e+10     7.936e+09     1.927e+09     3.987e+08     8.667e+06     1.009e+06             0             0
+tt4b                           9.023e+05     8.239e+04     3.152e+06     3.483e+06     1.586e+06     2.964e+05             0             0
+ttHH                           1.691e+04          1634     2.861e+05     9.629e+06             0             0             0             0
+ttHtobb                        1.484e+05     1.597e+04      1.31e+06     2.445e+06             0             0             0             0
+ttWH                           1.263e+05     2.776e+04     7.399e+04      1.32e+05             0             0             0             0
+ttWW                           6.063e+05     7.207e+04     1.588e+04          3729             0             0             0             0
+ttWZ                           2.315e+05     6.292e+04      2.62e+04     2.938e+04             0             0             0             0
+ttZHto4b                       1.183e+04           970      1.82e+05     4.805e+06             0             0             0             0
+ttZZto4b                       2.306e+04          1776     2.668e+05      4.54e+06             0             0             0             0
+ttZtobb                        4.765e+04          4111     2.972e+05     4.457e+05             0             0             0             0
+ttbb_2L2Nu                     7.282e+06     5.142e+05     6.487e+06      1.59e+06     5.069e+04          6591             0             0
+ttbb_Hadronic                  4.848e+07     4.784e+06     4.754e+07     1.242e+07     4.525e+05     6.158e+04             0             0
+ttbb_SemiLeptonic              6.781e+07     5.734e+06     6.357e+07     1.606e+07      5.44e+05      7.19e+04             0             0
+tttW                           6.084e+04          7396     2.196e+05     7.219e+04             0             0             0             0
+tttt                                5322         850.1     3.348e+04      4.44e+04             0             0             0             0
+══════════════════════════════════════════════════════════════════
+
+══════════════════════════════════════════════════════════════════
+ Stitching result — option EXP
+──────────────────────────────────────────────────────────────────
+  lumi                    =       41480.00 pb⁻¹
+  σ_inc total (NNLO+NNLL) =       831.7600 pb
+  BR_had                  =       0.454411
+  inclusive samples       = ['TTToHadronic', 'TTToSemiLeptonic', 'TTTo2L2Nu']
+
+  Per-dedicated anchoring (each rescaled to its own decay phase space):
+  ----------------------------------------------------------------
+   [ttbb_Hadronic]  owns=['tt2b']  anchor=['TTToHadronic']
+     σ_inc(used)         =       377.9607 pb   σ_ded =    1.4520 pb (cancels)
+     Σgenw anchor(all)   =    7.31408e+10
+     Σgenw anchor(owned) =    3.06272e+08
+     Σgenw dedicated     =    1.13736e+08
+     f = owned/all       =       0.004187
+     r = σ_inc·f/σ_ded   =       1.090005   <- multiply this sample's YAML weight by r
+     (xcheck) Lumi·σ_inc·f/Σ_ded =  0.00057721165
+  ----------------------------------------------------------------
+   [ttbb_SemiLeptonic]  owns=['tt2b']  anchor=['TTToSemiLeptonic']
+     σ_inc(used)         =       365.4574 pb   σ_ded =    1.4040 pb (cancels)
+     Σgenw anchor(all)   =     1.0413e+11
+     Σgenw anchor(owned) =    3.98727e+08
+     Σgenw dedicated     =    1.53798e+08
+     f = owned/all       =       0.003829
+     r = σ_inc·f/σ_ded   =       0.996736   <- multiply this sample's YAML weight by r
+     (xcheck) Lumi·σ_inc·f/Σ_ded =  0.00037742051
+  ----------------------------------------------------------------
+   [ttbb_2L2Nu]  owns=['tt2b']  anchor=['TTTo2L2Nu']
+     σ_inc(used)         =        88.3419 pb   σ_ded =    0.3394 pb (cancels)
+     Σgenw anchor(all)   =    7.69584e+09
+     Σgenw anchor(owned) =    2.69669e+07
+     Σgenw dedicated     =    1.59309e+07
+     f = owned/all       =       0.003504
+     r = σ_inc·f/σ_ded   =       0.912125   <- multiply this sample's YAML weight by r
+     (xcheck) Lumi·σ_inc·f/Σ_ded =  0.00080600848
+  ----------------------------------------------------------------
+   [tt4b]  owns=['ttbbb', 'tt4b']  anchor=['TTToHadronic', 'TTToSemiLeptonic', 'TTTo2L2Nu']
+     σ_inc(used)         =       831.7600 pb   σ_ded =    0.2960 pb (cancels)
+     Σgenw anchor(all)   =    1.84967e+11
+     Σgenw anchor(owned) =    1.81621e+07
+     Σgenw dedicated     =      9.502e+06
+     f = owned/all       =       0.000098
+     r = σ_inc·f/σ_ded   =       0.275917   <- multiply this sample's YAML weight by r
+     (xcheck) Lumi·σ_inc·f/Σ_ded =  0.00035652855
+  ----------------------------------------------------------------
+  Reject map (inclusive sample -> categories removed, filled by a dedicated):
+     TTToHadronic           reject ['tt2b', 'ttbbb', 'tt4b']
+     TTToSemiLeptonic       reject ['tt2b', 'ttbbb', 'tt4b']
+     TTTo2L2Nu              reject ['tt2b', 'ttbbb', 'tt4b']
+══════════════════════════════════════════════════════════════════
+
+══════════════════════════════════════════════════════════════════
+ Analyzer per-event MULTIPLIER table  (-> stitch_factors JSON)
+ rows = sampleName ; cols = category from expandedTtbarId % 100
+──────────────────────────────────────────────────────────────────
+sample              role                LF         cc        ttb       tt2b      ttbbb       tt4b
+─────────────────────────────────────────────────────────────────────────────────────────────────
+TTTo2L2Nu           inclusive            1          1          1          0          0          0
+TTToHadronic        inclusive            1          1          1          0          0          0
+TTToSemiLeptonic    inclusive            1          1          1          0          0          0
+tt4b                dedicated            0          0          0          0    0.27592    0.27592
+ttbb_2L2Nu          dedicated            0          0          0    0.91212          0          0
+ttbb_Hadronic       dedicated            0          0          0       1.09          0          0
+ttbb_SemiLeptonic   dedicated            0          0          0    0.99674          0          0
+──────────────────────────────────────────────────────────────────
+ 1 = keep (inclusive) ; r = dedicated rescale ; 0 = rejected.
+ Applied ON TOP of YAML weight. Samples not shown keep YAML weight (x1).
+══════════════════════════════════════════════════════════════════
+INFO  wrote DerivedCorr/stitchFactors/stitch_factors_2017.json

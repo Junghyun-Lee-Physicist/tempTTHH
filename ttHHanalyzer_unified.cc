@@ -157,21 +157,19 @@ void ttHHanalyzer_unified::loop(sysName sysType, bool up){
     if(exitFlag) std::exit(EXIT_FAILURE);
 
     // ── [stitch] setup report + Condor-catchable prerequisite check ──────────
-    // loop() is the non-prescan path (main / btagtrig / trigsf / validation);
-    // every event here gets the stitch multiplier via process(). Print what was
-    // loaded, then HARD-FAIL if a stitch-plan ttbar sample is missing its
-    // Expanded_genTtbarId lookup: without it, tt+nb (61/62/71/72) is never
-    // tagged, so tt4b would be silently dropped and inclusive tt+nb would be
-    // mis-rejected as tt+2b. Better to die here than write wrong histograms.
-    _stitch.printConfigSummary();
-    if (_stitch.inPlan() && !_expTtbarId.active()) {
-        std::cerr << "\n[FATAL][stitch] sample '" << _sampleName << "' is in the stitch "
-                  << "plan (role " << _stitch.role() << ") but the Expanded_genTtbarId "
-                  << "lookup is INACTIVE (no ttnb_<sample>.root loaded).\n"
-                  << "  tt+nb (61/62/71/72) would never be tagged -> wrong stitch.\n"
-                  << "  Provide the lookup (/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/DerivedCorr/expandedTtbarId or "
-                  << "$EXPANDED_TTBARID_DIR). Aborting (exit 43).\n" << std::endl;
-        std::exit(43);
+    // Only when the stitch JSON was loaded (main / btagtrig). trigsf, validation
+    // run stitch-free, so this block is skipped there.
+    if (_stitch.loaded()) {
+        _stitch.printConfigSummary();
+        if (_stitch.inPlan() && !_expTtbarId.active()) {
+            std::cerr << "\n[FATAL][stitch] sample '" << _sampleName << "' is in the stitch "
+                      << "plan (role " << _stitch.role() << ") but the Expanded_genTtbarId "
+                      << "lookup is INACTIVE (no ttnb_<sample>.root loaded).\n"
+                      << "  tt+nb (61/62/71/72) would never be tagged -> wrong stitch.\n"
+                      << "  Provide the lookup (DerivedCorr/expandedTtbarId or "
+                      << "$EXPANDED_TTBARID_DIR). Aborting (exit 43).\n" << std::endl;
+            std::exit(43);
+        }
     }
 
     if(debugCorrections) std::cout<<"debug : Before begin the entry.."<<std::endl;
@@ -197,7 +195,8 @@ void ttHHanalyzer_unified::loop(sysName sysType, bool up){
 
     // [stitch] per-category Sum(weight) before/after the multiplier, so the log
     // shows exactly what the stitch did to this sample's composition.
-    _stitch.printRunSummary();
+    // (main / btagtrig only; skipped when the JSON was not loaded.)
+    if (_stitch.loaded()) _stitch.printRunSummary();
 
     // [stitch] diagnostic — how this sample's events mapped expandedTtbarId%100
     // to the b-tag-reweight processKey. If 61/62/71/72 share the 53/54/55 key,
@@ -3108,22 +3107,25 @@ int main(int argc, char** argv){
     {
         const char* d = std::getenv("EXPANDED_TTBARID_DIR");
         analysis.setExpandedTtbarIdDir(d ? std::string(d)
-                                         : std::string("/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/DerivedCorr/expandedTtbarId"));
+                                         : std::string("DerivedCorr/expandedTtbarId"));
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // [stitch] Load the ttbar stitching multiplier JSON (per-(sample,category)
-    // factor applied on top of the YAML base weight; see ttbarCategorization.md
-    // s10-s11). Skipped in kPrescan — prescan PRODUCES the inputs this JSON is
-    // computed from, so it need not exist yet. Override path with
-    // $STITCH_FACTORS_JSON (e.g. an absolute path on a worker). Missing/garbled
-    // file -> fatal-exit inside load() so a Condor job is flagged.
-    // ─────────────────────────────────────────────────────────────────────
-    if (mode != AnalysisMode::kPrescan) {
+    // [stitch] Load the ttbar stitching multiplier JSON ONLY for the two modes
+    // that should see the stitched composition: main (final yields) and btagtrig
+    // (b-tag norm reweight context). trigsf / validation / prescan are left
+    // stitch-free on purpose:
+    //   - prescan PRODUCES the inputs this JSON is computed from;
+    //   - the TRIGGER SF must be derived (trigsf) on an un-stitched sample so it
+    //     stays a pure efficiency ratio, independent of the stitch/JSON;
+    //   - validation toggles its own SFs.
+    // Override path with $STITCH_FACTORS_JSON. Missing/garbled -> fatal-exit.
+    if (mode == AnalysisMode::kMainAnalysis ||
+        mode == AnalysisMode::kBTagAndTriggerStudy) {
         const char* sj = std::getenv("STITCH_FACTORS_JSON");
         analysis.setStitchFactorsFile(
             sj ? std::string(sj)
-               : std::string("/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/DerivedCorr/stitchFactors/stitch_factors_2017.json"));
+               : std::string("DerivedCorr/stitchFactors/stitch_factors_2017.json"));
     }
 
     // ─────────────────────────────────────────────────────────────────────

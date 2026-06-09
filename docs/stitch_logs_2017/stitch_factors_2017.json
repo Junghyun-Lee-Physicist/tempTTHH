@@ -1,0 +1,315 @@
+{
+  "_comment": "Stitching factors + per-event MULTIPLIER for the ttHH FH Run2 2017 UL analysis. Computed by compute_stitch_factors.py from the analyzer `prescan`-mode output (expanded genTtbarId, \u00a75). The analyzer loads `analyzer_perEvent_factor` and applies the multiplier per event via expandedTtbarId % 100 (see that block's note). Each dedicated sample is anchored to its OWN decay phase space (per-channel ttbb_{Had,SL,DL}: matching inclusive, \u03c3\u00d7BR_c; decay-inclusive tt4b: all channels, \u03c3 no-BR), per ttHH AN-2022/122 \u00a73.2-3.4 (\u00a73.3 SL Option1, \u00a73.4 DL gen-level 4b exclusion). Per-dedicated f/r and \u03a3genw are under `result` for traceability.",
+  "config": {
+    "analyzer_output_dir": "/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan",
+    "prescan_tree": "prescan",
+    "stitch_option": "EXP",
+    "only_use_listed_sample_dirs": false,
+    "root_file_glob": "*.root",
+    "lumi_pb_inv": 41480.0,
+    "br_had": 0.45441081000000005,
+    "sigma_inc_total_pb": 831.76,
+    "sigma_ttbb_pb": 1.452,
+    "sigma_tt4b_pb": 0.296
+  },
+  "plan": {
+    "inclusive": [
+      "TTToHadronic",
+      "TTToSemiLeptonic",
+      "TTTo2L2Nu"
+    ],
+    "dedicated": {
+      "ttbb_Hadronic": {
+        "owns": [
+          "tt2b"
+        ],
+        "anchor": [
+          "TTToHadronic"
+        ],
+        "sigma_inc": 377.9607353256,
+        "sigma_dedicated": 1.452,
+        "reject_from": [
+          "TTToHadronic"
+        ]
+      },
+      "ttbb_SemiLeptonic": {
+        "owns": [
+          "tt2b"
+        ],
+        "anchor": [
+          "TTToSemiLeptonic"
+        ],
+        "sigma_inc": 365.45736134879996,
+        "sigma_dedicated": 1.4039661771250553,
+        "reject_from": [
+          "TTToSemiLeptonic"
+        ]
+      },
+      "ttbb_2L2Nu": {
+        "owns": [
+          "tt2b"
+        ],
+        "anchor": [
+          "TTTo2L2Nu"
+        ],
+        "sigma_inc": 88.34190332559997,
+        "sigma_dedicated": 0.3393803420301554,
+        "reject_from": [
+          "TTTo2L2Nu"
+        ]
+      },
+      "tt4b": {
+        "owns": [
+          "ttbbb",
+          "tt4b"
+        ],
+        "anchor": [
+          "TTToHadronic",
+          "TTToSemiLeptonic",
+          "TTTo2L2Nu"
+        ],
+        "sigma_inc": 831.76,
+        "sigma_dedicated": 0.296,
+        "reject_from": [
+          "TTToHadronic",
+          "TTToSemiLeptonic",
+          "TTTo2L2Nu"
+        ]
+      }
+    }
+  },
+  "result": {
+    "option": "EXP",
+    "lumi_pb_inv": 41480.0,
+    "sigma_inc_total": 831.76,
+    "br_had": 0.45441081000000005,
+    "inclusive": [
+      "TTToHadronic",
+      "TTToSemiLeptonic",
+      "TTTo2L2Nu"
+    ],
+    "dedicated": [
+      {
+        "sample": "ttbb_Hadronic",
+        "owns": [
+          "tt2b"
+        ],
+        "owns_subs": [
+          53,
+          54,
+          55
+        ],
+        "anchor": [
+          "TTToHadronic"
+        ],
+        "sigma_inc": 377.9607353256,
+        "sigma_dedicated": 1.452,
+        "sumGW_anchor_all": 73140766669.42169,
+        "sumGW_anchor_owned": 306272316.98187256,
+        "sumGW_dedicated_all": 113736165.6780777,
+        "f": 0.00418743651356771,
+        "r": 1.090004534295674,
+        "peF_full": 0.0005772116468365047
+      },
+      {
+        "sample": "ttbb_SemiLeptonic",
+        "owns": [
+          "tt2b"
+        ],
+        "owns_subs": [
+          53,
+          54,
+          55
+        ],
+        "anchor": [
+          "TTToSemiLeptonic"
+        ],
+        "sigma_inc": 365.45736134879996,
+        "sigma_dedicated": 1.4039661771250553,
+        "sumGW_anchor_all": 104129959629.04999,
+        "sumGW_anchor_owned": 398727083.57025146,
+        "sumGW_dedicated_all": 153797755.7116127,
+        "f": 0.003829129339823688,
+        "r": 0.996735909735944,
+        "peF_full": 0.00037742051247971215
+      },
+      {
+        "sample": "ttbb_2L2Nu",
+        "owns": [
+          "tt2b"
+        ],
+        "owns_subs": [
+          53,
+          54,
+          55
+        ],
+        "anchor": [
+          "TTTo2L2Nu"
+        ],
+        "sigma_inc": 88.34190332559997,
+        "sigma_dedicated": 0.3393803420301554,
+        "sumGW_anchor_all": 7695841652.167358,
+        "sumGW_anchor_owned": 26966853.994018555,
+        "sumGW_dedicated_all": 15930890.41240549,
+        "f": 0.00350408119252609,
+        "r": 0.9121247273882689,
+        "peF_full": 0.0008060084781640624
+      },
+      {
+        "sample": "tt4b",
+        "owns": [
+          "ttbbb",
+          "tt4b"
+        ],
+        "owns_subs": [
+          61,
+          62,
+          71,
+          72
+        ],
+        "anchor": [
+          "TTToHadronic",
+          "TTToSemiLeptonic",
+          "TTTo2L2Nu"
+        ],
+        "sigma_inc": 831.76,
+        "sigma_dedicated": 0.296,
+        "sumGW_anchor_all": 184966567950.63904,
+        "sumGW_anchor_owned": 18162089.074157715,
+        "sumGW_dedicated_all": 9502000.0,
+        "f": 9.81911989576653e-05,
+        "r": 0.2759172690710395,
+        "peF_full": 0.0003565285522032991
+      }
+    ],
+    "reject_map": {
+      "TTToHadronic": [
+        "tt2b",
+        "ttbbb",
+        "tt4b"
+      ],
+      "TTToSemiLeptonic": [
+        "tt2b",
+        "ttbbb",
+        "tt4b"
+      ],
+      "TTTo2L2Nu": [
+        "tt2b",
+        "ttbbb",
+        "tt4b"
+      ]
+    }
+  },
+  "analyzer_perEvent_factor": {
+    "note": "Per-(sample,category) MULTIPLIER applied ON TOP of the YAML base weight. final weight = yaml_weight[sample] * multiplier[sample][category] * genWeight * (PU*btagSF*trigSF). category = sub_to_category[expandedTtbarId%100]. inclusive: 1 on kept, 0 on rejected (filled by a dedicated). dedicated: r on owned categories, 0 elsewhere (r rescales the dedicated sample to its inclusive anchor; the dedicated LHE \u03c3 cancels against the YAML base weight). Samples NOT listed keep their YAML weight (multiplier 1). REQUIREMENT: dedicated YAML weight must be Lumi*sigma_dedicated/Sumgenw using the SAME per-channel sigma as this config (sigma_ttbb_Had=1.452pb, sigma_ttbb_SL~1.404pb, sigma_ttbb_DL~0.339pb, sigma_tt4b=0.296pb); sigma_dedicated cancels so only YAML-vs-config agreement matters.",
+    "application": "final_weight = yaml_base_weight[sample] * multiplier[sample][category] * genWeight * (PU*btagSF*trigSF)",
+    "sub_to_category": {
+      "0": "LF",
+      "41": "cc",
+      "42": "cc",
+      "43": "cc",
+      "44": "cc",
+      "45": "cc",
+      "51": "ttb",
+      "52": "ttb",
+      "53": "tt2b",
+      "54": "tt2b",
+      "55": "tt2b",
+      "61": "ttbbb",
+      "62": "ttbbb",
+      "71": "tt4b",
+      "72": "tt4b"
+    },
+    "categories": [
+      "LF",
+      "cc",
+      "ttb",
+      "tt2b",
+      "ttbbb",
+      "tt4b"
+    ],
+    "samples": {
+      "TTToHadronic": {
+        "role": "inclusive",
+        "by_category": {
+          "LF": 1.0,
+          "cc": 1.0,
+          "ttb": 1.0,
+          "tt2b": 0.0,
+          "ttbbb": 0.0,
+          "tt4b": 0.0
+        }
+      },
+      "TTToSemiLeptonic": {
+        "role": "inclusive",
+        "by_category": {
+          "LF": 1.0,
+          "cc": 1.0,
+          "ttb": 1.0,
+          "tt2b": 0.0,
+          "ttbbb": 0.0,
+          "tt4b": 0.0
+        }
+      },
+      "TTTo2L2Nu": {
+        "role": "inclusive",
+        "by_category": {
+          "LF": 1.0,
+          "cc": 1.0,
+          "ttb": 1.0,
+          "tt2b": 0.0,
+          "ttbbb": 0.0,
+          "tt4b": 0.0
+        }
+      },
+      "ttbb_Hadronic": {
+        "role": "dedicated",
+        "r": 1.090004534295674,
+        "by_category": {
+          "LF": 0.0,
+          "cc": 0.0,
+          "ttb": 0.0,
+          "tt2b": 1.090004534295674,
+          "ttbbb": 0.0,
+          "tt4b": 0.0
+        }
+      },
+      "ttbb_SemiLeptonic": {
+        "role": "dedicated",
+        "r": 0.996735909735944,
+        "by_category": {
+          "LF": 0.0,
+          "cc": 0.0,
+          "ttb": 0.0,
+          "tt2b": 0.996735909735944,
+          "ttbbb": 0.0,
+          "tt4b": 0.0
+        }
+      },
+      "ttbb_2L2Nu": {
+        "role": "dedicated",
+        "r": 0.9121247273882689,
+        "by_category": {
+          "LF": 0.0,
+          "cc": 0.0,
+          "ttb": 0.0,
+          "tt2b": 0.9121247273882689,
+          "ttbbb": 0.0,
+          "tt4b": 0.0
+        }
+      },
+      "tt4b": {
+        "role": "dedicated",
+        "r": 0.2759172690710395,
+        "by_category": {
+          "LF": 0.0,
+          "cc": 0.0,
+          "ttb": 0.0,
+          "tt2b": 0.0,
+          "ttbbb": 0.2759172690710395,
+          "tt4b": 0.2759172690710395
+        }
+      }
+    }
+  }
+}
