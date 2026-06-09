@@ -31,6 +31,8 @@
 #include "CorrectionsManager.h"
 #include "Config_TtCatGroup.hh"   // ttH AN App. A.2.1 process key mapping (LF/cc/B/ttH/ttHH/...)
 #include "ExpandedTtbarId.h"      // [tt+nb] Expanded_genTtbarId per-event lookup
+#include "StitchFactors.h"        // [stitch] per-(sample,category) stitch multiplier
+#include <map>
 
 #include <nlohmann/json.hpp>
 
@@ -1217,6 +1219,14 @@ class ttHHanalyzer_unified {
         _expTtbarId.loadFromDir(dir, _sampleName);
     }
 
+    // [stitch] Load the ttbar stitching multiplier JSON for this sample.
+    //   stitch_factors_2017.json (compute_stitch_factors.py). Fatal-exit on a
+    //   missing/garbled file (Condor-catchable). Call only for non-prescan modes
+    //   (prescan produces the inputs to this JSON, so it need not exist yet).
+    void setStitchFactorsFile(const std::string& path) {
+        _stitch.load(path, _sampleName);
+    }
+
     // [NEW] Set validation-mode parameters at run time.
     // Caller (driver) parses YAML/argv and pushes them in.
     void setValidationConfig(const ValidationConfig& cfg) {
@@ -1287,6 +1297,8 @@ class ttHHanalyzer_unified {
 
     // ── [tt+nb] extended ttbar-Id ────────────────────────────────────────
     ExpandedTtbarId _expTtbarId;        // per-sample lookup; inactive until load()
+    StitchFactors   _stitch;            // [stitch] per-(sample,category) multiplier
+    std::map<int,std::string> _btagKeyByExpSub;  // [stitch] diag: expandedSub -> b-tag processKey
     Int_t _genTtbarIdNano  = -1;        // NanoAOD genTtbarId (mirror, for output tree)
     Int_t _expandedTtbarId = -1;        // resolved id: Expanded if in lookup, else nano
     // Analysis Mode Variable Declaration
