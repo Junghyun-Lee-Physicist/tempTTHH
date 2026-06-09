@@ -1,7 +1,7 @@
 common:
   year: "2017"
   # You can choose one of below analysis mode
-  # main, btagtrig, trigsf
+  # main, btagtrig, trigsf, prescan
   analysis_mode: "btagtrig" 
 
 samples:
@@ -229,9 +229,21 @@ samples:
     data_or_mc: "MC"
     sample_name: "QCD_HT2000toInf"
     era: ""
-  - filelist: "filelist_ttbb.txt"
-    output_dir: "ttbb"
-    weight: 0.0005295497645
+  - filelist: "filelist_ttbb_Hadronic.txt"
+    output_dir: "ttbb_Hadronic"
+    weight: 0.0002406331374
     data_or_mc: "MC"
-    sample_name: "ttbb"
+    sample_name: "ttbb_Hadronic"
+    era: ""
+  - filelist: "filelist_ttbb_SemiLeptonic.txt"
+    output_dir: "ttbb_SemiLeptonic"
+    weight: 0.0001720656002
+    data_or_mc: "MC"
+    sample_name: "ttbb_SemiLeptonic"
+    era: ""
+  - filelist: "filelist_ttbb_2L2Nu.txt"
+    output_dir: "ttbb_2L2Nu"
+    weight: 0.0004015448394
+    data_or_mc: "MC"
+    sample_name: "ttbb_2L2Nu"
     era: ""
