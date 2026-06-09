@@ -237,13 +237,13 @@ samples:
     era: ""
   - filelist: "filelist_ttbb_SemiLeptonic.txt"
     output_dir: "ttbb_SemiLeptonic"
-    weight: 1.0
+    weight: 0.0001720656002
     data_or_mc: "MC"
     sample_name: "ttbb_SemiLeptonic"
     era: ""
   - filelist: "filelist_ttbb_2L2Nu.txt"
     output_dir: "ttbb_2L2Nu"
-    weight: 1.0
+    weight: 0.0004015448394
     data_or_mc: "MC"
     sample_name: "ttbb_2L2Nu"
     era: ""
