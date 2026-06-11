@@ -1,4 +1,0 @@
-260112 update log
-
-switch branch to dev260112 for update MC normalization method
-

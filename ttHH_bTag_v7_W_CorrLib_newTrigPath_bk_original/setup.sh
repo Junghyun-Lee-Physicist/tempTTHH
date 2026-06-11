@@ -1,2 +1,0 @@
-
-source sampleInfoMan/setenv.sh
