@@ -51,8 +51,9 @@ def classify_process(filename):
     Classify if a file is DATA or MC based on its name.
     """
     # Adjust these keywords based on your merged filenames
-    data_keywords = ['Data', 'SingleMuon', 'DoubleMuon', 'JetHT', 'BTagCSV', 'EGamma', 'MuonEG']
-    
+    ##data_keywords = ['Data', 'SingleMuon', 'DoubleMuon', 'JetHT', 'BTagCSV', 'EGamma', 'MuonEG']
+    data_keywords = ['Data', 'JetHT', 'BTagCSV']
+
     name_clean = filename.replace(".root", "")
     for kw in data_keywords:
         if kw in name_clean:

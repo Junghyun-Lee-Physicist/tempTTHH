@@ -270,38 +270,48 @@ int GetQCDHTValue(const std::string& name) {
 }
 
 int GetSmartColor(const std::string& name) {
-    if (name.find("QCD") != std::string::npos) {
-        int ht = GetQCDHTValue(name);
-        if (ht >= 2000) return TColor::GetColor("#440000");
-        if (ht >= 1500) return TColor::GetColor("#660000");
-        if (ht >= 1000) return TColor::GetColor("#880000");
-        if (ht >= 700)  return TColor::GetColor("#BB0000");
-        if (ht >= 500)  return TColor::GetColor("#DD1111");
-        if (ht >= 300)  return TColor::GetColor("#FF4444");
-        if (ht >= 200)  return TColor::GetColor("#FF7777");
-        if (ht >= 100)  return TColor::GetColor("#FFAAAA");
-        if (ht >= 50)   return TColor::GetColor("#FFCCCC");
-        return TColor::GetColor("#FF0000");
+    // ── QCD : ONE flat colour (was a 9-step red gradient by HT bin) ──
+    // QCD multijet is a single physics process here; the HT slices are just an
+    // MC generation convenience. A single block keeps the (QCD-dominated) stack
+    // readable. [changed 2026-06]
+    if (name.find("QCD") != std::string::npos)
+        return TColor::GetColor("#C0392B");          // flat brick red
+
+    // ── dedicated heavy-flavour ttbar (the stitched tt+B / tt+nb pieces) ──
+    // Checked BEFORE the inclusive "TTTo" / ttH / ttZ / ttW branches.
+    // (Names like "ttbb_*"/"tt4b" do not contain "TTTo"/"ttH"/"ttW"/"ttZ", so
+    //  there is no collision; ttHtobb has no "ttbb" substring.)
+    //   ttbb_* (dedicated tt+2b, 4FS NLO)  → violet family by decay channel
+    //   tt4b   (dedicated tt+nb, LO)        → one bold standout colour
+    if (name.find("ttbb") != std::string::npos || name.find("ttBB") != std::string::npos) {
+        if (name.find("Hadronic") != std::string::npos) return TColor::GetColor("#8E44AD"); // purple
+        if (name.find("SemiLep")  != std::string::npos) return TColor::GetColor("#BB6BD9"); // light purple
+        if (name.find("2L2Nu")    != std::string::npos) return TColor::GetColor("#D7BDE2"); // pale purple
+        return TColor::GetColor("#8E44AD");
     }
+    if (name.find("tt4b") != std::string::npos || name.find("TT4b") != std::string::npos)
+        return TColor::GetColor("#16A085");          // teal — tt+nb standout
+
+    // ── inclusive ttbar by decay channel : BLUE family (visually grouped) ──
     if (name.find("TTTo") != std::string::npos || name.find("TTto") != std::string::npos) {
         if (name.find("Hadronic") != std::string::npos || name.find("hadronic") != std::string::npos)
-            return TColor::GetColor("#3366CC");
+            return TColor::GetColor("#2C5AA0");      // dark blue  (had)
         if (name.find("SemiLep")  != std::string::npos || name.find("semilep") != std::string::npos)
-            return TColor::GetColor("#44BBBB");
+            return TColor::GetColor("#5B8FD4");      // mid blue   (SL)
         if (name.find("2L2Nu")    != std::string::npos || name.find("2l2nu") != std::string::npos)
-            return TColor::GetColor("#66AA66");
-        return TColor::GetColor("#6699CC");
+            return TColor::GetColor("#A8CBEF");      // light blue (2l)
+        return TColor::GetColor("#5B8FD4");
     }
     if (name.find("ttHH") != std::string::npos || name.find("TTHH") != std::string::npos)
-        return TColor::GetColor("#FF8C00");
+        return TColor::GetColor("#FF8C00");          // orange — signal
     if (name.find("tttt") != std::string::npos || name.find("TTTT") != std::string::npos)
-        return TColor::GetColor("#9B59B6");
+        return TColor::GetColor("#34495E");          // dark slate (moved off purple)
     if (name.find("ttH")  != std::string::npos || name.find("TTH") != std::string::npos)
-        return TColor::GetColor("#F1C40F");
+        return TColor::GetColor("#F1C40F");          // yellow
     if (name.find("TTZ") != std::string::npos || name.find("ttZ") != std::string::npos)
-        return TColor::GetColor("#27AE60");
+        return TColor::GetColor("#27AE60");          // green
     if (name.find("TTW") != std::string::npos || name.find("ttW") != std::string::npos)
-        return TColor::GetColor("#D4A03C");
+        return TColor::GetColor("#D4A03C");          // sand
     if (name.find("WJets") != std::string::npos)
         return TColor::GetColor("#1ABC9C");
     if (name.find("DYJets") != std::string::npos || name.find("DY") != std::string::npos)
@@ -329,6 +339,16 @@ std::string StripCMSSuffix(const std::string& raw) {
 std::string ShortenLabel(const std::string& rawName) {
     std::string name = StripCMSSuffix(rawName);
     if (name.find("QCD") != std::string::npos) return "QCD";
+    // dedicated heavy-flavour ttbar — keep the three ttbb channels distinct
+    // (different legend entries + different colours) and tt4b on its own.
+    if (name.find("ttbb") != std::string::npos || name.find("ttBB") != std::string::npos) {
+        if (name.find("Hadronic") != std::string::npos) return "t#bar{t}b#bar{b} (had)";
+        if (name.find("SemiLep")  != std::string::npos) return "t#bar{t}b#bar{b} (SL)";
+        if (name.find("2L2Nu")    != std::string::npos) return "t#bar{t}b#bar{b} (2l)";
+        return "t#bar{t}b#bar{b}";
+    }
+    if (name.find("tt4b") != std::string::npos || name.find("TT4b") != std::string::npos)
+        return "t#bar{t}+4b";
     if (name.find("TTTo") != std::string::npos || name.find("TTto") != std::string::npos) {
         if (name.find("Hadronic") != std::string::npos || name.find("hadronic") != std::string::npos)
             return "t#bar{t} (had)";
@@ -357,6 +377,51 @@ std::string ShortenLabel(const std::string& rawName) {
         return "VV";
     if (name.length() > 18) return name.substr(0, 18);
     return name;
+}
+
+// ============================================================================
+// 2.6  CMS-STYLE PHYSICS-GROUP MERGE  [added 2026-06]
+// ----------------------------------------------------------------------------
+// Collapse the ~20 individual samples into a handful of physics groups so the
+// stack is readable and shows "who contributes most". One merged histogram per
+// group → each group is ONE contiguous block in the stack and ONE legend row.
+//
+//   key      label                samples folded in
+//   -------  -------------------  ----------------------------------------------
+//   QCD      QCD                  QCD_HT* (all HT slices)
+//   ttbar    t#bar{t}             TTToHadronic / SemiLeptonic / 2L2Nu (inclusive)
+//   ttbb     t#bar{t}b#bar{b}     ttbb_Hadronic / SemiLeptonic / 2L2Nu (tt+2b)
+//   tt4b     t#bar{t}+4b          tt4b (tt+nb — kept separate; the categorization point)
+//   ttH      t#bar{t}H            ttHtobb
+//   ttV      t#bar{t}+V           ttZ*, ttW*, ttWW, ttWZ, ttZZ*, ttWH, ttZH*, tttW
+//   tttt     t#bar{t}t#bar{t}     tttt
+//   ttHH     t#bar{t}HH           ttHH (signal)
+//   Other    Other                anything unmatched
+//
+// Check ORDER matters (substring collisions): ttbb/tt4b before ttH/ttV; ttHH
+// before ttH; tttt before ttV (tttW contains "ttW"). ttZHto4b/ttZZto4b contain
+// "to4b" (not "tt4b") so they fall to ttV, not tt4b — intended.
+// ============================================================================
+struct ProcessGroup { std::string key; std::string label; const char* colorHex; };
+
+ProcessGroup GetProcessGroup(const std::string& name) {
+    if (name.find("QCD")  != std::string::npos) return {"QCD",  "QCD",                 "#C0392B"};
+    if (name.find("ttbb") != std::string::npos ||
+        name.find("ttBB") != std::string::npos) return {"ttbb", "t#bar{t}b#bar{b}",    "#8E44AD"};
+    if (name.find("tt4b") != std::string::npos ||
+        name.find("TT4b") != std::string::npos) return {"tt4b", "t#bar{t}+4b",         "#16A085"};
+    if (name.find("TTTo") != std::string::npos ||
+        name.find("TTto") != std::string::npos) return {"ttbar","t#bar{t}",            "#2C5AA0"};
+    if (name.find("ttHH") != std::string::npos ||
+        name.find("TTHH") != std::string::npos) return {"ttHH", "t#bar{t}HH",          "#FF8C00"};
+    if (name.find("tttt") != std::string::npos ||
+        name.find("TTTT") != std::string::npos) return {"tttt", "t#bar{t}t#bar{t}",    "#34495E"};
+    if (name.find("ttH")  != std::string::npos ||
+        name.find("TTH")  != std::string::npos) return {"ttH",  "t#bar{t}H",           "#F1C40F"};
+    if (name.find("ttZ")  != std::string::npos || name.find("TTZ") != std::string::npos ||
+        name.find("ttW")  != std::string::npos || name.find("TTW") != std::string::npos)
+                                                 return {"ttV",  "t#bar{t}+V",          "#27AE60"};
+    return {"Other", "Other", "#BDC3C7"};
 }
 
 /**
@@ -473,6 +538,28 @@ void stack_plotter() {
     double LUMI = 41.48;  // Lumi for 2017 UL
     std::string outDir = "plots";
 
+    // ── stack ordering policy ──────────────────────────────────────────────
+    // The stack is ALWAYS grouped + ordered by yield; this flag only chooses
+    // which end the largest group goes (the data/MC total & ratio are identical
+    // either way — only small-component VISIBILITY on the log axis changes).
+    //
+    //   true  → largest group at the BOTTOM   (standard CMS convention; on a
+    //           log axis a single dominant process — QCD here — fills the frame
+    //           and the small groups stacked on top become invisible slivers).
+    //   false → smallest group at the BOTTOM  (log-visibility ordering: each
+    //           small group sits on a small cumulative base so log(1+y/C) is
+    //           appreciable and it shows as its own band near the bottom).
+    //
+    // For a QCD-dominated (~80%) spectrum, false makes tt / tt+HF / signal
+    // actually visible. Legend stays in descending-yield order regardless.
+    const bool kStackLargestAtBottom = false;
+
+    // Overlay the signal (ttHH) as a scaled LINE on top of the stack so the
+    // tiny signal (here ~4 events) is visible without distorting the stack.
+    // 0 → off; otherwise the multiplicative factor (e.g. 1e5).
+    const double kSignalOverlayScale = 0.0;
+    const std::string kSignalGroupKey = "ttHH";
+
     gStyle->SetOptStat(0);
     gStyle->SetOptTitle(0);
     gROOT->SetBatch(kTRUE);
@@ -511,24 +598,15 @@ void stack_plotter() {
         bool hasData = false;
         bool hasMC = false;
 
-        // Group same-label samples (e.g. all QCD HT slices) into one legend
-        // entry whose yield is summed across the group.
-        // Map: short label → (representative TH1F* for color, accumulated yield)
-        std::map<std::string, std::pair<TH1F*, double>> legendGroup;
-        // Insertion order kept separately so the legend appears in the order
-        // the first member of each group was encountered.
-        std::vector<std::string> legendOrder;
-
-        // Collect MC histograms first, then add them to THStack in
-        // ascending-yield order.  Everything else is kept identical to the
-        // old plotter: no stitching/category regrouping, no `group:` field,
-        // and labels are inferred only from the sample name via ShortenLabel().
-        struct MCStackEntry {
-            TH1F* hist;
-            std::string shortLabel;
-            double yield;
+        // ── CMS-style physics-group merge ──────────────────────────────────
+        // Sum every sample of a group into ONE histogram. Result: each group is
+        // a single contiguous block in the stack and a single legend row.
+        struct GroupAcc {
+            TH1F* hist = nullptr;     // merged histogram (owns a clone)
+            double yield = 0.0;       // integral incl. under/overflow
+            std::string label;        // legend label (LaTeX)
         };
-        std::vector<MCStackEntry> mcStackEntries;
+        std::map<std::string, GroupAcc> groupMap;   // group key → accumulator
 
         for (const auto& sample : samples) {
             TH1F* h = GetSummedHist(sample, hInfo.key_path);
@@ -538,68 +616,70 @@ void stack_plotter() {
                 if (!hData) { hData = (TH1F*)h->Clone("hData"); hData->SetDirectory(0); }
                 else hData->Add(h);
                 hasData = true; delete h;
+                continue;
             }
-            else {
-                int smartColor = GetSmartColor(sample.name);
-                h->SetFillColor(smartColor);
 
-                const std::string shortLabel = ShortenLabel(sample.name);
-                const double thisYield = h->Integral(0, h->GetNbinsX() + 1);
+            // ── MC: route into its physics group ──
+            const ProcessGroup pg = GetProcessGroup(sample.name);
+            const double thisYield = h->Integral(0, h->GetNbinsX() + 1);
 
-                mcStackEntries.push_back({h, shortLabel, thisYield});
-
-                if (!hMcSum) { hMcSum = (TH1F*)h->Clone("hMcSum"); hMcSum->SetDirectory(0); }
-                else hMcSum->Add(h);
-                hasMC = true;
-            }
-        }
-
-        // Requested stack-order-only change:
-        // smaller-yield MC processes are added first, larger-yield processes
-        // later.  This deliberately does NOT merge ttbar stitching categories.
-        std::sort(mcStackEntries.begin(), mcStackEntries.end(),
-                  [](const MCStackEntry& a, const MCStackEntry& b) {
-                      return a.yield < b.yield;
-                  });
-
-        for (const auto& entry : mcStackEntries) {
-            hs->Add(entry.hist);
-
-            auto it = legendGroup.find(entry.shortLabel);
-            if (it == legendGroup.end()) {
-                legendGroup[entry.shortLabel] = std::make_pair(entry.hist, entry.yield);
-                legendOrder.push_back(entry.shortLabel);
+            auto it = groupMap.find(pg.key);
+            if (it == groupMap.end()) {
+                TH1F* gh = (TH1F*)h->Clone(("g_" + pg.key).c_str());
+                gh->SetDirectory(0);
+                gh->SetFillColor(TColor::GetColor(pg.colorHex));
+                gh->SetLineColor(kBlack);
+                gh->SetLineWidth(1);
+                groupMap[pg.key] = GroupAcc{ gh, thisYield, pg.label };
             } else {
-                // Same legend group already seen — accumulate yield only
-                // (color already set on the representative entry).
-                it->second.second += entry.yield;
+                it->second.hist->Add(h);
+                it->second.yield += thisYield;
             }
+
+            if (!hMcSum) { hMcSum = (TH1F*)h->Clone("hMcSum"); hMcSum->SetDirectory(0); }
+            else hMcSum->Add(h);
+            hasMC = true;
+            delete h;   // group keeps its own clone; per-sample hist no longer needed
         }
 
-        // ── Build legend entries with yield strings ────────────────────────
-        // Order: Data first (top-right), then MC by insertion order (which
-        // mirrors YAML order — currently sample-name alphabetical). The MC-sum
-        // row is added at the end so it sits at the bottom of the legend.
+        // Order groups by TOTAL yield (descending). CMS convention: the largest
+        // background sits at the BOTTOM of the stack, so we Add() largest first
+        // (THStack draws the first-added histogram at the bottom).
+        std::vector<GroupAcc> groupsByYield;
+        groupsByYield.reserve(groupMap.size());
+        for (auto& kv : groupMap) groupsByYield.push_back(kv.second);
+        std::sort(groupsByYield.begin(), groupsByYield.end(),
+                  [](const GroupAcc& a, const GroupAcc& b) { return a.yield > b.yield; });
+
+        // THStack draws the first-added histogram at the BOTTOM. groupsByYield
+        // is sorted descending (largest first), which we keep for the legend.
+        //   largest-at-bottom → add largest first (forward iterate)
+        //   smallest-at-bottom→ add smallest first (reverse iterate)
+        if (kStackLargestAtBottom) {
+            for (auto it = groupsByYield.begin(); it != groupsByYield.end(); ++it)
+                hs->Add(it->hist);
+        } else {
+            for (auto it = groupsByYield.rbegin(); it != groupsByYield.rend(); ++it)
+                hs->Add(it->hist);
+        }
+
+        // ── Build legend ───────────────────────────────────────────────────
+        // Data first, then MC groups by descending yield (most-contributing
+        // first → "who matters" is read top-down), then a Total-MC row.
         if (hasData && hData) {
             const double dataYield = hData->Integral(0, hData->GetNbinsX() + 1);
             leg->AddEntry(hData,
                           Form("Data   %s", FormatYield(dataYield).c_str()),
                           "lp");
         }
-        for (const auto& lbl : legendOrder) {
-            const auto& entry = legendGroup[lbl];
-            TH1F* representative = entry.first;
-            const double y       = entry.second;
-            leg->AddEntry(representative,
-                          Form("%s   %s", lbl.c_str(),
-                                          FormatYield(y).c_str()),
+        for (const auto& g : groupsByYield) {
+            leg->AddEntry(g.hist,
+                          Form("%s   %s", g.label.c_str(),
+                                          FormatYield(g.yield).c_str()),
                           "f");
         }
         if (hasMC && hMcSum) {
             const double mcYield = hMcSum->Integral(0, hMcSum->GetNbinsX() + 1);
-            // Use a dummy invisible marker entry so only the text shows.
-            // (TLegend requires a TObject*; we pass hMcSum and hide the marker
-            // by using "" option — ROOT accepts empty option as "no draw".)
             leg->AddEntry((TObject*)nullptr,
                           Form("Total MC   %s",
                                FormatYield(mcYield).c_str()),
@@ -618,6 +698,7 @@ void stack_plotter() {
 
         if (globalMax <= 0.0) {
             delete hs; delete leg; if(hData) delete hData; if(hMcSum) delete hMcSum;
+            for (auto& kv : groupMap) delete kv.second.hist;
             std::cout << " -> [Skip] Empty (Max=0)." << std::endl;
             continue;
         }
@@ -652,6 +733,28 @@ void stack_plotter() {
         }
 
         if (hasData) hData->Draw("SAME EP");
+
+        // ── optional signal overlay (scaled line) ──
+        // Draw the signal group (default ttHH) as a thick line scaled ×N so the
+        // tiny signal is visible on top of the stack without changing it.
+        TH1F* hSigOverlay = nullptr;
+        if (kSignalOverlayScale > 0.0) {
+            auto sit = groupMap.find(kSignalGroupKey);
+            if (sit != groupMap.end() && sit->second.hist) {
+                hSigOverlay = (TH1F*)sit->second.hist->Clone("hSigOverlay");
+                hSigOverlay->SetDirectory(0);
+                hSigOverlay->Scale(kSignalOverlayScale);
+                hSigOverlay->SetFillStyle(0);
+                hSigOverlay->SetLineColor(TColor::GetColor("#FF8C00"));
+                hSigOverlay->SetLineWidth(3);
+                hSigOverlay->Draw("HIST SAME");
+                leg->AddEntry(hSigOverlay,
+                              Form("%s #times%g",
+                                   sit->second.label.c_str(), kSignalOverlayScale),
+                              "l");
+            }
+        }
+
         leg->Draw(); DrawCMSLabel(LUMI);
 
         // Detect whether this is a cutflow plot — used to widen the ratio
@@ -697,6 +800,10 @@ void stack_plotter() {
         c->SaveAs(Form("%s/%s.png", outDir.c_str(), hInfo.clean_name.c_str()));
 
         delete c; delete hMcSum; if(hData) delete hData;
+        if (hSigOverlay) delete hSigOverlay;
+        // THStack does not own its histograms; free the per-group clones we made.
+        delete hs;
+        for (auto& kv : groupMap) delete kv.second.hist;
     }
 
     std::cout << "\n\n[Success] All plots saved to '" << outDir << "' directory." << std::endl;
