@@ -75,6 +75,12 @@ else
   $(info [BTagSF Headers] Using shared header from $(BTAGSF_INCDIR))
 endif
 
+# [STEP5] EventShape — 외부 정적 라이브러리로 분리 컴파일.
+# di-lepton analyzer의 `#include ".../EventShape.cc"` (소스 직접 include)
+# 방식을 대체한다: 헤더만 include하고 libEventShape.a 로 링크.
+EVTSHAPE_DIR   := EventShape/Class
+EVTSHAPE_LIB   := lib/libEventShape.a
+
 SRC_DIR        := src
 OBJ_DIR        := tmp
 LIB_DIR        := lib
@@ -113,7 +119,7 @@ LIB_SOURCES    := $(filter-out $(DICT_SOURCE), $(wildcard $(SRC_DIR)/*.cc))
 LIB_OBJECTS    := $(patsubst $(SRC_DIR)/%.cc,$(OBJ_DIR)/%.o,$(LIB_SOURCES) $(DICT_SOURCE))
 
 # Default target
-all: prepare_dirs $(SHARED_LIB) $(APPLICATIONS)
+all: prepare_dirs $(EVTSHAPE_LIB) $(SHARED_LIB) $(APPLICATIONS)
 	$(INFO) "[Done] Built shared lib=$(SHARED_LIB) and apps=$(APPLICATIONS)"
 
 .PHONY: all clean prepare_dirs
@@ -137,6 +143,15 @@ $(DICT_SOURCE): $(DICT_HEADER) $(DICT_LINKDEF)
 # ----------------------
 #   Library Compilation
 # ----------------------
+# [STEP5] EventShape 정적 라이브러리 (단독 빌드: make lib/libEventShape.a)
+$(OBJ_DIR)/EventShape.o: $(EVTSHAPE_DIR)/src/EventShape.cc $(EVTSHAPE_DIR)/interface/EventShape.h | prepare_dirs
+	$(INFO) "[EvtShape] Compiling $< -> $@"
+	$(HIDE) $(CXX) $(COMPILE_FLAGS) $(INCLUDE_FLAGS) $< -o $@
+
+$(EVTSHAPE_LIB): $(OBJ_DIR)/EventShape.o | prepare_dirs
+	$(INFO) "[EvtShape] Archiving static library $@"
+	$(HIDE) ar rcs $@ $^
+
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cc | prepare_dirs
 	$(INFO) "[Lib] Compiling $< -> $@"
 	$(HIDE) $(CXX) $(COMPILE_FLAGS) $(INCLUDE_FLAGS) $< -o $@
@@ -154,10 +169,10 @@ $(OBJ_DIR)/%.o: %.cc | prepare_dirs
 	$(INFO) "[App] Compiling application $< -> $@"
 	$(HIDE) $(CXX) $(COMPILE_FLAGS) $(INCLUDE_FLAGS) $< -o $@
 
-$(APPLICATIONS): % : $(OBJ_DIR)/%.o $(SHARED_LIB)
+$(APPLICATIONS): % : $(OBJ_DIR)/%.o $(SHARED_LIB) $(EVTSHAPE_LIB)
 	$(INFO) "[App] Linking application $@"
 	$(HIDE) $(CXX) -fPIC $(OBJ_DIR)/$@.o -o $@ \
-                  $(GENERAL_LINK) -l$(LIB_NAME)
+                  $(GENERAL_LINK) -l$(LIB_NAME) -lEventShape
 
 # ----------------------
 #   Clean

@@ -106,44 +106,30 @@ class CondorJobManager:
         config = self.load_yaml_config(self.config_file_path)
         common = config.get("common", {})
         samples = config.get("samples", [])
-        scenarios = config.get("validation_scenarios", [])
 
+        # [STEP2] validation 모드(시나리오 외부 루프) 제거 — 단일 패스만 유지.
+        # 유효 모드 검증은 C++ analyzer의 parseAnalysisMode가 fatal로 수행하지만,
+        # 잘못된 yml로 condor job을 뿌리기 전에 여기서도 조기 차단한다.
         analyzer_mode = common.get("analysis_mode", "main")
+        valid_modes = ("main", "btagtrig", "prescan", "debug")
+        if analyzer_mode not in valid_modes:
+            raise ValueError(
+                f"[FATAL] analysis_mode='{analyzer_mode}' is not valid. "
+                f"Valid: {valid_modes}. "
+                "(trigsf/validation은 2026-06 리팩토링에서 제거 — "
+                "docs/changes/STEP_2 참조)")
 
-        # ── Validation mode: outer loop over scenarios ─────────────────────
-        if analyzer_mode == "validation":
-            if not scenarios:
-                raise ValueError(
-                    "[ERROR] analysis_mode=validation but no "
-                    "`validation_scenarios:` block in YAML."
-                )
-            for scen in scenarios:
-                scen_name = scen.get("name", "default")
-                print(f"\n{'='*70}\n[VALIDATION] Submitting scenario: {scen_name}\n{'='*70}")
-                self._current_scenario = scen
-                for entry in samples:
-                    try:
-                        self.parse_config_entry(entry, common, scen)
-                        self.prepare_output_directory()
-                        self.setup_and_submit_job()
-                    except Exception as e:
-                        print(f"  Error with sample {entry} (scenario "
-                              f"{scen_name}) : {e}")
-                        continue
-        # ── Other modes: single pass over samples ──────────────────────────
-        else:
-            self._current_scenario = None
-            for entry in samples:
-                try:
-                    self.parse_config_entry(entry, common, None)
-                    self.prepare_output_directory()
-                    self.setup_and_submit_job()
-                except Exception as e:
-                    print(f"  Error with sample {entry} : {e}")
-                    continue
+        for entry in samples:
+            try:
+                self.parse_config_entry(entry, common)
+                self.prepare_output_directory()
+                self.setup_and_submit_job()
+            except Exception as e:
+                print(f"  Error with sample {entry} : {e}")
+                continue
 
     # -------------------------------------------------------------------------
-    def parse_config_entry(self, entry, common, scenario):
+    def parse_config_entry(self, entry, common):
 
         required_keys_inEntry = [
             "filelist", "output_dir", "weight",
@@ -165,18 +151,31 @@ class CondorJobManager:
         self.year = common["year"]
         self.analysis_mode = common["analysis_mode"]
 
+        # [STEP4] 보정 입력 경로 — yml common.path_* 를 condor 실행 sh의
+        # export로 주입한다. 비어 있거나 없으면 export하지 않음 → analyzer가
+        # 코드 내 default(Tier3)를 사용 (하위호환).
+        path_env_map = {
+            "path_jsonpog":               "TTHH_JSONPOG_PATH",
+            "path_goldenjson":            "TTHH_GOLDENJSON_PATH",
+            "path_trigsf_dir":            "TTHH_TRIGSF_DIR",
+            "path_btag_reweight_json":    "TTHH_BTAGRW_JSON",
+            "path_stitch_json":           "STITCH_FACTORS_JSON",
+            "path_expanded_ttbarid_dir":  "EXPANDED_TTBARID_DIR",
+        }
+        self.env_exports = {}
+        for yml_key, env_name in path_env_map.items():
+            v = common.get(yml_key, "")
+            if isinstance(v, str) and v.strip():
+                self.env_exports[env_name] = v.strip()
+
         if self.data_or_mc == "MC" and str(self.era).strip():
             raise ValueError(
                 "MC samples must not define an eraName. "
                 "Please leave era empty."
             )
 
-        # ── Composite output dir for validation mode ───────────────────────
-        if scenario is not None:
-            scen_name = scenario.get("name", "default")
-            self.output_dir = f"{scen_name}/{self.sample_output_dir}"
-        else:
-            self.output_dir = self.sample_output_dir
+        # [STEP2] validation 모드 제거 — output_dir 합성 분기 삭제
+        self.output_dir = self.sample_output_dir
 
         self.path_output = os.path.join(self.path_output_base,
                                         self.output_dir + "/")
@@ -199,7 +198,7 @@ class CondorJobManager:
     def load_yaml_config(self, path):
         """
         Minimal YAML loader. Supports two top-level lists (`samples:` and
-        `validation_scenarios:`) plus a `common:` mapping. Accepts string,
+        plus a `common:` mapping. Accepts string,
         int, float, and bool scalars. Comments (#) and blank lines are
         skipped.
 
@@ -244,11 +243,10 @@ class CondorJobManager:
 
         config = {
             "common": {},
-            "samples": [],
-            "validation_scenarios": []
-        }
+            "samples": []
+        }   # [STEP2] validation_scenarios 섹션 지원 제거
 
-        section = None        # "common" | "samples" | "validation_scenarios"
+        section = None        # "common" | "samples"
         current_item = None   # dict for current samples or scenarios entry
 
         with open(path, "r") as f:
@@ -272,17 +270,8 @@ class CondorJobManager:
                     section = "samples"
                     section_prev_list = "samples"
                     continue
-                if line == "validation_scenarios:":
-                    if current_item is not None:
-                        config[section_prev_list].append(current_item)
-                        current_item = None
-                    section = "validation_scenarios"
-                    section_prev_list = "validation_scenarios"
-                    continue
-
                 # ── List items (start with "- ") ──────────────────────────
-                if section in ("samples", "validation_scenarios") \
-                        and line.startswith("- "):
+                if section == "samples" and line.startswith("- "):
                     if current_item is not None:
                         config[section_prev_list].append(current_item)
                     current_item = {}
@@ -297,14 +286,13 @@ class CondorJobManager:
                     key, value = line.split(":", 1)
                     if section == "common":
                         config["common"][key.strip()] = parse_value(value)
-                    elif section in ("samples", "validation_scenarios"):
+                    elif section == "samples":
                         if current_item is None:
                             current_item = {}
                         current_item[key.strip()] = parse_value(value)
 
         # flush final item
-        if current_item is not None and section in (
-                "samples", "validation_scenarios"):
+        if current_item is not None and section == "samples":
             config[section].append(current_item)
 
         return config
@@ -337,46 +325,6 @@ class CondorJobManager:
                                 stderr=subprocess.PIPE, text=True)
         if result.returncode == 0:
             print(f"Set permissions to 755 for {self.path_output}")
-
-    # -------------------------------------------------------------------------
-    def _scenario_argv(self):
-        """Build the validation-scenario argv suffix.
-
-        Returns the empty string when not in validation mode or when no
-        scenario is currently selected.
-        """
-        scen = getattr(self, "_current_scenario", None)
-        if scen is None:
-            return ""
-
-        # Order matters only for readability; the C++ side is flag-based.
-        parts = [f"--val-scenario {scen.get('name', 'default')}"]
-
-        # Numeric/bool fields: always emit so defaults are explicit on the
-        # command line (easier to debug from condor logs).
-        bool_fields = [
-            ("applyHadWWindow",  "--val-hadWWindow"),
-            ("applyHiggsWindow", "--val-higgsWindow"),
-            ("tightenJet8",      "--val-tightenJet8"),
-            ("applyBtagShapeSF", "--val-btagShape"),
-            ("applyBtagNormSF",  "--val-btagNorm"),
-            ("applyTriggerSF",   "--val-trig"),
-            ("applyTopPtSF",     "--val-topPt"),
-            ("ttHVRStyle",       "--val-ttHVR"),
-        ]
-        int_fields = [
-            ("nbJetsCut",              "--val-nbJetsCut"),
-            ("forceHiggsRecoMinBjets", "--val-hRecoMin"),
-        ]
-        for key, flag in int_fields:
-            if key in scen:
-                parts.append(f"{flag} {int(scen[key])}")
-        for key, flag in bool_fields:
-            if key in scen:
-                v = 1 if bool(scen[key]) else 0
-                parts.append(f"{flag} {v}")
-
-        return " ".join(parts)
 
     # -------------------------------------------------------------------------
     def _output_is_complete(self, output_path):
@@ -431,8 +379,6 @@ class CondorJobManager:
         filenames `<sample>_<count>.root` stay aligned with the input
         filelist regardless of how many jobs are skipped.
         """
-        scen_argv = self._scenario_argv()
-
         n_written = 0
         with open(self.arg_list_file, "w") as argout:
             count = 0
@@ -472,8 +418,6 @@ class CondorJobManager:
                     )
                     if str(self.era).strip():
                         args += f" --era {self.era} "
-                    if scen_argv:
-                        args += " " + scen_argv
 
                     argout.write(args + "\n")
                     n_written += 1
@@ -521,25 +465,25 @@ class CondorJobManager:
             fout.write("cmsenv\n")
             fout.write("echo 'WORKDIR ' ${PWD}\n")
             fout.write(f"source \"{self.analyzer_path}/setup.sh\"\n")
+            # [STEP4] yml common.path_* → env 주입 (로그에 남도록 echo 동반)
+            for env_name, val in getattr(self, "env_exports", {}).items():
+                fout.write(f"export {env_name}=\"{val}\"\n")
+                fout.write(f"echo '[paths] {env_name}='\"${{{env_name}}}\"\n")
             fout.write(f"mkdir -p {self.path_output}\n")
             fout.write(f"\"{self.analyzer_path}/{self.nameofExe}\" \"$@\"\n")
         subprocess.call(["chmod", "755", self.script_name])
 
     # -------------------------------------------------------------------------
     def submit_job(self):
-        scen = getattr(self, "_current_scenario", None)
-        scen_label = ("[" + scen["name"] + "] ") if scen else ""
-        print(f"Submitting job for sample: {scen_label}{self.sample_name}")
+        print(f"Submitting job for sample: {self.sample_name}")
         subprocess.call(["condor_submit", self.condor_submit_name])
 
     def setup_and_submit_job(self):
-        scen = getattr(self, "_current_scenario", None)
-        scen_label = ("[" + scen["name"] + "] ") if scen else ""
-        print(f"\nSetting up job for sample: {scen_label}{self.sample_name}")
+        print(f"\nSetting up job for sample: {self.sample_name}")
         n_jobs = self.generate_argument_list()
         if n_jobs == 0:
             print(f"  All outputs already complete for "
-                  f"{scen_label}{self.sample_name} — nothing to submit.")
+                  f"{self.sample_name} — nothing to submit.")
             return
         self.create_executable_script()
         self.write_condor_submission_file()

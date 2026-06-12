@@ -45,10 +45,15 @@ public:
     // isData: true->Data, false->MC
     // sampleName: MC 프로세스 이름 (e.g. "TTToHadronic"), b-tag reweight lookup에 사용
     //             Data일 경우 빈 문자열 허용
+    // [STEP4] requireDerivedCorr: true(main/debug)이면 파생 보정(trigger SF,
+    // b-tag norm reweight) 누락/로드 실패가 FATAL(exit 47/48)이다.
+    // false(btagtrig)이면 부트스트랩 허용 — WARN 후 SF=1.0으로 진행
+    // (btagtrig은 그 보정들을 "만들기 위한" skim을 생산하는 모드이므로).
     CorrectionsManager(const std::string& runYear,
                        const std::string& dataEra,
                        bool isData,
-                       const std::string& sampleName = "");
+                       const std::string& sampleName = "",
+                       bool requireDerivedCorr = true);
     ~CorrectionsManager();
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -217,6 +222,7 @@ private:
     std::string goldenJsonPath;
     std::string trigSFPath;         // trigger_sf.json.gz가 위치한 디렉토리 경로
     std::string btagReweightPath;   // b-tag reweight JSON 전체 파일 경로
+    bool requireDerived_ = true;    // [STEP4] 파생 보정 누락 시 FATAL 여부 (모드별)
     std::string runYear_;
     std::string dataEra_;
     std::string sampleName_;        // MC 프로세스 이름 (process key for reweight lookup)

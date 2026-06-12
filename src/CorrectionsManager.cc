@@ -12,6 +12,7 @@
 // Author: Junghyun Lee
 // ============================================================================
 #include "CorrectionsManager.h"
+#include <cstdlib>   // [STEP4] std::getenv, std::exit
 #include <fstream>
 #include <iostream>
 #include <filesystem>   // JSON 파일 존재 확인용
@@ -23,40 +24,71 @@ static constexpr bool kVerbose = false;
 // ============================================================================
 // 생성자 (Constructor)
 // ============================================================================
+// ----------------------------------------------------------------------------
+// [STEP4] 환경변수 우선 경로 결정: env가 설정돼 있으면 그 값을, 아니면
+// 코드 내 default(Tier3)를 쓴다. 어느 쪽을 썼는지 로그로 명시한다.
+// env는 AnalyzerConfig yml의 common.path_* → condor sh의 export →
+// 로컬 실행 시엔 쉘에서 직접 export로 통제된다 (docs/changes/STEP_4 참조).
+// ----------------------------------------------------------------------------
+static std::string envOr(const char* envName,
+                         const std::string& defaultPath,
+                         const char* what) {
+    const char* v = std::getenv(envName);
+    const std::string chosen = (v && *v) ? std::string(v) : defaultPath;
+    std::cout << "[CorrectionsManager][path] " << what << " = " << chosen
+              << ((v && *v) ? "   (env " : "   (default; env ")
+              << envName << ((v && *v) ? ")" : " unset)") << std::endl;
+    return chosen;
+}
+
 CorrectionsManager::CorrectionsManager(const std::string& runYear,
                                        const std::string& dataEra,
                                        bool isData,
-                                       const std::string& sampleName)
+                                       const std::string& sampleName,
+                                       bool requireDerivedCorr)
   : runYear_(runYear)
   , dataEra_(dataEra)
   , isData_(isData)
   , sampleName_(sampleName)
 {
-////    jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration"; // lxplus
-////    goldenJsonPath = "/afs/cern.ch/user/j/junghyun/ttHH_analysis/CMSSW_14_2_1/src/runii_tthhanalyzerV8/GoldenJson"; // lxplus
-////    jsonPath = "/Users/jhlee/correctionLib/corrections/jsonpog-integration"; // Local
-////    goldenJsonPath = "/Users/jhlee/tempTTHH/GoldenJson"; // Local
-    jsonPath = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration"; // Tier3
-    goldenJsonPath = "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/GoldenJson"; // Tier3
+    requireDerived_ = requireDerivedCorr;
 
-////    trigSFPath = "/Users/jhlee/tempTTHH/Correction/TriggerSF"; // Local
-    trigSFPath = "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/DerivedCorr/TriggerSF"; // Tier3
+    // [STEP4] 경로는 env 우선, 미설정 시 기존 Tier3 하드코딩 값이 default
+    // (하위호환 — env 없이 돌리면 이전과 동일하게 동작).
+    jsonPath = envOr("TTHH_JSONPOG_PATH",
+        "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration",
+        "jsonpog-integration");
+    goldenJsonPath = envOr("TTHH_GOLDENJSON_PATH",
+        "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/GoldenJson",
+        "GoldenJSON dir");
+    trigSFPath = envOr("TTHH_TRIGSF_DIR",
+        "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/DerivedCorr/TriggerSF",
+        "trigger SF dir");
+    btagReweightPath = envOr("TTHH_BTAGRW_JSON",
+        "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/DerivedCorr/bTagReweight/btagNormReweight.json",
+        "b-tag norm reweight JSON");
+    std::cout << "[CorrectionsManager] derived-correction policy: "
+              << (requireDerived_ ? "REQUIRED (missing -> FATAL 47/48)"
+                                  : "optional (bootstrap; missing -> WARN, SF=1)")
+              << std::endl;
 
-    // b-tag normalization reweight JSON 경로
-    // makeReweightJSON이 생성한 파일. 상대경로 또는 절대경로 사용 가능.
-    btagReweightPath = "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/DerivedCorr/bTagReweight/btagNormReweight.json"; // Tier3
+    // [STEP4] 중앙(POG) 보정 입력의 누락/손상은 모드 무관 FATAL(49) —
+    // correctionlib의 throw를 여기서 잡아 Condor가 식별 가능한 exit로 변환.
+    try {
+        loadJME_();          // always load MC JEC/JER; Data only if isData_
+        loadPU_();           // always load PU (both MC & Data)
+        loadBTag_();         // MC-only b-tag SF (or Data if you wish)
+        loadGoldenJSON_();   // only Data
+    } catch (const std::exception& e) {
+        std::cerr << "[FATAL][CorrectionsManager] central correction load failed: "
+                  << e.what() << "\n"
+                  << "  -> check TTHH_JSONPOG_PATH / TTHH_GOLDENJSON_PATH "
+                  << "(or yml common.path_*).\n";
+        std::exit(49);
+    }
 
-    std::cout<<"[CorrectionsManager] json library path : "<<jsonPath<<std::endl;
-
-    loadJME_();          // always load MC JEC/JER; Data only if isData_
-    loadPU_();           // always load PU (both MC & Data)
-    loadBTag_();         // MC-only b-tag SF (or Data if you wish)
-    loadGoldenJSON_();   // only Data
-
-    // [UPDATED] Trigger SF 로드 (correctionlib JSON)
+    // 파생 보정 — requireDerived_에 따라 FATAL(47/48) 또는 WARN
     loadTrigger_();
-
-    // B-tag normalization reweight 로드 (MC only)
     loadBTagReweight_();
 }
 
@@ -232,6 +264,12 @@ void CorrectionsManager::loadGoldenJSON_() {
     if (kVerbose) std::cout << "[loadGoldenJSON] Loading from " << txt << "\n";
     std::ifstream in(txt);
     if (!in) {
+        if (isData_) {   // [STEP4] Data가 golden 필터 없이 도는 사고 차단
+            std::cerr << "[FATAL][CorrectionsManager] GoldenJSON not found for Data: "
+                      << txt << "\n"
+                      << "  -> TTHH_GOLDENJSON_PATH (yml common.path_goldenjson)를 확인하세요.\n";
+            std::exit(49);
+        }
         std::cerr << "[loadGoldenJSON] ERROR opening " << txt << "\n";
         return;
     }
@@ -279,9 +317,17 @@ void CorrectionsManager::loadTrigger_() {
     // 파일 존재 확인 (filesystem)
     namespace fs = std::filesystem;
     if (!fs::exists(fileName)) {
+        if (requireDerived_) {   // [STEP4] main/debug: silent SF=1 진행 금지
+            std::cerr << "[FATAL][CorrectionsManager] Trigger SF JSON not found: "
+                      << fileName << "\n"
+                      << "  -> main/debug 모드는 trigger SF가 필수입니다.\n"
+                      << "  -> DeriveSF로 생성하거나 TTHH_TRIGSF_DIR"
+                      << " (yml common.path_trigsf_dir)를 확인하세요.\n";
+            std::exit(47);
+        }
         std::cerr << "[CorrectionsManager][WARN] Trigger SF JSON not found: "
                   << fileName << "\n"
-                  << "  -> Trigger SF will NOT be applied.\n"
+                  << "  -> Trigger SF will NOT be applied (bootstrap mode).\n"
                   << "  -> Run DeriveSF first to generate this file.\n";
         return;
     }
@@ -324,6 +370,11 @@ void CorrectionsManager::loadTrigger_() {
         }
 
     } catch (const std::exception& e) {
+        if (requireDerived_) {   // [STEP4]
+            std::cerr << "[FATAL][CorrectionsManager] Failed to load trigger SF JSON: "
+                      << e.what() << "\n";
+            std::exit(47);
+        }
         std::cerr << "[CorrectionsManager][ERROR] Failed to load trigger SF JSON: "
                   << e.what() << "\n"
                   << "  -> Trigger SF will NOT be applied.\n";
@@ -377,9 +428,17 @@ void CorrectionsManager::loadBTagReweight_() {
     // 파일 존재 확인 (filesystem)
     namespace fs = std::filesystem;
     if (!fs::exists(btagReweightPath)) {
+        if (requireDerived_) {   // [STEP4] main/debug: silent SF=1 진행 금지
+            std::cerr << "[FATAL][CorrectionsManager] B-tag reweight JSON not found: "
+                      << btagReweightPath << "\n"
+                      << "  -> main/debug 모드는 b-tag norm reweight가 필수입니다.\n"
+                      << "  -> makeReweightJSON으로 생성하거나 TTHH_BTAGRW_JSON"
+                      << " (yml common.path_btag_reweight_json)를 확인하세요.\n";
+            std::exit(48);
+        }
         std::cerr << "[CorrectionsManager][WARN] B-tag reweight JSON not found: "
                   << btagReweightPath << "\n"
-                  << "  -> B-tag normalization reweight will NOT be applied.\n"
+                  << "  -> B-tag normalization reweight will NOT be applied (bootstrap mode).\n"
                   << "  -> Run makeReweightJSON first to generate this file.\n";
         return;
     }
@@ -407,6 +466,11 @@ void CorrectionsManager::loadBTagReweight_() {
         }
 
     } catch (const std::exception& e) {
+        if (requireDerived_) {   // [STEP4]
+            std::cerr << "[FATAL][CorrectionsManager] Failed to load b-tag reweight JSON: "
+                      << e.what() << "\n";
+            std::exit(48);
+        }
         std::cerr << "[CorrectionsManager][ERROR] Failed to load b-tag reweight JSON: "
                   << e.what() << "\n"
                   << "  -> B-tag normalization reweight will NOT be applied.\n";
