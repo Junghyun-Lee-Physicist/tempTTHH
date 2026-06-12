@@ -32,6 +32,9 @@
 #include "Config_TtCatGroup.hh"   // ttH AN App. A.2.1 process key mapping (LF/cc/B/ttH/ttHH/...)
 #include "ExpandedTtbarId.h"      // [tt+nb] Expanded_genTtbarId per-event lookup
 #include "StitchFactors.h"        // [stitch] per-(sample,category) stitch multiplier
+#include "DebugLogger.h"          // [STEP2][debug] kDebug 모드 단계별 검증 로거
+#include "SelectionCuts.h"        // [STEP3] selection 상수 단일 소스 (cut map 대체)
+#include "EventShape/Class/interface/EventShape.h"  // [STEP5] event shape (라이브러리 링크)
 #include <map>
 
 #include <nlohmann/json.hpp>
@@ -51,10 +54,10 @@ const float cZMass = 91.;
 // Analysis Mode Definition
 // =============================================================================
 enum class AnalysisMode {
-    kMainAnalysis,
-    kBTagAndTriggerStudy,
-    kTriggerSFStudy,
-    kValidationStudy,        // N-1 / weight-ablation study
+    kMainAnalysis,           // 본 분석: full selection + 전체 SF + stitch
+    kBTagAndTriggerStudy,    // btagtrig: 파생 도구(b-tag SF / trigger SF)용 flat skim 생산
+    kDebug,                  // [STEP2] main과 동일 동작 + 단계별 디버그 로그
+                             //   (로컬 테스트 파일 1-2개 검증용; DebugLogger.h 참조)
     kPrescan      // [NEW] gen-level Σ genWeight + genTtbarId breakdown
                              //       (no selection, no object building)
                              // ⚠ TEMPORARY — to be migrated to NtupleForge
@@ -68,80 +71,91 @@ enum class AnalysisMode {
 inline AnalysisMode parseAnalysisMode(const std::string& modeStr) {
     if (modeStr.empty()) {
         throw std::invalid_argument(
-            "[ERROR] Analysis mode not specified!\n"
-            "        Valid modes: main, btagtrig, trigsf, validation, prescan"
+            "[FATAL] Analysis mode not specified!\n"
+            "        Valid modes: main, btagtrig, prescan, debug"
         );
     }
     if (modeStr == "main"       || modeStr == "MainAnalysis")        return AnalysisMode::kMainAnalysis;
     if (modeStr == "btagtrig"   || modeStr == "BTagAndTriggerStudy") return AnalysisMode::kBTagAndTriggerStudy;
-    if (modeStr == "trigsf"     || modeStr == "TriggerSFStudy")      return AnalysisMode::kTriggerSFStudy;
-    if (modeStr == "validation" || modeStr == "ValidationStudy")     return AnalysisMode::kValidationStudy;
-    if (modeStr == "prescan"  || modeStr == "Prescan")  return AnalysisMode::kPrescan;
-    throw std::invalid_argument("[ERROR] Unknown analysis mode: " + modeStr);
+    if (modeStr == "prescan"    || modeStr == "Prescan")             return AnalysisMode::kPrescan;
+    if (modeStr == "debug"      || modeStr == "Debug")               return AnalysisMode::kDebug;
+    // [STEP2] 제거된 모드는 명시적으로 안내 (조용한 오동작 방지)
+    if (modeStr == "trigsf" || modeStr == "TriggerSFStudy" ||
+        modeStr == "validation" || modeStr == "ValidationStudy") {
+        throw std::invalid_argument(
+            "[FATAL] Analysis mode '" + modeStr + "' was REMOVED (2026-06 refactor).\n"
+            "        trigsf     -> standalone TriggerStudy package (btagtrig skim 입력)\n"
+            "        validation -> 제거됨 (docs/changes/STEP_2 참조)\n"
+            "        Valid modes: main, btagtrig, prescan, debug");
+    }
+    throw std::invalid_argument("[FATAL] Unknown analysis mode: " + modeStr +
+                                "\n        Valid modes: main, btagtrig, prescan, debug");
 }
 
 inline std::string analysisModeName(AnalysisMode mode) {
     switch (mode) {
         case AnalysisMode::kMainAnalysis:        return "MainAnalysis";
         case AnalysisMode::kBTagAndTriggerStudy: return "BTagAndTriggerStudy";
-        case AnalysisMode::kTriggerSFStudy:      return "TriggerSFStudy";
-        case AnalysisMode::kValidationStudy:     return "ValidationStudy";
+        case AnalysisMode::kDebug:               return "Debug";
         case AnalysisMode::kPrescan:  return "Prescan";
         default: return "Unknown";
     }
 }
 
 // =============================================================================
-// SelectionPolicy: 분석 모드에 따른 Cut 적용 여부 정의
+// [STEP3] Selection 강제(enforce) 모드 비트 — cut 테이블(kCutSequence)에서
+// "이 cut이 어느 모드에서 실제 reject로 작동하는가"를 선언한다.
+// 비트에 없는 모드에서는 관찰 전용(cutflow 기록만, reject 없음).
+// =============================================================================
+enum : uint8_t {
+    kSelBitMainLike = 0x1,                          // main + debug (debug는 main 미러)
+    kSelBitBtagTrig = 0x2,                          // btagtrig (skim 생산)
+    kSelEnforceAll  = kSelBitMainLike | kSelBitBtagTrig,
+    kSelObserveOnly = 0x0                           // 어떤 모드에서도 cut 아님
+};
+inline uint8_t selectionModeBit(AnalysisMode m) {
+    switch (m) {
+        case AnalysisMode::kMainAnalysis:
+        case AnalysisMode::kDebug:               return kSelBitMainLike;
+        case AnalysisMode::kBTagAndTriggerStudy: return kSelBitBtagTrig;
+        default:                                 return 0;  // prescan: selectObjects 미호출
+    }
+}
+
+// =============================================================================
+// SelectionPolicy: 모드별 "비-cut" 동작 정의
+// [STEP3] cut on/off 부울 4종(applyTriggerCut/applyLeptonVeto/applyBJetCut/
+// applyHadWMassCut)은 cut 테이블의 enforceIn 비트마스크로 흡수 — 여기엔
+// object 수집·Higgs reco 등 cut이 아닌 동작만 남는다.
 // =============================================================================
 struct SelectionPolicy {
-    bool applyTriggerCut;
-    bool applyLeptonVeto;
-    bool applyBJetCut;
-    bool applyHadWMassCut;
-    bool collectLeptons;
-    bool requireLeadMuonOnly;
-    bool doHiggsReconstruction;
-    bool requireSingleMuon;
-    
+    bool collectLeptons;        // lepton 수집 (btagtrig: muon control)
+    bool requireLeadMuonOnly;   // lead lepton gate를 muon으로 한정
+    bool doHiggsReconstruction; // chi2 Higgs reco 수행 여부
+
     static SelectionPolicy fromMode(AnalysisMode mode) {
-        SelectionPolicy p;
+        SelectionPolicy p{false, false, false};
         switch (mode) {
             case AnalysisMode::kMainAnalysis:
-                //   Trig  LepV  bJet  HadW  CollLep leadMu HiggsReco Req1Mu
-                p = {true, true, true, true, false, false, true, false};
+            case AnalysisMode::kDebug:   // debug = main 미러
+                p.doHiggsReconstruction = true;
                 break;
             case AnalysisMode::kBTagAndTriggerStudy:
-                p = {false, false, false, false, true, true, false, false};
-                break;
-            case AnalysisMode::kTriggerSFStudy:
-                p = {false, false, true, false, true, true, false, true};
-                break;
-            case AnalysisMode::kValidationStudy:
-                // Identical to kMainAnalysis by default; specific cuts and SF
-                // applications are toggled via _validationConfig at run time.
-                // HiggsReco kept ON so we can reconstruct when nbJets>=4 events
-                // exist; selectObjects gates the actual reco call.
-                p = {true, true, true, true, false, false, true, false};
+                p.collectLeptons      = true;
+                p.requireLeadMuonOnly = true;
                 break;
             case AnalysisMode::kPrescan:
-                // No selection at all — accumulator only.
-                p = {false, false, false, false, false, false, false, false};
-                break;
+                break;   // selectObjects 미호출 — 전부 false
         }
         return p;
     }
-    
+
     void print() const {
-        std::cout << "\n=== Selection Policy =======================" << std::endl;
-        std::cout << "  Trigger Cut:                              " << (applyTriggerCut ? "ON" : "OFF") << std::endl;
-        std::cout << "  Lepton Veto:                              " << (applyLeptonVeto ? "ON" : "OFF") << std::endl;
-        std::cout << "  b-Jet Cut:                                " << (applyBJetCut ? "ON" : "OFF") << std::endl;
-        std::cout << "  HadW Mass Cut:                            " << (applyHadWMassCut ? "ON" : "OFF") << std::endl;
+        std::cout << "\n=== Selection Policy (non-cut behaviours) ===" << std::endl;
         std::cout << "  Collect Leptons:                          " << (collectLeptons ? "YES" : "NO") << std::endl;
         std::cout << "  Require Lead Muon only (Not Lead Elec):   " << (requireLeadMuonOnly ? "YES" : "NO") << std::endl;
         std::cout << "  Higgs Reco:                               " << (doHiggsReconstruction ? "YES" : "NO") << std::endl;
-        std::cout << "  Require 1 Muon:                           " << (requireSingleMuon ? "YES" : "NO") << std::endl;
+        std::cout << "  (cut 강제 여부는 kCutSequence의 enforceIn 비트 참조)" << std::endl;
         std::cout << "============================================\n" << std::endl;
     }
 };
@@ -150,34 +164,9 @@ struct SelectionPolicy {
 // =============================================================================
 
 
-std::map<std::string, float> cut { 
-    {"nJets", 6} // nJets higher than  // [round2] was 8; ttH AN / trigger SF baseline 
-    , {"nLeptons", 0} // nLepton equals to
-    //, {"nVetoLeptons", 0} // nVetoLepton equals to
-    , {"nbJets", 2}  // [round2] was 4; ttH AN / trigger SF baseline
-    , {"jetPt", 30} // jet pT higher than
-    , {"leadElePt", 30}     //// New Def for leptons to veto at Hadronic channel 
-    , {"leadMuonPt", 29}    //// New Def for leptons to veto at Hadronic channel
-    , {"subLeadElePt", 15}  //// New Def for leptons to veto at Hadronic channel
-    , {"subLeadMuonPt", 15} //// New Def for leptons to veto at Hadronic channel
-    //    , {"vetoLepPt", 15} // lepton pT higher than
-    , {"boostedJetPt", 10} // boostedJet pT higher than
-    , {"6thJetsPT", 40}
-    , {"HT", 500}
-    , {"nlJets", 0} // light jet higher than
-    , {"hadHiggsPt", 20} // hadronic Higgs pT higher than
-    , {"jetEta", 2.4} // jet eta higher than
-    , {"eleEta", 2.5} // electron eta higher than
-    , {"muonEta", 2.4} // muon eta higher than
-    , {"boostedJetEta", 2.4} // boostedJet eta higher than
-    , {"muonIso", 0.15} // muon isolation less than
-////    , {"eleIso", 0.1}  // ele isolation less than
-    , {"jetID", 6}   // pass tight and tightLepVeto ID
-    , {"jetPUid", 4}   // pass loose cut fail tight and medium
-    , {"bTagDisc", 0.80}
-    , {"trigger", 1.0} // trigger
-    , {"filter",  1.0} // noise filter
-    , {"pv", 1}}; // primary vertex  
+// [STEP3] 전역 cut map 제거 — include/SelectionCuts.h (namespace Cuts)로 대체.
+//         map operator[]의 무음 0-삽입 함정과 타입 손실 제거. 원형은
+//         docs/backup_20260611/ttHHanalyzer_unified.h 참조.
 
 class objectPhysics {
  public:
@@ -1043,89 +1032,9 @@ class event{
     TLorentzVector _sumJetp4, _sumSelJetp4, _sumSelbJetp4, _sumHadronicHiggsp4, _sumLightJetp4, _sumSelMuonp4, _sumSelElectronp4; 
 };
 
-// ============================================================
-// [NEW] ValidationConfig: per-scenario cut/SF toggle bundle
-// ------------------------------------------------------------
-// Used only when _analysisMode == kValidationStudy.
-// Defaults reproduce kMainAnalysis behaviour exactly when all
-// booleans are at their default values.
-//
-// The four knobs that change CUT behaviour:
-//   nbJetsCut         : minimum b-jet count required at step 8
-//                       (-1 means "skip the cut entirely")
-//   applyHadWWindow   : turn ON/OFF the 30 < hadWMass < 250 cut
-//   applyHiggsWindow  : turn ON/OFF a Higgs mass window
-//                       (cut value: cMHWindowLo, cMHWindowHi)
-//   tightenJet8       : if true, raise the nJets cut to >=8
-//                       (default ≥7 in the existing analyzer)
-//
-// The four knobs that change WEIGHT behaviour (additive ablation):
-//   applyBtagShapeSF  : enable/disable b-tag shape SF
-//   applyBtagNormSF   : enable/disable b-tag norm reweight ratio
-//   applyTriggerSF    : enable/disable trigger SF
-//   applyTopPtSF      : enable/disable top-pT reweight (default OFF;
-//                       reserved for when corrMgr supports it)
-//
-// The single knob that changes RECO behaviour:
-//   forceHiggsRecoMinBjets : minimum b-jet count needed to attempt
-//                            Higgs reconstruction; reco is skipped
-//                            (chi2 left at sentinel) if event has fewer.
-//                            Default = 4. Set to 0 to disable.
-// ============================================================
-struct ValidationConfig {
-    // --- Cut toggles ---
-    int   nbJetsCut             = 4;     // -1 disables, otherwise nbJets >= value
-    bool  applyHadWWindow       = true;
-    bool  applyHiggsWindow      = false; // off by default to match current analyzer
-    bool  tightenJet8           = false; // raise nJets cut to >=8 if true
+// [STEP2] ValidationConfig struct 제거됨 — kValidationStudy 모드 삭제.
+//         원형은 docs/backup_20260611/ttHHanalyzer_unified.h 참조.
 
-    // --- Higgs reco gating ---
-    int   forceHiggsRecoMinBjets = 4;    // require >=4 b-jets to run Higgs reco
-
-    // --- SF on/off ---
-    bool  applyBtagShapeSF = true;
-    bool  applyBtagNormSF  = true;
-    bool  applyTriggerSF   = true;
-    bool  applyTopPtSF     = false;
-
-    // --- ttH VR style preset (overrides everything when true) ---
-    bool  ttHVRStyle       = false;
-
-    // --- Histogram suffix to disambiguate parallel scenarios ---
-    // (used only as a courtesy log message; output dir naming is
-    // controlled by submit script)
-    std::string scenarioName = "default";
-
-    void applyTtHVRPreset() {
-        // ttH AN VR (4 jet, 3 b-tag, no Higgs window).
-        // Reference: AN-19-094 §6.x VR definition.
-        nbJetsCut             = 3;
-        applyHadWWindow       = false;
-        applyHiggsWindow      = false;
-        tightenJet8           = false;
-        forceHiggsRecoMinBjets = 4; // still need 4 to reco
-        applyBtagShapeSF = true;
-        applyBtagNormSF  = true;
-        applyTriggerSF   = true;
-        applyTopPtSF     = false;
-        scenarioName = "ttHVR";
-    }
-
-    void print() const {
-        std::cout << "[ValidationConfig] scenario=" << scenarioName
-                  << " nbJetsCut=" << nbJetsCut
-                  << " hadWWin=" << applyHadWWindow
-                  << " higgsWin=" << applyHiggsWindow
-                  << " tightenJet8=" << tightenJet8
-                  << " hRecoMin=" << forceHiggsRecoMinBjets
-                  << " | SF: btagShape=" << applyBtagShapeSF
-                  << " btagNorm=" << applyBtagNormSF
-                  << " trig=" << applyTriggerSF
-                  << " topPt=" << applyTopPtSF
-                  << " ttHVR=" << ttHVRStyle
-                  << std::endl;
-    }
-};
 
 class ttHHanalyzer_unified {
  public:
@@ -1159,6 +1068,14 @@ class ttHHanalyzer_unified {
 	_DataOrMC = DataOrMC;
 	_sampleName = sampleName;
 	_era = trimWhitespace(era);
+
+    // [STEP2][debug] kDebug 모드: 디버그 로거 활성화.
+    // 이벤트 단위 상세 출력 수는 환경변수 TTHH_DEBUG_NEVENTS (기본 10).
+    if (_analysisMode == AnalysisMode::kDebug) {
+        long nDbg = 10;
+        if (const char* sEnv = std::getenv("TTHH_DEBUG_NEVENTS")) nDbg = std::atol(sEnv);
+        _dbg.enable(nDbg);
+    }
     
     std::cout << "\n========================================" << std::endl;
     std::cout << "  Initializing ttHH Analyzer" << std::endl;
@@ -1189,7 +1106,12 @@ class ttHHanalyzer_unified {
 	if(_DataOrMC == "Data") isData = true;
 
     // [변경] sampleName을 4번째 인자로 전달 → process별 b-tag reweight 조회용
-    corrMgr = new CorrectionsManager(yearForCorr, _era, isData, _sampleName);
+    // [STEP4] main/debug는 파생 보정(trigger SF, b-tag norm RW) 필수 —
+    // 누락 시 CorrectionsManager가 FATAL(47/48)로 종료한다.
+    // btagtrig/prescan은 부트스트랩 허용 (그 보정의 입력을 만드는 모드).
+    const bool requireDerived = (_analysisMode == AnalysisMode::kMainAnalysis ||
+                                 _analysisMode == AnalysisMode::kDebug);
+    corrMgr = new CorrectionsManager(yearForCorr, _era, isData, _sampleName, requireDerived);
 
 	debugCorrections = debug;
 
@@ -1225,16 +1147,6 @@ class ttHHanalyzer_unified {
     //   (prescan produces the inputs to this JSON, so it need not exist yet).
     void setStitchFactorsFile(const std::string& path) {
         _stitch.load(path, _sampleName);
-    }
-
-    // [NEW] Set validation-mode parameters at run time.
-    // Caller (driver) parses YAML/argv and pushes them in.
-    void setValidationConfig(const ValidationConfig& cfg) {
-        _valCfg = cfg;
-        if (_analysisMode == AnalysisMode::kValidationStudy) {
-            std::cout << "  [Validation] applying scenario: ";
-            _valCfg.print();
-        }
     }
 
     ~ttHHanalyzer_unified() {
@@ -1301,6 +1213,19 @@ class ttHHanalyzer_unified {
     std::map<int,std::string> _btagKeyByExpSub;  // [stitch] diag: expandedSub -> b-tag processKey
     Int_t _genTtbarIdNano  = -1;        // NanoAOD genTtbarId (mirror, for output tree)
     Int_t _expandedTtbarId = -1;        // resolved id: Expanded if in lookup, else nano
+    // [STEP5] Event shape 변수 — analyze()에서 selected jets / b-jets로 계산,
+    // output tree branch로 기록 (DNN 입력 후보). -1 = 계산 불가(객체 부족).
+    Float_t _es_aplanarity      = -1.f, _es_sphericity      = -1.f;
+    Float_t _es_transSphericity = -1.f, _es_C = -1.f, _es_D = -1.f;
+    Float_t _es_bjetAplanarity      = -1.f, _es_bjetSphericity = -1.f;
+    Float_t _es_bjetTransSphericity = -1.f, _es_bjetC = -1.f, _es_bjetD = -1.f;
+
+    Float_t _stitchWeight  = 1.0f;      // [stitch] per-event stitch multiplier written to
+                                        // the output tree. 1.0 for Data / non-plan samples /
+                                        // modes where stitching is gated off (trigsf, ...).
+                                        // Downstream tools rebuild the clean stitched base:
+                                        //   base = genWeight*PU*L1Prefire*xsec * stitchWeight
+                                        // (evtWeight already has btagSF/trigSF/normRW in it).
     // Analysis Mode Variable Declaration
     AnalysisMode _analysisMode;
     SelectionPolicy _policy;    
@@ -1392,10 +1317,8 @@ void accumulatePrescanEvent();
 void writePrescanTree();
 
 
-    // [NEW] Validation-mode runtime config — only used when
-    // _analysisMode == kValidationStudy. Filled by Init/loop from
-    // YAML-passed flags.
-    ValidationConfig _valCfg;
+    // [STEP2][debug] kDebug 모드 단계별 검증 로거 (다른 모드에선 no-op)
+    DebugLogger _dbg;
 
     TH1D * _hJES, * _hbJES, *_hbJetEff, *_hJetEff, *_hSysbTagM ;
 
@@ -1465,6 +1388,27 @@ void writePrescanTree();
         kHiggsMass,         // 12  Higgs mass window (currently off in main)
         kTotal              // 13  total
     };
+
+    // ─────────────────────────────────────────────────────────────────────
+    // [STEP3] 선언적 cut 테이블 — selection 시퀀스의 단일 정의
+    //   enforceIn        : cut으로 강제되는 모드 비트 (그 외 모드에선 관찰만)
+    //   recordOnlyIfPass : true = 조건 충족 시에만 cutflow 기록 (≥3/≥4 관찰 단계)
+    //   pass             : 통과 조건 (nullptr = 항상 통과; 기록 전용 단계)
+    //   onAfter          : 해당 단계 생존 직후의 부수 작업 (통계/SF 적용)
+    // 실제 테이블(kCutSequence)은 ttHHanalyzer_unified.cc의 selectObjects 위에
+    // 정의 — selection 전체가 거기서 한 화면의 표로 보인다.
+    // ─────────────────────────────────────────────────────────────────────
+    struct CutDef {
+        CutStep      step;
+        const char*  label;             // _cutStepLabels와 동일해야 (사람용)
+        uint8_t      enforceIn;
+        bool         recordOnlyIfPass;
+        bool (*pass)(ttHHanalyzer_unified&, event&, float wMass);
+        void (*onAfter)(ttHHanalyzer_unified&, event&);
+    };
+    static const std::vector<CutDef> kCutSequence;
+    void applyEventScaleFactors(event* thisEvent);  // [STEP3] SF 블록 (HT 통과 직후)
+    void computeLeptonJetStats(event* thisEvent);   // [STEP3] lepton-jet 통계
 
     // cutStepLabels must match above CutStep!!!
     const std::vector<std::string> _cutStepLabels = {
@@ -2966,6 +2910,21 @@ void writePrescanTree();
 	// (which now includes 61/62=tt+bbb, 71/72=tt+4b). Both are -1 on non-MC.
 	_inputTree->Branch("genTtbarId",      &_genTtbarIdNano,  "genTtbarId/I");
 	_inputTree->Branch("expandedTtbarId", &_expandedTtbarId, "expandedTtbarId/I");
+	// [stitch] per-event stitch multiplier (1.0 if not applicable). Lets
+	// derivative tools (b-tag reweight / trigger SF) rebuild the stitched
+	// pre-SF base weight without duplicating StitchFactors logic.
+	_inputTree->Branch("stitchWeight",    &_stitchWeight,    "stitchWeight/F");
+	// [STEP5] event shape branch (jets / b-jets)
+	_inputTree->Branch("aplanarity",          &_es_aplanarity,          "aplanarity/F");
+	_inputTree->Branch("sphericity",          &_es_sphericity,          "sphericity/F");
+	_inputTree->Branch("transSphericity",     &_es_transSphericity,     "transSphericity/F");
+	_inputTree->Branch("eventC",              &_es_C,                   "eventC/F");
+	_inputTree->Branch("eventD",              &_es_D,                   "eventD/F");
+	_inputTree->Branch("bjetAplanarity",      &_es_bjetAplanarity,      "bjetAplanarity/F");
+	_inputTree->Branch("bjetSphericity",      &_es_bjetSphericity,      "bjetSphericity/F");
+	_inputTree->Branch("bjetTransSphericity", &_es_bjetTransSphericity, "bjetTransSphericity/F");
+	_inputTree->Branch("bjetEventC",          &_es_bjetC,               "bjetEventC/F");
+	_inputTree->Branch("bjetEventD",          &_es_bjetD,               "bjetEventD/F");
 	_inputTree->Branch("bTagWeight", &bTagWeight_central_, "bTagWeight/F");
 	_inputTree->Branch("failGoldenJson", &failGoldenJson, "failGoldenJson/O");
 	_inputTree->Branch("passMETFilters", &passMETFilters, "passMETFilters/O");

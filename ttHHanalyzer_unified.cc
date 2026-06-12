@@ -120,6 +120,38 @@ void ttHHanalyzer_unified::performAnalysis(){
 
 void ttHHanalyzer_unified::loop(sysName sysType, bool up){
 
+    // [STEP3][debug] kDebug 모드: cut 테이블 무결성 검사 + 덤프.
+    // kCutSequence가 CutStep enum 순서와 _cutStepLabels에 정확히 1:1인지
+    // 시작 시 검증한다 (표/라벨/enum의 3중 정의가 어긋나는 사고 방지).
+    if (_dbg.on()) {
+        std::printf("[dbg][seltable] ── kCutSequence (%zu entries) ──\n", kCutSequence.size());
+        bool tableOK = true;
+        for (size_t i = 0; i < kCutSequence.size(); ++i) {
+            const auto& c = kCutSequence[i];
+            const int idx = static_cast<int>(c.step);
+            const bool stepOK  = (idx == static_cast<int>(i));
+            const bool labelOK = (idx < static_cast<int>(_cutStepLabels.size()) &&
+                                  _cutStepLabels.at(idx) == c.label);
+            std::printf("[dbg][seltable]  %2zu %-16s enforce=0x%X %s%s%s\n",
+                        i, c.label, c.enforceIn,
+                        c.recordOnlyIfPass ? "(관찰:충족시기록) " : "",
+                        stepOK ? "" : "[STEP-ORDER MISMATCH!] ",
+                        labelOK ? "" : "[LABEL MISMATCH vs _cutStepLabels!]");
+            tableOK = tableOK && stepOK && labelOK;
+        }
+        std::printf("[dbg][seltable] integrity: %s\n", tableOK ? "OK" : "** BROKEN — 위 항목 확인 **");
+
+        // [STEP4][debug] 경로 통제 env 상태 덤프 — yml→condor sh→env 주입이
+        // 실제로 전달됐는지 로컬/condor 로그에서 즉시 확인할 수 있다.
+        const char* pathEnvs[] = { "TTHH_JSONPOG_PATH", "TTHH_GOLDENJSON_PATH",
+                                   "TTHH_TRIGSF_DIR",   "TTHH_BTAGRW_JSON",
+                                   "STITCH_FACTORS_JSON", "EXPANDED_TTBARID_DIR" };
+        for (const char* pe : pathEnvs) {
+            const char* v = std::getenv(pe);
+            std::printf("[dbg][paths] %-22s = %s\n", pe, (v && *v) ? v : "(unset -> default)");
+        }
+    }
+
 
     int nevents = _ev->size();
     // nevents = 100; // DEBUG: removed - run all events for full cross-validation
@@ -197,6 +229,7 @@ void ttHHanalyzer_unified::loop(sysName sysType, bool up){
     // shows exactly what the stitch did to this sample's composition.
     // (main / btagtrig only; skipped when the JSON was not loaded.)
     if (_stitch.loaded()) _stitch.printRunSummary();
+    _dbg.summary();   // [STEP2][debug] kDebug 종료 요약 (cutflow + 값 집계 + NaN/Inf)
 
     // [stitch] diagnostic — how this sample's events mapped expandedTtbarId%100
     // to the b-tag-reweight processKey. If 61/62/71/72 share the 53/54/55 key,
@@ -378,8 +411,8 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
 ////        // CHECK: 현재 Veto Muon으로 TightID를 사용 중. 일반적으로 Veto 용도로는 LooseID를 권장함.
 ////        // Muon POG 권장사항 확인 필요 (예: LooseID + LooseIso).
 ////        // TightID 사용 시 "Loose하지만 가짜는 아닌" 뮤온을 놓쳐서 Hadronic 채널 오염 가능성 있음.
-////        if(fabs(muonT[i].eta) < cut["muonEta"] && muonT[i].tightId == true && muonT[i].pfRelIso04_all  < cut["muonIso"]){
-////            if(muonT[i].pt > cut["leadMuonPt"]){
+////        if(fabs(muonT[i].eta) < Cuts::muonEta && muonT[i].tightId == true && muonT[i].pfRelIso04_all  < Cuts::muonIso){
+////            if(muonT[i].pt > Cuts::leadMuonPt){
 ////                thereIsALeadLepton = true;
 ////                break;
 ////            }
@@ -389,8 +422,8 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
 ////        for(int i = 0; i < ele.size(); i++){
 ////            // CHECK: Electron Veto 역시 WP90(Tight에 가까움) 사용 중. Egamma POG의 Veto WP 권장사항 확인 필요.
 ////            if(fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660){  //Electrons tracked neither in the barrel nor in the endcap are discarded.
-////                if(fabs(ele[i].eta) < cut["eleEta"] && ele[i].mvaFall17V2Iso_WP90 == true && ele[i].pfRelIso03_all  < cut["eleIso"]){ 
-////                    if(ele[i].pt > cut["leadElePt"]){
+////                if(fabs(ele[i].eta) < Cuts::eleEta && ele[i].mvaFall17V2Iso_WP90 == true && ele[i].pfRelIso03_all  < eleIso){ 
+////                    if(ele[i].pt > Cuts::leadElePt){
 ////                        thereIsALeadLepton = true;
 ////                        break;
 ////                    }
@@ -410,20 +443,20 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
     int nVetoMuons = 0, nVetoEle = 0;
 
     for(int i = 0; i < muonT.size(); i++){
-        if(fabs(muonT[i].eta) < cut["muonEta"] && 
+        if(fabs(muonT[i].eta) < Cuts::muonEta && 
            muonT[i].tightId == true && 
-           muonT[i].pfRelIso04_all < cut["muonIso"] &&
-           muonT[i].pt > cut["subLeadMuonPt"]) {
+           muonT[i].pfRelIso04_all < Cuts::muonIso &&
+           muonT[i].pt > Cuts::subLeadMuonPt) {
             nVetoMuons++;
         }
     }
     for(int i = 0; i < ele.size(); i++){
         if((fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || 
             fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660) &&
-           fabs(ele[i].eta) < cut["eleEta"] && 
+           fabs(ele[i].eta) < Cuts::eleEta && 
            ele[i].mvaFall17V2Iso_WP90 == true && 
-           //ele[i].pfRelIso03_all < cut["eleIso"] && // We don't need Iso, It's already in ID
-           ele[i].pt > cut["subLeadElePt"]) {
+           //ele[i].pfRelIso03_all < eleIso && // We don't need Iso, It's already in ID
+           ele[i].pt > Cuts::subLeadElePt) {
             nVetoEle++;
         }
     }
@@ -444,10 +477,10 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
         bool hasLeadMuon = false;
         for(int i = 0; i < muonT.size(); i++){
             // Check for Lead Muon (High pT, Tight ID)
-            if(fabs(muonT[i].eta) < cut["muonEta"] && 
+            if(fabs(muonT[i].eta) < Cuts::muonEta && 
                muonT[i].tightId == true && 
-               muonT[i].pfRelIso04_all < cut["muonIso"] &&
-               muonT[i].pt > cut["leadMuonPt"]) { 
+               muonT[i].pfRelIso04_all < Cuts::muonIso &&
+               muonT[i].pt > Cuts::leadMuonPt) { 
                 hasLeadMuon = true;
                 break;
             }
@@ -461,10 +494,10 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
                 // Check for Lead Electron (High pT, Tight ID)
                 if((fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || 
                     fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660) &&
-                   fabs(ele[i].eta) < cut["eleEta"] && 
+                   fabs(ele[i].eta) < Cuts::eleEta && 
                    ele[i].mvaFall17V2Iso_WP90 == true && 
-                   //ele[i].pfRelIso03_all < cut["eleIso"] && // We don't need Iso, It's already in ID
-                   ele[i].pt > cut["leadElePt"]) { 
+                   //ele[i].pfRelIso03_all < eleIso && // We don't need Iso, It's already in ID
+                   ele[i].pt > Cuts::leadElePt) { 
                     hasLeadElectron = true;
                     break;
                 }
@@ -499,10 +532,10 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
             // Even if TriggerSF requires a Lead Muon to pass the gate, 
             // we collect softer muons here to check for Dilepton veto later.
             for(int i = 0; i < muonT.size(); i++){
-                if(fabs(muonT[i].eta) < cut["muonEta"] && 
+                if(fabs(muonT[i].eta) < Cuts::muonEta && 
                    muonT[i].tightId == true && 
-                   muonT[i].pfRelIso04_all < cut["muonIso"] &&
-                   muonT[i].pt > cut["subLeadMuonPt"]) { 
+                   muonT[i].pfRelIso04_all < Cuts::muonIso &&
+                   muonT[i].pt > Cuts::subLeadMuonPt) { 
                    
                     currentMuon = new objectLep(muonT[i].pt, muonT[i].eta, muonT[i].phi, 0.);
                     currentMuon->charge = muonT[i].charge;
@@ -518,10 +551,10 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
             for(int i = 0; i < ele.size(); i++){
                 if((fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || 
                     fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660) &&
-                   fabs(ele[i].eta) < cut["eleEta"] && 
+                   fabs(ele[i].eta) < Cuts::eleEta && 
                    ele[i].mvaFall17V2Iso_WP90 == true && 
-                   //ele[i].pfRelIso03_all < cut["eleIso"] && // We don't need Iso, It's already in ID
-                   ele[i].pt > cut["subLeadElePt"]) { 
+                   //ele[i].pfRelIso03_all < eleIso && // We don't need Iso, It's already in ID
+                   ele[i].pt > Cuts::subLeadElePt) { 
                    
                     currentEle = new objectLep(ele[i].pt, ele[i].eta, ele[i].phi, 0.);
                     currentEle->charge = ele[i].charge;
@@ -550,7 +583,7 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
 
         // 1. Pre-cuts
         // [UPDATE] 보정 후 기준으로 pT 컷을 적용하기 위해 여기서는 eta/ID만 최소한으로 확인
-        if( !(fabs(jetRaw.eta) < cut["jetEta"] && jetRaw.jetId >= cut["jetID"]) ) continue;
+        if( !(fabs(jetRaw.eta) < Cuts::jetEta && jetRaw.jetId >= Cuts::jetID) ) continue;
  
         // 2. Calculation (지역 변수 사용, Heap 할당 X)
         float ntuplePt  = jetRaw.pt;                // NanoAOD Default (Corrected)
@@ -596,11 +629,11 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
 	    const double massJECJER = massJEC * jerFactor;
 
         // 3. Final Cuts (on Smeared pT)
-        if (smearedPt < cut["jetPt"]) continue;
+        if (smearedPt < Cuts::jetPt) continue;
         
         // PU ID Check (Low pT only)
         passPuId = true;
-        if (smearedPt < 50.0 && jetRaw.puId < cut["jetPUid"]) {
+        if (smearedPt < 50.0 && jetRaw.puId < Cuts::jetPUid) {
              continue; 
         }
 
@@ -705,6 +738,211 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
 //   이유: 두 보정 모두 selection 후의 kinematics (HT, nJets, jet6PT)에 의존하므로
 //   cut 이전에 적용하면 의미가 없다.
 //   단, cutflow 중간 단계에서는 보정 전 weight를 사용하여 selection efficiency를
+// ============================================================================
+// [STEP3] applyEventScaleFactors — 이벤트 단위 보정(SF) 블록
+// HT cut 통과 직후(= nbjet cut 이전)에 kCutSequence의 onAfter로 호출된다.
+// 기존 selectObjects 인라인 블록을 메서드로 추출 — 내용은 비트 동일 이동.
+// 위치 의미(왜 step 7과 8 사이인가)는 블록 첫 주석 [MOVED ...] 참조.
+// ============================================================================
+void ttHHanalyzer_unified::applyEventScaleFactors(event* thisEvent){
+    // ══════════════════════════════════════════════════════════════════════
+    // [MOVED from post-step-10 to pre-step-8]
+    // Event-level corrections applied here — between HT cut (step 7) and
+    // nbjet cut (step 8) — so cutflow histograms from step 8 onwards see
+    // the SF-corrected MC. This is required to read the b-tag SF / trigger
+    // SF / norm reweight effect from the cutflow ratios.
+    //
+    // [ttH AN A.2.1] inclusive ttbar dispatched by genTtbarId; non-ttbar
+    // by sample name. See Config_TtCatGroup.hh::MakeProcessKey().
+    // ══════════════════════════════════════════════════════════════════════
+    triggerSF_        = 1.0f;
+    triggerSF_up_     = 1.0f;
+    triggerSF_down_   = 1.0f;
+    btagNormReweight_ = 1.0f;
+
+    // Always populate the 3 chain weights with the FULL meaning, regardless
+    // of validation toggles — they are diagnostic, not the production path.
+    _evtWeight_chain_raw    = _evtWeight;     // baseline only
+    _evtWeight_chain_btagSF = _evtWeight;     // will multiply btagShape below
+    _evtWeight_chain_full   = _evtWeight;     // will multiply all SFs below
+
+    if (_DataOrMC != "Data") {
+
+        // ── b-tag shape SF ─────────────────────────────────────────────
+        // Both chains get it (even if legacy _evtWeight skips it in
+        // validation when toggle is off).
+        _evtWeight_chain_btagSF *= bTagWeight_central_;
+        _evtWeight_chain_full   *= bTagWeight_central_;
+        _evtWeight *= bTagWeight_central_;   // [STEP2] 토글 제거 — 항상 적용
+        _dbg.kv("sf", "btagShape", bTagWeight_central_);
+
+        // ── Trigger SF ────────────────────────────────────────────────
+        const int    nbjet   = thisEvent->getnSelbJet();
+        const double ht      = thisEvent->getSumSelJetScalarpT();
+        const double jet6pt  = thisEvent->getSelJets()->at(5)->getp4()->Pt();
+        const double jet6eta = thisEvent->getSelJets()->at(5)->getp4()->Eta();
+
+        triggerSF_      = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt,  0.0));
+        triggerSF_up_   = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt, +1.0));
+        triggerSF_down_ = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt, -1.0));
+
+        _evtWeight_chain_full *= triggerSF_;
+        _evtWeight *= triggerSF_;            // [STEP2] 토글 제거 — 항상 적용
+        _dbg.kv("sf", "triggerSF", triggerSF_);
+
+        // ── b-tag normalization reweight ──────────────────────────────
+        // [ttHH AN-2022/122 / ttH AN App. A.2.1] the b-tag-shape SF distorts
+        // the per-category normalization, so it is restored per (sample, HF
+        // category). Key on the EXPANDED id (not NanoAOD genTtbarId) so tt+nb
+        // (61/62/71/72) carries its own reweight bin, distinct from tt+2b
+        // (53/54/55) — high b-jet multiplicity is exactly where tt+nb lives.
+        // The stitch multiplier above already fixed the MC composition feeding
+        // this derivation, so the reweight is computed on the stitched mix.
+        const int nJets = thisEvent->getnSelJet();
+        const std::string processKey = TtCatGroup::MakeProcessKey(
+            _sampleName, _expandedTtbarId);
+        if (processKey.empty()) {
+            std::cerr << "\n[FATAL][btagRW] MakeProcessKey() returned an EMPTY key for"
+                      << " sample='" << _sampleName << "' expandedTtbarId="
+                      << _expandedTtbarId << " (sub="
+                      << (((_expandedTtbarId % 100) + 100) % 100) << ").\n"
+                      << "  Config_TtCatGroup.hh must map this code. Aborting (exit 45)"
+                      << " so the Condor job is flagged.\n" << std::endl;
+            std::exit(45);
+        }
+        // diagnostic: remember the (expandedSub -> processKey) mapping once, so
+        // the end-of-job log shows whether 61/62/71/72 get keys distinct from 53.
+        {
+            const int esub = ((_expandedTtbarId % 100) + 100) % 100;
+            if (_btagKeyByExpSub.find(esub) == _btagKeyByExpSub.end())
+                _btagKeyByExpSub[esub] = processKey;
+        }
+        btagNormReweight_ = static_cast<float>(
+            corrMgr->getBTagReweight("central", processKey, nJets, ht));
+        if (!std::isfinite(btagNormReweight_)) {
+            std::cerr << "\n[FATAL][btagRW] non-finite reweight (" << btagNormReweight_
+                      << ") for processKey='" << processKey << "' nJets=" << nJets
+                      << " ht=" << ht << ". Aborting (exit 46).\n" << std::endl;
+            std::exit(46);
+        }
+
+        _evtWeight_chain_full *= btagNormReweight_;
+        _evtWeight *= btagNormReweight_;     // [STEP2] 토글 제거 — 항상 적용
+        _dbg.kv("sf", "btagNormRW", btagNormReweight_);
+        _dbg.kv("sf", "evtWeight_afterSF", _evtWeight);
+
+        if (debugCorrections) {
+            std::cout << "[selectObjects] Corrections (mode="
+                      << analysisModeName(_analysisMode) << "):"
+                      << " sample=" << _sampleName
+                      << " genTtbarId=" << _ev->genTtbarId
+                      << " expandedTtbarId=" << _expandedTtbarId
+                      << " processKey=" << processKey
+                      << " btagSF=" << bTagWeight_central_
+                      << " trigSF=" << triggerSF_
+                      << " btagRW=" << btagNormReweight_
+                      << " w_raw="    << _evtWeight_chain_raw
+                      << " w_btagSF=" << _evtWeight_chain_btagSF
+                      << " w_full="   << _evtWeight_chain_full
+                      << " _evtWeight=" << _evtWeight
+                      << std::endl;
+        }
+    }
+}
+
+// ============================================================================
+// [STEP3] computeLeptonJetStats — lepton-jet / b-jet-lepton 보조 통계
+// lepton veto 단계 직후(통과/관찰 무관, 생존 시) kCutSequence의 onAfter로 호출.
+// ============================================================================
+void ttHHanalyzer_unified::computeLeptonJetStats(event* thisEvent){
+    thisEvent->getStatsComb(thisEvent->getSelJets(),  thisEvent->getSelLeptons(), ljetStat);
+    thisEvent->getStatsComb(thisEvent->getSelbJets(), thisEvent->getSelLeptons(), lbjetStat);
+}
+
+// ============================================================================
+// [STEP3] kCutSequence — selection 시퀀스의 단일 정의 (선언적 cut 테이블)
+// ----------------------------------------------------------------------------
+// 열 의미:
+//   step / label        : cutflow 단계와 라벨 (_cutStepLabels와 1:1)
+//   enforceIn           : cut으로 "강제"되는 모드 비트
+//                         (kSelBitMainLike = main+debug, kSelBitBtagTrig = btagtrig,
+//                          kSelEnforceAll = 둘 다, kSelObserveOnly = 기록 전용)
+//   recordOnlyIfPass    : true = 조건 충족시에만 기록 (≥3/≥4 b-tag 관찰 단계)
+//   pass                : 통과 조건 (nullptr = 무조건 통과; 카운터 단계)
+//   onAfter             : 생존 직후 부수 작업
+//
+// cut 값(Cuts::*)의 출처는 include/SelectionCuts.h 의 AN 주석 참조.
+// ============================================================================
+const std::vector<ttHHanalyzer_unified::CutDef> ttHHanalyzer_unified::kCutSequence = {
+    // 0. 모든 이벤트 카운트
+    { CutStep::kNoCut,         "noCut",           kSelObserveOnly, false, nullptr, nullptr },
+
+    // 1. Hadronic trigger — main/debug에서만 강제 (btagtrig은 skim에 bit 저장만)
+    { CutStep::kHadTrigger,    "HadTrigger",      kSelBitMainLike, false,
+      [](ttHHanalyzer_unified&, event& e, float)->bool { return e.getHadTriggerAccept(); },
+      nullptr },
+
+    // 2. MET noise filter — 전 모드 강제 (skim invariant)  [AN §4.2]
+    { CutStep::kNoiseFilter,   "noiseFilter",     kSelEnforceAll,  false,
+      [](ttHHanalyzer_unified&, event& e, float)->bool { return e.getMETFilter(); },
+      nullptr },
+
+    // 3. Primary vertex — 전 모드 강제  [AN §4.2]
+    { CutStep::kPrimaryVertex, "pv>=1",           kSelEnforceAll,  false,
+      [](ttHHanalyzer_unified&, event& e, float)->bool { return e.getPVvalue(); },
+      nullptr },
+
+    // 4. nJets ≥ 6 — 전 모드 강제  [AN Tab.55]
+    { CutStep::kNumJets,       "njets>=6",        kSelEnforceAll,  false,
+      [](ttHHanalyzer_unified&, event& e, float)->bool { return e.getnSelJet() >= Cuts::nJets; },
+      nullptr },
+
+    // 5. 6th jet pT > 40 — 전 모드 강제 (HLT 성능)  [AN Tab.55]
+    { CutStep::kSixthJetPt,    "6thJetsPT>40",    kSelEnforceAll,  false,
+      [](ttHHanalyzer_unified&, event& e, float)->bool {
+          return e.getSelJets()->at(5)->getp4()->Pt() > Cuts::sixthJetPt; },
+      nullptr },
+
+    // 6. Lepton veto — main/debug에서만 강제 (btagtrig은 muon control 유지)
+    //    [AN Tab.55] 생존 시 lepton-jet 통계 계산 (이전 코드와 동일 위치)
+    { CutStep::kLeptonVeto,    "nlepton==0",      kSelBitMainLike, false,
+      [](ttHHanalyzer_unified&, event& e, float)->bool { return e.getnVetoLepton() == Cuts::nLeptons; },
+      [](ttHHanalyzer_unified& a, event& e){ a.computeLeptonJetStats(&e); } },
+
+    // 7. HT > 500 — 전 모드 강제  [AN Tab.55]
+    //    통과 직후 이벤트 단위 SF 적용 (b-tag shape × trigger SF × norm RW) —
+    //    step 8 이후 cutflow가 SF 보정된 MC를 보도록 하기 위함 ([MOVED] 주석 참조)
+    { CutStep::kHT,            "HT>500",          kSelEnforceAll,  false,
+      [](ttHHanalyzer_unified&, event& e, float)->bool { return e.getSumSelJetScalarpT() > Cuts::HT; },
+      [](ttHHanalyzer_unified& a, event& e){ a.applyEventScaleFactors(&e); } },
+
+    // 8. nbJets ≥ 2 (baseline) — main/debug 강제  [AN Tab.55] ([round2] was 4)
+    { CutStep::kNumbJets2,     "nbjets>=2",       kSelBitMainLike, false,
+      [](ttHHanalyzer_unified&, event& e, float)->bool { return e.getnSelbJet() >= Cuts::nbJets; },
+      nullptr },
+
+    // 9-10. nbJets ≥ 3 / ≥ 4 — 관찰 전용 (cut 아님; 충족 시에만 기록 →
+    //       cutflow ratio로 다음 단계 영향만 읽는다. SR 분류는 이후 단계)
+    { CutStep::kNumbJets3,     "nbjets>=3",       kSelObserveOnly, true,
+      [](ttHHanalyzer_unified&, event& e, float)->bool { return e.getnSelbJet() >= 3; },
+      nullptr },
+    { CutStep::kNumbJets4,     "nbjets>=4",       kSelObserveOnly, true,
+      [](ttHHanalyzer_unified&, event& e, float)->bool { return e.getnSelbJet() >= 4; },
+      nullptr },
+
+    // 11. Hadronic W mass window — main/debug 강제  [AN Tab.55: 30 < m_qq < 250]
+    { CutStep::kHadWMass,      "30<HadW<250",     kSelBitMainLike, false,
+      [](ttHHanalyzer_unified&, event&, float wMass)->bool {
+          return !(wMass < Cuts::hadWMassLo || wMass > Cuts::hadWMassHi); },
+      nullptr },
+
+    // 12. Higgs mass window — 현재 비활성 (05 Jan 2026), 카운터만
+    { CutStep::kHiggsMass,     "HiggsMassWindow", kSelObserveOnly, false, nullptr, nullptr },
+
+    // 13. Total — 최종 이벤트
+    { CutStep::kTotal,         "nTotal",          kSelObserveOnly, false, nullptr, nullptr },
+};
+
 //   편향 없이 계산할 수 있도록 한다.
 // ═══════════════════════════════════════════════════════════════════════════
 bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
@@ -721,6 +959,9 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
     // ──────────────────────────────────────────────────────────────────────
     auto processStep = [&](CutStep step, float wMassVal) {
         int idx = static_cast<int>(step);
+        // [STEP2][debug] 히스토그램과 독립적으로 stdout에서 cutflow 재구성
+        // (hCutFlow 채움 로직의 교차 검증용; kDebug에서만 동작)
+        _dbg.cut(idx, _cutStepLabels.at(idx).c_str(), _evtWeight);
         
         if (idx < _cutFlowCount.size()) {
             _cutFlowCount[idx]  += 1.0;
@@ -770,15 +1011,10 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
 
     auto* bjets = thisEvent->getSelbJets();
 
-    // [Validation] In kValidationStudy mode the b-jet cut may be loosened
-    // (e.g. nbJetsCut=2). We still want to run Higgs reco only when there
-    // are enough b-jets; when there aren't, leave _minChi2Higgs at the
-    // sentinel value (cLargeValue) so downstream fillCutStepHist treats
-    // these events as "no Higgs reco available".
-    const int hRecoMin =
-        (_analysisMode == AnalysisMode::kValidationStudy)
-            ? _valCfg.forceHiggsRecoMinBjets
-            : 4;  // unchanged behaviour for all other modes
+    // Higgs reco는 b-jet >= 4 일 때만 수행. 부족하면 _minChi2Higgs를 sentinel
+    // (cLargeValue)로 남겨 downstream(fillCutStepHist)이 "reco 없음"으로 처리.
+    // [STEP2] kValidationStudy 제거에 따라 _valCfg 가변 하한 분기 삭제.
+    const int hRecoMin = 4;
     if (_policy.doHiggsReconstruction) {
         const size_t nb = bjets->size();
         // Also guard against hRecoMin <= 0 (effectively disabled by user).
@@ -865,247 +1101,33 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
     // processStep()으로 cutflow를 기록한다.
     // ══════════════════════════════════════════════════════════════════════
 
-    // Step 0: No Cut — 모든 이벤트 카운트
-    processStep(CutStep::kNoCut, hadWMass);
-
-    // Step 1: Trigger — Hadronic trigger path 통과 여부
-    // Trigger Study와 B-tag SF 도출 시에는 trigger cut을 끌 수 있음 (policy 제어)
-    if (_policy.applyTriggerCut) { 
-        if(cut["trigger"] > 0 && thisEvent->getHadTriggerAccept() == false){
-            return false;
-        }
-    }
-    processStep(CutStep::kHadTrigger, hadWMass);
-
-    // Step 2: Noise Filter — MET noise filter 통과 여부
-    if(cut["filter"] > 0 && thisEvent->getMETFilter() == false){
-        return false;
-    }
-    processStep(CutStep::kNoiseFilter, hadWMass);
-
-    // Step 3: Primary Vertex — 유효한 primary vertex 존재 여부
-    if(cut["pv"] > 0 && thisEvent->getPVvalue() == false){
-        return false;
-    }
-    processStep(CutStep::kPrimaryVertex, hadWMass);
-
-    // Step 4: nJets >= 6 (또는 설정값) — 최소 jet 수 요구
-    if(!(thisEvent->getnSelJet() >= cut["nJets"] )){
-        return false;
-    }
-    processStep(CutStep::kNumJets, hadWMass);
-
-    // Step 5: 6th Jet Pt > 40 — 6번째 jet의 pT 하한
-    if(!(thisEvent->getSelJets()->at(5)->getp4()->Pt() > cut["6thJetsPT"])){
-        return false;
-    }
-    processStep(CutStep::kSixthJetPt, hadWMass);
-
-    // Step 6: Lepton Veto (nLepton == 0) — 렙톤 거부 조건
-    if (_policy.requireSingleMuon) {
-        // TriggerSF 도출 모드: 정확히 muon 1개, electron 0개 요구
-        if (!(thisEvent->getnSelMuon() == 1 && thisEvent->getnSelElectron() == 0)) {
-            return false;
-        }
-    }
-    else if (_policy.applyLeptonVeto) {
-        // Main Analysis 모드: lepton veto (nLepton == 0)
-        if(!(thisEvent->getnVetoLepton() == cut["nLeptons"])){
-            return false;
-        }
-    }
-    processStep(CutStep::kLeptonVeto, hadWMass);
-
-    // (보조 통계 계산: lepton-jet statistics, b-jet-lepton statistics)
-    thisEvent->getStatsComb(thisEvent->getSelJets(), thisEvent->getSelLeptons(), ljetStat);
-    thisEvent->getStatsComb(thisEvent->getSelbJets(), thisEvent->getSelLeptons(), lbjetStat);
-
-    // Step 7: HT > 500 — Scalar pT sum 하한
-    if(!(thisEvent->getSumSelJetScalarpT() > cut["HT"])){
-        return false;
-    }
-    processStep(CutStep::kHT, hadWMass);
-
     // ══════════════════════════════════════════════════════════════════════
-    // [MOVED from post-step-10 to pre-step-8]
-    // Event-level corrections applied here — between HT cut (step 7) and
-    // nbjet cut (step 8) — so cutflow histograms from step 8 onwards see
-    // the SF-corrected MC. This is required to read the b-tag SF / trigger
-    // SF / norm reweight effect from the cutflow ratios.
+    // [STEP3] 선언적 cut 테이블 실행
     //
-    // Each SF can be individually disabled in kValidationStudy mode via
-    // _valCfg toggles; the unmodified main analysis runs the full chain.
-    //
-    // [ttH AN A.2.1] inclusive ttbar dispatched by genTtbarId; non-ttbar
-    // by sample name. See Config_TtCatGroup.hh::MakeProcessKey().
+    // selection의 "무엇을/어떤 순서로/어느 모드에서" 는 전부 kCutSequence
+    // (이 파일, selectObjects 바로 위)에 표로 정의되어 있다. 이 루프는 그
+    // 표를 순서대로 실행할 뿐이다:
+    //   - pass 실패 + 강제 모드(enforceIn)      → 이벤트 reject
+    //   - pass 성공 또는 비강제(관찰)            → cutflow 기록 (recordOnlyIfPass
+    //                                            가 true인 단계는 성공시에만 기록)
+    //   - 생존 시 onAfter 부수 작업 실행 (통계 계산, SF 적용)
+    // STEP3 이전 if-나열과의 동작 동일성: docs/changes/STEP_3_*.md §5 검증표.
     // ══════════════════════════════════════════════════════════════════════
-    triggerSF_        = 1.0f;
-    triggerSF_up_     = 1.0f;
-    triggerSF_down_   = 1.0f;
-    btagNormReweight_ = 1.0f;
-
-    const bool isVal = (_analysisMode == AnalysisMode::kValidationStudy);
-    const bool useBtagShape = isVal ? _valCfg.applyBtagShapeSF : true;
-    const bool useTrigSF    = isVal ? _valCfg.applyTriggerSF   : true;
-    const bool useBtagNorm  = isVal ? _valCfg.applyBtagNormSF  : true;
-
-    // Always populate the 3 chain weights with the FULL meaning, regardless
-    // of validation toggles — they are diagnostic, not the production path.
-    _evtWeight_chain_raw    = _evtWeight;     // baseline only
-    _evtWeight_chain_btagSF = _evtWeight;     // will multiply btagShape below
-    _evtWeight_chain_full   = _evtWeight;     // will multiply all SFs below
-
-    if (_DataOrMC != "Data") {
-
-        // ── b-tag shape SF ─────────────────────────────────────────────
-        // Both chains get it (even if legacy _evtWeight skips it in
-        // validation when toggle is off).
-        _evtWeight_chain_btagSF *= bTagWeight_central_;
-        _evtWeight_chain_full   *= bTagWeight_central_;
-        if (useBtagShape) _evtWeight *= bTagWeight_central_;
-
-        // ── Trigger SF ────────────────────────────────────────────────
-        const int    nbjet   = thisEvent->getnSelbJet();
-        const double ht      = thisEvent->getSumSelJetScalarpT();
-        const double jet6pt  = thisEvent->getSelJets()->at(5)->getp4()->Pt();
-        const double jet6eta = thisEvent->getSelJets()->at(5)->getp4()->Eta();
-
-        triggerSF_      = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt,  0.0));
-        triggerSF_up_   = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt, +1.0));
-        triggerSF_down_ = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt, -1.0));
-
-        _evtWeight_chain_full *= triggerSF_;
-        if (useTrigSF) _evtWeight *= triggerSF_;
-
-        // ── b-tag normalization reweight ──────────────────────────────
-        // [ttHH AN-2022/122 / ttH AN App. A.2.1] the b-tag-shape SF distorts
-        // the per-category normalization, so it is restored per (sample, HF
-        // category). Key on the EXPANDED id (not NanoAOD genTtbarId) so tt+nb
-        // (61/62/71/72) carries its own reweight bin, distinct from tt+2b
-        // (53/54/55) — high b-jet multiplicity is exactly where tt+nb lives.
-        // The stitch multiplier above already fixed the MC composition feeding
-        // this derivation, so the reweight is computed on the stitched mix.
-        const int nJets = thisEvent->getnSelJet();
-        const std::string processKey = TtCatGroup::MakeProcessKey(
-            _sampleName, _expandedTtbarId);
-        if (processKey.empty()) {
-            std::cerr << "\n[FATAL][btagRW] MakeProcessKey() returned an EMPTY key for"
-                      << " sample='" << _sampleName << "' expandedTtbarId="
-                      << _expandedTtbarId << " (sub="
-                      << (((_expandedTtbarId % 100) + 100) % 100) << ").\n"
-                      << "  Config_TtCatGroup.hh must map this code. Aborting (exit 45)"
-                      << " so the Condor job is flagged.\n" << std::endl;
-            std::exit(45);
+    const uint8_t mBit = selectionModeBit(_analysisMode);
+    for (const CutDef& c : kCutSequence) {
+        const bool ok = (c.pass == nullptr) ? true
+                                            : c.pass(*this, *thisEvent, hadWMass);
+        if (!ok && (c.enforceIn & mBit)) {
+            return false;                             // 강제 cut 실패 → reject
         }
-        // diagnostic: remember the (expandedSub -> processKey) mapping once, so
-        // the end-of-job log shows whether 61/62/71/72 get keys distinct from 53.
-        {
-            const int esub = ((_expandedTtbarId % 100) + 100) % 100;
-            if (_btagKeyByExpSub.find(esub) == _btagKeyByExpSub.end())
-                _btagKeyByExpSub[esub] = processKey;
+        if (ok || !c.recordOnlyIfPass) {
+            processStep(c.step, hadWMass);            // cutflow 기록
         }
-        btagNormReweight_ = static_cast<float>(
-            corrMgr->getBTagReweight("central", processKey, nJets, ht));
-        if (!std::isfinite(btagNormReweight_)) {
-            std::cerr << "\n[FATAL][btagRW] non-finite reweight (" << btagNormReweight_
-                      << ") for processKey='" << processKey << "' nJets=" << nJets
-                      << " ht=" << ht << ". Aborting (exit 46).\n" << std::endl;
-            std::exit(46);
-        }
-
-        _evtWeight_chain_full *= btagNormReweight_;
-        if (useBtagNorm) _evtWeight *= btagNormReweight_;
-
-        if (debugCorrections) {
-            std::cout << "[selectObjects] Corrections (mode="
-                      << analysisModeName(_analysisMode) << "):"
-                      << " sample=" << _sampleName
-                      << " genTtbarId=" << _ev->genTtbarId
-                      << " expandedTtbarId=" << _expandedTtbarId
-                      << " processKey=" << processKey
-                      << " btagSF=" << bTagWeight_central_
-                      << " trigSF=" << triggerSF_
-                      << " btagRW=" << btagNormReweight_
-                      << " w_raw="    << _evtWeight_chain_raw
-                      << " w_btagSF=" << _evtWeight_chain_btagSF
-                      << " w_full="   << _evtWeight_chain_full
-                      << " _evtWeight=" << _evtWeight
-                      << std::endl;
+        if (c.onAfter) {
+            c.onAfter(*this, *thisEvent);             // 생존 시 부수 작업
         }
     }
 
-
-    // ─── b-tag cut sequence — three steps (≥2, ≥3, ≥4) ────────────────
-    // Each step is a SEPARATE cut + processStep so the cutflow and per-step
-    // distributions show the impact of every increment.
-    //
-    // In main mode (and other non-validation modes) the loosest cut here
-    // is applyBJetCut → ≥2 (per cut["nbJets"]). The tighter steps (≥3,
-    // ≥4) are processed for histograms first, then enforced as cuts only
-    // for the kTotal "SR" semantics. This way:
-    //   - main mode SR is ≥2 b-tags (matches ttH AN baseline)
-    //   - looking at cutStep ≥3 / ≥4 histograms tells you what the SR
-    //     would look like if tightened
-    //
-    // In validation mode the legacy single-cut behaviour is preserved.
-
-    if (_analysisMode == AnalysisMode::kValidationStudy) {
-        // Validation mode: single cut at _valCfg.nbJetsCut (existing logic)
-        const int needNb = _valCfg.nbJetsCut;
-        const bool cutEnabled = (_valCfg.nbJetsCut >= 0);
-        if (cutEnabled) {
-            if (!(thisEvent->getnSelbJet() >= needNb)) return false;
-        }
-        // Fill all three b-tag step hists (the event passes here, so it
-        // is at least at the level the user requested — duplicating into
-        // the ≥2/≥3/≥4 step hists is harmless for validation purposes).
-        processStep(CutStep::kNumbJets2, hadWMass);
-        if (thisEvent->getnSelbJet() >= 3) processStep(CutStep::kNumbJets3, hadWMass);
-        if (thisEvent->getnSelbJet() >= 4) processStep(CutStep::kNumbJets4, hadWMass);
-    }
-    else {
-        // Production-mode three-tier b-tag cutflow.
-        // Loosest cut first (gates whether we proceed at all in this mode):
-        const int needNbBaseline = static_cast<int>(cut["nbJets"]);  // ≥2
-        if (_policy.applyBJetCut) {
-            if (!(thisEvent->getnSelbJet() >= needNbBaseline)) return false;
-        }
-        processStep(CutStep::kNumbJets2, hadWMass);
-
-        // ≥3 — record but do NOT cut; the user reads the cutflow ratio
-        // at this step to see the next-level effect.
-        if (thisEvent->getnSelbJet() >= 3) {
-            processStep(CutStep::kNumbJets3, hadWMass);
-        }
-        // ≥4 — same idea
-        if (thisEvent->getnSelbJet() >= 4) {
-            processStep(CutStep::kNumbJets4, hadWMass);
-        }
-    }
-
-    // Step kHadWMass: hadronic W mass window
-    {
-        const bool hadWEnabled =
-            (_analysisMode == AnalysisMode::kValidationStudy)
-                ? _valCfg.applyHadWWindow
-                : _policy.applyHadWMassCut;
-        if (hadWEnabled) {
-            if (hadWMass < 30.0f || hadWMass > 250.0f) {
-                return false;
-            }
-        }
-    }
-    processStep(CutStep::kHadWMass, hadWMass);
-
-    // Step 10: Higgs Mass Window (현재 사용하지 않음, 05 Jan 2026)
-    processStep(CutStep::kHiggsMass, hadWMass);
-
-
-
-    // Step 11: Total — 최종 이벤트 (모든 cut + 모든 보정 적용)
-    processStep(CutStep::kTotal, hadWMass);
-
-   
     return true;
 }
 
@@ -1139,6 +1161,42 @@ void ttHHanalyzer_unified::diMotherReco(const TLorentzVector & dPar1p4,const TLo
 } 
 
 void ttHHanalyzer_unified::analyze(event *thisEvent){
+
+    // ══════════════════════════════════════════════════════════════════════
+    // [STEP5] Event shape 계산 — selected jets / b-jets의 momentum tensor
+    // (EventShape 라이브러리: sphericity/aplanarity/C/D; di-lepton analyzer의
+    //  소스-include 방식 대신 libEventShape.a 링크 사용)
+    // 객체 2개 미만이면 tensor가 퇴화하므로 계산하지 않음 (-1 유지).
+    // ══════════════════════════════════════════════════════════════════════
+    {
+        std::vector<TVector3> vJet, vBjet;
+        for (auto* j : *thisEvent->getSelJets())  vJet.push_back(j->getp4()->Vect());
+        for (auto* b : *thisEvent->getSelbJets()) vBjet.push_back(b->getp4()->Vect());
+
+        if (vJet.size() >= 2) {
+            EventShape es(vJet);
+            _es_aplanarity      = static_cast<Float_t>(es.getAplanarity());
+            _es_sphericity      = static_cast<Float_t>(es.getSphericity());
+            _es_transSphericity = static_cast<Float_t>(es.getTransSphericity());
+            _es_C               = static_cast<Float_t>(es.getC());
+            _es_D               = static_cast<Float_t>(es.getD());
+        }
+        if (vBjet.size() >= 2) {
+            EventShape esB(vBjet);
+            _es_bjetAplanarity      = static_cast<Float_t>(esB.getAplanarity());
+            _es_bjetSphericity      = static_cast<Float_t>(esB.getSphericity());
+            _es_bjetTransSphericity = static_cast<Float_t>(esB.getTransSphericity());
+            _es_bjetC               = static_cast<Float_t>(esB.getC());
+            _es_bjetD               = static_cast<Float_t>(esB.getD());
+        }
+        // [STEP5][debug] 정의역 검증: sphericity∈[0,1], aplanarity∈[0,0.5],
+        // C,D∈[0,1] — 범위 밖/NaN이면 종료 요약의 BAD/minmax로 드러난다.
+        _dbg.kv("evtshape", "sphericity", _es_sphericity);
+        _dbg.kv("evtshape", "aplanarity", _es_aplanarity);
+        _dbg.kv("evtshape", "C",          _es_C);
+        _dbg.kv("evtshape", "D",          _es_D);
+        _dbg.kv("evtshape", "bjetSphericity", _es_bjetSphericity);
+    }
 
     //////std::vector<objectJet*>* bJetsInv = thisEvent->getSelbJets(); 
     //////std::vector<objectJet*>* lbJetsInv = thisEvent->getLoosebJets(); 
@@ -1353,6 +1411,11 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
     // hits. Data has no genTtbarId branch, so leave -1.
     _genTtbarIdNano  = -1;
     _expandedTtbarId = -1;
+    _stitchWeight    = 1.0f;   // [stitch] tree branch default (Data / non-plan / gated modes)
+    // [STEP5] event shape per-event reset (-1 = 미계산; analyze()에서 채움)
+    _es_aplanarity = _es_sphericity = _es_transSphericity = _es_C = _es_D = -1.f;
+    _es_bjetAplanarity = _es_bjetSphericity = _es_bjetTransSphericity = _es_bjetC = _es_bjetD = -1.f;
+    _dbg.nextEvent();           // [STEP2][debug] 이벤트 경계 (kDebug에서만 동작)
 
     if (debugCorrections) {
 	std::cout << "[process] : Current evtWeight="<< _evtWeight << std::endl;
@@ -1403,6 +1466,12 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
 	_evtWeight *= _PUWeight;
 	_evtWeight *= _L1PrefiringWeight;
 	_evtWeight *= _genWeight;
+	// [STEP2][debug] weight 구성요소 추적 (kDebug에서만 동작; NaN/Inf 집계 포함)
+	_dbg.kv("weight", "genWeight",        _genWeight);
+	_dbg.kv("weight", "PUWeight",         _PUWeight);
+	_dbg.kv("weight", "L1Prefire",        _L1PrefiringWeight);
+	_dbg.kv("weight", "base_xsecLumi",    _baseWeight);
+	_dbg.kv("weight", "evtWeight_preSF",  _evtWeight);
 	////_evtWeight *= bTagWeight_central_;
         if(debugCorrections) std::cout << "Final Event Weight: " << _evtWeight << std::endl;
     }
@@ -1497,6 +1566,9 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
         if (_stitch.inPlan()) {
             const double stitchMult = _stitch.factor(_expandedTtbarId, _evtWeight);
             _evtWeight *= stitchMult;
+            _stitchWeight = static_cast<float>(stitchMult);  // [stitch] -> output tree branch
+            _dbg.kv("stitch", "mult",            stitchMult);          // [STEP2][debug]
+            _dbg.kv("stitch", "expandedTtbarId", (double)_expandedTtbarId);
             if (debugCorrections) {
                 std::cout << "[stitch] sample=" << _sampleName
                           << " expandedTtbarId=" << _expandedTtbarId
@@ -2662,6 +2734,10 @@ void ttHHanalyzer_unified::fillTree(event * thisEvent){
     //////    } */
 
     
+    // [STEP2][debug] tree 기록값 추적 — branch에 실리는 최종값 검증 (kDebug)
+    _dbg.kv("tree", "evtWeight",       _evtWeight);
+    _dbg.kv("tree", "stitchWeight",    _stitchWeight);
+    _dbg.kv("tree", "expandedTtbarId", (double)_expandedTtbarId);
     _inputTree->Fill();
 }
 
@@ -3028,14 +3104,9 @@ void ttHHanalyzer_unified::writePrescanTree() {
 // =============================================================================
 // main() — entry point for the ttHH(4b) FH analyzer
 // -----------------------------------------------------------------------------
-// All argument parsing is done by tnm.cc::commandLine::decode, including the
-// optional --val-* flags used by the kValidationStudy mode. The fields read
-// here are added in tnm.h (see commandLine struct) and parsed in tnm.cc
-// (see decode()).
-//
-// For non-validation modes the val* fields hold their default values (which
-// reproduce kMainAnalysis behaviour exactly), so the validation block below
-// is harmless even when entered defensively.
+// All argument parsing is done by tnm.cc::commandLine::decode.
+// [STEP2] kValidationStudy 제거 — tnm.cc의 --val-* 파서 필드는 미사용 잔재로
+// 남아 있으며(무해), Step 8 정리 단계에서 제거 예정.
 // =============================================================================
 int main(int argc, char** argv){
 
@@ -3081,7 +3152,7 @@ int main(int argc, char** argv){
     //      (outFile, eventBuffer, weight, sysToggle, year, dataOrMC,
     //       sampleName, era, debug, mode)
     // ─────────────────────────────────────────────────────────────────────
-    bool debugVerbose = false;
+    const bool debugVerbose = (mode == AnalysisMode::kDebug);  // [STEP2] 거시 단계 로그
     ttHHanalyzer_unified analysis(
         cl.outputfilename,
         &ev,
@@ -3111,17 +3182,14 @@ int main(int argc, char** argv){
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // [stitch] Load the ttbar stitching multiplier JSON ONLY for the two modes
-    // that should see the stitched composition: main (final yields) and btagtrig
-    // (b-tag norm reweight context). trigsf / validation / prescan are left
-    // stitch-free on purpose:
-    //   - prescan PRODUCES the inputs this JSON is computed from;
-    //   - the TRIGGER SF must be derived (trigsf) on an un-stitched sample so it
-    //     stays a pure efficiency ratio, independent of the stitch/JSON;
-    //   - validation toggles its own SFs.
-    // Override path with $STITCH_FACTORS_JSON. Missing/garbled -> fatal-exit.
+    // [stitch] stitching multiplier JSON은 stitched 조성을 봐야 하는 모드에서만
+    // 로드한다: main(최종 yield), btagtrig(b-tag norm reweight 문맥), debug(main
+    // 미러). prescan은 의도적으로 stitch-free:
+    //   - prescan은 이 JSON의 입력(ΣgenW 분해)을 "생산"하는 모드이므로.
+    // 경로는 $STITCH_FACTORS_JSON 으로 override. 누락/손상 -> fatal-exit(40).
     if (mode == AnalysisMode::kMainAnalysis ||
-        mode == AnalysisMode::kBTagAndTriggerStudy) {
+        mode == AnalysisMode::kBTagAndTriggerStudy ||
+        mode == AnalysisMode::kDebug) {
         const char* sj = std::getenv("STITCH_FACTORS_JSON");
         analysis.setStitchFactorsFile(
             sj ? std::string(sj)
@@ -3129,44 +3197,7 @@ int main(int argc, char** argv){
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // 5. [Validation Study] — push --val-* flags into the analyzer
-    //
-    // tnm.cc::commandLine::decode has already read every --val-* flag and
-    // stored them in cl.val* fields. Defaults reproduce kMainAnalysis
-    // behaviour, so a user who passes no flags still gets a sane run.
-    //
-    // Block runs only when --mode validation; ignored otherwise.
-    // ─────────────────────────────────────────────────────────────────────
-    if (mode == AnalysisMode::kValidationStudy) {
-        ValidationConfig vcfg;
-        vcfg.scenarioName            = cl.valScenario;
-        vcfg.nbJetsCut               = cl.valNbJetsCut;
-        vcfg.forceHiggsRecoMinBjets  = cl.valHRecoMin;
-        vcfg.applyHadWWindow         = (cl.valApplyHadW      != 0);
-        vcfg.applyHiggsWindow        = (cl.valApplyHiggsWin  != 0);
-        vcfg.tightenJet8             = (cl.valTightenJet8    != 0);
-        vcfg.applyBtagShapeSF        = (cl.valApplyBtagShape != 0);
-        vcfg.applyBtagNormSF         = (cl.valApplyBtagNorm  != 0);
-        vcfg.applyTriggerSF          = (cl.valApplyTrig      != 0);
-        vcfg.applyTopPtSF            = (cl.valApplyTopPt     != 0);
-        vcfg.ttHVRStyle              = (cl.valTtHVRStyle     != 0);
-
-        // ttH VR preset overrides individual fields when requested.
-        // Preserve the user-supplied scenario tag for log/output naming.
-        if (vcfg.ttHVRStyle) {
-            const std::string preservedName = vcfg.scenarioName;
-            vcfg.applyTtHVRPreset();   // resets fields, sets scenarioName="ttHVR"
-            if (!preservedName.empty() && preservedName != "default") {
-                vcfg.scenarioName = preservedName;
-            }
-        }
-
-        // Push effective config; setValidationConfig prints it to stdout.
-        analysis.setValidationConfig(vcfg);
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
-    // 6. Run the analysis
+    // 5. Run the analysis
     // ─────────────────────────────────────────────────────────────────────
     if(debugVerbose) std::cout<<"debug : Before [ performAnalysis ] in main() function"<<std::endl;
     analysis.performAnalysis();
