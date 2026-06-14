@@ -80,15 +80,11 @@ namespace TtCatGroup {
 // into kB here because b-tag SF derivation lacks per-sub-category statistics
 // (see ttH AN A.2.1).
 // ────────────────────────────────────────────────────────────────────────────
-// [STEP7.5] kNB 추가: expandedTtbarId의 61/62(tt+bbb)·71/72(tt+4b)를 받는
-// tt+nb 그룹. ttHH AN §D.0.5가 tt4b를 별도 normalization 유닛으로 다루는 것이
-// 근거. 기존 멤버 값은 보존(코드/JSON 호환).
 enum class Group {
     kLF = 0,    // tt + light flavour
     kCC = 1,    // tt + cc
     kB  = 2,    // tt + b (= tt+b + tt+2b + tt+bb merged)
-    kNotTT = 3,
-    kNB    = 4   // [STEP7.5] tt+bbb / tt+4b (expandedTtbarId 61,62,71,72)
+    kNotTT = 3
 };
 
 // genTtbarId encoding (CMS GenTtbarCategorizer plugin):
@@ -106,11 +102,6 @@ enum class Group {
 // uses a per-event nGenAddBJets-based exclusion ("4 b-jet only excluded
 // from inclusive ttbar"), which is NOT recoverable from genTtbarId alone
 // and currently NOT IMPLEMENTED in this analyzer.
-// [STEP7.5] expandedTtbarId(61/62=tt+bbb, 71/72=tt+4b)까지 인식하도록 확장.
-// NanoAOD genTtbarId(≤55)만 들어오는 기존 호출 경로의 동작은 불변 —
-// 61-72는 ExtendedTtbarId 산출물에서만 나온다. 이전엔 61-72가 kNotTT로
-// 떨어져 inclusive ttbar에서 "tt+LF"로 미스라우트되는 버그가 있었다
-// (stitch가 weight를 0으로 만들어 yield 영향은 없었지만 키는 틀렸음).
 inline Group Classify(int genTtbarId) {
     if (genTtbarId < 0) return Group::kNotTT;
     const int catId = genTtbarId % 100;
@@ -118,8 +109,6 @@ inline Group Classify(int genTtbarId) {
     if (catId >= 41 && catId <= 45)       return Group::kCC;
     if (catId == 51 || catId == 52 ||
         (catId >= 53 && catId <= 55))     return Group::kB;
-    if (catId == 61 || catId == 62 ||
-        catId == 71 || catId == 72)       return Group::kNB;   // [STEP7.5]
     return Group::kNotTT;
 }
 
@@ -131,24 +120,6 @@ inline bool IsInclusiveTtbar(const std::string& sampleName) {
     return sampleName == "TTToHadronic"
         || sampleName == "TTToSemiLeptonic"
         || sampleName == "TTTo2L2Nu";
-}
-
-// [STEP7.5] dedicated ttbar HF 샘플 — per-channel 명명(현 main.yml) 포함.
-// ⚠ 기존 코드는 "ttbb"만 알아서 ttbb_Hadronic 등 per-channel 샘플이
-//   default("tt+LF")로 미스라우트되는 라이브 버그가 있었다 (STEP_7.5 문서).
-inline bool IsDedicatedTtbarHF(const std::string& sampleName) {
-    return sampleName == "ttbb"                 // 구(통합) 명명 호환
-        || sampleName == "ttbb_Hadronic"
-        || sampleName == "ttbb_SemiLeptonic"
-        || sampleName == "ttbb_2L2Nu"
-        || sampleName == "tt4b";
-}
-
-// inclusive + dedicated 전체 — 이 family는 전부 HF category로 디스패치한다
-// (sample 고정 키 금지). ttH AN §A.2 "include the contributions from all tt
-// decay channels" = decay channel은 병합되고 HF category가 키라는 처방.
-inline bool IsTtbarFamily(const std::string& sampleName) {
-    return IsInclusiveTtbar(sampleName) || IsDedicatedTtbarHF(sampleName);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -167,23 +138,23 @@ inline bool IsTtbarFamily(const std::string& sampleName) {
 //       comment).
 // ──────────────────────────────────────────────────────────────────────────
 inline std::string MakeProcessKey(const std::string& sampleName, int genTtbarId) {
-    // 1. [STEP7.5] ttbar family 전체(inclusive + dedicated ttbb/tt4b)를
-    //    HF category로 디스패치한다. 호출자는 가능하면 expandedTtbarId를
-    //    전달할 것 (61-72 분리는 expanded id에서만 가능).
-    //    근거: ttH AN §A.2 (category가 키, decay channel 병합) +
-    //          ttHH AN §D.0.4 (ttbb는 owned portion만 사용) +
-    //          ttHH AN §D.0.5 (tt4b는 별도 normalization 유닛 → "tt+nb").
-    //    stitch가 0으로 만드는 비-owned 이벤트도 자기 category 키를 받는다
-    //    (weight 0이라 yield 무영향; 유도/적용 키 일관성 유지가 목적).
-    if (IsTtbarFamily(sampleName)) {
+    // 1. inclusive ttbar → ttbar category dispatch
+    if (IsInclusiveTtbar(sampleName)) {
         switch (Classify(genTtbarId)) {
             case Group::kLF:    return "tt+LF";
             case Group::kCC:    return "tt+cc";
             case Group::kB:     return "tt+B";
-            case Group::kNB:    return "tt+nb";  // [STEP7.5] tt+bbb / tt+4b
             case Group::kNotTT: return "tt+LF";  // safety (shouldn't happen)
         }
     }
+
+    // 2. heavy-b dedicated ttbar samples → tt+B
+    //    NOTE: tt4b is currently merged into tt+B (sub-category indistinguishable
+    //    by genTtbarId; see Classify() limitation comment). May be promoted to
+    //    its own "tt4b" group later if FH DNN treats it separately
+    //    (cf. ttHH AN §D.0.5). Decision pending — see FUTURE UPDATE TRIGGERS.
+    if (sampleName == "ttbb")        return "tt+B";    // dedicated tt+B (4FS NLO)
+    if (sampleName == "tt4b")        return "tt+B";    // dedicated 4b (LO)
 
     // 3. signals & 4-b heavy processes — own measurement
     //    ttHH/ttZH4b/ttZZ4b: own group by 4-b final state analogy; ttHH AN
@@ -216,7 +187,6 @@ inline std::vector<std::string> AllProcessGroupKeys() {
         "tt+LF",
         "tt+cc",
         "tt+B",
-        "tt+nb",   // [STEP7.5] tt+bbb / tt+4b — ttHH AN D.0.5 (tt4b 별도 유닛)
         "ttH",
         "ttHH",
         "ttZH4b",
@@ -230,10 +200,8 @@ inline std::vector<std::string> AllProcessGroupKeys() {
 // Used by makeReweightJSON to know which sums to read from each sample file.
 // ──────────────────────────────────────────────────────────────────────────
 inline std::vector<std::string> ProcessKeysForSample(const std::string& sampleName) {
-    // [STEP7.5] ttbar family는 4개 category 어디에도 기여할 수 있다
-    // (expandedTtbarId 디스패치; stitch-zero 이벤트는 합산에 0 기여).
-    if (IsTtbarFamily(sampleName)) {
-        return { "tt+LF", "tt+cc", "tt+B", "tt+nb" };
+    if (IsInclusiveTtbar(sampleName)) {
+        return { "tt+LF", "tt+cc", "tt+B" };
     }
     // For non-ttbar: a single key, determined by MakeProcessKey with dummy id.
     return { MakeProcessKey(sampleName, -1) };

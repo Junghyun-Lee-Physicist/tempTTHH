@@ -4,6 +4,10 @@ common:
   # main, btagtrig, prescan, debug  ([STEP2] trigsf/validation 제거)
   analysis_mode: "btagtrig" 
 
+  # [STEP7] job당 입력 파일 수 (CLI --files-per-job 이 우선). 미지정=1.
+  # 재제출/리포트는 반드시 같은 값으로 불러야 chunk↔output 매핑이 유지된다.
+  files_per_job: 1
+
   # ── [STEP4] 보정 입력 경로 통제 ──────────────────────────────────────
   # 값을 채우면 condor 실행 스크립트에 export로 주입되어 analyzer가 사용.
   # 비워두면("" 또는 키 삭제) 코드 내 default(Tier3 경로)를 사용 (하위호환).

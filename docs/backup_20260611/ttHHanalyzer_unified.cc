@@ -120,45 +120,13 @@ void ttHHanalyzer_unified::performAnalysis(){
 
 void ttHHanalyzer_unified::loop(sysName sysType, bool up){
 
-    // [STEP3][debug] kDebug 모드: cut 테이블 무결성 검사 + 덤프.
-    // kCutSequence가 CutStep enum 순서와 _cutStepLabels에 정확히 1:1인지
-    // 시작 시 검증한다 (표/라벨/enum의 3중 정의가 어긋나는 사고 방지).
-    if (_dbg.on()) {
-        std::printf("[dbg][seltable] ── kCutSequence (%zu entries) ──\n", kCutSequence.size());
-        bool tableOK = true;
-        for (size_t i = 0; i < kCutSequence.size(); ++i) {
-            const auto& c = kCutSequence[i];
-            const int idx = static_cast<int>(c.step);
-            const bool stepOK  = (idx == static_cast<int>(i));
-            const bool labelOK = (idx < static_cast<int>(_cutStepLabels.size()) &&
-                                  _cutStepLabels.at(idx) == c.label);
-            std::printf("[dbg][seltable]  %2zu %-16s enforce=0x%X %s%s%s\n",
-                        i, c.label, c.enforceIn,
-                        c.recordOnlyIfPass ? "(관찰:충족시기록) " : "",
-                        stepOK ? "" : "[STEP-ORDER MISMATCH!] ",
-                        labelOK ? "" : "[LABEL MISMATCH vs _cutStepLabels!]");
-            tableOK = tableOK && stepOK && labelOK;
-        }
-        std::printf("[dbg][seltable] integrity: %s\n", tableOK ? "OK" : "** BROKEN — 위 항목 확인 **");
-
-        // [STEP4][debug] 경로 통제 env 상태 덤프 — yml→condor sh→env 주입이
-        // 실제로 전달됐는지 로컬/condor 로그에서 즉시 확인할 수 있다.
-        const char* pathEnvs[] = { "TTHH_JSONPOG_PATH", "TTHH_GOLDENJSON_PATH",
-                                   "TTHH_TRIGSF_DIR",   "TTHH_BTAGRW_JSON",
-                                   "STITCH_FACTORS_JSON", "EXPANDED_TTBARID_DIR" };
-        for (const char* pe : pathEnvs) {
-            const char* v = std::getenv(pe);
-            std::printf("[dbg][paths] %-22s = %s\n", pe, (v && *v) ? v : "(unset -> default)");
-        }
-    }
-
 
     int nevents = _ev->size();
     // nevents = 100; // DEBUG: removed - run all events for full cross-validation
 
     //std::cout<<"weight = "<<_weight<<std::endl;  
-    std::cout << "Base Weight = " << _baseWeight << std::endl; // 시작 시 base weight(xsec×lumi/Σgenw) 확인용
-    _SampleWeight = _baseWeight; // Tree branch에 기록되는 base weight (SF 곱하기 전 — evtWeight와 구분)
+    std::cout << "Base Weight = " << _baseWeight << std::endl; // [��]
+    _SampleWeight = _baseWeight; // Tree ���� Base Weight� �� (�� ��� �� evtWeight ��)
 
     cout<<endl;
     print("This analyzer commented out [ \"WTF\" log ] in the header, Please check if you want!!!", "magenta", "warning");
@@ -209,6 +177,7 @@ void ttHHanalyzer_unified::loop(sysName sysType, bool up){
 
     for(int entry=0; entry < nevents; entry++){
         event * currentEvent = new event;
+        ////cout << "Processed events: " << entry << endl;
         _ev->read(entry);       // read an event into event buffer
         process(currentEvent, sysType, up);
 
@@ -228,12 +197,12 @@ void ttHHanalyzer_unified::loop(sysName sysType, bool up){
     // shows exactly what the stitch did to this sample's composition.
     // (main / btagtrig only; skipped when the JSON was not loaded.)
     if (_stitch.loaded()) _stitch.printRunSummary();
-    _dbg.summary();   // [STEP2][debug] kDebug 종료 요약 (cutflow + 값 집계 + NaN/Inf)
 
-    // [stitch] diagnostic — 이 샘플의 expandedTtbarId%100 → b-tag reweight
-    // processKey 매핑. [STEP7.5]에서 MakeProcessKey가 tt+nb(61/62/71/72)를
-    // "tt+nb" 그룹으로 분리하도록 확장됨 (ttHH AN D.0.5 근거) — 아래 진단은
-    // 이제 YES를 출력해야 정상이다. NO가 나오면 옛 헤더로 빌드된 것.
+    // [stitch] diagnostic — how this sample's events mapped expandedTtbarId%100
+    // to the b-tag-reweight processKey. If 61/62/71/72 share the 53/54/55 key,
+    // Config_TtCatGroup.hh::MakeProcessKey does NOT yet split tt+nb out of tt+2b
+    // for the reweight (see ttbarCategorization.md s11): extend it there if the
+    // AN's per-tt+nb b-tag reweight bin is required.
     if (!_btagKeyByExpSub.empty()) {
         std::cout << "[stitch] b-tag reweight processKey by expandedTtbarId%100 "
                   << "(sample=" << _sampleName << "):\n";
@@ -256,7 +225,7 @@ void ttHHanalyzer_unified::loop(sysName sysType, bool up){
     writeTree();
     if(debugCorrections) std::cout<<"debug : After writeTree() & Before hcutFlow()"<<std::endl;
 
-    // 종료 시 cutflow 요약을 stdout으로 출력 (히스토그램과 별개의 텍스트 확인용)
+    // [��] �� map �� �� �� -> �� �� ���� ��
     std::cout << "=== CutFlow Summary ===" << std::endl;
     for (size_t i = 0; i < _cutStepLabels.size(); ++i) {
         std::cout << _cutStepLabels[i] 
@@ -264,7 +233,8 @@ void ttHHanalyzer_unified::loop(sysName sysType, bool up){
                   << " (weighted: " << _cutFlowWeight[i] << ")" 
                   << std::endl;
         
-        // (hCutFlow는 processStep에서 직접 Fill되므로 여기서 SetBinContent 하지 않음)
+        // hCutFlow ������ �� ���� �� Set�� ��� ��� �� � (����)
+        // hCutFlow->SetBinContent(i+1, _cutFlowCount[i]);
     }
 
     hCutFlow         ->Write();
@@ -276,12 +246,6 @@ void ttHHanalyzer_unified::loop(sysName sysType, bool up){
 
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// createObjects — NanoAOD branch → 분석 객체(jet/lepton) 생성.
-//   jets: JES/JER(sysType,up) 적용 → pT/η/ID/PUid (Cuts::jet*) → selectJet
-//         (내부에서 DeepJet M=valbTagMedium으로 b-jet 분류)
-//   leptons: veto 정의(Cuts::subLead*)로 수집; btagtrig은 lead-muon gate 추가
-// ═══════════════════════════════════════════════════════════════════════════
 void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, bool up){
 
     _ev->fillObjects();
@@ -375,19 +339,65 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
     std::vector<eventBuffer::Jet_s> jet = _ev->Jet;
     std::vector<eventBuffer::Muon_s> muonT = _ev->Muon;
     std::vector<eventBuffer::Electron_s> ele = _ev->Electron;
+////    std::vector<eventBuffer::FatJet_s> boostedJet = _ev->FatJet;
     objectGenPart * currentGenPart; 
     objectBoostedJet * currentBoostedJet;
     objectJet * currentJet;
     objectLep * currentMuon;
     objectLep * currentEle;
+////    objectMET * MET = new objectMET(_ev->PuppiMET_pt, 0, _ev->PuppiMET_phi, 0);
     float e = 1., es  = 1., pe = 1., pes = 1.;
     float me = 1., mes = 1., pme = 1.,  pmes = 1.;   
+////    thisEvent->setMET(MET);
 
+
+////    for(int i=0; i < boostedJet.size(); i++){
+////       	currentBoostedJet = new objectBoostedJet(boostedJet[i].pt, boostedJet[i].eta, boostedJet[i].phi, boostedJet[i].mass);
+////	currentBoostedJet->softDropMass = boostedJet[i].msoftdrop;
+////	
+////	if(currentBoostedJet->getp4()->Pt() > cut["boostedJetPt"] && fabs(currentBoostedJet->getp4()->Eta()) < fabs(cut["boostedJetEta"])){
+////	    //	    if((boostedJet[i].jetId & 4) == true){  	     
+////	    thisEvent->selectBoostedJet(currentBoostedJet);	
+////	    if(currentBoostedJet->getp4()->Pt() > cut["hadHiggsPt"]){
+////		if(boostedJet[i].particleNet_HbbvsQCD > cut["bTagDisc"]){
+////		    thisEvent->selectHadronicHiggs(currentBoostedJet);
+////		}
+////		//	}
+////	    }
+////	}
+////    }
+    
 
     // Leading lepton def
     // But FH channel don't need this..
     // We just use subleading lepton def for veto
     // update in 5th Jan, 2026
+////    bool thereIsALeadLepton = false;
+////
+////    for(int i = 0; i < muonT.size(); i++){
+////        // CHECK: 현재 Veto Muon으로 TightID를 사용 중. 일반적으로 Veto 용도로는 LooseID를 권장함.
+////        // Muon POG 권장사항 확인 필요 (예: LooseID + LooseIso).
+////        // TightID 사용 시 "Loose하지만 가짜는 아닌" 뮤온을 놓쳐서 Hadronic 채널 오염 가능성 있음.
+////        if(fabs(muonT[i].eta) < cut["muonEta"] && muonT[i].tightId == true && muonT[i].pfRelIso04_all  < cut["muonIso"]){
+////            if(muonT[i].pt > cut["leadMuonPt"]){
+////                thereIsALeadLepton = true;
+////                break;
+////            }
+////        }
+////    }
+////    if(!thereIsALeadLepton){
+////        for(int i = 0; i < ele.size(); i++){
+////            // CHECK: Electron Veto 역시 WP90(Tight에 가까움) 사용 중. Egamma POG의 Veto WP 권장사항 확인 필요.
+////            if(fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660){  //Electrons tracked neither in the barrel nor in the endcap are discarded.
+////                if(fabs(ele[i].eta) < cut["eleEta"] && ele[i].mvaFall17V2Iso_WP90 == true && ele[i].pfRelIso03_all  < cut["eleIso"]){ 
+////                    if(ele[i].pt > cut["leadElePt"]){
+////                        thereIsALeadLepton = true;
+////                        break;
+////                    }
+////                }
+////            }
+////        }
+////    }
 
 
 // =============================================================
@@ -400,20 +410,20 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
     int nVetoMuons = 0, nVetoEle = 0;
 
     for(int i = 0; i < muonT.size(); i++){
-        if(fabs(muonT[i].eta) < Cuts::muonEta && 
+        if(fabs(muonT[i].eta) < cut["muonEta"] && 
            muonT[i].tightId == true && 
-           muonT[i].pfRelIso04_all < Cuts::muonIso &&
-           muonT[i].pt > Cuts::subLeadMuonPt) {
+           muonT[i].pfRelIso04_all < cut["muonIso"] &&
+           muonT[i].pt > cut["subLeadMuonPt"]) {
             nVetoMuons++;
         }
     }
     for(int i = 0; i < ele.size(); i++){
         if((fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || 
             fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660) &&
-           fabs(ele[i].eta) < Cuts::eleEta && 
+           fabs(ele[i].eta) < cut["eleEta"] && 
            ele[i].mvaFall17V2Iso_WP90 == true && 
-           //ele[i].pfRelIso03_all < eleIso && // We don't need Iso, It's already in ID
-           ele[i].pt > Cuts::subLeadElePt) {
+           //ele[i].pfRelIso03_all < cut["eleIso"] && // We don't need Iso, It's already in ID
+           ele[i].pt > cut["subLeadElePt"]) {
             nVetoEle++;
         }
     }
@@ -434,10 +444,10 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
         bool hasLeadMuon = false;
         for(int i = 0; i < muonT.size(); i++){
             // Check for Lead Muon (High pT, Tight ID)
-            if(fabs(muonT[i].eta) < Cuts::muonEta && 
+            if(fabs(muonT[i].eta) < cut["muonEta"] && 
                muonT[i].tightId == true && 
-               muonT[i].pfRelIso04_all < Cuts::muonIso &&
-               muonT[i].pt > Cuts::leadMuonPt) { 
+               muonT[i].pfRelIso04_all < cut["muonIso"] &&
+               muonT[i].pt > cut["leadMuonPt"]) { 
                 hasLeadMuon = true;
                 break;
             }
@@ -451,10 +461,10 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
                 // Check for Lead Electron (High pT, Tight ID)
                 if((fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || 
                     fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660) &&
-                   fabs(ele[i].eta) < Cuts::eleEta && 
+                   fabs(ele[i].eta) < cut["eleEta"] && 
                    ele[i].mvaFall17V2Iso_WP90 == true && 
-                   //ele[i].pfRelIso03_all < eleIso && // We don't need Iso, It's already in ID
-                   ele[i].pt > Cuts::leadElePt) { 
+                   //ele[i].pfRelIso03_all < cut["eleIso"] && // We don't need Iso, It's already in ID
+                   ele[i].pt > cut["leadElePt"]) { 
                     hasLeadElectron = true;
                     break;
                 }
@@ -489,10 +499,10 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
             // Even if TriggerSF requires a Lead Muon to pass the gate, 
             // we collect softer muons here to check for Dilepton veto later.
             for(int i = 0; i < muonT.size(); i++){
-                if(fabs(muonT[i].eta) < Cuts::muonEta && 
+                if(fabs(muonT[i].eta) < cut["muonEta"] && 
                    muonT[i].tightId == true && 
-                   muonT[i].pfRelIso04_all < Cuts::muonIso &&
-                   muonT[i].pt > Cuts::subLeadMuonPt) { 
+                   muonT[i].pfRelIso04_all < cut["muonIso"] &&
+                   muonT[i].pt > cut["subLeadMuonPt"]) { 
                    
                     currentMuon = new objectLep(muonT[i].pt, muonT[i].eta, muonT[i].phi, 0.);
                     currentMuon->charge = muonT[i].charge;
@@ -508,10 +518,10 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
             for(int i = 0; i < ele.size(); i++){
                 if((fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || 
                     fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660) &&
-                   fabs(ele[i].eta) < Cuts::eleEta && 
+                   fabs(ele[i].eta) < cut["eleEta"] && 
                    ele[i].mvaFall17V2Iso_WP90 == true && 
-                   //ele[i].pfRelIso03_all < eleIso && // We don't need Iso, It's already in ID
-                   ele[i].pt > Cuts::subLeadElePt) { 
+                   //ele[i].pfRelIso03_all < cut["eleIso"] && // We don't need Iso, It's already in ID
+                   ele[i].pt > cut["subLeadElePt"]) { 
                    
                     currentEle = new objectLep(ele[i].pt, ele[i].eta, ele[i].phi, 0.);
                     currentEle->charge = ele[i].charge;
@@ -540,7 +550,7 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
 
         // 1. Pre-cuts
         // [UPDATE] 보정 후 기준으로 pT 컷을 적용하기 위해 여기서는 eta/ID만 최소한으로 확인
-        if( !(fabs(jetRaw.eta) < Cuts::jetEta && jetRaw.jetId >= Cuts::jetID) ) continue;
+        if( !(fabs(jetRaw.eta) < cut["jetEta"] && jetRaw.jetId >= cut["jetID"]) ) continue;
  
         // 2. Calculation (지역 변수 사용, Heap 할당 X)
         float ntuplePt  = jetRaw.pt;                // NanoAOD Default (Corrected)
@@ -576,6 +586,8 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
             unsigned long long event=_ev->event;
             int currentJetIdx = i;
 
+            ////double smearedPt = corrMgr->smearJER(ptJEC, genPt, jetRaw.eta, rho,
+	    ////                                      _ev->run, _ev->event, _ev->luminosityBlock, "nom");
             const double smearedPt = corrMgr->smearJER(ptJEC, jetRaw.eta, jetRaw.phi, rho,
                                           run, lumi, event, currentJetIdx,
                                           genPt, genEta, genPhi, "nom");
@@ -584,11 +596,11 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
 	    const double massJECJER = massJEC * jerFactor;
 
         // 3. Final Cuts (on Smeared pT)
-        if (smearedPt < Cuts::jetPt) continue;
+        if (smearedPt < cut["jetPt"]) continue;
         
         // PU ID Check (Low pT only)
         passPuId = true;
-        if (smearedPt < 50.0 && jetRaw.puId < Cuts::jetPUid) {
+        if (smearedPt < 50.0 && jetRaw.puId < cut["jetPUid"]) {
              continue; 
         }
 
@@ -615,7 +627,8 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
             newJet->mass_DiffRatio = 0.0f;
         }
 
-        // 이벤트에 등록 + b-tag WP에 따른 분류 (selectJet 내부에서 b-jet 판정)
+        // 이벤트에 등�
+	// WP에 따른 분류 로직
         thisEvent->selectJet(newJet);
         if (newJet->bTagCSV >= objectJet::valbTagMedium) {
             thisEvent->selectbJet(newJet);
@@ -623,6 +636,9 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
 	else if (newJet->bTagCSV < objectJet::valbTagLoose) {
             thisEvent->selectLightJet(newJet);
         }
+////        if (newJet->bTagCSV >= objectJet::valbTagLoose) {
+////            thisEvent->selectLoosebJet(newJet);
+////        }
 
     }   // <--- Jet Loop End (여기가 닫혔는지 꼭 확인!)
     
@@ -667,6 +683,7 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
 } // CreateObject Function End
            
 
+
 // ============================================================================
 // selectObjects — 이벤트 선택 + Trigger SF + B-tag Reweight 적용
 //
@@ -688,211 +705,6 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
 //   이유: 두 보정 모두 selection 후의 kinematics (HT, nJets, jet6PT)에 의존하므로
 //   cut 이전에 적용하면 의미가 없다.
 //   단, cutflow 중간 단계에서는 보정 전 weight를 사용하여 selection efficiency를
-// ============================================================================
-// [STEP3] applyEventScaleFactors — 이벤트 단위 보정(SF) 블록
-// HT cut 통과 직후(= nbjet cut 이전)에 kCutSequence의 onAfter로 호출된다.
-// 기존 selectObjects 인라인 블록을 메서드로 추출 — 내용은 비트 동일 이동.
-// 위치 의미(왜 step 7과 8 사이인가)는 블록 첫 주석 [MOVED ...] 참조.
-// ============================================================================
-void ttHHanalyzer_unified::applyEventScaleFactors(event* thisEvent){
-    // ══════════════════════════════════════════════════════════════════════
-    // [MOVED from post-step-10 to pre-step-8]
-    // Event-level corrections applied here — between HT cut (step 7) and
-    // nbjet cut (step 8) — so cutflow histograms from step 8 onwards see
-    // the SF-corrected MC. This is required to read the b-tag SF / trigger
-    // SF / norm reweight effect from the cutflow ratios.
-    //
-    // [ttH AN A.2.1] inclusive ttbar dispatched by genTtbarId; non-ttbar
-    // by sample name. See Config_TtCatGroup.hh::MakeProcessKey().
-    // ══════════════════════════════════════════════════════════════════════
-    triggerSF_        = 1.0f;
-    triggerSF_up_     = 1.0f;
-    triggerSF_down_   = 1.0f;
-    btagNormReweight_ = 1.0f;
-
-    // Always populate the 3 chain weights with the FULL meaning, regardless
-    // of validation toggles — they are diagnostic, not the production path.
-    _evtWeight_chain_raw    = _evtWeight;     // baseline only
-    _evtWeight_chain_btagSF = _evtWeight;     // will multiply btagShape below
-    _evtWeight_chain_full   = _evtWeight;     // will multiply all SFs below
-
-    if (_DataOrMC != "Data") {
-
-        // ── b-tag shape SF ─────────────────────────────────────────────
-        // Both chains get it (even if legacy _evtWeight skips it in
-        // validation when toggle is off).
-        _evtWeight_chain_btagSF *= bTagWeight_central_;
-        _evtWeight_chain_full   *= bTagWeight_central_;
-        _evtWeight *= bTagWeight_central_;   // [STEP2] 토글 제거 — 항상 적용
-        _dbg.kv("sf", "btagShape", bTagWeight_central_);
-
-        // ── Trigger SF ────────────────────────────────────────────────
-        const int    nbjet   = thisEvent->getnSelbJet();
-        const double ht      = thisEvent->getSumSelJetScalarpT();
-        const double jet6pt  = thisEvent->getSelJets()->at(5)->getp4()->Pt();
-        const double jet6eta = thisEvent->getSelJets()->at(5)->getp4()->Eta();
-
-        triggerSF_      = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt,  0.0));
-        triggerSF_up_   = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt, +1.0));
-        triggerSF_down_ = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt, -1.0));
-
-        _evtWeight_chain_full *= triggerSF_;
-        _evtWeight *= triggerSF_;            // [STEP2] 토글 제거 — 항상 적용
-        _dbg.kv("sf", "triggerSF", triggerSF_);
-
-        // ── b-tag normalization reweight ──────────────────────────────
-        // [ttHH AN-2022/122 / ttH AN App. A.2.1] the b-tag-shape SF distorts
-        // the per-category normalization, so it is restored per (sample, HF
-        // category). Key on the EXPANDED id (not NanoAOD genTtbarId) so tt+nb
-        // (61/62/71/72) carries its own reweight bin, distinct from tt+2b
-        // (53/54/55) — high b-jet multiplicity is exactly where tt+nb lives.
-        // The stitch multiplier above already fixed the MC composition feeding
-        // this derivation, so the reweight is computed on the stitched mix.
-        const int nJets = thisEvent->getnSelJet();
-        const std::string processKey = TtCatGroup::MakeProcessKey(
-            _sampleName, _expandedTtbarId);
-        if (processKey.empty()) {
-            std::cerr << "\n[FATAL][btagRW] MakeProcessKey() returned an EMPTY key for"
-                      << " sample='" << _sampleName << "' expandedTtbarId="
-                      << _expandedTtbarId << " (sub="
-                      << (((_expandedTtbarId % 100) + 100) % 100) << ").\n"
-                      << "  Config_TtCatGroup.hh must map this code. Aborting (exit 45)"
-                      << " so the Condor job is flagged.\n" << std::endl;
-            std::exit(45);
-        }
-        // diagnostic: remember the (expandedSub -> processKey) mapping once, so
-        // the end-of-job log shows whether 61/62/71/72 get keys distinct from 53.
-        {
-            const int esub = ((_expandedTtbarId % 100) + 100) % 100;
-            if (_btagKeyByExpSub.find(esub) == _btagKeyByExpSub.end())
-                _btagKeyByExpSub[esub] = processKey;
-        }
-        btagNormReweight_ = static_cast<float>(
-            corrMgr->getBTagReweight("central", processKey, nJets, ht));
-        if (!std::isfinite(btagNormReweight_)) {
-            std::cerr << "\n[FATAL][btagRW] non-finite reweight (" << btagNormReweight_
-                      << ") for processKey='" << processKey << "' nJets=" << nJets
-                      << " ht=" << ht << ". Aborting (exit 46).\n" << std::endl;
-            std::exit(46);
-        }
-
-        _evtWeight_chain_full *= btagNormReweight_;
-        _evtWeight *= btagNormReweight_;     // [STEP2] 토글 제거 — 항상 적용
-        _dbg.kv("sf", "btagNormRW", btagNormReweight_);
-        _dbg.kv("sf", "evtWeight_afterSF", _evtWeight);
-
-        if (debugCorrections) {
-            std::cout << "[selectObjects] Corrections (mode="
-                      << analysisModeName(_analysisMode) << "):"
-                      << " sample=" << _sampleName
-                      << " genTtbarId=" << _ev->genTtbarId
-                      << " expandedTtbarId=" << _expandedTtbarId
-                      << " processKey=" << processKey
-                      << " btagSF=" << bTagWeight_central_
-                      << " trigSF=" << triggerSF_
-                      << " btagRW=" << btagNormReweight_
-                      << " w_raw="    << _evtWeight_chain_raw
-                      << " w_btagSF=" << _evtWeight_chain_btagSF
-                      << " w_full="   << _evtWeight_chain_full
-                      << " _evtWeight=" << _evtWeight
-                      << std::endl;
-        }
-    }
-}
-
-// ============================================================================
-// [STEP3] computeLeptonJetStats — lepton-jet / b-jet-lepton 보조 통계
-// lepton veto 단계 직후(통과/관찰 무관, 생존 시) kCutSequence의 onAfter로 호출.
-// ============================================================================
-void ttHHanalyzer_unified::computeLeptonJetStats(event* thisEvent){
-    thisEvent->getStatsComb(thisEvent->getSelJets(),  thisEvent->getSelLeptons(), ljetStat);
-    thisEvent->getStatsComb(thisEvent->getSelbJets(), thisEvent->getSelLeptons(), lbjetStat);
-}
-
-// ============================================================================
-// [STEP3] kCutSequence — selection 시퀀스의 단일 정의 (선언적 cut 테이블)
-// ----------------------------------------------------------------------------
-// 열 의미:
-//   step / label        : cutflow 단계와 라벨 (_cutStepLabels와 1:1)
-//   enforceIn           : cut으로 "강제"되는 모드 비트
-//                         (kSelBitMainLike = main+debug, kSelBitBtagTrig = btagtrig,
-//                          kSelEnforceAll = 둘 다, kSelObserveOnly = 기록 전용)
-//   recordOnlyIfPass    : true = 조건 충족시에만 기록 (≥3/≥4 b-tag 관찰 단계)
-//   pass                : 통과 조건 (nullptr = 무조건 통과; 카운터 단계)
-//   onAfter             : 생존 직후 부수 작업
-//
-// cut 값(Cuts::*)의 출처는 include/SelectionCuts.h 의 AN 주석 참조.
-// ============================================================================
-const std::vector<ttHHanalyzer_unified::CutDef> ttHHanalyzer_unified::kCutSequence = {
-    // 0. 모든 이벤트 카운트
-    { CutStep::kNoCut,         "noCut",           kSelObserveOnly, false, nullptr, nullptr },
-
-    // 1. Hadronic trigger — main/debug에서만 강제 (btagtrig은 skim에 bit 저장만)
-    { CutStep::kHadTrigger,    "HadTrigger",      kSelBitMainLike, false,
-      [](ttHHanalyzer_unified&, event& e, float)->bool { return e.getHadTriggerAccept(); },
-      nullptr },
-
-    // 2. MET noise filter — 전 모드 강제 (skim invariant)  [AN §4.2]
-    { CutStep::kNoiseFilter,   "noiseFilter",     kSelEnforceAll,  false,
-      [](ttHHanalyzer_unified&, event& e, float)->bool { return e.getMETFilter(); },
-      nullptr },
-
-    // 3. Primary vertex — 전 모드 강제  [AN §4.2]
-    { CutStep::kPrimaryVertex, "pv>=1",           kSelEnforceAll,  false,
-      [](ttHHanalyzer_unified&, event& e, float)->bool { return e.getPVvalue(); },
-      nullptr },
-
-    // 4. nJets ≥ 6 — 전 모드 강제  [AN Tab.55]
-    { CutStep::kNumJets,       "njets>=6",        kSelEnforceAll,  false,
-      [](ttHHanalyzer_unified&, event& e, float)->bool { return e.getnSelJet() >= Cuts::nJets; },
-      nullptr },
-
-    // 5. 6th jet pT > 40 — 전 모드 강제 (HLT 성능)  [AN Tab.55]
-    { CutStep::kSixthJetPt,    "6thJetsPT>40",    kSelEnforceAll,  false,
-      [](ttHHanalyzer_unified&, event& e, float)->bool {
-          return e.getSelJets()->at(5)->getp4()->Pt() > Cuts::sixthJetPt; },
-      nullptr },
-
-    // 6. Lepton veto — main/debug에서만 강제 (btagtrig은 muon control 유지)
-    //    [AN Tab.55] 생존 시 lepton-jet 통계 계산 (이전 코드와 동일 위치)
-    { CutStep::kLeptonVeto,    "nlepton==0",      kSelBitMainLike, false,
-      [](ttHHanalyzer_unified&, event& e, float)->bool { return e.getnVetoLepton() == Cuts::nLeptons; },
-      [](ttHHanalyzer_unified& a, event& e){ a.computeLeptonJetStats(&e); } },
-
-    // 7. HT > 500 — 전 모드 강제  [AN Tab.55]
-    //    통과 직후 이벤트 단위 SF 적용 (b-tag shape × trigger SF × norm RW) —
-    //    step 8 이후 cutflow가 SF 보정된 MC를 보도록 하기 위함 ([MOVED] 주석 참조)
-    { CutStep::kHT,            "HT>500",          kSelEnforceAll,  false,
-      [](ttHHanalyzer_unified&, event& e, float)->bool { return e.getSumSelJetScalarpT() > Cuts::HT; },
-      [](ttHHanalyzer_unified& a, event& e){ a.applyEventScaleFactors(&e); } },
-
-    // 8. nbJets ≥ 2 (baseline) — main/debug 강제  [AN Tab.55] ([round2] was 4)
-    { CutStep::kNumbJets2,     "nbjets>=2",       kSelBitMainLike, false,
-      [](ttHHanalyzer_unified&, event& e, float)->bool { return e.getnSelbJet() >= Cuts::nbJets; },
-      nullptr },
-
-    // 9-10. nbJets ≥ 3 / ≥ 4 — 관찰 전용 (cut 아님; 충족 시에만 기록 →
-    //       cutflow ratio로 다음 단계 영향만 읽는다. SR 분류는 이후 단계)
-    { CutStep::kNumbJets3,     "nbjets>=3",       kSelObserveOnly, true,
-      [](ttHHanalyzer_unified&, event& e, float)->bool { return e.getnSelbJet() >= 3; },
-      nullptr },
-    { CutStep::kNumbJets4,     "nbjets>=4",       kSelObserveOnly, true,
-      [](ttHHanalyzer_unified&, event& e, float)->bool { return e.getnSelbJet() >= 4; },
-      nullptr },
-
-    // 11. Hadronic W mass window — main/debug 강제  [AN Tab.55: 30 < m_qq < 250]
-    { CutStep::kHadWMass,      "30<HadW<250",     kSelBitMainLike, false,
-      [](ttHHanalyzer_unified&, event&, float wMass)->bool {
-          return !(wMass < Cuts::hadWMassLo || wMass > Cuts::hadWMassHi); },
-      nullptr },
-
-    // 12. Higgs mass window — 현재 비활성 (05 Jan 2026), 카운터만
-    { CutStep::kHiggsMass,     "HiggsMassWindow", kSelObserveOnly, false, nullptr, nullptr },
-
-    // 13. Total — 최종 이벤트
-    { CutStep::kTotal,         "nTotal",          kSelObserveOnly, false, nullptr, nullptr },
-};
-
 //   편향 없이 계산할 수 있도록 한다.
 // ═══════════════════════════════════════════════════════════════════════════
 bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
@@ -909,9 +721,6 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
     // ──────────────────────────────────────────────────────────────────────
     auto processStep = [&](CutStep step, float wMassVal) {
         int idx = static_cast<int>(step);
-        // [STEP2][debug] 히스토그램과 독립적으로 stdout에서 cutflow 재구성
-        // (hCutFlow 채움 로직의 교차 검증용; kDebug에서만 동작)
-        _dbg.cut(idx, _cutStepLabels.at(idx).c_str(), _evtWeight);
         
         if (idx < _cutFlowCount.size()) {
             _cutFlowCount[idx]  += 1.0;
@@ -961,48 +770,90 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
 
     auto* bjets = thisEvent->getSelbJets();
 
-    // Higgs reco는 b-jet >= 4 일 때만 수행. 부족하면 _minChi2Higgs를 sentinel
-    // (cLargeValue)로 남겨 downstream(fillCutStepHist)이 "reco 없음"으로 처리.
-    // [STEP2] kValidationStudy 제거에 따라 _valCfg 가변 하한 분기 삭제.
-    const int hRecoMin = 4;
+    // [Validation] In kValidationStudy mode the b-jet cut may be loosened
+    // (e.g. nbJetsCut=2). We still want to run Higgs reco only when there
+    // are enough b-jets; when there aren't, leave _minChi2Higgs at the
+    // sentinel value (cLargeValue) so downstream fillCutStepHist treats
+    // these events as "no Higgs reco available".
+    const int hRecoMin =
+        (_analysisMode == AnalysisMode::kValidationStudy)
+            ? _valCfg.forceHiggsRecoMinBjets
+            : 4;  // unchanged behaviour for all other modes
     if (_policy.doHiggsReconstruction) {
         const size_t nb = bjets->size();
         // Also guard against hRecoMin <= 0 (effectively disabled by user).
 
         if (hRecoMin > 0 && nb >= static_cast<size_t>(hRecoMin)) {
             // ═════════════════════════════════════════════════════════════
-            // [STEP6] di-mother 재구성 — HiggsReconstructor 클래스로 위임.
-            // pair cache + C(N,4)×3 pairing 한 번의 sweep으로 HH/ZH/ZZ 가설을
-            // 동시에 평가한다 (기존 인라인 코드는 HH만; 알고리즘·χ² 식·순회
-            // 순서는 비트 동일 — docs/changes/STEP_6 oracle 테스트).
+            // Step 1: Pair Cache 구축 (Build pair cache)
+            //
+            // pairMass[i][j] = (bjet_i + bjet_j).M()
+            // pairSumPt[i][j] = bjet_i.Pt() + bjet_j.Pt()
+            // pairPt[i][j] = (bjet_i + bjet_j).Pt()
+            //
+            // 대칭(symmetric)이므로 i < j 만 채운다.
             // ═════════════════════════════════════════════════════════════
-            std::vector<const TLorentzVector*> bjp4;
-            bjp4.reserve(nb);
-            for (size_t i = 0; i < nb; ++i) bjp4.push_back(bjets->at(i)->getp4());
+            struct PairInfo {
+                float mass;     // 불변질량 (invariant mass)
+                float sumPt;    // pT 합 (sum of individual pTs, for χ² denominator)
+                float pairPt;   // 쌍의 pT (pair system pT, for _bpTHiggs)
+            };
 
-            _higgsReco.reconstruct(bjp4, cHiggsMass, cZMass);
+            // nb × nb 상삼각 행렬 (upper-triangular matrix)
+            // flat vector 사용으로 cache locality 향상
+            std::vector<PairInfo> pairCache(nb * nb);
+            auto idx = [nb](size_t i, size_t j) -> size_t { return i * nb + j; };
 
-            // HH — 기존 멤버로 복사 (갱신 조건도 원본과 동일: sentinel보다 좋을 때)
-            const HiggsReconstructor::PairResult& hh = _higgsReco.HH();
-            if (hh.valid() && _minChi2Higgs > hh.chi2) {
-                _minChi2Higgs    = hh.chi2;
-                _bbMassMin1Higgs = hh.mass1;
-                _bbMassMin2Higgs = hh.mass2;
-                _bpTHiggs1       = hh.pt1;
-                _bpTHiggs2       = hh.pt2;
+            for (size_t i = 0; i < nb; ++i) {
+                for (size_t j = i + 1; j < nb; ++j) {
+                    TLorentzVector sum = *bjets->at(i)->getp4() + *bjets->at(j)->getp4();
+                    pairCache[idx(i,j)].mass   = static_cast<float>(sum.M());
+                    pairCache[idx(i,j)].sumPt  = static_cast<float>(
+                        bjets->at(i)->getp4()->Pt() + bjets->at(j)->getp4()->Pt());
+                    pairCache[idx(i,j)].pairPt = static_cast<float>(sum.Pt());
+                }
             }
-            // ZH / ZZ — 신규 가설은 tree branch로만 기록 (히스토는 추후)
-            const HiggsReconstructor::PairResult& zh = _higgsReco.ZH();
-            const HiggsReconstructor::PairResult& zz = _higgsReco.ZZ();
-            _hr_chi2ZH = zh.chi2; _hr_mZcandZH = zh.mass1; _hr_mHcandZH = zh.mass2;
-            _hr_chi2ZZ = zz.chi2; _hr_mZ1ZZ    = zz.mass1; _hr_mZ2ZZ    = zz.mass2;
 
-            // [STEP6][debug] 가설별 χ² 추적 — 종료 요약에서 chi2HH ≤ (ZH 대비
-            // 신호스러움) 등 분포 sanity + NaN 검출
-            _dbg.kv("higgsreco", "chi2HH", _minChi2Higgs);
-            _dbg.kv("higgsreco", "chi2ZH", _hr_chi2ZH);
-            _dbg.kv("higgsreco", "chi2ZZ", _hr_chi2ZZ);
-            _dbg.kv("higgsreco", "mHH1",   _bbMassMin1Higgs);
+            // ═════════════════════════════════════════════════════════════
+            // Step 2: C(N,4) × 3 pairings 순회 (Iterate all pairings)
+            //
+            // 4개의 b-jet {i,j,k,l}을 2쌍으로 나누는 방법은 3가지:
+            //   Pairing A: (i,j) + (k,l)
+            //   Pairing B: (i,k) + (j,l)
+            //   Pairing C: (i,l) + (j,k)
+            //
+            // χ² = (m_pair1 - m_H)² / σ₁ + (m_pair2 - m_H)² / σ₂
+            // where σ = √((sumPt / 2) × 0.2)
+            //   (20% 분해능 가정, resolution assumption)
+            // ═════════════════════════════════════════════════════════════
+            auto tryPairing = [&](size_t a, size_t b, size_t c, size_t d) {
+                const auto& p1 = pairCache[idx(a, b)];
+                const auto& p2 = pairCache[idx(c, d)];
+
+                float chi2 = std::pow(p1.mass - cHiggsMass, 2) / std::pow(p1.sumPt / 2.0f * 0.2f, 0.5f)
+                            + std::pow(p2.mass - cHiggsMass, 2) / std::pow(p2.sumPt / 2.0f * 0.2f, 0.5f);
+
+                if (_minChi2Higgs > chi2) {
+                    _minChi2Higgs   = chi2;
+                    _bbMassMin1Higgs = p1.mass;
+                    _bbMassMin2Higgs = p2.mass;
+                    _bpTHiggs1       = p1.pairPt;
+                    _bpTHiggs2       = p2.pairPt;
+                }
+            };
+
+            for (size_t i = 0; i < nb - 3; ++i) {
+                for (size_t j = i + 1; j < nb - 2; ++j) {
+                    for (size_t k = j + 1; k < nb - 1; ++k) {
+                        for (size_t l = k + 1; l < nb; ++l) {
+                            // 3가지 pairing 시도
+                            tryPairing(i, j, k, l);   // (i,j) + (k,l)
+                            tryPairing(i, k, j, l);   // (i,k) + (j,l)
+                            tryPairing(i, l, j, k);   // (i,l) + (j,k)
+                        }
+                    }
+                }
+            }
         } // end if (hRecoMin > 0 && nb >= hRecoMin)
     } // end if doHiggsReconstruction
 
@@ -1014,104 +865,469 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
     // processStep()으로 cutflow를 기록한다.
     // ══════════════════════════════════════════════════════════════════════
 
+    // Step 0: No Cut — 모든 이벤트 카운트
+    processStep(CutStep::kNoCut, hadWMass);
+
+    // Step 1: Trigger — Hadronic trigger path 통과 여부
+    // Trigger Study와 B-tag SF 도출 시에는 trigger cut을 끌 수 있음 (policy 제어)
+    if (_policy.applyTriggerCut) { 
+        if(cut["trigger"] > 0 && thisEvent->getHadTriggerAccept() == false){
+            return false;
+        }
+    }
+    processStep(CutStep::kHadTrigger, hadWMass);
+
+    // Step 2: Noise Filter — MET noise filter 통과 여부
+    if(cut["filter"] > 0 && thisEvent->getMETFilter() == false){
+        return false;
+    }
+    processStep(CutStep::kNoiseFilter, hadWMass);
+
+    // Step 3: Primary Vertex — 유효한 primary vertex 존재 여부
+    if(cut["pv"] > 0 && thisEvent->getPVvalue() == false){
+        return false;
+    }
+    processStep(CutStep::kPrimaryVertex, hadWMass);
+
+    // Step 4: nJets >= 6 (또는 설정값) — 최소 jet 수 요구
+    if(!(thisEvent->getnSelJet() >= cut["nJets"] )){
+        return false;
+    }
+    processStep(CutStep::kNumJets, hadWMass);
+
+    // Step 5: 6th Jet Pt > 40 — 6번째 jet의 pT 하한
+    if(!(thisEvent->getSelJets()->at(5)->getp4()->Pt() > cut["6thJetsPT"])){
+        return false;
+    }
+    processStep(CutStep::kSixthJetPt, hadWMass);
+
+    // Step 6: Lepton Veto (nLepton == 0) — 렙톤 거부 조건
+    if (_policy.requireSingleMuon) {
+        // TriggerSF 도출 모드: 정확히 muon 1개, electron 0개 요구
+        if (!(thisEvent->getnSelMuon() == 1 && thisEvent->getnSelElectron() == 0)) {
+            return false;
+        }
+    }
+    else if (_policy.applyLeptonVeto) {
+        // Main Analysis 모드: lepton veto (nLepton == 0)
+        if(!(thisEvent->getnVetoLepton() == cut["nLeptons"])){
+            return false;
+        }
+    }
+    processStep(CutStep::kLeptonVeto, hadWMass);
+
+    // (보조 통계 계산: lepton-jet statistics, b-jet-lepton statistics)
+    thisEvent->getStatsComb(thisEvent->getSelJets(), thisEvent->getSelLeptons(), ljetStat);
+    thisEvent->getStatsComb(thisEvent->getSelbJets(), thisEvent->getSelLeptons(), lbjetStat);
+
+    // Step 7: HT > 500 — Scalar pT sum 하한
+    if(!(thisEvent->getSumSelJetScalarpT() > cut["HT"])){
+        return false;
+    }
+    processStep(CutStep::kHT, hadWMass);
+
     // ══════════════════════════════════════════════════════════════════════
-    // [STEP3] 선언적 cut 테이블 실행
+    // [MOVED from post-step-10 to pre-step-8]
+    // Event-level corrections applied here — between HT cut (step 7) and
+    // nbjet cut (step 8) — so cutflow histograms from step 8 onwards see
+    // the SF-corrected MC. This is required to read the b-tag SF / trigger
+    // SF / norm reweight effect from the cutflow ratios.
     //
-    // selection의 "무엇을/어떤 순서로/어느 모드에서" 는 전부 kCutSequence
-    // (이 파일, selectObjects 바로 위)에 표로 정의되어 있다. 이 루프는 그
-    // 표를 순서대로 실행할 뿐이다:
-    //   - pass 실패 + 강제 모드(enforceIn)      → 이벤트 reject
-    //   - pass 성공 또는 비강제(관찰)            → cutflow 기록 (recordOnlyIfPass
-    //                                            가 true인 단계는 성공시에만 기록)
-    //   - 생존 시 onAfter 부수 작업 실행 (통계 계산, SF 적용)
-    // STEP3 이전 if-나열과의 동작 동일성: docs/changes/STEP_3_*.md §5 검증표.
+    // Each SF can be individually disabled in kValidationStudy mode via
+    // _valCfg toggles; the unmodified main analysis runs the full chain.
+    //
+    // [ttH AN A.2.1] inclusive ttbar dispatched by genTtbarId; non-ttbar
+    // by sample name. See Config_TtCatGroup.hh::MakeProcessKey().
     // ══════════════════════════════════════════════════════════════════════
-    const uint8_t mBit = selectionModeBit(_analysisMode);
-    for (const CutDef& c : kCutSequence) {
-        bool ok = (c.pass == nullptr) ? true
-                                      : c.pass(*this, *thisEvent, hadWMass);
-        // [muon-val] 옵션이 켜지면 lepton veto cut을 "정확히 1 muon + 0 e"로 치환
-        // (테이블 람다는 capture-less라 여기서 런타임 분기; 다른 step은 불변).
-        if (_require1Muon && c.step == CutStep::kLeptonVeto) {
-            ok = (thisEvent->getnSelMuon() == 1 && thisEvent->getnSelElectron() == 0);
+    triggerSF_        = 1.0f;
+    triggerSF_up_     = 1.0f;
+    triggerSF_down_   = 1.0f;
+    btagNormReweight_ = 1.0f;
+
+    const bool isVal = (_analysisMode == AnalysisMode::kValidationStudy);
+    const bool useBtagShape = isVal ? _valCfg.applyBtagShapeSF : true;
+    const bool useTrigSF    = isVal ? _valCfg.applyTriggerSF   : true;
+    const bool useBtagNorm  = isVal ? _valCfg.applyBtagNormSF  : true;
+
+    // Always populate the 3 chain weights with the FULL meaning, regardless
+    // of validation toggles — they are diagnostic, not the production path.
+    _evtWeight_chain_raw    = _evtWeight;     // baseline only
+    _evtWeight_chain_btagSF = _evtWeight;     // will multiply btagShape below
+    _evtWeight_chain_full   = _evtWeight;     // will multiply all SFs below
+
+    if (_DataOrMC != "Data") {
+
+        // ── b-tag shape SF ─────────────────────────────────────────────
+        // Both chains get it (even if legacy _evtWeight skips it in
+        // validation when toggle is off).
+        _evtWeight_chain_btagSF *= bTagWeight_central_;
+        _evtWeight_chain_full   *= bTagWeight_central_;
+        if (useBtagShape) _evtWeight *= bTagWeight_central_;
+
+        // ── Trigger SF ────────────────────────────────────────────────
+        const int    nbjet   = thisEvent->getnSelbJet();
+        const double ht      = thisEvent->getSumSelJetScalarpT();
+        const double jet6pt  = thisEvent->getSelJets()->at(5)->getp4()->Pt();
+        const double jet6eta = thisEvent->getSelJets()->at(5)->getp4()->Eta();
+
+        triggerSF_      = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt,  0.0));
+        triggerSF_up_   = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt, +1.0));
+        triggerSF_down_ = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt, -1.0));
+
+        _evtWeight_chain_full *= triggerSF_;
+        if (useTrigSF) _evtWeight *= triggerSF_;
+
+        // ── b-tag normalization reweight ──────────────────────────────
+        // [ttHH AN-2022/122 / ttH AN App. A.2.1] the b-tag-shape SF distorts
+        // the per-category normalization, so it is restored per (sample, HF
+        // category). Key on the EXPANDED id (not NanoAOD genTtbarId) so tt+nb
+        // (61/62/71/72) carries its own reweight bin, distinct from tt+2b
+        // (53/54/55) — high b-jet multiplicity is exactly where tt+nb lives.
+        // The stitch multiplier above already fixed the MC composition feeding
+        // this derivation, so the reweight is computed on the stitched mix.
+        const int nJets = thisEvent->getnSelJet();
+        const std::string processKey = TtCatGroup::MakeProcessKey(
+            _sampleName, _expandedTtbarId);
+        if (processKey.empty()) {
+            std::cerr << "\n[FATAL][btagRW] MakeProcessKey() returned an EMPTY key for"
+                      << " sample='" << _sampleName << "' expandedTtbarId="
+                      << _expandedTtbarId << " (sub="
+                      << (((_expandedTtbarId % 100) + 100) % 100) << ").\n"
+                      << "  Config_TtCatGroup.hh must map this code. Aborting (exit 45)"
+                      << " so the Condor job is flagged.\n" << std::endl;
+            std::exit(45);
         }
-        if (!ok && (c.enforceIn & mBit)) {
-            return false;                             // 강제 cut 실패 → reject
+        // diagnostic: remember the (expandedSub -> processKey) mapping once, so
+        // the end-of-job log shows whether 61/62/71/72 get keys distinct from 53.
+        {
+            const int esub = ((_expandedTtbarId % 100) + 100) % 100;
+            if (_btagKeyByExpSub.find(esub) == _btagKeyByExpSub.end())
+                _btagKeyByExpSub[esub] = processKey;
         }
-        if (ok || !c.recordOnlyIfPass) {
-            processStep(c.step, hadWMass);            // cutflow 기록
+        btagNormReweight_ = static_cast<float>(
+            corrMgr->getBTagReweight("central", processKey, nJets, ht));
+        if (!std::isfinite(btagNormReweight_)) {
+            std::cerr << "\n[FATAL][btagRW] non-finite reweight (" << btagNormReweight_
+                      << ") for processKey='" << processKey << "' nJets=" << nJets
+                      << " ht=" << ht << ". Aborting (exit 46).\n" << std::endl;
+            std::exit(46);
         }
-        if (c.onAfter) {
-            c.onAfter(*this, *thisEvent);             // 생존 시 부수 작업
+
+        _evtWeight_chain_full *= btagNormReweight_;
+        if (useBtagNorm) _evtWeight *= btagNormReweight_;
+
+        if (debugCorrections) {
+            std::cout << "[selectObjects] Corrections (mode="
+                      << analysisModeName(_analysisMode) << "):"
+                      << " sample=" << _sampleName
+                      << " genTtbarId=" << _ev->genTtbarId
+                      << " expandedTtbarId=" << _expandedTtbarId
+                      << " processKey=" << processKey
+                      << " btagSF=" << bTagWeight_central_
+                      << " trigSF=" << triggerSF_
+                      << " btagRW=" << btagNormReweight_
+                      << " w_raw="    << _evtWeight_chain_raw
+                      << " w_btagSF=" << _evtWeight_chain_btagSF
+                      << " w_full="   << _evtWeight_chain_full
+                      << " _evtWeight=" << _evtWeight
+                      << std::endl;
         }
     }
 
+
+    // ─── b-tag cut sequence — three steps (≥2, ≥3, ≥4) ────────────────
+    // Each step is a SEPARATE cut + processStep so the cutflow and per-step
+    // distributions show the impact of every increment.
+    //
+    // In main mode (and other non-validation modes) the loosest cut here
+    // is applyBJetCut → ≥2 (per cut["nbJets"]). The tighter steps (≥3,
+    // ≥4) are processed for histograms first, then enforced as cuts only
+    // for the kTotal "SR" semantics. This way:
+    //   - main mode SR is ≥2 b-tags (matches ttH AN baseline)
+    //   - looking at cutStep ≥3 / ≥4 histograms tells you what the SR
+    //     would look like if tightened
+    //
+    // In validation mode the legacy single-cut behaviour is preserved.
+
+    if (_analysisMode == AnalysisMode::kValidationStudy) {
+        // Validation mode: single cut at _valCfg.nbJetsCut (existing logic)
+        const int needNb = _valCfg.nbJetsCut;
+        const bool cutEnabled = (_valCfg.nbJetsCut >= 0);
+        if (cutEnabled) {
+            if (!(thisEvent->getnSelbJet() >= needNb)) return false;
+        }
+        // Fill all three b-tag step hists (the event passes here, so it
+        // is at least at the level the user requested — duplicating into
+        // the ≥2/≥3/≥4 step hists is harmless for validation purposes).
+        processStep(CutStep::kNumbJets2, hadWMass);
+        if (thisEvent->getnSelbJet() >= 3) processStep(CutStep::kNumbJets3, hadWMass);
+        if (thisEvent->getnSelbJet() >= 4) processStep(CutStep::kNumbJets4, hadWMass);
+    }
+    else {
+        // Production-mode three-tier b-tag cutflow.
+        // Loosest cut first (gates whether we proceed at all in this mode):
+        const int needNbBaseline = static_cast<int>(cut["nbJets"]);  // ≥2
+        if (_policy.applyBJetCut) {
+            if (!(thisEvent->getnSelbJet() >= needNbBaseline)) return false;
+        }
+        processStep(CutStep::kNumbJets2, hadWMass);
+
+        // ≥3 — record but do NOT cut; the user reads the cutflow ratio
+        // at this step to see the next-level effect.
+        if (thisEvent->getnSelbJet() >= 3) {
+            processStep(CutStep::kNumbJets3, hadWMass);
+        }
+        // ≥4 — same idea
+        if (thisEvent->getnSelbJet() >= 4) {
+            processStep(CutStep::kNumbJets4, hadWMass);
+        }
+    }
+
+    // Step kHadWMass: hadronic W mass window
+    {
+        const bool hadWEnabled =
+            (_analysisMode == AnalysisMode::kValidationStudy)
+                ? _valCfg.applyHadWWindow
+                : _policy.applyHadWMassCut;
+        if (hadWEnabled) {
+            if (hadWMass < 30.0f || hadWMass > 250.0f) {
+                return false;
+            }
+        }
+    }
+    processStep(CutStep::kHadWMass, hadWMass);
+
+    // Step 10: Higgs Mass Window (현재 사용하지 않음, 05 Jan 2026)
+    processStep(CutStep::kHiggsMass, hadWMass);
+
+
+
+    // Step 11: Total — 최종 이벤트 (모든 cut + 모든 보정 적용)
+    processStep(CutStep::kTotal, hadWMass);
+
+   
     return true;
 }
 
 
-// [STEP8] motherReco() 제거 — 호출처 0인 죽은 메서드 (HiggsReconstructor로 대체됨).
-//         원형은 docs/backup_20260611 참조.
+void ttHHanalyzer_unified::motherReco(const TLorentzVector & dPar1p4,const TLorentzVector & dPar2p4, const float mother1mass, float & _minChi2,float & _bbMassMin1){
+    float bbMass1, chi2;
+    bbMass1 = (dPar1p4+dPar2p4).M();
+    chi2 = pow((bbMass1 - mother1mass),2)/pow((dPar1p4.Pt()+dPar2p4.Pt())/2.*0.02,0.5);
+    if(_minChi2 > chi2){
+	_minChi2      = chi2;
+	_bbMassMin1   = bbMass1;
+	_bpTHiggs1    = (dPar1p4+dPar2p4).Pt();
+    }
+} 
 
-// ═══════════════════════════════════════════════════════════════════════════
-// analyze — selection 이후·기록 이전의 파생량 계산 단계.
-// 현재: [STEP5] event shape (jets/b-jets 각 5변수). Higgs reco는 selectObjects
-// 내 HiggsReconstructor 호출로 수행됨에 유의 (b-jet 확정 직후가 필요해서).
-// ═══════════════════════════════════════════════════════════════════════════
+
+void ttHHanalyzer_unified::diMotherReco(const TLorentzVector & dPar1p4,const TLorentzVector & dPar2p4,const TLorentzVector & dPar3p4,const TLorentzVector & dPar4p4, const float mother1mass, const float  mother2mass, float & _minChi2,float & _bbMassMin1, float & _bbMassMin2){
+    float bbMass1, bbMass2, chi2;
+    bbMass1 = (dPar1p4+dPar2p4).M();
+    bbMass2 = (dPar3p4+dPar4p4).M();
+    // [FIX] 2nd term denominator 0.02 -> 0.2 corrected. Assuming 20% resolution for both candidates.
+    chi2 = pow((bbMass1 - mother1mass),2)/pow((dPar1p4.Pt()+dPar2p4.Pt())/2.*0.2,0.5)
+         + pow((bbMass2 - mother2mass),2)/pow((dPar3p4.Pt()+dPar4p4.Pt())/2.*0.2,0.5);
+    if(_minChi2 > chi2){
+	_minChi2      = chi2;
+	_bbMassMin1   = bbMass1;
+	_bbMassMin2   = bbMass2;
+	_bpTHiggs1    = (dPar1p4+dPar2p4).Pt();
+	_bpTHiggs2    = (dPar3p4+dPar4p4).Pt();
+    }
+} 
+
 void ttHHanalyzer_unified::analyze(event *thisEvent){
 
-    // ══════════════════════════════════════════════════════════════════════
-    // [STEP5] Event shape 계산 — selected jets / b-jets의 momentum tensor
-    // (EventShape 라이브러리: sphericity/aplanarity/C/D; di-lepton analyzer의
-    //  소스-include 방식 대신 libEventShape.a 링크 사용)
-    // 객체 2개 미만이면 tensor가 퇴화하므로 계산하지 않음 (-1 유지).
-    // ══════════════════════════════════════════════════════════════════════
-    {
-        std::vector<TVector3> vJet, vBjet;
-        for (auto* j : *thisEvent->getSelJets())  vJet.push_back(j->getp4()->Vect());
-        for (auto* b : *thisEvent->getSelbJets()) vBjet.push_back(b->getp4()->Vect());
+    //////std::vector<objectJet*>* bJetsInv = thisEvent->getSelbJets(); 
+    //////std::vector<objectJet*>* lbJetsInv = thisEvent->getLoosebJets(); 
+    //////std::vector<objectJet*>* jetsInv = thisEvent->getSelJets(); 
 
-        if (vJet.size() >= 2) {
-            EventShape es(vJet);
-            _es_aplanarity      = static_cast<Float_t>(es.getAplanarity());
-            _es_sphericity      = static_cast<Float_t>(es.getSphericity());
-            _es_transSphericity = static_cast<Float_t>(es.getTransSphericity());
-            _es_C               = static_cast<Float_t>(es.getC());
-            _es_D               = static_cast<Float_t>(es.getD());
-        }
-        if (vBjet.size() >= 2) {
-            EventShape esB(vBjet);
-            _es_bjetAplanarity      = static_cast<Float_t>(esB.getAplanarity());
-            _es_bjetSphericity      = static_cast<Float_t>(esB.getSphericity());
-            _es_bjetTransSphericity = static_cast<Float_t>(esB.getTransSphericity());
-            _es_bjetC               = static_cast<Float_t>(esB.getC());
-            _es_bjetD               = static_cast<Float_t>(esB.getD());
-        }
-        // [STEP5][debug] 정의역 검증: sphericity∈[0,1], aplanarity∈[0,0.5],
-        // C,D∈[0,1] — 범위 밖/NaN이면 종료 요약의 BAD/minmax로 드러난다.
-        _dbg.kv("evtshape", "sphericity", _es_sphericity);
-        _dbg.kv("evtshape", "aplanarity", _es_aplanarity);
-        _dbg.kv("evtshape", "C",          _es_C);
-        _dbg.kv("evtshape", "D",          _es_D);
-        _dbg.kv("evtshape", "bjetSphericity", _es_bjetSphericity);
-    }
+    //////std::vector<TVector3> vectorsJet, vectorsBjet;
+    //////// Event Shape Calculation & genbjet matching for mother particle
+    //////for(int k = 0; k < jetsInv->size(); k++){
+    //////     vectorsJet.push_back(jetsInv->at(k)->getp4()->Vect());
+    //////}
+    //////for(int m = 0; m < bJetsInv->size(); m++){
+    //////    vectorsBjet.push_back(bJetsInv->at(m)->getp4()->Vect());
+    //////    if(thisEvent->getnGenPart() < 1) continue;
+    //////    bJetsInv->at(m)->matchedtoHiggs = false;	    	
+    //////    for(auto genParticle: *thisEvent->getGenParts()){
+    //////        float dR = bJetsInv->at(m)->getp4()->DeltaR( *genParticle->getp4());
+    //////        if(genParticle->hasHiggsMother == true && dR < 0.8 && (fabs(bJetsInv->at(m)->getp4()->Pt() - (*genParticle->getp4()).Pt()) < bJetsInv->at(m)->getp4()->Pt()*0.4) ){
+    //////          if(dR > genParticle->dRmatched) {
+    //////    	  //std::cout << "this was matched to a closer particle before" << std::endl;
+    //////          }else if( genParticle->matched){
+    //////    	  //std::cout << "this was matched before" << std::endl;
+    //////          }
+    //////          bJetsInv->at(m)->matchedtoHiggs   = true;	
+    //////          bJetsInv->at(m)->matchedtoHiggsdR = dR;	
+    //////          genParticle->matched = true;
+    //////          genParticle->dRmatched = dR;
+    //////          break;
+    //////        }
+    //////    } 
+    //////    //	std::cout << bJetsInv->at(m)->matchedtoHiggsb << std::endl;  
+    //////}
 
+    //////_minChi2Higgs  = cLargeValue;
+    //////_minChi2Z      = cLargeValue;
+    //////_minChi2HiggsZ = cLargeValue;
+    //////_minChi2SHiggsNotMatched = cLargeValue;
+    //////_minChi2SHiggsMatched = cLargeValue;
+    //////_minChi2HHNotMatched = cLargeValue;
+    //////_minChi2HHMatched = cLargeValue;
+    //////_bbMassMinSHiggsMatched = -1;
+    //////_bbMassMinSHiggsNotMatched = -1;
+    //////_bbMassMinHH1Matched = -1;
+    //////_bbMassMinHH1NotMatched = -1;
+    //////_bbMassMinHH2Matched = -1;
+    //////_bbMassMinHH2NotMatched = -1;
+
+    //////float tempminChi2 = cLargeValue, tmpMassMin1HiggsZ = 0., tmpMassMin2HiggsZ = 0.;
+    //////float tempMinChi2SHiggs = cLargeValue, tempMinChi2SHiggs_r = cLargeValue, tmpMassMinSHiggs = 0.;
+    //////float tempMinChi2SHiggsMatched = cLargeValue, tempMinChi2SHiggsMatched_r = cLargeValue, tmpMassMinSHiggsMatched = 0.;
+    //////float tempMinChi2SHiggsNotMatched = cLargeValue, tempMinChi2SHiggsNotMatched_r = cLargeValue, tmpMassMinSHiggsNotMatched = 0.;
+    ////////extract H
+    //////for( int ibjet1 = 0; ibjet1 < bJetsInv->size(); ibjet1++){
+    //////    tempMinChi2SHiggs = cLargeValue;
+    //////    bJetsInv->at(ibjet1)->minChiHiggsIndex = -1;
+    //////    for( int ibjet2 = 0; ibjet2 < bJetsInv->size(); ibjet2++){
+    //////        if( ibjet1 == ibjet2) continue;	   
+    //////        tempMinChi2SHiggs_r = tempMinChi2SHiggs;
+    //////        motherReco(*bJetsInv->at(ibjet1)->getp4(), *bJetsInv->at(ibjet2)->getp4(),cHiggsMass, tempMinChi2SHiggs, tmpMassMinSHiggs);
+    //////        if(tempMinChi2SHiggs_r > tempMinChi2SHiggs){
+    //////    	bJetsInv->at(ibjet1)->minChiHiggsIndex = ibjet2;
+    //////        }
+    //////        if(bJetsInv->at(ibjet1)->matchedtoHiggs == true && bJetsInv->at(ibjet2)->matchedtoHiggs == true){
+    //////    	motherReco(*bJetsInv->at(ibjet1)->getp4(), *bJetsInv->at(ibjet2)->getp4(),cHiggsMass, _minChi2SHiggsMatched, _bbMassMinSHiggsMatched);		
+    //////        } else if (bJetsInv->at(ibjet1)->matchedtoHiggs == false && bJetsInv->at(ibjet2)->matchedtoHiggs == false){
+    //////    	motherReco(*bJetsInv->at(ibjet1)->getp4(), *bJetsInv->at(ibjet2)->getp4(),cHiggsMass, _minChi2SHiggsNotMatched, _bbMassMinSHiggsNotMatched);		
+    //////        }
+    //////    }
+    //////    bJetsInv->at(ibjet1)->minChiHiggs = tempMinChi2SHiggs;
+    //////}
+
+
+    //////// HH & ZZ reco : 4 medium b jet case
+
+    //////if(thisEvent->getnSelbJet() >  3){
+    //////    for( int ibjet1 = 0; ibjet1 < bJetsInv->size(); ibjet1++){
+    //////        for( int ibjet2 = ibjet1+1; ibjet2 < bJetsInv->size(); ibjet2++){
+    //////    	if( ibjet1 == ibjet2) continue;
+    //////    	for( int ibjet3 = 1; ibjet3 < bJetsInv->size(); ibjet3++){
+    //////    	    if(ibjet1 == ibjet3 || ibjet2 == ibjet3) continue;
+    //////    	    for( int ibjet4 = ibjet3+1; ibjet4 < bJetsInv->size(); ibjet4++){
+    //////    		if(ibjet1 == ibjet4 || ibjet2 == ibjet4 || ibjet3 == ibjet4 ) continue;		
+    //////    		if(bJetsInv->at(ibjet1)->matchedtoHiggs == true && bJetsInv->at(ibjet2)->matchedtoHiggs == true && bJetsInv->at(ibjet3)->matchedtoHiggs == true && bJetsInv->at(ibjet4)->matchedtoHiggs == true){
+    //////    		    diMotherReco(*bJetsInv->at(ibjet1)->getp4(), *bJetsInv->at(ibjet2)->getp4()
+    //////    				 , *bJetsInv->at(ibjet3)->getp4(), *bJetsInv->at(ibjet4)->getp4() 
+    //////    				 , cHiggsMass, cHiggsMass, _minChi2HHMatched, _bbMassMinHH1Matched, _bbMassMinHH2Matched);
+    //////    		} else {
+    //////    		    diMotherReco(*bJetsInv->at(ibjet1)->getp4(), *bJetsInv->at(ibjet2)->getp4()
+    //////    				 , *bJetsInv->at(ibjet3)->getp4(), *bJetsInv->at(ibjet4)->getp4() 
+    //////    				 , cHiggsMass, cHiggsMass, _minChi2HHNotMatched, _bbMassMinHH1NotMatched, _bbMassMinHH2NotMatched);
+    //////    		}
+    //////    		diMotherReco(*bJetsInv->at(ibjet1)->getp4(), *bJetsInv->at(ibjet2)->getp4()
+    //////    			     , *bJetsInv->at(ibjet3)->getp4(), *bJetsInv->at(ibjet4)->getp4() 
+    //////    			     , cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
+    //////    		diMotherReco(*bJetsInv->at(ibjet1)->getp4(), *bJetsInv->at(ibjet2)->getp4()
+    //////    			     , *bJetsInv->at(ibjet3)->getp4(), *bJetsInv->at(ibjet4)->getp4()
+    //////    			     , cZMass, cZMass, _minChi2Z, _bbMassMin1Z, _bbMassMin2Z);  
+    //////    		diMotherReco(*bJetsInv->at(ibjet1)->getp4(), *bJetsInv->at(ibjet2)->getp4() //ZH 
+    //////    			     , *bJetsInv->at(ibjet3)->getp4(), *bJetsInv->at(ibjet4)->getp4()
+    //////    			     , cHiggsMass, cZMass, _minChi2HiggsZ, _bbMassMin1HiggsZ, _bbMassMin2HiggsZ); 
+    //////    	    }
+    //////    	}
+    //////        }
+    //////    }
+    //////    // HH & ZZ reco : 3 medium + 1 loose b jet case
+    //////}
+    ////else if(thisEvent->getnSelbJet() == 3 && thisEvent->getnbLooseJet() > 3){
+    ////    for( int ibjet1 = 0; ibjet1 < lbJetsInv->size(); ibjet1++){
+    ////        for( int ibjet2 = 0; ibjet2 < bJetsInv->size(); ibjet2++){
+    ////    	if( lbJetsInv->at(ibjet1) == bJetsInv->at(ibjet2)) continue;
+    ////    	for( int ibjet3 = 0; ibjet3 < bJetsInv->size(); ibjet3++){
+    ////    	    if(lbJetsInv->at(ibjet1) == bJetsInv->at(ibjet3) || ibjet2 == ibjet3) continue;
+    ////    	    for( int ibjet4 = ibjet3+1; ibjet4 < bJetsInv->size(); ibjet4++){
+    ////    		if(lbJetsInv->at(ibjet1) == bJetsInv->at(ibjet4) || ibjet2 == ibjet4 || ibjet3 == ibjet4 ) continue;		
+    ////    		if( bJetsInv->at(ibjet2)->matchedtoHiggs == true && bJetsInv->at(ibjet3)->matchedtoHiggs == true && bJetsInv->at(ibjet4)->matchedtoHiggs == true){
+    ////    		    diMotherReco(*lbJetsInv->at(ibjet1)->getp4(), *bJetsInv->at(ibjet2)->getp4()
+    ////    				 , *bJetsInv->at(ibjet3)->getp4(), *bJetsInv->at(ibjet4)->getp4() 
+    ////    				 , cHiggsMass, cHiggsMass, _minChi2HHMatched, _bbMassMinHH1Matched, _bbMassMinHH2Matched);
+    ////    		} else {
+    ////    		    diMotherReco(*lbJetsInv->at(ibjet1)->getp4(), *bJetsInv->at(ibjet2)->getp4()
+    ////    				 , *bJetsInv->at(ibjet3)->getp4(), *bJetsInv->at(ibjet4)->getp4() 
+    ////    				 , cHiggsMass, cHiggsMass, _minChi2HHNotMatched, _bbMassMinHH1NotMatched, _bbMassMinHH2NotMatched);
+    ////    		}
+
+    ////    		diMotherReco(*lbJetsInv->at(ibjet1)->getp4(), *bJetsInv->at(ibjet2)->getp4()
+    ////    			     , *bJetsInv->at(ibjet3)->getp4(), *bJetsInv->at(ibjet4)->getp4()
+    ////    			     , cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs); 
+    ////    		diMotherReco(*lbJetsInv->at(ibjet1)->getp4(), *bJetsInv->at(ibjet2)->getp4()
+    ////    			     , *bJetsInv->at(ibjet3)->getp4(), *bJetsInv->at(ibjet4)->getp4()
+    ////    			     , cZMass, cZMass, _minChi2Z, _bbMassMin1Z, _bbMassMin2Z); 
+    ////    		// ZH combinatorics 
+    ////    		diMotherReco(*lbJetsInv->at(ibjet1)->getp4(), *bJetsInv->at(ibjet2)->getp4() // ZH H(lbb)Z(bb)
+    ////    			     , *bJetsInv->at(ibjet3)->getp4(), *bJetsInv->at(ibjet4)->getp4()
+    ////    			     , cHiggsMass, cZMass, _minChi2HiggsZ, _bbMassMin1HiggsZ, _bbMassMin2HiggsZ);  
+    ////    		tempminChi2 = _minChi2HiggsZ; tmpMassMin1HiggsZ = _bbMassMin1HiggsZ; tmpMassMin2HiggsZ = _bbMassMin2HiggsZ;
+    ////    		diMotherReco(*lbJetsInv->at(ibjet1)->getp4(), *bJetsInv->at(ibjet2)->getp4() // ZH Z(lbb)H(bb)
+    ////    			     , *bJetsInv->at(ibjet3)->getp4(), *bJetsInv->at(ibjet4)->getp4()
+    ////    			     , cZMass, cHiggsMass, _minChi2HiggsZ, _bbMassMin2HiggsZ, _bbMassMin1HiggsZ); 
+    ////    		// pick the lowest minChi2 for the two combinatorics
+    ////    		if(tempminChi2 < _minChi2HiggsZ){
+    ////    		    _minChi2HiggsZ = tempminChi2; _bbMassMin1HiggsZ = tmpMassMin1HiggsZ; _bbMassMin2HiggsZ = tmpMassMin2HiggsZ;
+    ////    		}
+    ////    	    }
+    ////    	}
+    ////        }
+    ////    }
+    ////    // HH & ZZ reco : 3 medium b jet + 1 jet case 
+    ////}
+    ////else if(thisEvent->getnSelbJet() == 3){
+    ////    for( int ijet1 = 0; ijet1 < jetsInv->size(); ijet1++){
+    ////        for( int ibjet2 = 0; ibjet2 < bJetsInv->size(); ibjet2++){
+    ////    	if( jetsInv->at(ijet1) == bJetsInv->at(ibjet2)) continue;
+    ////    	for( int ibjet3 = 0; ibjet3 < bJetsInv->size(); ibjet3++){
+    ////    	    if(jetsInv->at(ijet1) == bJetsInv->at(ibjet3) || ibjet2 == ibjet3) continue;
+    ////    	    for( int ibjet4 = ibjet3+1; ibjet4 < bJetsInv->size(); ibjet4++){
+    ////    		if(jetsInv->at(ijet1) == bJetsInv->at(ibjet4) || ibjet2 == ibjet4 || ibjet3 == ibjet4 ) continue;		
+    ////    		diMotherReco(*jetsInv->at(ijet1)->getp4(), *bJetsInv->at(ibjet2)->getp4()
+    ////    			     , *bJetsInv->at(ibjet3)->getp4(), *bJetsInv->at(ibjet4)->getp4()
+    ////    			     , cHiggsMass, cHiggsMass, _minChi2Higgs, _bbMassMin1Higgs, _bbMassMin2Higgs);
+    ////    		diMotherReco(*jetsInv->at(ijet1)->getp4(), *bJetsInv->at(ibjet2)->getp4()
+    ////    			     , *bJetsInv->at(ibjet3)->getp4(), *bJetsInv->at(ibjet4)->getp4()
+    ////    			     , cZMass, cZMass, _minChi2Z, _bbMassMin1Z, _bbMassMin2Z);
+    ////    		// ZH combinatorics 
+    ////    		diMotherReco(*jetsInv->at(ijet1)->getp4(), *bJetsInv->at(ibjet2)->getp4() // ZH H(jb)Z(bb)
+    ////    			     , *bJetsInv->at(ibjet3)->getp4(), *bJetsInv->at(ibjet4)->getp4()
+    ////    			     , cHiggsMass, cZMass, _minChi2HiggsZ, _bbMassMin1HiggsZ, _bbMassMin2HiggsZ);
+    ////    		tempminChi2 = _minChi2HiggsZ; tmpMassMin1HiggsZ = _bbMassMin1HiggsZ; tmpMassMin2HiggsZ = _bbMassMin2HiggsZ;
+    ////    		diMotherReco(*jetsInv->at(ijet1)->getp4(), *bJetsInv->at(ibjet2)->getp4() // ZH Z(jb)H(bb)
+    ////    			     , *bJetsInv->at(ibjet3)->getp4(), *bJetsInv->at(ibjet4)->getp4()
+    ////    			     , cZMass, cHiggsMass, _minChi2HiggsZ, _bbMassMin2HiggsZ, _bbMassMin1HiggsZ);
+    ////    		// pick the lowest minChi2 for the two combinatorics
+    ////    		if(tempminChi2 < _minChi2HiggsZ){
+    ////    		    _minChi2HiggsZ = tempminChi2; _bbMassMin1HiggsZ = tmpMassMin1HiggsZ; _bbMassMin2HiggsZ = tmpMassMin2HiggsZ;
+    ////    		}
+    ////    	    }
+    ////    	}
+    ////        }
+    ////    }
+    ////}
+    
 
     //    std::map<std::string, float> testVars = HypoComb->GetBestPermutation(getLepP4(thisEvent),getJetP4(thisEvent),getJetCSV(thisEvent),*(thisEvent->getMET()->getp4()));
     //    HypoComb.GetBestPermutation(getLepP4(thisEvent),getJetP4(thisEvent),getJetCSV(thisEvent),*(thisEvent->getMET()->getp4()));
     //    std::cout<< "BLR: " << testVars["Evt_blr"] << std::endl;
 
+    //thisEvent->eventShapeJet  = new EventShape(vectorsJet);
+    //thisEvent->eventShapeBjet  = new EventShape(vectorsBjet);
 }
 
 
-// ═══════════════════════════════════════════════════════════════════════════
-// process — 이벤트 단위 메인 파이프라인
-//   ① per-event reset (stitchWeight, event shape, ZH/ZZ 결과, expandedTtbarId)
-//   ② weight 조립 (base × PU × L1Prefire × genWeight)
-//   ③ computeBTagWeight (shape SF; selection 전, JEC/JER 적용 후 kinematics)
-//   ④ expandedTtbarId resolve + stitch multiplier 적용/기록
-//   ⑤ createObjects → selectObjects(cut 테이블+SF) → analyze → fillHistos → fillTree
-// ═══════════════════════════════════════════════════════════════════════════
 void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
 
     // 1) Golden JSON filter for data
@@ -1137,14 +1353,6 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
     // hits. Data has no genTtbarId branch, so leave -1.
     _genTtbarIdNano  = -1;
     _expandedTtbarId = -1;
-    _stitchWeight    = 1.0f;   // [stitch] tree branch default (Data / non-plan / gated modes)
-    // [STEP6] 추가 가설 결과 per-event reset (-1 = 미수행)
-    _hr_chi2ZH = _hr_mZcandZH = _hr_mHcandZH = -1.f;
-    _hr_chi2ZZ = _hr_mZ1ZZ    = _hr_mZ2ZZ    = -1.f;
-    // [STEP5] event shape per-event reset (-1 = 미계산; analyze()에서 채움)
-    _es_aplanarity = _es_sphericity = _es_transSphericity = _es_C = _es_D = -1.f;
-    _es_bjetAplanarity = _es_bjetSphericity = _es_bjetTransSphericity = _es_bjetC = _es_bjetD = -1.f;
-    _dbg.nextEvent();           // [STEP2][debug] 이벤트 경계 (kDebug에서만 동작)
 
     if (debugCorrections) {
 	std::cout << "[process] : Current evtWeight="<< _evtWeight << std::endl;
@@ -1195,12 +1403,7 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
 	_evtWeight *= _PUWeight;
 	_evtWeight *= _L1PrefiringWeight;
 	_evtWeight *= _genWeight;
-	// [STEP2][debug] weight 구성요소 추적 (kDebug에서만 동작; NaN/Inf 집계 포함)
-	_dbg.kv("weight", "genWeight",        _genWeight);
-	_dbg.kv("weight", "PUWeight",         _PUWeight);
-	_dbg.kv("weight", "L1Prefire",        _L1PrefiringWeight);
-	_dbg.kv("weight", "base_xsecLumi",    _baseWeight);
-	_dbg.kv("weight", "evtWeight_preSF",  _evtWeight);
+	////_evtWeight *= bTagWeight_central_;
         if(debugCorrections) std::cout << "Final Event Weight: " << _evtWeight << std::endl;
     }
 
@@ -1294,9 +1497,6 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
         if (_stitch.inPlan()) {
             const double stitchMult = _stitch.factor(_expandedTtbarId, _evtWeight);
             _evtWeight *= stitchMult;
-            _stitchWeight = static_cast<float>(stitchMult);  // [stitch] -> output tree branch
-            _dbg.kv("stitch", "mult",            stitchMult);          // [STEP2][debug]
-            _dbg.kv("stitch", "expandedTtbarId", (double)_expandedTtbarId);
             if (debugCorrections) {
                 std::cout << "[stitch] sample=" << _sampleName
                           << " expandedTtbarId=" << _expandedTtbarId
@@ -1499,7 +1699,160 @@ void ttHHanalyzer_unified::fillHistos(event * thisEvent){
 	//	hCutFlow->SetBinContent(1, cutflow[0]);
     //    }
     
+////    int i = 0; 
+////    for (const auto& x : cutflow){
+////	//hCutFlow->SetBinContent(i, x.second);
+////	i++;
+////    }
     
+   ////// thisEvent->getCentrality(thisEvent->getSelJets(), thisEvent->getSelbJets(), jbjetCent);
+   ////// thisEvent->getCentrality(thisEvent->getSelJets(), thisEvent->getSelLeptons(), jlepCent);
+   ////// thisEvent->getStats(thisEvent->getSelJets(), jetStat);
+   ////// thisEvent->getStats(thisEvent->getSelbJets(), bjetStat);
+   ////// thisEvent->getStatsComb(thisEvent->getSelJets(), thisEvent->getSelbJets(), bjStat);
+   ////// thisEvent->getMaxPTComb(thisEvent->getSelJets(), thisEvent->getSelbJets(), jbbMaxs);
+   ////// thisEvent->getMaxPTSame(thisEvent->getSelJets(), jjjMaxs);
+
+   ////// thisEvent->getStatsComb(thisEvent->getSelJets(), thisEvent->getSelLeptons(), ljetStat);
+   ////// thisEvent->getStatsComb(thisEvent->getSelbJets(), thisEvent->getSelLeptons(), lbjetStat);
+   ////// 
+   ////// thisEvent->getFoxWolfram(thisEvent->getSelJets(), jetFoxWolfMom);
+   ////// thisEvent->getFoxWolfram(thisEvent->getSelbJets(), bjetFoxWolfMom);
+
+   ////// //    std::cout << "Number of Hadronic Higgs: " << thisEvent->getnHadronicHiggs() << std::endl;
+
+   ////// hjetNumber->Fill(thisEvent->getnSelJet(),_weight*thisEvent->getbTagSys());
+   ////// hHadronicHiggsNumber->Fill(thisEvent->getnHadronicHiggs(),_weight*thisEvent->getbTagSys());
+   ////// hBjetNumber->Fill(thisEvent->getnSelbJet(),_weight*thisEvent->getbTagSys());
+   ////// hLightJetNumber->Fill(thisEvent->getnLightJet(),_weight*thisEvent->getbTagSys());
+
+   ////// hjetAverageMass->Fill(thisEvent->getSumSelJetMass()/(float)thisEvent->getnSelJet(),_weight*thisEvent->getbTagSys());
+   ////// hHadronicHiggsAverageMass->Fill(thisEvent->getSumSelHadronicHiggsMass()/(float)thisEvent->getnHadronicHiggs(),_weight*thisEvent->getbTagSys());
+   ////// hBjetAverageMass->Fill(thisEvent->getSumSelbJetMass()/(float)thisEvent->getnSelbJet(),_weight*thisEvent->getbTagSys());
+   ////// hLightJetAverageMass->Fill(thisEvent->getSumSelLightJetMass()/(float)thisEvent->getnLightJet(),_weight*thisEvent->getbTagSys());
+   ////// hBjetAverageMassSqr->Fill((thisEvent->getSumSelbJetMass()*thisEvent->getSumSelbJetMass())/(float)thisEvent->getnSelbJet(), _weight*thisEvent->getbTagSys());
+
+   ////// if(thisEvent->getnHadronicHiggs() > 0){ 
+   //////     hHadronicHiggsSoftDropMass1->Fill(thisEvent->getSelHadronicHiggses()->at(0)->softDropMass,_weight*thisEvent->getbTagSys());
+   ////// }
+
+   ////// if(thisEvent->getnHadronicHiggs() > 1){ 
+   //////     hHadronicHiggsSoftDropMass2->Fill(thisEvent->getSelHadronicHiggses()->at(1)->softDropMass,_weight*thisEvent->getbTagSys());
+   ////// }
+
+
+   ////// hjetHT->Fill(thisEvent->getSumSelJetScalarpT(),_weight*thisEvent->getbTagSys());
+   ////// hBjetHT->Fill(thisEvent->getSumSelbJetScalarpT(),_weight*thisEvent->getbTagSys());
+   ////// hHadronicHiggsHT->Fill(thisEvent->getSumSelHadronicHiggsScalarpT(),_weight*thisEvent->getbTagSys());
+   ////// hLightJetHT->Fill(thisEvent->getSumSelLightJetScalarpT(),_weight*thisEvent->getbTagSys());
+   ////// hAvgDeltaRjj->Fill(jetStat.meandR,_weight*thisEvent->getbTagSys());
+   ////// hAvgDeltaEtajj->Fill(jetStat.meandEta,_weight*thisEvent->getbTagSys());
+   ////// hminDeltaRjj->Fill(jetStat.mindR,_weight*thisEvent->getbTagSys());
+   ////// hminDeltaRMassjj->Fill(jetStat.mindRMass,_weight*thisEvent->getbTagSys());
+   ////// hminDeltaRpTjj->Fill(jetStat.mindRpT,_weight*thisEvent->getbTagSys());
+   ////// hAvgDeltaRbb->Fill(bjetStat.meandR,_weight*thisEvent->getbTagSys());
+   ////// hAvgDeltaRbj->Fill(bjStat.meandR,_weight*thisEvent->getbTagSys());
+   ////// hAvgDeltaEtabj->Fill(bjStat.meandEta,_weight*thisEvent->getbTagSys());
+   ////// hminDeltaRbj->Fill(bjStat.mindR,_weight*thisEvent->getbTagSys());
+   ////// hminDeltaRMassbj->Fill(bjStat.mindRMass,_weight*thisEvent->getbTagSys());
+   ////// hminDeltaRpTbj->Fill(bjStat.mindRpT,_weight*thisEvent->getbTagSys());    
+   ////// hAvgDeltaEtabb->Fill(bjetStat.meandEta,_weight*thisEvent->getbTagSys());
+   ////// hminDeltaRbb->Fill(bjetStat.mindR,_weight*thisEvent->getbTagSys());
+   ////// hminDeltaRMassbb->Fill(bjetStat.mindRMass,_weight*thisEvent->getbTagSys());
+   ////// hminDeltaRpTbb->Fill(bjetStat.mindRpT,_weight*thisEvent->getbTagSys());
+   ////// hmaxDeltaEtabb->Fill(bjetStat.maxdEta,_weight*thisEvent->getbTagSys());
+   ////// hmaxDeltaEtajj->Fill(jetStat.maxdEta,_weight*thisEvent->getbTagSys());
+   ////// hAvgDeltaEtabj->Fill(bjStat.meandEta,_weight*thisEvent->getbTagSys());
+   ////// hmaxDeltaEtabj->Fill(bjStat.maxdEta,_weight*thisEvent->getbTagSys());
+   ////// hmaxPTmassjbb->Fill(jbbMaxs.maxPTmass, _weight*thisEvent->getbTagSys());
+   ////// hmaxPTmassjjj->Fill(jjjMaxs.maxPTmass, _weight*thisEvent->getbTagSys());
+
+   ////// hInvMassHSingleMatched->Fill(_bbMassMinSHiggsMatched,_weight*thisEvent->getbTagSys());
+   ////// hInvMassHSingleNotMatched->Fill(_bbMassMinSHiggsNotMatched,_weight*thisEvent->getbTagSys());
+   ////// hChi2HiggsSingleMatched->Fill(_minChi2SHiggsMatched,_weight*thisEvent->getbTagSys());
+   ////// hChi2HiggsSingleNotMatched->Fill(_minChi2SHiggsNotMatched,_weight*thisEvent->getbTagSys());
+
+   ////// hInvMassHH1Matched->Fill(_bbMassMinHH1Matched,_weight*thisEvent->getbTagSys());
+   ////// hInvMassHH1NotMatched->Fill(_bbMassMinHH1NotMatched,_weight*thisEvent->getbTagSys());
+   ////// hInvMassHH2Matched->Fill(_bbMassMinHH2Matched,_weight*thisEvent->getbTagSys());
+   ////// hInvMassHH2NotMatched->Fill(_bbMassMinHH2NotMatched,_weight*thisEvent->getbTagSys());
+   ////// hChi2HHMatched->Fill(_minChi2HHMatched,_weight*thisEvent->getbTagSys());
+   ////// hChi2HHNotMatched->Fill(_minChi2HHNotMatched,_weight*thisEvent->getbTagSys());
+
+
+   ////// hInvMassH1->Fill(_bbMassMin1Higgs,_weight*thisEvent->getbTagSys());
+   ////// hInvMassH2->Fill(_bbMassMin2Higgs,_weight*thisEvent->getbTagSys());
+   ////// hInvMassH1_zoomIn->Fill(_bbMassMin1Higgs,_weight*thisEvent->getbTagSys());
+   ////// hInvMassH2_zoomIn->Fill(_bbMassMin2Higgs,_weight*thisEvent->getbTagSys());
+   ////// hPTH1->Fill(_bpTHiggs1,_weight*thisEvent->getbTagSys());
+   ////// hPTH2->Fill(_bpTHiggs2,_weight*thisEvent->getbTagSys());
+   ////// hInvMassZ1->Fill(_bbMassMin1Z,_weight*thisEvent->getbTagSys());
+   ////// hInvMassZ2->Fill(_bbMassMin2Z,_weight*thisEvent->getbTagSys());
+   ////// hInvMassZ1_zoomIn->Fill(_bbMassMin1Z,_weight*thisEvent->getbTagSys());
+   ////// hInvMassZ2_zoomIn->Fill(_bbMassMin2Z,_weight*thisEvent->getbTagSys());
+   ////// hInvMassHZ1->Fill(_bbMassMin1HiggsZ,_weight*thisEvent->getbTagSys());
+   ////// hInvMassHZ2->Fill(_bbMassMin2HiggsZ,_weight*thisEvent->getbTagSys());
+   ////// hInvMassHZ1_zoomIn->Fill(_bbMassMin1HiggsZ,_weight*thisEvent->getbTagSys());
+   ////// hInvMassHZ2_zoomIn->Fill(_bbMassMin2HiggsZ,_weight*thisEvent->getbTagSys());
+
+   ////// if(fabs(_bbMassMin1Higgs-cHiggsMass) < fabs(_bbMassMin2Higgs-cHiggsMass)){
+   //////     hInvMassH1mChi->Fill(_bbMassMin1Higgs,_weight*thisEvent->getbTagSys());
+   //////     hInvMassH2mChi->Fill(_bbMassMin2Higgs,_weight*thisEvent->getbTagSys());
+   ////// } else  {
+   //////     hInvMassH2mChi->Fill(_bbMassMin1Higgs,_weight*thisEvent->getbTagSys());
+   //////     hInvMassH1mChi->Fill(_bbMassMin2Higgs,_weight*thisEvent->getbTagSys());
+   ////// }
+   ////// hChi2Higgs->Fill(_minChi2Higgs,_weight*thisEvent->getbTagSys());
+   ////// hChi2Z->Fill(_minChi2Z,_weight*thisEvent->getbTagSys());
+   ////// hChi2HiggsZ->Fill(_minChi2HiggsZ,_weight*thisEvent->getbTagSys());
+
+   ////// 
+   ////// hmet->Fill(thisEvent->getMET()->getp4()->Pt(),_weight*thisEvent->getbTagSys());
+   ////// //    hmetPhi->Fill(thisEvent->getMET()->getp4()->Phi(),_weight*thisEvent->getbTagSys());
+   ////// // hmetEta->Fill(thisEvent->getMET()->getp4()->Eta(),_weight*thisEvent->getbTagSys());
+   ////// 
+   ////// hAplanarity->Fill(thisEvent->eventShapeJet->getAplanarity(), _weight*thisEvent->getbTagSys());
+   ////// hSphericity->Fill(thisEvent->eventShapeJet->getSphericity(), _weight*thisEvent->getbTagSys());
+   ////// hTransSphericity->Fill(thisEvent->eventShapeJet->getTransSphericity(), _weight*thisEvent->getbTagSys());
+   ////// hCvalue->Fill(thisEvent->eventShapeJet->getC(), _weight*thisEvent->getbTagSys());
+   ////// hDvalue->Fill(thisEvent->eventShapeJet->getD(), _weight*thisEvent->getbTagSys());
+   ////// hCentralityjb->Fill(jbjetCent.centrality, _weight*thisEvent->getbTagSys());    
+   ////// hCentralityjl->Fill(jlepCent.centrality, _weight*thisEvent->getbTagSys());    
+
+   ////// hH0->Fill(jetFoxWolfMom.h0, _weight*thisEvent->getbTagSys());
+   ////// hH1->Fill(jetFoxWolfMom.h1, _weight*thisEvent->getbTagSys());
+   ////// hH2->Fill(jetFoxWolfMom.h2, _weight*thisEvent->getbTagSys());
+   ////// hH3->Fill(jetFoxWolfMom.h3, _weight*thisEvent->getbTagSys());
+   ////// hH4->Fill(jetFoxWolfMom.h4, _weight*thisEvent->getbTagSys());
+   ////// hR1->Fill(jetFoxWolfMom.r1, _weight*thisEvent->getbTagSys());
+   ////// hR2->Fill(jetFoxWolfMom.r2, _weight*thisEvent->getbTagSys());
+   ////// hR3->Fill(jetFoxWolfMom.r3, _weight*thisEvent->getbTagSys());
+   ////// hR4->Fill(jetFoxWolfMom.r4, _weight*thisEvent->getbTagSys()); 
+
+
+   ////// hBjetH0->Fill(bjetFoxWolfMom.h0, _weight*thisEvent->getbTagSys());
+   ////// hBjetH1->Fill(bjetFoxWolfMom.h1, _weight*thisEvent->getbTagSys());
+   ////// hBjetH2->Fill(bjetFoxWolfMom.h2, _weight*thisEvent->getbTagSys());
+   ////// hBjetH3->Fill(bjetFoxWolfMom.h3, _weight*thisEvent->getbTagSys());
+   ////// hBjetH4->Fill(bjetFoxWolfMom.h4, _weight*thisEvent->getbTagSys());
+   ////// hBjetR1->Fill(bjetFoxWolfMom.r1, _weight*thisEvent->getbTagSys());
+   ////// hBjetR2->Fill(bjetFoxWolfMom.r2, _weight*thisEvent->getbTagSys());
+   ////// hBjetR3->Fill(bjetFoxWolfMom.r3, _weight*thisEvent->getbTagSys());
+   ////// hBjetR4->Fill(bjetFoxWolfMom.r4, _weight*thisEvent->getbTagSys()); 
+
+
+   ////// hBjetAplanarity->Fill(thisEvent->eventShapeBjet->getAplanarity(), _weight*thisEvent->getbTagSys());
+   ////// hBjetSphericity->Fill(thisEvent->eventShapeBjet->getSphericity(), _weight*thisEvent->getbTagSys());
+   ////// hBjetTransSphericity->Fill(thisEvent->eventShapeBjet->getTransSphericity(), _weight*thisEvent->getbTagSys());
+   ////// hBjetCvalue->Fill(thisEvent->eventShapeBjet->getC(), _weight*thisEvent->getbTagSys());
+   ////// hBjetDvalue->Fill(thisEvent->eventShapeBjet->getD(), _weight*thisEvent->getbTagSys());
+
+
+   ////// for(int ih=0; ih < thisEvent->getnSelJet() && ih < nHistsJets; ih++){
+   //////     hjetsPTs.at(ih)->Fill(thisEvent->getSelJets()->at(ih)->getp4()->Pt(),_weight*thisEvent->getbTagSys());
+   //////     hjetsEtas.at(ih)->Fill(thisEvent->getSelJets()->at(ih)->getp4()->Eta(),_weight*thisEvent->getbTagSys());
+   //////     hjetsBTagDisc.at(ih)->Fill(getJetCSV(thisEvent).at(ih),_weight*thisEvent->getbTagSys());
+   ////// }
    int nSel = thisEvent->getnSelJet();
    for(int ih = 0; ih < nSel && ih < nHistsJets; ++ih){
      float JEC_DiffRatio = thisEvent->getSelJets()->at(ih)->JEC_DiffRatio;   // nanoAOD JEC 적용 후 pT
@@ -1510,6 +1863,18 @@ void ttHHanalyzer_unified::fillHistos(event * thisEvent){
      h_JEC_Mass_DiffRatio.at(ih)->Fill(Mass_DiffRatio, _evtWeight);
    }
   
+   ////// for(int ih=0; ih < thisEvent->getnSelbJet() && ih < nHistsbJets; ih++){
+   //////     hbjetsPTs.at(ih)->Fill(thisEvent->getSelbJets()->at(ih)->getp4()->Pt(),_evtWeight*thisEvent->getbTagSys());
+   //////     hbjetsEtas.at(ih)->Fill(thisEvent->getSelbJets()->at(ih)->getp4()->Eta(),_evtWeight*thisEvent->getbTagSys());
+   //////     hbjetsBTagDisc.at(ih)->Fill(getbJetCSV(thisEvent).at(ih),_evtWeight*thisEvent->getbTagSys());
+   ////// }
+
+
+   ////// for(int ih=0; ih < thisEvent->getnLightJet() && ih < nHistsLightJets; ih++){
+   //////     hLightJetsPTs.at(ih)->Fill(thisEvent->getSelLightJets()->at(ih)->getp4()->Pt(),_evtWeight*thisEvent->getbTagSys());
+   //////     hLightJetsEtas.at(ih)->Fill(thisEvent->getSelLightJets()->at(ih)->getp4()->Eta(),_evtWeight*thisEvent->getbTagSys());
+   //////     hLightJetsBTagDisc.at(ih)->Fill(getlightJetCSV(thisEvent).at(ih),_evtWeight*thisEvent->getbTagSys());
+   ////// }
 
     /*    hleptonNumber->Fill(thisEvent->getnSelLepton(),_evtWeight*thisEvent->getbTagSys());
 
@@ -1560,6 +1925,7 @@ void ttHHanalyzer_unified::fillHistos(event * thisEvent){
 }
 
 
+
 void ttHHanalyzer_unified::writeHistos(){
     _of->file->cd();
     _histoDirs.at(0)->cd();
@@ -1574,6 +1940,125 @@ void ttHHanalyzer_unified::writeHistos(){
 
     }
 
+    ////for(int ih=0; ih<nHistsbJets; ih++){
+    ////    hbjetsPTs.at(ih)->Write();
+    ////    hbjetsEtas.at(ih)->Write();
+    ////    hbjetsBTagDisc.at(ih)->Write();
+    ////}
+
+    ////for(int ih=0; ih<nHistsLightJets; ih++){
+    ////    hLightJetsPTs.at(ih)->Write();
+    ////    hLightJetsEtas.at(ih)->Write();
+    ////    hLightJetsBTagDisc.at(ih)->Write();
+    ////}
+
+    ////hInvMassHadW->Write();
+
+    ////hInvMassHSingleMatched->Write();
+    ////hInvMassHSingleNotMatched->Write();
+    ////hChi2HiggsSingleNotMatched->Write();
+    ////hChi2HiggsSingleMatched->Write();
+    ////hInvMassHH1Matched->Write();
+    ////hInvMassHH1NotMatched->Write();
+    ////hInvMassHH2Matched->Write();
+    ////hInvMassHH2NotMatched->Write();
+    ////hChi2HHNotMatched->Write();
+    ////hChi2HHMatched->Write();
+
+    ////hjetNumber->Write();
+    ////hBjetNumber->Write();
+    ////hHadronicHiggsNumber->Write();
+    ////hLightJetNumber->Write();
+    ////hjetAverageMass->Write();
+    ////hBjetAverageMass->Write();
+    ////hHadronicHiggsAverageMass->Write();
+    ////hLightJetAverageMass->Write();
+    ////hBjetAverageMassSqr->Write();
+    ////hHadronicHiggsSoftDropMass1->Write();
+    ////hHadronicHiggsSoftDropMass2->Write();
+    ////hjetHT->Write();
+    ////hBjetHT->Write();
+    ////hHadronicHiggsHT->Write();
+    ////hLightJetHT->Write();
+    ////hAvgDeltaRjj->Write();
+    ////hminDeltaRjj->Write();
+    ////hminDeltaRMassjj->Write();
+    ////hminDeltaRpTjj->Write();
+    ////hAvgDeltaRbb->Write();
+    ////hAvgDeltaEtajj->Write();
+    ////hAvgDeltaEtabb->Write();
+    ////hminDeltaRbb->Write();
+    ////hminDeltaRMassbb->Write();
+    ////hminDeltaRpTbb->Write();
+    ////hmaxDeltaEtabb->Write();
+    ////hmaxDeltaEtajj->Write();
+    ////hAvgDeltaRbj->Write();
+    ////hAvgDeltaEtabj->Write();
+    ////hminDeltaRbj->Write();
+    ////hminDeltaRMassbj->Write();
+    ////hminDeltaRpTbj->Write();
+    ////hmaxDeltaEtabj->Write();
+    ////hmaxPTmassjbb->Write();
+    ////hmaxPTmassjjj->Write();
+
+    ////hPTH1->Write();
+    ////hPTH2->Write();
+    ////hInvMassH1->Write();
+    ////hInvMassH2->Write();
+    ////hInvMassH1_zoomIn->Write();
+    ////hInvMassH2_zoomIn->Write();
+    ////hInvMassH1mChi->Write();
+    ////hInvMassH2mChi->Write();
+    ////hInvMassHZ1->Write();
+    ////hInvMassHZ2->Write();
+    ////hInvMassHZ1_zoomIn->Write();
+    ////hInvMassHZ2_zoomIn->Write();
+    ////hInvMassZ1->Write();
+    ////hInvMassZ2->Write();
+    ////hInvMassZ1_zoomIn->Write();
+    ////hInvMassZ2_zoomIn->Write();
+    ////hChi2Higgs->Write();
+    ////hChi2HiggsZ->Write();
+    ////hChi2Z->Write();
+
+
+    ////hmet->Write();
+    ////// hmetPhi->Write();
+    ////// hmetEta->Write();
+
+    ////hAplanarity->Write();
+    ////hSphericity->Write();
+    ////hTransSphericity->Write();
+    ////hCvalue->Write();
+    ////hDvalue->Write();
+    ////hCentralityjb->Write();
+    ////hCentralityjl->Write();
+
+    ////hH0->Write();
+    ////hH1->Write();
+    ////hH2->Write();
+    ////hH3->Write();
+    ////hH4->Write();
+    ////hR1->Write();
+    ////hR2->Write();
+    ////hR3->Write();
+    ////hR4->Write(); 
+
+    ////hBjetH0->Write();
+    ////hBjetH1->Write();
+    ////hBjetH2->Write();
+    ////hBjetH3->Write();
+    ////hBjetH4->Write();
+    ////hBjetR1->Write();
+    ////hBjetR2->Write();
+    ////hBjetR3->Write();
+    ////hBjetR4->Write(); 
+
+    ////hBjetAplanarity->Write();
+    ////hBjetSphericity->Write();
+    ////hBjetTransSphericity->Write();
+    ////hBjetCvalue->Write();
+    ////hBjetDvalue->Write();
 
     _histoDirs.at(1)->cd();
     
@@ -1725,13 +2210,6 @@ void ttHHanalyzer_unified::writeHistos(){
     std::cout << "[ttCatSummary] ═══════════════════════════════════════════════\n"
               << std::endl;
 }
-// ═══════════════════════════════════════════════════════════════════════════
-// fillTree — selection 통과 이벤트를 flat tree(Tree/Tree)에 기록.
-// 파생 도구(bTagSF_ReweightStudy/TriggerStudy)의 입력 skim이 되는 branch들:
-//   evtWeight(모든 SF 곱힌 최종), stitchWeight(0/r/1), expandedTtbarId,
-//   bTagWeight·triggerSF·btagNormReweight(개별 SF), kinematics, event shape,
-//   chi2 가설(HH는 기존 멤버, ZH/ZZ는 [STEP6] branch).
-// ═══════════════════════════════════════════════════════════════════════════
 void ttHHanalyzer_unified::fillTree(event * thisEvent){
 
     jetPt.clear();
@@ -1790,11 +2268,400 @@ void ttHHanalyzer_unified::fillTree(event * thisEvent){
     passMETFilters = _passMETFilters;
     passHadTrig = thisEvent->getHadTriggerAccept();
 
+////////////////////////////////////////////////////////////////////////////////////////
    
-    // [STEP2][debug] tree 기록값 추적 — branch에 실리는 최종값 검증 (kDebug)
-    _dbg.kv("tree", "evtWeight",       _evtWeight);
-    _dbg.kv("tree", "stitchWeight",    _stitchWeight);
-    _dbg.kv("tree", "expandedTtbarId", (double)_expandedTtbarId);
+    //////bjetPT1 = thisEvent->getSelJets()->at(0)->getp4()->Pt();
+    //////bjetPT2 = thisEvent->getSelJets()->at(1)->getp4()->Pt();
+    //////bjetPT3 = thisEvent->getSelJets()->at(2)->getp4()->Pt();
+    //////bjetPT4 = thisEvent->getSelJets()->at(3)->getp4()->Pt();
+    //////bjetEta1 = thisEvent->getSelJets()->at(0)->getp4()->Eta();
+    //////bjetEta2 = thisEvent->getSelJets()->at(1)->getp4()->Eta();
+    //////bjetEta3 = thisEvent->getSelJets()->at(2)->getp4()->Eta();
+    //////bjetEta4 = thisEvent->getSelJets()->at(3)->getp4()->Eta();
+    //////bjetBTagDisc1 = getJetCSV(thisEvent).at(0);
+    //////bjetBTagDisc2 = getJetCSV(thisEvent).at(1);
+    //////bjetBTagDisc3 = getJetCSV(thisEvent).at(2);
+    //////bjetBTagDisc4 = getJetCSV(thisEvent).at(3);
+
+
+    //////bbjetPT1 = thisEvent->getSelbJets()->at(0)->getp4()->Pt();
+    //////bbjetPT2 = thisEvent->getSelbJets()->at(1)->getp4()->Pt();
+    //////bbjetPT3 = thisEvent->getSelbJets()->at(2)->getp4()->Pt();
+    //////bbjetEta1 = thisEvent->getSelbJets()->at(0)->getp4()->Eta();
+    //////bbjetEta2 = thisEvent->getSelbJets()->at(1)->getp4()->Eta();
+    //////bbjetEta3 = thisEvent->getSelbJets()->at(2)->getp4()->Eta();
+    //////bbjetPhi1 = thisEvent->getSelbJets()->at(0)->getp4()->Phi();
+    //////bbjetPhi2 = thisEvent->getSelbJets()->at(1)->getp4()->Phi();
+    //////bbjetPhi3 = thisEvent->getSelbJets()->at(2)->getp4()->Phi();
+    //////bbjetBTagDisc1 = getbJetCSV(thisEvent).at(0);
+    //////bbjetBTagDisc2 = getbJetCSV(thisEvent).at(1);
+    //////bbjetBTagDisc3 = getbJetCSV(thisEvent).at(2);
+    //////bbjetHiggsMatched1 = thisEvent->getSelbJets()->at(0)->matchedtoHiggs;
+    //////bbjetHiggsMatched2 = thisEvent->getSelbJets()->at(1)->matchedtoHiggs;
+    //////bbjetHiggsMatched3 = thisEvent->getSelbJets()->at(2)->matchedtoHiggs;
+    //////bbjetHiggsMatcheddR1 = thisEvent->getSelbJets()->at(0)->matchedtoHiggsdR;
+    //////bbjetHiggsMatcheddR2 = thisEvent->getSelbJets()->at(1)->matchedtoHiggsdR;
+    //////bbjetHiggsMatcheddR3 = thisEvent->getSelbJets()->at(2)->matchedtoHiggsdR;
+    //////bbjetMinChiHiggsIndex1 = thisEvent->getSelbJets()->at(0)->minChiHiggsIndex;
+    //////bbjetMinChiHiggsIndex2 = thisEvent->getSelbJets()->at(1)->minChiHiggsIndex;
+    //////bbjetMinChiHiggsIndex3 = thisEvent->getSelbJets()->at(2)->minChiHiggsIndex;
+
+
+    //////if(thisEvent->getnSelJet() > 4){
+    //////	bjetPT5 = thisEvent->getSelJets()->at(4)->getp4()->Pt();
+    //////    bjetEta5 = thisEvent->getSelJets()->at(4)->getp4()->Eta();
+    //////    bjetBTagDisc5 = getJetCSV(thisEvent).at(4);
+    //////} else{
+    //////    bjetPT5 = -6;
+    //////    bjetEta5 = -6;
+    //////    bjetBTagDisc5 = -6;
+    //////}
+    //////
+    //////if(thisEvent->getnSelJet() > 5){
+    //////    bjetPT6 = thisEvent->getSelJets()->at(5)->getp4()->Pt();
+    //////    bjetEta6 = thisEvent->getSelJets()->at(5)->getp4()->Eta();
+    //////    bjetBTagDisc6 = getJetCSV(thisEvent).at(5);
+    //////} else{
+    //////    bjetPT6 = -6;
+    //////    bjetEta6 = -6;
+    //////    bjetBTagDisc6 = -6;
+    //////}
+
+
+    //////if(thisEvent->getnSelJet() > 6){
+    //////    bjetPT7 = thisEvent->getSelJets()->at(6)->getp4()->Pt();
+    //////    bjetEta7 = thisEvent->getSelJets()->at(6)->getp4()->Eta();
+    //////    bjetBTagDisc7 = getJetCSV(thisEvent).at(6);
+    //////} else{
+    //////    bjetPT7 = -6;
+    //////    bjetEta7 = -6;
+    //////    bjetBTagDisc7 = -6;
+    //////}
+
+    //////if(thisEvent->getnSelJet() > 7){
+    //////    bjetPT8 = thisEvent->getSelJets()->at(7)->getp4()->Pt();
+    //////    bjetEta8 = thisEvent->getSelJets()->at(7)->getp4()->Eta();
+    //////    bjetBTagDisc8 = getJetCSV(thisEvent).at(7);
+    //////} else{
+    //////    bjetPT8 = -6;
+    //////    bjetEta8 = -6;
+    //////    bjetBTagDisc8 = -6;
+    //////}
+
+    //////if(thisEvent->getnSelJet() > 8){
+    //////    bjetPT9 = thisEvent->getSelJets()->at(8)->getp4()->Pt();
+    //////    bjetEta9 = thisEvent->getSelJets()->at(8)->getp4()->Eta();
+    //////    bjetBTagDisc9 = getJetCSV(thisEvent).at(8);
+    //////} else{
+    //////    bjetPT9 = -6;
+    //////    bjetEta9 = -6;
+    //////    bjetBTagDisc9 = -6;
+    //////}
+
+    //////if(thisEvent->getnSelJet() > 9){
+    //////    bjetPT10 = thisEvent->getSelJets()->at(9)->getp4()->Pt();
+    //////    bjetEta10 = thisEvent->getSelJets()->at(9)->getp4()->Eta();
+    //////    bjetBTagDisc10 = getJetCSV(thisEvent).at(9);
+    //////} else{
+    //////    bjetPT10 = -6;
+    //////    bjetEta10 = -6;
+    //////    bjetBTagDisc10 = -6;
+    //////}
+
+    //////if(thisEvent->getnSelJet() > 10){
+    //////    bjetPT11 = thisEvent->getSelJets()->at(10)->getp4()->Pt();
+    //////    bjetEta11 = thisEvent->getSelJets()->at(10)->getp4()->Eta();
+    //////    bjetBTagDisc11 = getJetCSV(thisEvent).at(10);
+    //////} else{
+    //////    bjetPT11 = -6;
+    //////    bjetEta11 = -6;
+    //////    bjetBTagDisc11 = -6;
+    //////}
+
+    //////if(thisEvent->getnSelJet() > 11){
+    //////    bjetPT12 = thisEvent->getSelJets()->at(11)->getp4()->Pt();
+    //////    bjetEta12 = thisEvent->getSelJets()->at(11)->getp4()->Eta();
+    //////    bjetBTagDisc12 = getJetCSV(thisEvent).at(11);
+    //////} else{
+    //////    bjetPT12 = -6;
+    //////    bjetEta12 = -6;
+    //////    bjetBTagDisc12 = -6;
+    //////}
+
+    //////// # b-jet
+    //////if(thisEvent->getnSelbJet() > 3){
+    //////    bbjetPT4 = thisEvent->getSelbJets()->at(3)->getp4()->Pt();
+    //////    bbjetEta4 = thisEvent->getSelbJets()->at(3)->getp4()->Eta();
+    //////    bbjetPhi4 = thisEvent->getSelbJets()->at(3)->getp4()->Phi();
+    //////    bbjetBTagDisc4 = getbJetCSV(thisEvent).at(3);
+    //////    bbjetHiggsMatched4 = thisEvent->getSelbJets()->at(3)->matchedtoHiggs;
+    //////    bbjetHiggsMatcheddR4 = thisEvent->getSelbJets()->at(3)->matchedtoHiggsdR;
+    //////    bbjetMinChiHiggsIndex4 = thisEvent->getSelbJets()->at(3)->minChiHiggsIndex;
+    //////} else {
+    //////    bbjetPT4 = -6;
+    //////    bbjetEta4 = -6;
+    //////    bbjetPhi4 = -6;
+    //////    bbjetBTagDisc4 = -6;
+    //////    bbjetHiggsMatched4 = 0;
+    //////    bbjetHiggsMatcheddR4 = -6;
+    //////    bbjetMinChiHiggsIndex4 = -6;
+    //////}
+    //////
+    //////if(thisEvent->getnSelbJet() > 4){
+    //////    bbjetPT5 = thisEvent->getSelbJets()->at(4)->getp4()->Pt();
+    //////    bbjetEta5 = thisEvent->getSelbJets()->at(4)->getp4()->Eta();
+    //////    bbjetPhi5 = thisEvent->getSelbJets()->at(4)->getp4()->Phi();
+    //////    bbjetBTagDisc5 = getbJetCSV(thisEvent).at(4);
+    //////    bbjetHiggsMatched5 = thisEvent->getSelbJets()->at(4)->matchedtoHiggs;
+    //////    bbjetHiggsMatcheddR5 = thisEvent->getSelbJets()->at(4)->matchedtoHiggsdR;
+    //////    bbjetMinChiHiggsIndex5 = thisEvent->getSelbJets()->at(4)->minChiHiggsIndex;
+    //////} else {
+    //////    bbjetPT5 = -6;
+    //////    bbjetEta5 = -6;
+    //////    bbjetPhi5 = -6;
+    //////    bbjetBTagDisc5 = -6;
+    //////    bbjetHiggsMatched5 = 0;
+    //////    bbjetHiggsMatcheddR5 = -6;
+    //////    bbjetMinChiHiggsIndex5 = -6;
+    //////}
+
+    //////if(thisEvent->getnSelbJet() > 5){
+    //////    bbjetPT6 = thisEvent->getSelbJets()->at(5)->getp4()->Pt();
+    //////    bbjetEta6 = thisEvent->getSelbJets()->at(5)->getp4()->Eta();
+    //////    bbjetPhi6 = thisEvent->getSelbJets()->at(5)->getp4()->Phi();
+    //////    bbjetBTagDisc6 = getbJetCSV(thisEvent).at(5);
+    //////    bbjetHiggsMatched6 = thisEvent->getSelbJets()->at(5)->matchedtoHiggs;
+    //////    bbjetHiggsMatcheddR6 = thisEvent->getSelbJets()->at(5)->matchedtoHiggsdR;
+    //////    bbjetMinChiHiggsIndex6 = thisEvent->getSelbJets()->at(5)->minChiHiggsIndex;
+    //////} else {
+    //////    bbjetPT6 = -6;
+    //////    bbjetEta6 = -6;
+    //////    bbjetPhi6 = -6;
+    //////    bbjetBTagDisc6 = -6;
+    //////    bbjetHiggsMatched6 = 0;
+    //////    bbjetHiggsMatcheddR6 = -6;
+    //////    bbjetMinChiHiggsIndex6 = -6;
+    //////}
+
+    //////if(thisEvent->getnSelbJet() > 6){
+    //////    bbjetPT7 = thisEvent->getSelbJets()->at(6)->getp4()->Pt();
+    //////    bbjetEta7 = thisEvent->getSelbJets()->at(6)->getp4()->Eta();
+    //////    bbjetPhi7 = thisEvent->getSelbJets()->at(6)->getp4()->Phi();
+    //////    bbjetBTagDisc7 = getbJetCSV(thisEvent).at(6);
+    //////    bbjetHiggsMatched7 = thisEvent->getSelbJets()->at(6)->matchedtoHiggs;
+    //////    bbjetHiggsMatcheddR7 = thisEvent->getSelbJets()->at(6)->matchedtoHiggsdR;
+    //////} else {
+    //////    bbjetPT7 = -6;
+    //////    bbjetEta7 = -6;
+    //////    bbjetPhi7 = -6;
+    //////    bbjetBTagDisc7 = -6;
+    //////    bbjetHiggsMatched7 = 0;
+    //////    bbjetHiggsMatcheddR7 = -6;
+    //////}
+
+
+    //////if(thisEvent->getnSelbJet() > 7){
+    //////    bbjetPT8 = thisEvent->getSelbJets()->at(7)->getp4()->Pt();
+    //////    bbjetEta8 = thisEvent->getSelbJets()->at(7)->getp4()->Eta();
+    //////    bbjetPhi8 = thisEvent->getSelbJets()->at(7)->getp4()->Phi();
+    //////    bbjetBTagDisc8 = getbJetCSV(thisEvent).at(7);
+    //////    bbjetHiggsMatched8 = thisEvent->getSelbJets()->at(7)->matchedtoHiggs;
+    //////    bbjetHiggsMatcheddR8 = thisEvent->getSelbJets()->at(7)->matchedtoHiggsdR;
+    //////} else {
+    //////    bbjetPT8 = -6;
+    //////    bbjetEta8 = -6;
+    //////    bbjetPhi8 = -6;
+    //////    bbjetBTagDisc8 = -6;
+    //////    bbjetHiggsMatched8 = 0;
+    //////    bbjetHiggsMatcheddR8 = 0;
+    //////}
+
+
+    //////if(thisEvent->getnLightJet() > 0){
+    //////	blightjetPT1 = thisEvent->getSelLightJets()->at(0)->getp4()->Pt();
+    //////    blightjetEta1 = thisEvent->getSelLightJets()->at(0)->getp4()->Eta();
+    //////    blightjetBTagDisc1 = getlightJetCSV(thisEvent).at(0);
+    //////} else{
+    //////    blightjetPT1 = -6;
+    //////    blightjetEta1 = -6;
+    //////    blightjetBTagDisc1 = -6;
+    //////}
+
+    //////if(thisEvent->getnLightJet() > 1){
+    //////	blightjetPT2 = thisEvent->getSelLightJets()->at(1)->getp4()->Pt();
+    //////    blightjetEta2 = thisEvent->getSelLightJets()->at(1)->getp4()->Eta();
+    //////    blightjetBTagDisc2 = getlightJetCSV(thisEvent).at(1);
+    //////} else{
+    //////    blightjetPT2 = -6;
+    //////    blightjetEta2 = -6;
+    //////    blightjetBTagDisc2 = -6;
+    //////}
+
+    //////if(thisEvent->getnLightJet() > 2){
+    //////	blightjetPT3 = thisEvent->getSelLightJets()->at(2)->getp4()->Pt();
+    //////    blightjetEta3 = thisEvent->getSelLightJets()->at(2)->getp4()->Eta();
+    //////    blightjetBTagDisc3 = getlightJetCSV(thisEvent).at(2);
+    //////} else{
+    //////    blightjetPT3 = -6;
+    //////    blightjetEta3 = -6;
+    //////    blightjetBTagDisc3 = -6;
+    //////}
+
+    //////if(thisEvent->getnLightJet() > 3){
+    //////	blightjetPT4 = thisEvent->getSelLightJets()->at(3)->getp4()->Pt();
+    //////    blightjetEta4 = thisEvent->getSelLightJets()->at(3)->getp4()->Eta();
+    //////    blightjetBTagDisc4 = getlightJetCSV(thisEvent).at(3);
+    //////} else{
+    //////    blightjetPT4 = -6;
+    //////    blightjetEta4 = -6;
+    //////    blightjetBTagDisc4 = -6;
+    //////}
+
+    //////if(thisEvent->getnLightJet() > 4){
+    //////	blightjetPT5 = thisEvent->getSelLightJets()->at(4)->getp4()->Pt();
+    //////    blightjetEta5 = thisEvent->getSelLightJets()->at(4)->getp4()->Eta();
+    //////    blightjetBTagDisc5 = getlightJetCSV(thisEvent).at(4);
+    //////} else{
+    //////    blightjetPT5 = -6;
+    //////    blightjetEta5 = -6;
+    //////    blightjetBTagDisc5 = -6;
+    //////}
+
+    //////if(thisEvent->getnLightJet() > 5){
+    //////	blightjetPT6 = thisEvent->getSelLightJets()->at(5)->getp4()->Pt();
+    //////    blightjetEta6 = thisEvent->getSelLightJets()->at(5)->getp4()->Eta();
+    //////    blightjetBTagDisc6 = getlightJetCSV(thisEvent).at(5);
+    //////} else{
+    //////    blightjetPT6 = -6;
+    //////    blightjetEta6 = -6;
+    //////    blightjetBTagDisc6 = -6;
+    //////}
+
+
+    //////bweight= _weight;
+    //////bjetAverageMass = thisEvent->getSumSelJetMass()/thisEvent->getnSelJet();
+    //////bbJetAverageMass = thisEvent->getSumSelbJetMass()/thisEvent->getnSelbJet();
+    //////blightJetAverageMass = thisEvent->getSumSelLightJetMass()/thisEvent->getnLightJet();
+    //////bbJetAverageMassSqr = (thisEvent->getSumSelbJetMass()*thisEvent->getSumSelbJetMass())/thisEvent->getnSelbJet();
+    //////bmet = thisEvent->getMET()->getp4()->Pt();
+    //////baverageDeltaRjj = jetStat.meandR;
+    //////baverageDeltaRbb = bjetStat.meandR;
+    //////baverageDeltaRbj = bjStat.meandR;
+    //////baverageDeltaEtajj = jetStat.meandEta;
+    //////baverageDeltaEtabb = bjetStat.meandEta;
+    //////baverageDeltaEtabj = bjStat.meandEta;
+    //////bminDeltaRjj = jetStat.mindR;
+    //////bminDeltaRbb = bjetStat.mindR;
+    //////bminDeltaRbj = bjStat.mindR;
+    //////bmaxDeltaEtabb = bjetStat.maxdEta;
+    //////bmaxDeltaEtajj = jetStat.maxdEta;
+    //////bmaxDeltaEtabj = bjStat.maxdEta;
+    //////bminDeltaRMassjj = jetStat.mindRMass;
+    //////bminDeltaRMassbb = bjetStat.mindRMass;
+    //////bminDeltaRMassbj = bjStat.mindRMass;
+    //////bminDeltaRpTjj = jetStat.mindRpT;
+    //////bminDeltaRpTbb = bjetStat.mindRpT;
+    //////bminDeltaRpTbj = bjStat.mindRpT;
+    //////bmaxPTmassjjj = jjjMaxs.maxPTmass;
+    //////bmaxPTmassjbb = jbbMaxs.maxPTmass;
+    //////bH0 = jetFoxWolfMom.h0;
+    //////bH1 = jetFoxWolfMom.h1;
+    //////bH2 = jetFoxWolfMom.h2;
+    //////bH3 = jetFoxWolfMom.h3;
+    //////bH4 = jetFoxWolfMom.h4;
+    //////bbH0 = bjetFoxWolfMom.h0;
+    //////bbH1 = bjetFoxWolfMom.h1;
+    //////bbH2 = bjetFoxWolfMom.h2;
+    //////bbH3 = bjetFoxWolfMom.h3;
+    //////bbH4 = bjetFoxWolfMom.h4;
+    //////bR1 = jetFoxWolfMom.r1;
+    //////bR2 = jetFoxWolfMom.r2;
+    //////bR3 = jetFoxWolfMom.r3;
+    //////bR4 = jetFoxWolfMom.r4;
+    //////bbR1 = bjetFoxWolfMom.r1;
+    //////bbR2 = bjetFoxWolfMom.r2;
+    //////bbR3 = bjetFoxWolfMom.r3;
+    //////bbR4 = bjetFoxWolfMom.r4;
+
+    //////bjetHT = thisEvent->getSumSelJetScalarpT();  
+    //////bbjetHT = thisEvent->getSumSelbJetScalarpT();
+    //////blightjetHT = thisEvent->getSumSelLightJetScalarpT();
+    //////bjetNumber = thisEvent->getnSelJet();
+    //////bbjetNumber = thisEvent->getnSelbJet();
+    //////blightjetNumber = thisEvent->getnLightJet();
+    //////binvMassZ1 = _bbMassMin1Z; //ZZ
+    //////binvMassZ2 = _bbMassMin2Z;
+    //////bchi2Z = _minChi2Z;
+    //////binvMassH1 = _bbMassMin1Higgs; //HH
+    //////binvMassH2 = _bbMassMin2Higgs;
+    //////bchi2Higgs = _minChi2Higgs;
+    //////bchi2HiggsZ = _minChi2HiggsZ; //ZH
+    //////binvMassHiggsZ1 = _bbMassMin1HiggsZ;
+    //////binvMassHiggsZ2 = _bbMassMin2HiggsZ;
+    //////bPTH1 = _bpTHiggs1;
+    //////bPTH2 = _bpTHiggs2;
+
+
+    //////bcentralityjb = jbjetCent.centrality; 
+    //////bcentralityjl = jlepCent.centrality; 
+    //////baplanarity = thisEvent->eventShapeJet->getAplanarity();
+    //////bsphericity = thisEvent->eventShapeJet->getSphericity();
+    //////btransSphericity = thisEvent->eventShapeJet->getTransSphericity();
+    //////bcValue = thisEvent->eventShapeJet->getC();
+    //////bdValue = thisEvent->eventShapeJet->getD();
+    //////bbaplanarity = thisEvent->eventShapeBjet->getAplanarity();
+    //////bbsphericity = thisEvent->eventShapeBjet->getSphericity();
+    //////bbtransSphericity = thisEvent->eventShapeBjet->getTransSphericity();
+    //////bbcValue = thisEvent->eventShapeBjet->getC();
+    //////bbdValue = thisEvent->eventShapeBjet->getD();
+
+    ///////*    bleptonPT1 = thisEvent->getSelLeptons()->at(0)->getp4()->Pt();
+    //////bleptonPT2 = thisEvent->getSelLeptons()->at(1)->getp4()->Pt();
+    //////bleptonEta1 = thisEvent->getSelLeptons()->at(0)->getp4()->Eta();
+    //////bleptonEta2 = thisEvent->getSelLeptons()->at(1)->getp4()->Eta();
+    //////bleptonCharge1 = thisEvent->getSelLeptons()->at(0)->charge;
+    //////bleptonCharge2 = thisEvent->getSelLeptons()->at(1)->charge;
+    //////bleptonHT = thisEvent->getSelLeptonHT();
+    //////bST = thisEvent->getSelLeptonST();
+
+
+    //////if(thisEvent->getnSelMuon() > 0){
+    //////    bmuonPT1 = thisEvent->getSelMuons()->at(0)->getp4()->Pt();
+    //////    bmuonEta1 = thisEvent->getSelMuons()->at(0)->getp4()->Eta();
+    //////} else {
+    //////    bmuonPT1 = -6;
+    //////    bmuonEta1 = -6;
+    //////}
+
+    //////if(thisEvent->getnSelMuon() > 1){
+    //////    bmuonPT2 = thisEvent->getSelMuons()->at(1)->getp4()->Pt();
+    //////    bmuonEta2 = thisEvent->getSelMuons()->at(1)->getp4()->Eta();
+    //////    bdiMuonMass = thisEvent->getSelMuonsMass();
+    //////} else {
+    //////    bmuonPT2 = -6;
+    //////    bmuonEta2 = -6;
+    //////    bdiMuonMass = -6;
+    //////} 
+
+    //////if(thisEvent->getnSelElectron() > 0){
+    //////    belePT1 = thisEvent->getSelElectrons()->at(0)->getp4()->Pt();
+    //////    beleEta1 = thisEvent->getSelElectrons()->at(0)->getp4()->Eta();
+    //////} else {
+    //////    belePT1 = -6;
+    //////    beleEta1 = -6;
+    //////}
+
+    //////if(thisEvent->getnSelElectron() > 1){
+    //////    belePT2 = thisEvent->getSelElectrons()->at(1)->getp4()->Pt();
+    //////    beleEta2 = thisEvent->getSelElectrons()->at(1)->getp4()->Eta();
+    //////    bdiElectronMass = thisEvent->getSelElectronsMass();
+    //////} else {
+    //////    belePT2 = -6;
+    //////    beleEta2 = -6;
+    //////    bdiElectronMass = -6;
+    //////    } */
+
+    
     _inputTree->Fill();
 }
 
@@ -2161,9 +3028,14 @@ void ttHHanalyzer_unified::writePrescanTree() {
 // =============================================================================
 // main() — entry point for the ttHH(4b) FH analyzer
 // -----------------------------------------------------------------------------
-// All argument parsing is done by tnm.cc::commandLine::decode.
-// [STEP2] kValidationStudy 제거 — tnm.cc의 --val-* 파서 필드는 미사용 잔재로
-// 남아 있으며(무해), Step 8 정리 단계에서 제거 예정.
+// All argument parsing is done by tnm.cc::commandLine::decode, including the
+// optional --val-* flags used by the kValidationStudy mode. The fields read
+// here are added in tnm.h (see commandLine struct) and parsed in tnm.cc
+// (see decode()).
+//
+// For non-validation modes the val* fields hold their default values (which
+// reproduce kMainAnalysis behaviour exactly), so the validation block below
+// is harmless even when entered defensively.
 // =============================================================================
 int main(int argc, char** argv){
 
@@ -2209,7 +3081,7 @@ int main(int argc, char** argv){
     //      (outFile, eventBuffer, weight, sysToggle, year, dataOrMC,
     //       sampleName, era, debug, mode)
     // ─────────────────────────────────────────────────────────────────────
-    const bool debugVerbose = (mode == AnalysisMode::kDebug);  // [STEP2] 거시 단계 로그
+    bool debugVerbose = false;
     ttHHanalyzer_unified analysis(
         cl.outputfilename,
         &ev,
@@ -2239,14 +3111,17 @@ int main(int argc, char** argv){
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // [stitch] stitching multiplier JSON은 stitched 조성을 봐야 하는 모드에서만
-    // 로드한다: main(최종 yield), btagtrig(b-tag norm reweight 문맥), debug(main
-    // 미러). prescan은 의도적으로 stitch-free:
-    //   - prescan은 이 JSON의 입력(ΣgenW 분해)을 "생산"하는 모드이므로.
-    // 경로는 $STITCH_FACTORS_JSON 으로 override. 누락/손상 -> fatal-exit(40).
+    // [stitch] Load the ttbar stitching multiplier JSON ONLY for the two modes
+    // that should see the stitched composition: main (final yields) and btagtrig
+    // (b-tag norm reweight context). trigsf / validation / prescan are left
+    // stitch-free on purpose:
+    //   - prescan PRODUCES the inputs this JSON is computed from;
+    //   - the TRIGGER SF must be derived (trigsf) on an un-stitched sample so it
+    //     stays a pure efficiency ratio, independent of the stitch/JSON;
+    //   - validation toggles its own SFs.
+    // Override path with $STITCH_FACTORS_JSON. Missing/garbled -> fatal-exit.
     if (mode == AnalysisMode::kMainAnalysis ||
-        mode == AnalysisMode::kBTagAndTriggerStudy ||
-        mode == AnalysisMode::kDebug) {
+        mode == AnalysisMode::kBTagAndTriggerStudy) {
         const char* sj = std::getenv("STITCH_FACTORS_JSON");
         analysis.setStitchFactorsFile(
             sj ? std::string(sj)
@@ -2254,7 +3129,44 @@ int main(int argc, char** argv){
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // 5. Run the analysis
+    // 5. [Validation Study] — push --val-* flags into the analyzer
+    //
+    // tnm.cc::commandLine::decode has already read every --val-* flag and
+    // stored them in cl.val* fields. Defaults reproduce kMainAnalysis
+    // behaviour, so a user who passes no flags still gets a sane run.
+    //
+    // Block runs only when --mode validation; ignored otherwise.
+    // ─────────────────────────────────────────────────────────────────────
+    if (mode == AnalysisMode::kValidationStudy) {
+        ValidationConfig vcfg;
+        vcfg.scenarioName            = cl.valScenario;
+        vcfg.nbJetsCut               = cl.valNbJetsCut;
+        vcfg.forceHiggsRecoMinBjets  = cl.valHRecoMin;
+        vcfg.applyHadWWindow         = (cl.valApplyHadW      != 0);
+        vcfg.applyHiggsWindow        = (cl.valApplyHiggsWin  != 0);
+        vcfg.tightenJet8             = (cl.valTightenJet8    != 0);
+        vcfg.applyBtagShapeSF        = (cl.valApplyBtagShape != 0);
+        vcfg.applyBtagNormSF         = (cl.valApplyBtagNorm  != 0);
+        vcfg.applyTriggerSF          = (cl.valApplyTrig      != 0);
+        vcfg.applyTopPtSF            = (cl.valApplyTopPt     != 0);
+        vcfg.ttHVRStyle              = (cl.valTtHVRStyle     != 0);
+
+        // ttH VR preset overrides individual fields when requested.
+        // Preserve the user-supplied scenario tag for log/output naming.
+        if (vcfg.ttHVRStyle) {
+            const std::string preservedName = vcfg.scenarioName;
+            vcfg.applyTtHVRPreset();   // resets fields, sets scenarioName="ttHVR"
+            if (!preservedName.empty() && preservedName != "default") {
+                vcfg.scenarioName = preservedName;
+            }
+        }
+
+        // Push effective config; setValidationConfig prints it to stdout.
+        analysis.setValidationConfig(vcfg);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // 6. Run the analysis
     // ─────────────────────────────────────────────────────────────────────
     if(debugVerbose) std::cout<<"debug : Before [ performAnalysis ] in main() function"<<std::endl;
     analysis.performAnalysis();

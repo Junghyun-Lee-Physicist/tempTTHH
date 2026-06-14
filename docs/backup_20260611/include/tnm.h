@@ -60,7 +60,19 @@ struct commandLine
     std::string analysisMode;  // NEW: Add this member
 
     // ── [Validation Study] optional fields ─────────────────────────────
-    // [STEP8] --val-* 필드 제거 — kValidationStudy 모드 삭제(STEP 2)의 잔재 정리.
+    // Populated only when running with --mode validation. If omitted from
+    // argv, sentinel values keep behaviour identical to kMainAnalysis.
+    std::string valScenario      = "default";
+    int         valNbJetsCut     = 4;
+    int         valHRecoMin      = 4;
+    int         valApplyHadW     = 1;
+    int         valApplyHiggsWin = 0;
+    int         valTightenJet8   = 0;
+    int         valApplyBtagShape = 1;
+    int         valApplyBtagNorm  = 1;
+    int         valApplyTrig     = 1;
+    int         valApplyTopPt    = 0;
+    int         valTtHVRStyle    = 0;
 
 
     

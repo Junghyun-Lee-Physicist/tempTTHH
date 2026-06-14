@@ -1,137 +1,68 @@
-# ttHH (HH→4b) Fully-Hadronic Analyzer
+## Description of the analyzer
+- This repository contains an analyzer for the ***ttHH Run II hadronic channel***. 
+- While the current code focuses on trigger studies, the overall framework is versatile enough for full analysis. 
+- We strive to rely solely on ROOT libraries and are in the process of phasing out several “deprecated” libraries ( ex. HypothesisCombinatorics.h, MVAvarsJABDTthh.h, ... ), though this goal hasn’t been fully achieved yet.
 
-CMS **ttHH, HH→bbbb, fully-hadronic** (ttbar→hadronic) 채널 분석 코드.
-현재 baseline은 **Run2 2017 NanoAODv9 UltraLegacy** (~41.48 fb⁻¹), full Run2/Run3
-확장을 염두에 둔 era-agnostic 구조를 지향한다.
+## Pre-requisites
+A Scientific Linux 7 is required for compiling this code. 
 
-> 이 문서는 2026-06 리팩토링 이후 상태를 반영한다. 단계별 변경 이력과 롤백
-> 방법은 `docs/changes/STEP_*.md` 와 `docs/changes/README.md` 를 참조.
-
----
-
-## 1. 분석 모드 (Analysis Modes)
-
-analyzer는 `--mode` 로 동작이 갈린다. 모드별 selection 강제 여부는
-`kCutSequence`(아래 §5)의 `enforceIn` 비트로, 비-cut 동작(lepton 수집·Higgs
-reco)은 `SelectionPolicy` 로 정의된다.
-
-| 모드 | 용도 | selection | SF·stitch |
-|---|---|---|---|
-| `main` | 본 분석 (최종 yield) | full (ttH AN Tab.55 FH) | 전체 SF + stitch ON |
-| `btagtrig` | 파생 도구용 flat skim 생산 | object만 (cut 미강제, muon control 유지) | bootstrap (SF 누락 허용) |
-| `prescan` | ΣgenW 등 누산 (보정 입력 생산) | 없음 (accumulator) | stitch-free |
-| `debug` | **로컬 단계별 검증** | `main` 과 동일 | `main` 미러 + 단계별 로그 |
-
-**제거된 모드**: `trigsf`(→ standalone `TriggerStudy` 패키지), `validation`.
-입력 시 즉시 `[FATAL]` + 대체 경로 안내 후 종료한다.
-
-### debug 모드
-`main` 과 완전히 동일하게 동작하면서 weight 조립 / stitch / SF / cutflow /
-tree 기록 / event shape / Higgs reco / 경로 env 를 단계별로 로깅한다
-(`include/DebugLogger.h`). 다른 모드에서는 모든 hook이 no-op.
+Note that lxplus does not support the el7 environment directly now, so you’ll need to use Singularity with the ```cmssw-el7``` command. If you want to use a different OS version, be sure to update the variables and libraries in **Makefile**.
+- Important: Since Singularity doesn’t support job submissions to Condor, use lxplus8 or lxplus9 servers for submitting jobs.
+- Libraries: ***ROOT, GSL, and LHAPDF***. cmssw-el7 and CMSSW_10_6_28 are suggested for this purpose.
+- TTH libraries: Install tar files
+&#9655;	To set up the cmssw environment & install the analyzer:
 ```bash
-# 처음 N개 이벤트 상세 + 전 이벤트 집계(N/mean/min/max/NaN·Inf) + 종료 요약
-TTHH_DEBUG_NEVENTS=20 ./ttHHanalyzer_unified --mode debug \
-    --filelist <1-2 파일 list> --output dbg.root \
-    --weight 1.0 --year 2017 --dataOrMC MC --sample TTToHadronic
-grep '\[dbg\]' <job stdout>     # [dbg][weight] [dbg][stitch] [dbg][sf]
-                                  # [dbg][sel] [dbg][evtshape] [dbg][higgsreco]
-                                  # [dbg][paths] [dbg][seltable]
-```
-로컬에서 테스트 파일 1–2개로 각 로직을 검증하는 1차 수단이다 (condor 없이).
-condor에서만 드러나는 것(대량 통계, 메모리)은 여전히 condor에서 확인.
-
----
-
-## 2. 사전 준비 (Pre-requisites)
-
-- 환경: **CMSSW_14_2_1** (ROOT 6 + correctionlib). 과거 el7/CMSSW_10_6 기반에서
-  이전됨 — Makefile은 Linux/macOS(g++/clang++) 자동 분기.
-- 라이브러리: ROOT, correctionlib, nlohmann/json (header-only, 동봉).
-- 보정 입력: jsonpog-integration (CVMFS), GoldenJson, trigger SF JSON,
-  b-tag norm reweight JSON, stitch JSON, expandedTtbarId lookup (§4 경로 참조).
-
-```bash
-# 예: KISTI/Tier3
-cmsrel CMSSW_14_2_1 && cd CMSSW_14_2_1/src && cmsenv
-git clone <repo> tempTTHH && cd tempTTHH
-source setup.sh        # TNM_PATH / LD_LIBRARY_PATH / ROOT_INCLUDE_PATH 설정 (필수)
+# In lxplus..
+cmssw-el7
+cmsrel CMSSW_10_6_28
+cd CMSSW_10_6_28/src && cmsenv
+git clone https://github.com/Junghyun-Lee-Physicist/ttHHAnalyzer.git
+cp /eos/user/j/junghyun/public/TTH.tar.gz .
+tar -zxvf TTH.tar.gz && rm -rf TTH.tar.gz
 ```
 
-## 3. 컴파일
-
+## Compilation to make execution file
 ```bash
+cmssw-el7
+cd CMSSW_10_6_28/src/ttHHAnalyzer
 cmsenv
-source setup.sh
-make -j4               # exe: ttHHanalyzer_unified ; lib: libttHH, libEventShape
-make lib/libEventShape.a   # (선택) EventShape 정적 라이브러리 단독 빌드
-make -C bTagSF_ReweightStudy   # b-tag SF 도구 (공유 헤더 Config_TtCatGroup.hh 사용)
+source setup.sh  # required for setup
+make -j4
 ```
-EventShape는 **정적 라이브러리(`lib/libEventShape.a`)로 분리 컴파일**되어
-링크된다 (과거 소스 직접 include 방식 폐기).
 
-## 4. 보정 입력 경로 (env / yml 통제)
+## Creating a Proxy
+The proxy provides the necessary permissions for accessing grid jobs, Condor jobs, and samples on lxplus. If you’re a member of the **CERN CMS VO** with the required permissions, you can generate a proxy using the ```voms-proxy-init``` command.
 
-절대경로 하드코딩을 제거하고 **env 우선, 미설정 시 코드 내 Tier3 default**
-(하위호환) 구조로 통일했다. condor 실행 시 yml `common.path_*` 가 실행
-스크립트에 export로 주입된다.
-
-| yml `common.` | 환경변수 | 대상 |
-|---|---|---|
-| `path_jsonpog` | `TTHH_JSONPOG_PATH` | jsonpog-integration (POG 중앙) |
-| `path_goldenjson` | `TTHH_GOLDENJSON_PATH` | GoldenJson 디렉토리 |
-| `path_trigsf_dir` | `TTHH_TRIGSF_DIR` | trigger SF JSON 디렉토리 |
-| `path_btag_reweight_json` | `TTHH_BTAGRW_JSON` | btagNormReweight.json |
-| `path_stitch_json` | `STITCH_FACTORS_JSON` | stitch_factors_2017.json |
-| `path_expanded_ttbarid_dir` | `EXPANDED_TTBARID_DIR` | ttnb_* lookup 디렉토리 |
-
-**FATAL exit 맵** (Condor .err에서 식별): 40–43 stitch/expandedTtbarId 로드,
-45 빈 process key, 46 b-tag reweight 평가 실패(흔히 **매핑 변경 후 JSON
-미재생성**), 47 trigger SF 누락/평가 실패, 48 b-tag reweight JSON 누락,
-49 중앙 보정 로드 또는 Data GoldenJSON 누락. `main`/`debug` 는 파생 보정
-누락을 FATAL로, `btagtrig` 는 bootstrap(WARN+SF=1)로 처리.
-
-## 5. Selection — 선언적 cut 테이블
-
-이벤트 selection은 `ttHHanalyzer_unified.cc` 의 **`kCutSequence`** (선언적 표)
-하나로 정의된다. 각 항목은 `{step, label, enforceIn, recordOnlyIfPass, pass,
-onAfter}` — selection의 순서·라벨·모드별 강제 여부·부수작업(SF 적용/통계)이
-한 화면에 보인다. cut 상수는 `include/SelectionCuts.h` (`namespace Cuts`,
-constexpr, AN 출처 주석)에 단일 정의 — 기존 `std::map<string,float>` 의 무음
-0-삽입 함정 제거.
-
-현재 baseline = ttH AN-19-094 Table 55 FH: `nJets≥6, jet6 pT>40, HT>500,
-nbJets≥2, lepton veto(pT>15), 30<m_qq<250` (DeepJet M=0.3040). SR(7/8/≥9
-jets × ≥4 b)은 이후 분류 단계.
-
-## 6. 로컬 실행 (Local Run)
-
-CLI는 `--flag value` 형식 (과거 위치 인자에서 변경):
+If you specify an output file for the proxy with the ```--out``` option, set the path in the ```X509_USER_PROXY``` environment variable as shown below to activate proxy permissions:
 ```bash
-./ttHHanalyzer_unified \
-    --filelist filelistTest/file_ttHH_0.txt --output out_ttHH_0.root \
-    --weight 0.00000109763773 --year 2017 --dataOrMC MC --sample ttHH
+voms-proxy-init --voms cms --valid 96:00 --out proxy.cert
+export X509_USER_PROXY=proxy.cert
 ```
-
-## 7. Condor 실행
-
+Currently, to submit Condor jobs, a **proxy.cert** file with valid time remaining must be present in the analyzer directory. You can check the remaining valid time with the following command:
 ```bash
-# 현황만 (제출 없이 샘플별 complete/missing + 인덱스)
-python3 submit_job_FH_Tier3_unified.py --mode main --report
-# 제출 — 마스터 filelist를 N개씩 자동 분할
-python3 submit_job_FH_Tier3_unified.py --mode main --files-per-job 5
-# 실패 job만 재제출 (별도 출력 디렉토리로)
-python3 submit_job_FH_Tier3_unified.py --mode main --files-per-job 5 \
-        --resubmit --resubmit-to retry1
+voms-proxy-info -file ./proxy.cert --timeleft
 ```
-- 샘플당 **마스터 filelist 하나**(`filelist_<sample>.txt`)만 있으면 `--files-per-job
-  N` 으로 결정적 분할 — `<sample>_<jobIdx>.root` ↔ chunk가 영구 1:1.
-  (per-file split 디렉토리 불필요. `N=1` 이면 한 줄=한 job 기존 동작.)
-- ⚠ `--resubmit`/`--report` 는 **원 제출과 같은 `--files-per-job`** 으로 호출해야
-  chunk↔output 매핑이 유지된다.
-- `AnalyzerConfig/*.yml` + `proxy.cert` 필요. 경로 통제는 §4.
-- `proxy.cert`: `voms-proxy-init --voms cms --valid 96:00 --out proxy.cert`
-  후 `export X509_USER_PROXY=proxy.cert`.
+
+## Example Local Run
+&#9655; To run locally, use the following syntax:
+```bash
+# ./<exe name> <file-list-path> <output name> <weight> <year> <MC or Data> <sample name>
+./ttHHanalyzer_trigger filelistTest/file_ttHH_0.txt test_output_ttHH_0.root 0.00000109763773 2017 MC ttHH_MC_Test
+./ttHHanalyzer_trigger filelistTest/file_SingleMuon_C_0.txt test_output_JetHT_C_0.root 1.0 2017 Data JetHT_C_Data_Test
+```
+
+## Running with Condor
+- For Condor job, you’ll need configuration files in the ```AnalyzerConfig``` directory and a ```proxy.cert``` file within the analyzer directory. 
+- You should also have ```sample lists files``` generated by ```DAS query```.
+Based on these files, ```submit_job_FH_Trigger.py``` will split and submit jobs. When you create a condor directory, submission files, execution scripts, and logs are automatically generated inside it.
+
+
+&#9655; To submit condor job:
+```bash
+python3 submit_job_FH_Trigger.py
+```
+
+
 
 ---
 
@@ -314,39 +245,56 @@ removed entirely) on the next cleanup pass.
 
 ---
 
-## 확장 가이드 (Extension Guide)
-
-### 새 분석 모드 추가
-1. `ttHHanalyzer_unified.h` 의 `enum class AnalysisMode` 에 멤버 추가.
-2. `parseAnalysisMode()` / `analysisModeName()` 에 분기 추가.
-3. `SelectionPolicy::fromMode()` 에 비-cut 동작 설정.
-4. `selectionModeBit()` 에 cut 강제 비트 매핑 (cut을 강제할 모드면).
-5. cut 강제 여부는 `kCutSequence` 각 항목의 `enforceIn` 비트로 제어
-   (정책 bool 추가 불필요 — 테이블이 흡수).
-
-### 새 selection cut 추가
-1. 상수는 `include/SelectionCuts.h` (`namespace Cuts`) 에 AN 출처 주석과 함께.
-2. `ttHHanalyzer_unified.h` 의 `CutStep` enum + `_cutStepLabels` 에 단계 추가.
-3. `kCutSequence` 에 `{step, label, enforceIn, recordOnlyIfPass, pass, onAfter}`
-   항목 추가 (pass는 capture-less 람다). 라벨은 `_cutStepLabels` 와 1:1.
-4. debug 모드의 `[dbg][seltable]` 무결성 검사가 enum↔테이블↔라벨 1:1을
-   런타임 확인한다.
-
-### 새 보정(correction) 경로 추가
-`src/CorrectionsManager.cc` 에서 `envOr("TTHH_...", default, what)` 패턴으로
-경로를 받고, submitter의 `path_env_map` 과 yml `common.path_*` 에 키 추가.
-
-### 카테고리(process group) 매핑 변경
-`bTagSF_ReweightStudy/include/Config_TtCatGroup.hh` (analyzer·도구 **공유**
-single source) 의 `MakeProcessKey` 만 수정. ⚠ 매핑 변경 후 반드시
-`exe_BTagSF` → `exe_MakeJSON` 으로 JSON 재생성 (안 하면 main이 새 키를 옛
-JSON에서 못 찾아 exit 46).
-
----
-
 ## Bug Fixes Applied
 - **Memory leak in `event` class**: Added destructor to clean up heap-allocated physics objects (`objectJet`, `objectLep`, `objectGenPart`, etc.) that were previously leaked on every event
 - **Arrow operator on `std::array`**: Fixed `writeHistos()` where `->Write()` was called on `std::array<TH1F*, 6>` instead of individual elements
 
 ---
 
+6. 확장 가이드
+6.1 새 모드 추가하기
+
+enum에 새 모드 추가:
+
+cppenum class AnalysisMode {
+    kMainAnalysis,
+    kBTagSFDerivation,
+    kTriggerSFStudy,
+    kNewMode  // NEW
+};
+
+parseAnalysisMode()에 파싱 추가:
+
+cppelse if (modeStr == "newmode") {
+    return AnalysisMode::kNewMode;
+}
+
+SelectionPolicy::fromMode()에 설정 추가:
+
+cppcase AnalysisMode::kNewMode:
+    policy.applyTriggerCut = true;
+    policy.applyLeptonVeto = false;
+    // ... 원하는 설정
+    break;
+6.2 새 Selection Flag 추가하기
+
+SelectionPolicy에 플래그 추가:
+
+cppstruct SelectionPolicy {
+    // ... existing flags ...
+    bool applyNewCut;  // NEW
+};
+
+각 모드에서 초기화:
+
+cppcase AnalysisMode::kMainAnalysis:
+    policy.applyNewCut = true;
+    break;
+
+selectObjects()에서 사용:
+
+cppif (_policy.applyNewCut) {
+    if (/* new cut condition */) {
+        return false;
+    }
+}

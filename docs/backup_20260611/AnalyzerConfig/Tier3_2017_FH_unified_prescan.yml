@@ -1,23 +1,8 @@
 common:
   year: "2017"
   # You can choose one of below analysis mode
-  # main, btagtrig, prescan, debug  ([STEP2] trigsf/validation 제거)
+  # main, btagtrig, trigsf, prescan
   analysis_mode: "prescan" 
-
-  # [STEP7] job당 입력 파일 수 (CLI --files-per-job 이 우선). 미지정=1.
-  # 재제출/리포트는 반드시 같은 값으로 불러야 chunk↔output 매핑이 유지된다.
-  files_per_job: 1
-
-  # ── [STEP4] 보정 입력 경로 통제 ──────────────────────────────────────
-  # 값을 채우면 condor 실행 스크립트에 export로 주입되어 analyzer가 사용.
-  # 비워두면("" 또는 키 삭제) 코드 내 default(Tier3 경로)를 사용 (하위호환).
-  # 로컬 테스트 시엔 같은 이름의 환경변수를 직접 export 하면 된다.
-  path_jsonpog: ""               # jsonpog-integration (POG 중앙 JSON; cvmfs)
-  path_goldenjson: ""            # GoldenJson 디렉토리 (Data 인증)
-  path_trigsf_dir: ""            # trigger_sf.json.gz가 있는 디렉토리
-  path_btag_reweight_json: ""    # btagNormReweight.json 전체 경로
-  path_stitch_json: ""           # stitch_factors_2017.json 전체 경로
-  path_expanded_ttbarid_dir: ""  # ttnb_<sample>.root lookup 디렉토리
 
 samples:
   # ---------------------------------------------------------

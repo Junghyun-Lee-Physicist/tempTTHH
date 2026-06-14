@@ -21,7 +21,6 @@
 #   validation    : <path_output_base>/<scenario.name>/<sample.output_dir>/
 ###############################################################################
 
-import argparse
 import os
 import sys
 import time
@@ -40,40 +39,17 @@ class CondorJobManager:
 
         self.time_info = time.strftime("%Y%m%d-%H%M%S")
 
-        # ── [STEP7] CLI 인자 — 코드 내 상수 수정 없이 운영을 제어 ──────────
-        #   --mode M            : main/btagtrig/prescan/debug (default main)
-        #   --files-per-job N   : job당 입력 파일 수
-        #                         (미지정: yml common.files_per_job, 그것도 없으면 1)
-        #   --resubmit          : 완료 output은 skip, 미완료 job만 재제출
-        #   --resubmit-to SUB   : 재제출 output을 <sample>/<SUB>/ 하위로 분리 저장
-        #   --report            : 제출 없이 샘플별 완료/미완료 현황만 출력
-        parser = argparse.ArgumentParser(
-            description="ttHH FH condor submitter — [STEP7] master filelist 자동 "
-                        "분할, files-per-job, 실패 감지/재제출/리포트")
-        parser.add_argument("--mode", default="main",
-                            choices=["main", "btagtrig", "prescan", "debug"])
-        parser.add_argument("--files-per-job", type=int, default=None,
-                            help="job당 입력 파일 수 (기본: yml common.files_per_job 또는 1)")
-        parser.add_argument("--resubmit", action="store_true",
-                            help="완료 output은 skip, 미완료만 재queue")
-        parser.add_argument("--resubmit-to", default="",
-                            help="재제출 output을 별도 하위 디렉토리에 저장 (--resubmit 전용)")
-        parser.add_argument("--report", action="store_true",
-                            help="제출 없이 완료/미완료 현황 리포트만")
-        args = parser.parse_args()
-
         # Variables for jobs, please check before running
         self.analyzer_path = f"{script_dir}"
         self.nameofExe = "ttHHanalyzer_unified"
-        self.AnalyzerMode = args.mode  # main / btagtrig / prescan / debug ([STEP2] trigsf·validation 제거)
+        self.AnalyzerMode = "main"  # main / btagtrig / trigsf (x) / validation / prescan
 
-        # ── Resubmit / report control ([STEP7] CLI로 제어) ─────────────────
-        self.resubmit_only = bool(args.resubmit)
-        self.resubmit_to   = args.resubmit_to.strip().strip("/")
-        self.report_only   = bool(args.report)
-        self.cli_files_per_job = args.files_per_job
-        if self.resubmit_to and not self.resubmit_only:
-            raise ValueError("[FATAL] --resubmit-to 는 --resubmit 과 함께만 사용 가능")
+        # ── Resubmit control ──────────────────────────────────────────────
+        # False → normal run: queue every job (default; behaviour unchanged).
+        # True  → resubmit pass: skip jobs whose output ROOT is already a
+        #         complete analyzer output, re-queue only missing/incomplete
+        #         ones. Flip to True manually for a resubmission run.
+        self.resubmit_only = False
 
         self.path_output_base = (
             f"/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/"
@@ -130,138 +106,64 @@ class CondorJobManager:
         config = self.load_yaml_config(self.config_file_path)
         common = config.get("common", {})
         samples = config.get("samples", [])
+        scenarios = config.get("validation_scenarios", [])
 
-        # [STEP2] validation 모드(시나리오 외부 루프) 제거 — 단일 패스만 유지.
-        # 유효 모드 검증은 C++ analyzer의 parseAnalysisMode가 fatal로 수행하지만,
-        # 잘못된 yml로 condor job을 뿌리기 전에 여기서도 조기 차단한다.
         analyzer_mode = common.get("analysis_mode", "main")
-        valid_modes = ("main", "btagtrig", "prescan", "debug")
-        if analyzer_mode not in valid_modes:
+
+        # ── Validation mode: outer loop over scenarios ─────────────────────
+        if analyzer_mode == "validation":
+            if not scenarios:
+                raise ValueError(
+                    "[ERROR] analysis_mode=validation but no "
+                    "`validation_scenarios:` block in YAML."
+                )
+            for scen in scenarios:
+                scen_name = scen.get("name", "default")
+                print(f"\n{'='*70}\n[VALIDATION] Submitting scenario: {scen_name}\n{'='*70}")
+                self._current_scenario = scen
+                for entry in samples:
+                    try:
+                        self.parse_config_entry(entry, common, scen)
+                        self.prepare_output_directory()
+                        self.setup_and_submit_job()
+                    except Exception as e:
+                        print(f"  Error with sample {entry} (scenario "
+                              f"{scen_name}) : {e}")
+                        continue
+        # ── Other modes: single pass over samples ──────────────────────────
+        else:
+            self._current_scenario = None
+            for entry in samples:
+                try:
+                    self.parse_config_entry(entry, common, None)
+                    self.prepare_output_directory()
+                    self.setup_and_submit_job()
+                except Exception as e:
+                    print(f"  Error with sample {entry} : {e}")
+                    continue
+
+    # -------------------------------------------------------------------------
+    def parse_config_entry(self, entry, common, scenario):
+
+        required_keys_inEntry = [
+            "filelist", "output_dir", "weight",
+            "data_or_mc", "sample_name"
+        ]
+        missing = [k for k in required_keys_inEntry if k not in entry]
+        if missing:
             raise ValueError(
-                f"[FATAL] analysis_mode='{analyzer_mode}' is not valid. "
-                f"Valid: {valid_modes}. "
-                "(trigsf/validation은 2026-06 리팩토링에서 제거 — "
-                "docs/changes/STEP_2 참조)")
+                f"Invalid entry (missing keys: {missing}): {entry}"
+            )
 
-        for entry in samples:
-            try:
-                self.parse_config_entry(entry, common)
-                self.prepare_output_directory()
-                self.setup_and_submit_job()
-            except Exception as e:
-                print(f"  Error with sample {entry} : {e}")
-                continue
-
-    # -------------------------------------------------------------------------
-    # -------------------------------------------------------------------------
-    # [TrackC] xsec_db + prescan 로더 (lazy, 1회 캐시)
-    # -------------------------------------------------------------------------
-    def _load_xsec_db(self, path):
-        if getattr(self, "_xsec_db", None) is not None:
-            return self._xsec_db
-        import json
-        with open(path) as f:
-            self._xsec_db = json.load(f)
-        return self._xsec_db
-
-    def _load_prescan(self, path):
-        if getattr(self, "_prescan", None) is not None:
-            return self._prescan
-        import json
-        with open(path) as f:
-            self._prescan = json.load(f).get("samples", {})
-        return self._prescan
-
-    def _compute_base_weight(self, sample_name, common):
-        """[TrackC] base weight 런타임 합성:
-              w = lumi * cross_section_pb * br / sumGenW(runs.genEventSumw)
-           Data(cross_section_pb=null)는 1.0. yml에 명시 weight가 있으면 그것을
-           우선(하위호환/override). xsec_db·prescan 경로는 common에서 받는다."""
-        db = self._load_xsec_db(common["xsec_db"])
-        rec = db.get(sample_name)
-        if rec is None:
-            raise ValueError(f"[FATAL] sample '{sample_name}' not in xsec_db "
-                             f"({common['xsec_db']})")
-        xsec = rec.get("cross_section_pb")
-        if xsec is None:
-            return 1.0, "data"          # Data
-        br   = rec.get("br", 1.0) or 1.0
-        meta = db.get("_meta", {})
-        lumi = float(common.get("lumi_pb_inv", meta.get("lumi_pb_inv")))
-        pre  = self._load_prescan(common["prescan"])
-        prec = pre.get(sample_name)
-        if prec is None:
-            raise ValueError(f"[FATAL] sample '{sample_name}' not in prescan "
-                             f"({common['prescan']}) — prescan 먼저 실행 필요")
-        sumw = prec["runs"]["genEventSumw"]              # ★ runs.genEventSumw 사용
-        sumw_tree = prec["events"]["sumGenW_total"]      # 비교용
-        if sumw <= 0:
-            raise ValueError(f"[FATAL] {sample_name}: sumGenW(runs)={sumw} <= 0")
-        # runs vs tree 합 불일치 경고 (사용은 runs)
-        if sumw_tree > 0 and abs(sumw - sumw_tree)/sumw > 1e-4:
-            print(f"  [warn] {sample_name}: sumGenW runs={sumw:.6e} vs "
-                  f"tree={sumw_tree:.6e} differ >0.01% (using runs)")
-        w = lumi * xsec * br / sumw
-        return w, f"xsec={xsec}*br={br:.5f}*lumi={lumi}/sumGenW={sumw:.4e}"
-
-    def parse_config_entry(self, entry, common):
-
-        # [TrackC] 필수 키 완화: sample_name 만 필수. filelist/output_dir/
-        # weight/data_or_mc 는 규칙·xsec_db에서 유도 (yml 명시 시 override).
-        if "sample_name" not in entry:
-            raise ValueError(f"Invalid entry (missing 'sample_name'): {entry}")
+        self.file_list_name = entry["filelist"]
+        self.sample_output_dir = entry["output_dir"]
+        self.weight = entry["weight"]
+        self.data_or_mc = entry["data_or_mc"]
         self.sample_name = entry["sample_name"]
-
-        # filelist: 규칙 'filelist_<sample_name>.txt' (yml override 가능)
-        self.file_list_name = entry.get(
-            "filelist", f"filelist_{self.sample_name}.txt")
-        # output_dir: 기본 = sample_name
-        self.sample_output_dir = entry.get("output_dir", self.sample_name)
         self.era = entry.get("era", "")
-
-        # data_or_mc: xsec_db의 cross_section_pb null 여부로 자동 판정 (override 가능)
-        if "data_or_mc" in entry:
-            self.data_or_mc = entry["data_or_mc"]
-        else:
-            db = self._load_xsec_db(common["xsec_db"])
-            rec = db.get(self.sample_name, {})
-            self.data_or_mc = "Data" if rec.get("cross_section_pb") is None else "MC"
-
-        # weight: yml 명시 우선, 없으면 xsec_db+prescan 으로 합성
-        if "weight" in entry:
-            self.weight = entry["weight"]
-        else:
-            self.weight, prov = self._compute_base_weight(self.sample_name, common)
-            print(f"  [weight] {self.sample_name}: {self.weight:.10g}  ({prov})")
 
         self.year = common["year"]
         self.analysis_mode = common["analysis_mode"]
-
-        # [STEP7] job당 파일 수: CLI > yml common.files_per_job > 1
-        # (=1 이면 기존 동작과 완전 동일: 한 줄=한 job, output 인덱스 동일)
-        fpj = self.cli_files_per_job
-        if fpj is None:
-            fpj = int(common.get("files_per_job", 1) or 1)
-        if fpj < 1:
-            raise ValueError(f"[FATAL] files_per_job must be >= 1 (got {fpj})")
-        self.files_per_job = fpj
-
-        # [STEP4] 보정 입력 경로 — yml common.path_* 를 condor 실행 sh의
-        # export로 주입한다. 비어 있거나 없으면 export하지 않음 → analyzer가
-        # 코드 내 default(Tier3)를 사용 (하위호환).
-        path_env_map = {
-            "path_jsonpog":               "TTHH_JSONPOG_PATH",
-            "path_goldenjson":            "TTHH_GOLDENJSON_PATH",
-            "path_trigsf_dir":            "TTHH_TRIGSF_DIR",
-            "path_btag_reweight_json":    "TTHH_BTAGRW_JSON",
-            "path_stitch_json":           "STITCH_FACTORS_JSON",
-            "path_expanded_ttbarid_dir":  "EXPANDED_TTBARID_DIR",
-        }
-        self.env_exports = {}
-        for yml_key, env_name in path_env_map.items():
-            v = common.get(yml_key, "")
-            if isinstance(v, str) and v.strip():
-                self.env_exports[env_name] = v.strip()
 
         if self.data_or_mc == "MC" and str(self.era).strip():
             raise ValueError(
@@ -269,8 +171,12 @@ class CondorJobManager:
                 "Please leave era empty."
             )
 
-        # [STEP2] validation 모드 제거 — output_dir 합성 분기 삭제
-        self.output_dir = self.sample_output_dir
+        # ── Composite output dir for validation mode ───────────────────────
+        if scenario is not None:
+            scen_name = scenario.get("name", "default")
+            self.output_dir = f"{scen_name}/{self.sample_output_dir}"
+        else:
+            self.output_dir = self.sample_output_dir
 
         self.path_output = os.path.join(self.path_output_base,
                                         self.output_dir + "/")
@@ -293,7 +199,7 @@ class CondorJobManager:
     def load_yaml_config(self, path):
         """
         Minimal YAML loader. Supports two top-level lists (`samples:` and
-        plus a `common:` mapping. Accepts string,
+        `validation_scenarios:`) plus a `common:` mapping. Accepts string,
         int, float, and bool scalars. Comments (#) and blank lines are
         skipped.
 
@@ -338,10 +244,11 @@ class CondorJobManager:
 
         config = {
             "common": {},
-            "samples": []
-        }   # [STEP2] validation_scenarios 섹션 지원 제거
+            "samples": [],
+            "validation_scenarios": []
+        }
 
-        section = None        # "common" | "samples"
+        section = None        # "common" | "samples" | "validation_scenarios"
         current_item = None   # dict for current samples or scenarios entry
 
         with open(path, "r") as f:
@@ -365,10 +272,17 @@ class CondorJobManager:
                     section = "samples"
                     section_prev_list = "samples"
                     continue
+                if line == "validation_scenarios:":
+                    if current_item is not None:
+                        config[section_prev_list].append(current_item)
+                        current_item = None
+                    section = "validation_scenarios"
+                    section_prev_list = "validation_scenarios"
+                    continue
+
                 # ── List items (start with "- ") ──────────────────────────
-                # [TrackC] bare string 항목 지원: "- TTToHadronic" →
-                #   {sample_name: TTToHadronic}. 기존 "- key: value" 도 호환.
-                if section == "samples" and line.startswith("- "):
+                if section in ("samples", "validation_scenarios") \
+                        and line.startswith("- "):
                     if current_item is not None:
                         config[section_prev_list].append(current_item)
                     current_item = {}
@@ -376,9 +290,6 @@ class CondorJobManager:
                     if line and ":" in line:
                         key, value = line.split(":", 1)
                         current_item[key.strip()] = parse_value(value)
-                    elif line:
-                        # bare string = sample name only (TrackC 권장 형식)
-                        current_item["sample_name"] = parse_value(line)
                     continue
 
                 # ── Plain key:value lines ─────────────────────────────────
@@ -386,13 +297,14 @@ class CondorJobManager:
                     key, value = line.split(":", 1)
                     if section == "common":
                         config["common"][key.strip()] = parse_value(value)
-                    elif section == "samples":
+                    elif section in ("samples", "validation_scenarios"):
                         if current_item is None:
                             current_item = {}
                         current_item[key.strip()] = parse_value(value)
 
         # flush final item
-        if current_item is not None and section == "samples":
+        if current_item is not None and section in (
+                "samples", "validation_scenarios"):
             config[section].append(current_item)
 
         return config
@@ -425,6 +337,46 @@ class CondorJobManager:
                                 stderr=subprocess.PIPE, text=True)
         if result.returncode == 0:
             print(f"Set permissions to 755 for {self.path_output}")
+
+    # -------------------------------------------------------------------------
+    def _scenario_argv(self):
+        """Build the validation-scenario argv suffix.
+
+        Returns the empty string when not in validation mode or when no
+        scenario is currently selected.
+        """
+        scen = getattr(self, "_current_scenario", None)
+        if scen is None:
+            return ""
+
+        # Order matters only for readability; the C++ side is flag-based.
+        parts = [f"--val-scenario {scen.get('name', 'default')}"]
+
+        # Numeric/bool fields: always emit so defaults are explicit on the
+        # command line (easier to debug from condor logs).
+        bool_fields = [
+            ("applyHadWWindow",  "--val-hadWWindow"),
+            ("applyHiggsWindow", "--val-higgsWindow"),
+            ("tightenJet8",      "--val-tightenJet8"),
+            ("applyBtagShapeSF", "--val-btagShape"),
+            ("applyBtagNormSF",  "--val-btagNorm"),
+            ("applyTriggerSF",   "--val-trig"),
+            ("applyTopPtSF",     "--val-topPt"),
+            ("ttHVRStyle",       "--val-ttHVR"),
+        ]
+        int_fields = [
+            ("nbJetsCut",              "--val-nbJetsCut"),
+            ("forceHiggsRecoMinBjets", "--val-hRecoMin"),
+        ]
+        for key, flag in int_fields:
+            if key in scen:
+                parts.append(f"{flag} {int(scen[key])}")
+        for key, flag in bool_fields:
+            if key in scen:
+                v = 1 if bool(scen[key]) else 0
+                parts.append(f"{flag} {v}")
+
+        return " ".join(parts)
 
     # -------------------------------------------------------------------------
     def _output_is_complete(self, output_path):
@@ -479,85 +431,57 @@ class CondorJobManager:
         filenames `<sample>_<count>.root` stay aligned with the input
         filelist regardless of how many jobs are skipped.
         """
-        # [STEP7] 마스터 filelist(샘플당 한 파일)를 N개씩 chunk로 잘라 job을
-        # 만든다. 분할은 결정적(고정 순서·고정 N)이므로 output 이름
-        # <sample>_<jobIdx>.root 가 입력 chunk와 1:1로 영구 대응한다 —
-        # 재제출/리포트를 같은 N으로 부르면 완료 판정이 정확히 같은 chunk에
-        # 매핑된다. files_per_job=1 이면 기존 동작(한 줄=한 job)과 동일.
-        sample_list_file_path = os.path.join(
-            self.sample_list_path, self.file_list_name)
-        with open(sample_list_file_path, "r") as sample_list_in:
-            lines = [line.strip() for line in sample_list_in
-                     if line.strip() and not line.startswith('#')]
-        N = self.files_per_job
-        chunks = [lines[i:i + N] for i in range(0, len(lines), N)]
-        sanitized = self.output_dir.replace("/", "_")
+        scen_argv = self._scenario_argv()
 
         n_written = 0
-        n_complete = 0
-        missing = []
         with open(self.arg_list_file, "w") as argout:
-            for job_idx, chunk in enumerate(chunks):
-                full_output_path = (
-                    f"{self.path_output}{self.sample_output_dir}_{job_idx}.root"
-                )
+            count = 0
+            sample_list_file_path = os.path.join(
+                self.sample_list_path, self.file_list_name)
+            with open(sample_list_file_path, "r") as sample_list_in:
+                lines = [line.strip() for line in sample_list_in
+                         if line.strip() and not line.startswith('#')]
+                for line in lines:
+                    sanitized = self.output_dir.replace("/", "_")
 
-                # 완료 판정은 resubmit/report 모드에서만 수행 (일반 제출은 불필요)
-                complete = ((self.resubmit_only or self.report_only)
-                            and self._output_is_complete(full_output_path))
-                if complete:
-                    n_complete += 1
-                else:
-                    missing.append(job_idx)
+                    # Output file in the per-scenario per-sample dir
+                    full_output_path = (
+                        f"{self.path_output}{self.sample_output_dir}_{count}.root"
+                    )
 
-                # [STEP7] report 모드: 현황만 집계 — job 생성/제출 없음
-                if self.report_only:
-                    continue
-                if self.resubmit_only and complete:
-                    continue
+                    # [resubmit-only] skip jobs already finished. `count` must
+                    # still advance to keep the <sample>_<count>.root mapping.
+                    if self.resubmit_only and self._output_is_complete(full_output_path):
+                        count += 1
+                        continue
 
-                # [STEP7] 재제출 분리 저장: --resubmit-to SUB → output을
-                # <path_output>/<SUB>/ 아래로 (원본과 비교/검증 용이)
-                if self.resubmit_only and self.resubmit_to:
-                    resub_dir = os.path.join(self.path_output, self.resubmit_to)
-                    os.makedirs(resub_dir, exist_ok=True)
-                    full_output_path = os.path.join(
-                        resub_dir, f"{self.sample_output_dir}_{job_idx}.root")
-
-                per_job_filelist_name = f"filelist_{sanitized}_{job_idx}.txt"
-                per_job_filelist_path = os.path.join(
-                    self.tmp_folder, per_job_filelist_name)
-                with open(per_job_filelist_path, 'w') as per_job_filelist:
-                    for line in chunk:
+                    per_job_filelist_name = f"filelist_{sanitized}_{count}.txt"
+                    per_job_filelist_path = os.path.join(
+                        self.tmp_folder, per_job_filelist_name)
+                    with open(per_job_filelist_path, 'w') as per_job_filelist:
                         per_job_filelist.write(line + '\n')
 
-                args = (
-                    f"--filelist {per_job_filelist_path} "
-                    f"--output {full_output_path} "
-                    f"--weight {self.weight} "
-                    f"--year {self.year} "
-                    f"--dataOrMC {self.data_or_mc} "
-                    f"--sample {self.sample_name} "
-                    f"--mode {self.analysis_mode} "
-                )
-                if str(self.era).strip():
-                    args += f" --era {self.era} "
+                    args = (
+                        f"--filelist {per_job_filelist_path} "
+                        f"--output {full_output_path} "
+                        f"--weight {self.weight} "
+                        f"--year {self.year} "
+                        f"--dataOrMC {self.data_or_mc} "
+                        f"--sample {self.sample_name} "
+                        f"--mode {self.analysis_mode} "
+                    )
+                    if str(self.era).strip():
+                        args += f" --era {self.era} "
+                    if scen_argv:
+                        args += " " + scen_argv
 
-                argout.write(args + "\n")
-                n_written += 1
+                    argout.write(args + "\n")
+                    n_written += 1
+                    count += 1
 
-        if self.report_only:
-            print(f"  [report] {self.sample_name}: files={len(lines)} "
-                  f"files/job={N} jobs={len(chunks)} "
-                  f"complete={n_complete} missing={len(missing)}"
-                  + (f" -> idx {missing[:20]}{' ...' if len(missing) > 20 else ''}"
-                     if missing else ""))
-            return 0
         if self.resubmit_only:
             print(f"  [resubmit] {self.sample_name}: {n_written} job(s) to "
-                  f"re-queue out of {len(chunks)} total"
-                  + (f" (output -> {self.resubmit_to}/)" if self.resubmit_to else "")
-                  + ".")
+                  f"re-queue out of {count} total.")
         return n_written
 
     # -------------------------------------------------------------------------
@@ -597,25 +521,25 @@ class CondorJobManager:
             fout.write("cmsenv\n")
             fout.write("echo 'WORKDIR ' ${PWD}\n")
             fout.write(f"source \"{self.analyzer_path}/setup.sh\"\n")
-            # [STEP4] yml common.path_* → env 주입 (로그에 남도록 echo 동반)
-            for env_name, val in getattr(self, "env_exports", {}).items():
-                fout.write(f"export {env_name}=\"{val}\"\n")
-                fout.write(f"echo '[paths] {env_name}='\"${{{env_name}}}\"\n")
             fout.write(f"mkdir -p {self.path_output}\n")
             fout.write(f"\"{self.analyzer_path}/{self.nameofExe}\" \"$@\"\n")
         subprocess.call(["chmod", "755", self.script_name])
 
     # -------------------------------------------------------------------------
     def submit_job(self):
-        print(f"Submitting job for sample: {self.sample_name}")
+        scen = getattr(self, "_current_scenario", None)
+        scen_label = ("[" + scen["name"] + "] ") if scen else ""
+        print(f"Submitting job for sample: {scen_label}{self.sample_name}")
         subprocess.call(["condor_submit", self.condor_submit_name])
 
     def setup_and_submit_job(self):
-        print(f"\nSetting up job for sample: {self.sample_name}")
+        scen = getattr(self, "_current_scenario", None)
+        scen_label = ("[" + scen["name"] + "] ") if scen else ""
+        print(f"\nSetting up job for sample: {scen_label}{self.sample_name}")
         n_jobs = self.generate_argument_list()
         if n_jobs == 0:
             print(f"  All outputs already complete for "
-                  f"{self.sample_name} — nothing to submit.")
+                  f"{scen_label}{self.sample_name} — nothing to submit.")
             return
         self.create_executable_script()
         self.write_condor_submission_file()

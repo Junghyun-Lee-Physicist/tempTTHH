@@ -32,16 +32,13 @@
 #include "Config_TtCatGroup.hh"   // ttH AN App. A.2.1 process key mapping (LF/cc/B/ttH/ttHH/...)
 #include "ExpandedTtbarId.h"      // [tt+nb] Expanded_genTtbarId per-event lookup
 #include "StitchFactors.h"        // [stitch] per-(sample,category) stitch multiplier
-#include "DebugLogger.h"          // [STEP2][debug] kDebug 모드 단계별 검증 로거
-#include "SelectionCuts.h"        // [STEP3] selection 상수 단일 소스 (cut map 대체)
-#include "EventShape/Class/interface/EventShape.h"  // [STEP5] event shape (라이브러리 링크)
-#include "HiggsReconstructor.h"   // [STEP6] di-mother(HH/ZH/ZZ) chi2 재구성 클래스
 #include <map>
 
 #include <nlohmann/json.hpp>
 
 #include <iostream>
 //using namespace ROOT::Math;
+////using nlohmann::fifo_map;
 using namespace std;
 
 const float cLargeValue = 99999999999.;
@@ -54,10 +51,10 @@ const float cZMass = 91.;
 // Analysis Mode Definition
 // =============================================================================
 enum class AnalysisMode {
-    kMainAnalysis,           // 본 분석: full selection + 전체 SF + stitch
-    kBTagAndTriggerStudy,    // btagtrig: 파생 도구(b-tag SF / trigger SF)용 flat skim 생산
-    kDebug,                  // [STEP2] main과 동일 동작 + 단계별 디버그 로그
-                             //   (로컬 테스트 파일 1-2개 검증용; DebugLogger.h 참조)
+    kMainAnalysis,
+    kBTagAndTriggerStudy,
+    kTriggerSFStudy,
+    kValidationStudy,        // N-1 / weight-ablation study
     kPrescan      // [NEW] gen-level Σ genWeight + genTtbarId breakdown
                              //       (no selection, no object building)
                              // ⚠ TEMPORARY — to be migrated to NtupleForge
@@ -71,91 +68,80 @@ enum class AnalysisMode {
 inline AnalysisMode parseAnalysisMode(const std::string& modeStr) {
     if (modeStr.empty()) {
         throw std::invalid_argument(
-            "[FATAL] Analysis mode not specified!\n"
-            "        Valid modes: main, btagtrig, prescan, debug"
+            "[ERROR] Analysis mode not specified!\n"
+            "        Valid modes: main, btagtrig, trigsf, validation, prescan"
         );
     }
     if (modeStr == "main"       || modeStr == "MainAnalysis")        return AnalysisMode::kMainAnalysis;
     if (modeStr == "btagtrig"   || modeStr == "BTagAndTriggerStudy") return AnalysisMode::kBTagAndTriggerStudy;
-    if (modeStr == "prescan"    || modeStr == "Prescan")             return AnalysisMode::kPrescan;
-    if (modeStr == "debug"      || modeStr == "Debug")               return AnalysisMode::kDebug;
-    // [STEP2] 제거된 모드는 명시적으로 안내 (조용한 오동작 방지)
-    if (modeStr == "trigsf" || modeStr == "TriggerSFStudy" ||
-        modeStr == "validation" || modeStr == "ValidationStudy") {
-        throw std::invalid_argument(
-            "[FATAL] Analysis mode '" + modeStr + "' was REMOVED (2026-06 refactor).\n"
-            "        trigsf     -> standalone TriggerStudy package (btagtrig skim 입력)\n"
-            "        validation -> 제거됨 (docs/changes/STEP_2 참조)\n"
-            "        Valid modes: main, btagtrig, prescan, debug");
-    }
-    throw std::invalid_argument("[FATAL] Unknown analysis mode: " + modeStr +
-                                "\n        Valid modes: main, btagtrig, prescan, debug");
+    if (modeStr == "trigsf"     || modeStr == "TriggerSFStudy")      return AnalysisMode::kTriggerSFStudy;
+    if (modeStr == "validation" || modeStr == "ValidationStudy")     return AnalysisMode::kValidationStudy;
+    if (modeStr == "prescan"  || modeStr == "Prescan")  return AnalysisMode::kPrescan;
+    throw std::invalid_argument("[ERROR] Unknown analysis mode: " + modeStr);
 }
 
 inline std::string analysisModeName(AnalysisMode mode) {
     switch (mode) {
         case AnalysisMode::kMainAnalysis:        return "MainAnalysis";
         case AnalysisMode::kBTagAndTriggerStudy: return "BTagAndTriggerStudy";
-        case AnalysisMode::kDebug:               return "Debug";
+        case AnalysisMode::kTriggerSFStudy:      return "TriggerSFStudy";
+        case AnalysisMode::kValidationStudy:     return "ValidationStudy";
         case AnalysisMode::kPrescan:  return "Prescan";
         default: return "Unknown";
     }
 }
 
 // =============================================================================
-// [STEP3] Selection 강제(enforce) 모드 비트 — cut 테이블(kCutSequence)에서
-// "이 cut이 어느 모드에서 실제 reject로 작동하는가"를 선언한다.
-// 비트에 없는 모드에서는 관찰 전용(cutflow 기록만, reject 없음).
-// =============================================================================
-enum : uint8_t {
-    kSelBitMainLike = 0x1,                          // main + debug (debug는 main 미러)
-    kSelBitBtagTrig = 0x2,                          // btagtrig (skim 생산)
-    kSelEnforceAll  = kSelBitMainLike | kSelBitBtagTrig,
-    kSelObserveOnly = 0x0                           // 어떤 모드에서도 cut 아님
-};
-inline uint8_t selectionModeBit(AnalysisMode m) {
-    switch (m) {
-        case AnalysisMode::kMainAnalysis:
-        case AnalysisMode::kDebug:               return kSelBitMainLike;
-        case AnalysisMode::kBTagAndTriggerStudy: return kSelBitBtagTrig;
-        default:                                 return 0;  // prescan: selectObjects 미호출
-    }
-}
-
-// =============================================================================
-// SelectionPolicy: 모드별 "비-cut" 동작 정의
-// [STEP3] cut on/off 부울 4종(applyTriggerCut/applyLeptonVeto/applyBJetCut/
-// applyHadWMassCut)은 cut 테이블의 enforceIn 비트마스크로 흡수 — 여기엔
-// object 수집·Higgs reco 등 cut이 아닌 동작만 남는다.
+// SelectionPolicy: 분석 모드에 따른 Cut 적용 여부 정의
 // =============================================================================
 struct SelectionPolicy {
-    bool collectLeptons;        // lepton 수집 (btagtrig: muon control)
-    bool requireLeadMuonOnly;   // lead lepton gate를 muon으로 한정
-    bool doHiggsReconstruction; // chi2 Higgs reco 수행 여부
-
+    bool applyTriggerCut;
+    bool applyLeptonVeto;
+    bool applyBJetCut;
+    bool applyHadWMassCut;
+    bool collectLeptons;
+    bool requireLeadMuonOnly;
+    bool doHiggsReconstruction;
+    bool requireSingleMuon;
+    
     static SelectionPolicy fromMode(AnalysisMode mode) {
-        SelectionPolicy p{false, false, false};
+        SelectionPolicy p;
         switch (mode) {
             case AnalysisMode::kMainAnalysis:
-            case AnalysisMode::kDebug:   // debug = main 미러
-                p.doHiggsReconstruction = true;
+                //   Trig  LepV  bJet  HadW  CollLep leadMu HiggsReco Req1Mu
+                p = {true, true, true, true, false, false, true, false};
                 break;
             case AnalysisMode::kBTagAndTriggerStudy:
-                p.collectLeptons      = true;
-                p.requireLeadMuonOnly = true;
+                p = {false, false, false, false, true, true, false, false};
+                break;
+            case AnalysisMode::kTriggerSFStudy:
+                p = {false, false, true, false, true, true, false, true};
+                break;
+            case AnalysisMode::kValidationStudy:
+                // Identical to kMainAnalysis by default; specific cuts and SF
+                // applications are toggled via _validationConfig at run time.
+                // HiggsReco kept ON so we can reconstruct when nbJets>=4 events
+                // exist; selectObjects gates the actual reco call.
+                p = {true, true, true, true, false, false, true, false};
                 break;
             case AnalysisMode::kPrescan:
-                break;   // selectObjects 미호출 — 전부 false
+                // No selection at all — accumulator only.
+                p = {false, false, false, false, false, false, false, false};
+                break;
         }
         return p;
     }
-
+    
     void print() const {
-        std::cout << "\n=== Selection Policy (non-cut behaviours) ===" << std::endl;
+        std::cout << "\n=== Selection Policy =======================" << std::endl;
+        std::cout << "  Trigger Cut:                              " << (applyTriggerCut ? "ON" : "OFF") << std::endl;
+        std::cout << "  Lepton Veto:                              " << (applyLeptonVeto ? "ON" : "OFF") << std::endl;
+        std::cout << "  b-Jet Cut:                                " << (applyBJetCut ? "ON" : "OFF") << std::endl;
+        std::cout << "  HadW Mass Cut:                            " << (applyHadWMassCut ? "ON" : "OFF") << std::endl;
         std::cout << "  Collect Leptons:                          " << (collectLeptons ? "YES" : "NO") << std::endl;
         std::cout << "  Require Lead Muon only (Not Lead Elec):   " << (requireLeadMuonOnly ? "YES" : "NO") << std::endl;
         std::cout << "  Higgs Reco:                               " << (doHiggsReconstruction ? "YES" : "NO") << std::endl;
-        std::cout << "  (cut 강제 여부는 kCutSequence의 enforceIn 비트 참조)" << std::endl;
+        std::cout << "  Require 1 Muon:                           " << (requireSingleMuon ? "YES" : "NO") << std::endl;
         std::cout << "============================================\n" << std::endl;
     }
 };
@@ -164,9 +150,34 @@ struct SelectionPolicy {
 // =============================================================================
 
 
-// [STEP3] 전역 cut map 제거 — include/SelectionCuts.h (namespace Cuts)로 대체.
-//         map operator[]의 무음 0-삽입 함정과 타입 손실 제거. 원형은
-//         docs/backup_20260611/ttHHanalyzer_unified.h 참조.
+std::map<std::string, float> cut { 
+    {"nJets", 6} // nJets higher than  // [round2] was 8; ttH AN / trigger SF baseline 
+    , {"nLeptons", 0} // nLepton equals to
+    //, {"nVetoLeptons", 0} // nVetoLepton equals to
+    , {"nbJets", 2}  // [round2] was 4; ttH AN / trigger SF baseline
+    , {"jetPt", 30} // jet pT higher than
+    , {"leadElePt", 30}     //// New Def for leptons to veto at Hadronic channel 
+    , {"leadMuonPt", 29}    //// New Def for leptons to veto at Hadronic channel
+    , {"subLeadElePt", 15}  //// New Def for leptons to veto at Hadronic channel
+    , {"subLeadMuonPt", 15} //// New Def for leptons to veto at Hadronic channel
+    //    , {"vetoLepPt", 15} // lepton pT higher than
+    , {"boostedJetPt", 10} // boostedJet pT higher than
+    , {"6thJetsPT", 40}
+    , {"HT", 500}
+    , {"nlJets", 0} // light jet higher than
+    , {"hadHiggsPt", 20} // hadronic Higgs pT higher than
+    , {"jetEta", 2.4} // jet eta higher than
+    , {"eleEta", 2.5} // electron eta higher than
+    , {"muonEta", 2.4} // muon eta higher than
+    , {"boostedJetEta", 2.4} // boostedJet eta higher than
+    , {"muonIso", 0.15} // muon isolation less than
+////    , {"eleIso", 0.1}  // ele isolation less than
+    , {"jetID", 6}   // pass tight and tightLepVeto ID
+    , {"jetPUid", 4}   // pass loose cut fail tight and medium
+    , {"bTagDisc", 0.80}
+    , {"trigger", 1.0} // trigger
+    , {"filter",  1.0} // noise filter
+    , {"pv", 1}}; // primary vertex  
 
 class objectPhysics {
  public:
@@ -681,6 +692,7 @@ class event{
 	float sumPT = 0., sumP = 0., centrality = 0.;
 
 	if(cont1->size()  == 0 || cont2->size() == 0){
+	    ////std::cout << "WTF!!!!" << std::endl;
 	}
 	for(int oindex=0; oindex < cont1->size(); oindex++){
 	    obj1P4 = (*cont1->at(oindex)->getp4());
@@ -707,6 +719,7 @@ class event{
 
         int nObject = 0.;
 	if(cont1->size()  == 0 || cont2->size() == 0){
+	    ////std::cout << "WTF!!!!" << std::endl;
         }
         for(int oindex=0; oindex < cont1->size(); oindex++){
             obj1P4 = (*cont1->at(oindex)->getp4());
@@ -729,6 +742,7 @@ class event{
 	TLorentzVector tmpP4; 
 	int nObject = 0.;
 	if(cont1->size()  == 0){
+	    ////std::cout << "WTF!!!!" << std::endl;
 	}
 	for(int oindex=0; oindex < cont1->size(); oindex++){
 	    for(int iindex = oindex+1; iindex < cont1->size(); iindex++){
@@ -757,6 +771,7 @@ class event{
 	TLorentzVector tmpP4; 
 	int nObject = 0.;
 	if(cont1->size()  == 0 || cont2->size() == 0){
+	    ////std::cout << "WTF!!!!" << std::endl;
 	}
 	for(int oindex=0; oindex < cont1->size(); oindex++){
 	    for(int iindex = 0; iindex < cont2->size(); iindex++){
@@ -784,6 +799,7 @@ class event{
 	int nObject = 0;
 
 	if(cont1->size()  == 0 || cont2->size() == 0){
+	    ////std::cout << "WTF!!!!" << std::endl;
 	}
 	for(int oindex=0; oindex < cont1->size(); oindex++){
 	    for(int iindex = 0; iindex < cont2->size(); iindex++){
@@ -1027,9 +1043,89 @@ class event{
     TLorentzVector _sumJetp4, _sumSelJetp4, _sumSelbJetp4, _sumHadronicHiggsp4, _sumLightJetp4, _sumSelMuonp4, _sumSelElectronp4; 
 };
 
-// [STEP2] ValidationConfig struct 제거됨 — kValidationStudy 모드 삭제.
-//         원형은 docs/backup_20260611/ttHHanalyzer_unified.h 참조.
+// ============================================================
+// [NEW] ValidationConfig: per-scenario cut/SF toggle bundle
+// ------------------------------------------------------------
+// Used only when _analysisMode == kValidationStudy.
+// Defaults reproduce kMainAnalysis behaviour exactly when all
+// booleans are at their default values.
+//
+// The four knobs that change CUT behaviour:
+//   nbJetsCut         : minimum b-jet count required at step 8
+//                       (-1 means "skip the cut entirely")
+//   applyHadWWindow   : turn ON/OFF the 30 < hadWMass < 250 cut
+//   applyHiggsWindow  : turn ON/OFF a Higgs mass window
+//                       (cut value: cMHWindowLo, cMHWindowHi)
+//   tightenJet8       : if true, raise the nJets cut to >=8
+//                       (default ≥7 in the existing analyzer)
+//
+// The four knobs that change WEIGHT behaviour (additive ablation):
+//   applyBtagShapeSF  : enable/disable b-tag shape SF
+//   applyBtagNormSF   : enable/disable b-tag norm reweight ratio
+//   applyTriggerSF    : enable/disable trigger SF
+//   applyTopPtSF      : enable/disable top-pT reweight (default OFF;
+//                       reserved for when corrMgr supports it)
+//
+// The single knob that changes RECO behaviour:
+//   forceHiggsRecoMinBjets : minimum b-jet count needed to attempt
+//                            Higgs reconstruction; reco is skipped
+//                            (chi2 left at sentinel) if event has fewer.
+//                            Default = 4. Set to 0 to disable.
+// ============================================================
+struct ValidationConfig {
+    // --- Cut toggles ---
+    int   nbJetsCut             = 4;     // -1 disables, otherwise nbJets >= value
+    bool  applyHadWWindow       = true;
+    bool  applyHiggsWindow      = false; // off by default to match current analyzer
+    bool  tightenJet8           = false; // raise nJets cut to >=8 if true
 
+    // --- Higgs reco gating ---
+    int   forceHiggsRecoMinBjets = 4;    // require >=4 b-jets to run Higgs reco
+
+    // --- SF on/off ---
+    bool  applyBtagShapeSF = true;
+    bool  applyBtagNormSF  = true;
+    bool  applyTriggerSF   = true;
+    bool  applyTopPtSF     = false;
+
+    // --- ttH VR style preset (overrides everything when true) ---
+    bool  ttHVRStyle       = false;
+
+    // --- Histogram suffix to disambiguate parallel scenarios ---
+    // (used only as a courtesy log message; output dir naming is
+    // controlled by submit script)
+    std::string scenarioName = "default";
+
+    void applyTtHVRPreset() {
+        // ttH AN VR (4 jet, 3 b-tag, no Higgs window).
+        // Reference: AN-19-094 §6.x VR definition.
+        nbJetsCut             = 3;
+        applyHadWWindow       = false;
+        applyHiggsWindow      = false;
+        tightenJet8           = false;
+        forceHiggsRecoMinBjets = 4; // still need 4 to reco
+        applyBtagShapeSF = true;
+        applyBtagNormSF  = true;
+        applyTriggerSF   = true;
+        applyTopPtSF     = false;
+        scenarioName = "ttHVR";
+    }
+
+    void print() const {
+        std::cout << "[ValidationConfig] scenario=" << scenarioName
+                  << " nbJetsCut=" << nbJetsCut
+                  << " hadWWin=" << applyHadWWindow
+                  << " higgsWin=" << applyHiggsWindow
+                  << " tightenJet8=" << tightenJet8
+                  << " hRecoMin=" << forceHiggsRecoMinBjets
+                  << " | SF: btagShape=" << applyBtagShapeSF
+                  << " btagNorm=" << applyBtagNormSF
+                  << " trig=" << applyTriggerSF
+                  << " topPt=" << applyTopPtSF
+                  << " ttHVR=" << ttHVRStyle
+                  << std::endl;
+    }
+};
 
 class ttHHanalyzer_unified {
  public:
@@ -1054,6 +1150,7 @@ class ttHHanalyzer_unified {
 	_baseWeight = weight; // 데이터셋 공통 상수 (CrossSection * Lumi / SumGenWeight)
 	_ev = ev;
 	_cl = cl;
+	////_sys = systematics; // Currently we do not get systematic from argument
 	// We need to add in future
 	_sys = false;
 
@@ -1062,28 +1159,6 @@ class ttHHanalyzer_unified {
 	_DataOrMC = DataOrMC;
 	_sampleName = sampleName;
 	_era = trimWhitespace(era);
-
-    // [STEP2][debug] kDebug 모드: 디버그 로거 활성화.
-    // 이벤트 단위 상세 출력 수는 환경변수 TTHH_DEBUG_NEVENTS (기본 10).
-    if (_analysisMode == AnalysisMode::kDebug) {
-        long nDbg = 10;
-        if (const char* sEnv = std::getenv("TTHH_DEBUG_NEVENTS")) nDbg = std::atol(sEnv);
-        _dbg.enable(nDbg);
-    }
-
-    // [muon-val] env 옵션 — main/debug에서만 활성.
-    if (_analysisMode == AnalysisMode::kMainAnalysis ||
-        _analysisMode == AnalysisMode::kDebug) {
-        if (const char* sEnv = std::getenv("TTHH_REQUIRE_1MUON")) {
-            _require1Muon = (std::atoi(sEnv) != 0);
-        }
-        if (_require1Muon) {
-            _policy.collectLeptons      = true;   // muon 수집 필요
-            _policy.requireLeadMuonOnly = true;   // muon gate만 (electron 무시)
-            std::cout << "[muon-val] TTHH_REQUIRE_1MUON=1 -> lepton veto를 "
-                         "'정확히 muon 1 + electron 0' 으로 대체 (SF 추가 없음)\n";
-        }
-    }
     
     std::cout << "\n========================================" << std::endl;
     std::cout << "  Initializing ttHH Analyzer" << std::endl;
@@ -1114,21 +1189,19 @@ class ttHHanalyzer_unified {
 	if(_DataOrMC == "Data") isData = true;
 
     // [변경] sampleName을 4번째 인자로 전달 → process별 b-tag reweight 조회용
-    // [STEP4] main/debug는 파생 보정(trigger SF, b-tag norm RW) 필수 —
-    // 누락 시 CorrectionsManager가 FATAL(47/48)로 종료한다.
-    // btagtrig/prescan은 부트스트랩 허용 (그 보정의 입력을 만드는 모드).
-    const bool requireDerived = (_analysisMode == AnalysisMode::kMainAnalysis ||
-                                 _analysisMode == AnalysisMode::kDebug);
-    corrMgr = new CorrectionsManager(yearForCorr, _era, isData, _sampleName, requireDerived);
+    corrMgr = new CorrectionsManager(yearForCorr, _era, isData, _sampleName);
 
 	debugCorrections = debug;
 
 	initHistograms();	
 	initTree();
+	////initSys();
        	std::string dummy = "";
+	////HypoComb = new tthHypothesisCombinatorics(std::string("data/blrbdtweights_80X_V4/weights_64.xml"), std::string(""));
 
     std::cout << "========================================" << std::endl;
     }
+
 
 
     // [tt+nb] Load the per-sample extended-ttbarId lookup (ttnb_<sample>.root).
@@ -1152,6 +1225,16 @@ class ttHHanalyzer_unified {
     //   (prescan produces the inputs to this JSON, so it need not exist yet).
     void setStitchFactorsFile(const std::string& path) {
         _stitch.load(path, _sampleName);
+    }
+
+    // [NEW] Set validation-mode parameters at run time.
+    // Caller (driver) parses YAML/argv and pushes them in.
+    void setValidationConfig(const ValidationConfig& cfg) {
+        _valCfg = cfg;
+        if (_analysisMode == AnalysisMode::kValidationStudy) {
+            std::cout << "  [Validation] applying scenario: ";
+            _valCfg.print();
+        }
     }
 
     ~ttHHanalyzer_unified() {
@@ -1184,7 +1267,12 @@ class ttHHanalyzer_unified {
         *hChi2HHMatched;
 
 
+    ////tthHypothesisCombinatorics * HypoComb; 
+
+ 
 // No need now, I'll update cutflow logic
+////    fifo_map<std::string,int> cutflow{{"noCut", 0}, {"HadTrigger", 0}, {"noiseFilter", 0}, {"pv>=1", 0}, {"njets>=6", 0}, {"6thJetsPT>40", 0}, {"nlepton==0", 0}, {"HT>500", 0}, {"30<HadW<250", 0}, {"HiggsMassWindow", 0}, {"nTotal", 0}};
+////    fifo_map<std::string,int> cutflow_w{{"noCut", 0}, {"HadTrigger", 0}, {"noiseFilter", 0}, {"pv>=1", 0}, {"njets>=6", 0}, {"6thJetsPT>40", 0}, {"nlepton==0", 0}, {"HT>500", 0}, {"30<HadW<250", 0}, {"HiggsMassWindow", 0}, {"nTotal", 0}};
 
 
  private: 
@@ -1213,25 +1301,6 @@ class ttHHanalyzer_unified {
     std::map<int,std::string> _btagKeyByExpSub;  // [stitch] diag: expandedSub -> b-tag processKey
     Int_t _genTtbarIdNano  = -1;        // NanoAOD genTtbarId (mirror, for output tree)
     Int_t _expandedTtbarId = -1;        // resolved id: Expanded if in lookup, else nano
-    // [STEP6] Higgs 재구성기 + 추가 가설(ZH/ZZ) 결과 — selectObjects에서 채움.
-    // HH 결과는 기존 멤버(_minChi2Higgs 등)로 들어가 하위 호환 유지.
-    HiggsReconstructor _higgsReco;
-    Float_t _hr_chi2ZH = -1.f, _hr_mZcandZH = -1.f, _hr_mHcandZH = -1.f;
-    Float_t _hr_chi2ZZ = -1.f, _hr_mZ1ZZ    = -1.f, _hr_mZ2ZZ    = -1.f;
-
-    // [STEP5] Event shape 변수 — analyze()에서 selected jets / b-jets로 계산,
-    // output tree branch로 기록 (DNN 입력 후보). -1 = 계산 불가(객체 부족).
-    Float_t _es_aplanarity      = -1.f, _es_sphericity      = -1.f;
-    Float_t _es_transSphericity = -1.f, _es_C = -1.f, _es_D = -1.f;
-    Float_t _es_bjetAplanarity      = -1.f, _es_bjetSphericity = -1.f;
-    Float_t _es_bjetTransSphericity = -1.f, _es_bjetC = -1.f, _es_bjetD = -1.f;
-
-    Float_t _stitchWeight  = 1.0f;      // [stitch] per-event stitch multiplier written to
-                                        // the output tree. 1.0 for Data / non-plan samples /
-                                        // modes where stitching is gated off (trigsf, ...).
-                                        // Downstream tools rebuild the clean stitched base:
-                                        //   base = genWeight*PU*L1Prefire*xsec * stitchWeight
-                                        // (evtWeight already has btagSF/trigSF/normRW in it).
     // Analysis Mode Variable Declaration
     AnalysisMode _analysisMode;
     SelectionPolicy _policy;    
@@ -1323,15 +1392,10 @@ void accumulatePrescanEvent();
 void writePrescanTree();
 
 
-    // [STEP2][debug] kDebug 모드 단계별 검증 로거 (다른 모드에선 no-op)
-    DebugLogger _dbg;
-
-    // [muon-val] offline single-muon validation 옵션 (env TTHH_REQUIRE_1MUON=1).
-    // main/debug에서만 의미. 켜지면 lepton veto cut(step kLeptonVeto)이
-    //   "정확히 muon 1개 + electron 0개" 요구로 바뀐다 (그 외 selection·weight는
-    //   불변; 별도 SF 없음). AN trigger 측정 영역(1μ+FH baseline)을 offline에서
-    //   흉내내는 용도 — 사용자 지시(별도 모드 만들지 않음).
-    bool _require1Muon = false;
+    // [NEW] Validation-mode runtime config — only used when
+    // _analysisMode == kValidationStudy. Filled by Init/loop from
+    // YAML-passed flags.
+    ValidationConfig _valCfg;
 
     TH1D * _hJES, * _hbJES, *_hbJetEff, *_hJetEff, *_hSysbTagM ;
 
@@ -1349,6 +1413,7 @@ void writePrescanTree();
     // For corrections////////////////
     CorrectionsManager *corrMgr;      
     bool debugCorrections;         
+    //////////////////////////////////
 
     // B-tag weight 저장용 (Tree branch)
     float bTagWeight_central_;
@@ -1400,27 +1465,6 @@ void writePrescanTree();
         kHiggsMass,         // 12  Higgs mass window (currently off in main)
         kTotal              // 13  total
     };
-
-    // ─────────────────────────────────────────────────────────────────────
-    // [STEP3] 선언적 cut 테이블 — selection 시퀀스의 단일 정의
-    //   enforceIn        : cut으로 강제되는 모드 비트 (그 외 모드에선 관찰만)
-    //   recordOnlyIfPass : true = 조건 충족 시에만 cutflow 기록 (≥3/≥4 관찰 단계)
-    //   pass             : 통과 조건 (nullptr = 항상 통과; 기록 전용 단계)
-    //   onAfter          : 해당 단계 생존 직후의 부수 작업 (통계/SF 적용)
-    // 실제 테이블(kCutSequence)은 ttHHanalyzer_unified.cc의 selectObjects 위에
-    // 정의 — selection 전체가 거기서 한 화면의 표로 보인다.
-    // ─────────────────────────────────────────────────────────────────────
-    struct CutDef {
-        CutStep      step;
-        const char*  label;             // _cutStepLabels와 동일해야 (사람용)
-        uint8_t      enforceIn;
-        bool         recordOnlyIfPass;
-        bool (*pass)(ttHHanalyzer_unified&, event&, float wMass);
-        void (*onAfter)(ttHHanalyzer_unified&, event&);
-    };
-    static const std::vector<CutDef> kCutSequence;
-    void applyEventScaleFactors(event* thisEvent);  // [STEP3] SF 블록 (HT 통과 직후)
-    void computeLeptonJetStats(event* thisEvent);   // [STEP3] lepton-jet 통계
 
     // cutStepLabels must match above CutStep!!!
     const std::vector<std::string> _cutStepLabels = {
@@ -1955,6 +1999,7 @@ void writePrescanTree();
 
 
     void diMotherReco(const TLorentzVector & dPar1p4,const TLorentzVector & dPar2p4,const TLorentzVector & dPar3p4,const TLorentzVector & dPar4p4, const float mother1mass, const float  mother2mass, float & _minChi2,float & _bbMassMin1, float & _bbMassMin2);
+    void motherReco(const TLorentzVector & dPar1p4,const TLorentzVector & dPar2p4, const float mother1mass, float & _minChi2,float & _bbMassMin1);
 
     float closestMassPair(const std::vector<objectJet*>* jets, float targetMass) const {
         if (!jets || jets->size() < 2) {
@@ -2145,6 +2190,8 @@ void writePrescanTree();
 
         hjetsPTs.resize(nHistsJets); hjetsEtas.resize(nHistsJets); hbjetsPTs.resize(nHistsbJets); hbjetsEtas.resize(nHistsbJets); hLightJetsPTs.resize(nHistsLightJets), hLightJetsEtas.resize(nHistsLightJets), hjetsBTagDisc.resize(nHistsJets), hbjetsBTagDisc.resize(nHistsbJets), hLightJetsBTagDisc.resize(nHistsLightJets);
 
+////	hCutFlow = new TH1F("cutflow", "N_{cutFlow}", cutflow.size(), 0, cutflow.size());
+////	hCutFlow_w = new TH1F("cutflow_w", "N_{weighted}", cutflow.size(), 0, cutflow.size());
 
 	TString trail = "";
 	if(sysType == kbTag){
@@ -2602,7 +2649,9 @@ void writePrescanTree();
     float bbjetMinChiHiggsIndex1, bbjetMinChiHiggsIndex2, bbjetMinChiHiggsIndex3, bbjetMinChiHiggsIndex4, bbjetMinChiHiggsIndex5, bbjetMinChiHiggsIndex6, bbjetMinChiHiggsIndex7, bbjetMinChiHiggsIndex8;
  
 
+////////////////////////////////////////////////////////////////////////////////////////    
     // Variables for Trigger Path                                                        
+    ////bool passHadTrig;                                                               
     bool passTrigger_HLT_IsoMu27; // Reference Muon Trigger to Calculate efficiency & SFs
     bool passTrigger_HLT_PFHT1050;                                                      
     //bool passTrigger_HLT_PFHT450_SixPFJet36_PFBTagDeepCSV_1p59;                          
@@ -2643,6 +2692,8 @@ void writePrescanTree();
     bool  passMETFilters;
     bool  passHadTrig;
 
+////////////////////////////////////////////////////////////////////////////////////////    
+
 
     int bjetNumber, bbjetNumber, blightjetNumber; 
     void initTree(sysName sysType = noSys, bool up = false){
@@ -2666,7 +2717,218 @@ void writePrescanTree();
 	
         _inputTree = new  TTree("Tree","tree for dnn inputs");
 
+	////_inputTree->Branch("bjetPT1", &bjetPT1, "bjetPT1/f");
+	////_inputTree->Branch("bjetPT2", &bjetPT2, "bjetPT2/f");	  
+	////_inputTree->Branch("bjetPT3", &bjetPT3, "bjetPT3/f");
+	////_inputTree->Branch("bjetPT4", &bjetPT4, "bjetPT4/f");	 
+	////_inputTree->Branch("bjetPT5", &bjetPT5, "bjetPT5/f");
+	////_inputTree->Branch("bjetPT6", &bjetPT6, "bjetPT6/f");	
+	////_inputTree->Branch("bjetPT7", &bjetPT7, "bjetPT7/f");	
+	////_inputTree->Branch("bjetPT8", &bjetPT8, "bjetPT8/f");	
+	////_inputTree->Branch("bjetPT9", &bjetPT9, "bjetPT5/f");
+	////_inputTree->Branch("bjetPT10", &bjetPT10, "bjetPT10/f");	
+	////_inputTree->Branch("bjetPT11", &bjetPT11, "bjetPT11/f");	
+	////_inputTree->Branch("bjetPT12", &bjetPT12, "bjetPT12/f");	
+	////_inputTree->Branch("bbjetPT1", &bbjetPT1, "bbjetPT1/f"); 
+	////_inputTree->Branch("bbjetPT2", &bbjetPT2, "bbjetPT2/f");
+	////_inputTree->Branch("bbjetPT3", &bbjetPT3, "bbjetPT3/f");	
+	////_inputTree->Branch("bbjetPT4", &bbjetPT4, "bbjetPT4/f");	 
+	////_inputTree->Branch("bbjetPT5", &bbjetPT5, "bbjetPT5/f");
+	////_inputTree->Branch("bbjetPT6", &bbjetPT6, "bbjetPT6/f");
+	////_inputTree->Branch("bbjetPT7", &bbjetPT7, "bbjetPT7/f");
+	////_inputTree->Branch("bbjetPT8", &bbjetPT8, "bbjetPT8/f");
+	////_inputTree->Branch("blightjetPT1", &blightjetPT1, "blightjetPT1/f");
+	////_inputTree->Branch("blightjetPT2", &blightjetPT2, "blightjetPT2/f");	  
+	////_inputTree->Branch("blightjetPT3", &blightjetPT3, "blightjetPT3/f");	
+	////_inputTree->Branch("blightjetPT4", &blightjetPT4, "blightjetPT4/f");
+	////_inputTree->Branch("blightjetPT5", &blightjetPT5, "blightjetPT5/f");	  
+	////_inputTree->Branch("blightjetPT6", &blightjetPT6, "blightjetPT6/f");	
+	////_inputTree->Branch("bjetEta1", &bjetEta1, "bjetEta1/f");  
+	////_inputTree->Branch("bjetEta2", &bjetEta2, "bjetEta2/f");
+	////_inputTree->Branch("bjetEta3", &bjetEta3, "bjetEta3/f");	
+	////_inputTree->Branch("bjetEta4", &bjetEta4, "bjetEta4/f");	  
+	////_inputTree->Branch("bjetEta5", &bjetEta5, "bjetEta5/f");	
+	////_inputTree->Branch("bjetEta6", &bjetEta6, "bjetEta6/f");
+	////_inputTree->Branch("bjetEta7", &bjetEta7, "bjetEta7/f");
+	////_inputTree->Branch("bjetEta8", &bjetEta8, "bjetEta8/f");
+	////_inputTree->Branch("bjetEta9", &bjetEta9, "bjetEta9/f");	
+	////_inputTree->Branch("bjetEta10", &bjetEta10, "bjetEta10/f");
+	////_inputTree->Branch("bjetEta11", &bjetEta11, "bjetEta11/f");
+	////_inputTree->Branch("bjetEta12", &bjetEta12, "bjetEta12/f");
+	////_inputTree->Branch("bbjetEta1", &bbjetEta1, "bbjetEta1/f");	 
+	////_inputTree->Branch("bbjetEta2", &bbjetEta2, "bbjetEta2/f");	
+	////_inputTree->Branch("bbjetEta3", &bbjetEta3, "bbjetEta3/f");	  
+	////_inputTree->Branch("bbjetEta4", &bbjetEta4, "bbjetEta4/f");	  
+	////_inputTree->Branch("bbjetEta5", &bbjetEta5, "bbjetEta5/f");	
+	////_inputTree->Branch("bbjetEta6", &bbjetEta6, "bbjetEta6/f");  
+	////_inputTree->Branch("bbjetEta7", &bbjetEta7, "bbjetEta7/f");  
+	////_inputTree->Branch("bbjetEta8", &bbjetEta8, "bbjetEta8/f");  
+	////_inputTree->Branch("bbjetPhi1", &bbjetPhi1, "bbjetPhi1/f");  
+	////_inputTree->Branch("bbjetPhi2", &bbjetPhi2, "bbjetPhi2/f");
+	////_inputTree->Branch("bbjetPhi3", &bbjetPhi3, "bbjetPhi3/f");	
+	////_inputTree->Branch("bbjetPhi4", &bbjetPhi4, "bbjetPhi4/f");	  
+	////_inputTree->Branch("bbjetPhi5", &bbjetPhi5, "bbjetPhi5/f");	
+	////_inputTree->Branch("bbjetPhi6", &bbjetPhi6, "bbjetPhi6/f");
+	////_inputTree->Branch("bbjetPhi7", &bbjetPhi7, "bbjetPhi7/f");
+	////_inputTree->Branch("bbjetPhi8", &bbjetPhi8, "bbjetPhi8/f");
+	////_inputTree->Branch("blightjetEta1", &blightjetEta1, "blightjetEta1/f");
+	////_inputTree->Branch("blightjetEta2", &blightjetEta2, "blightjetEta2/f");	  
+	////_inputTree->Branch("blightjetEta3", &blightjetEta3, "blightjetEta3/f");	
+	////_inputTree->Branch("blightjetEta4", &blightjetEta4, "blightjetEta4/f");
+	////_inputTree->Branch("blightjetEta5", &blightjetEta5, "blightjetEta5/f");	  
+	////_inputTree->Branch("blightjetEta6", &blightjetEta6, "blightjetEta6/f");	
+	////_inputTree->Branch("bjetBTagDisc1", &bjetBTagDisc1, "bjetBTagDisc1/f");  
+	////_inputTree->Branch("bjetBTagDisc2", &bjetBTagDisc2, "bjetBTagDisc2/f");  
+	////_inputTree->Branch("bjetBTagDisc3", &bjetBTagDisc3, "bjetBTagDisc3/f");  
+	////_inputTree->Branch("bjetBTagDisc4", &bjetBTagDisc4, "bjetBTagDisc4/f");  
+	////_inputTree->Branch("bjetBTagDisc5", &bjetBTagDisc5, "bjetBTagDisc5/f");  
+	////_inputTree->Branch("bjetBTagDisc6", &bjetBTagDisc6, "bjetBTagDisc6/f");  
+	////_inputTree->Branch("bjetBTagDisc7", &bjetBTagDisc7, "bjetBTagDisc7/f");  
+	////_inputTree->Branch("bjetBTagDisc8", &bjetBTagDisc8, "bjetBTagDisc8/f");  
+	////_inputTree->Branch("bjetBTagDisc9", &bjetBTagDisc9, "bjetBTagDisc9/f");  
+	////_inputTree->Branch("bjetBTagDisc10", &bjetBTagDisc10, "bjetBTagDisc10/f");  
+	////_inputTree->Branch("bjetBTagDisc11", &bjetBTagDisc11, "bjetBTagDisc11/f");  
+	////_inputTree->Branch("bjetBTagDisc12", &bjetBTagDisc12, "bjetBTagDisc12/f");  
+	////_inputTree->Branch("bbjetBTagDisc1", &bbjetBTagDisc1, "bbjetBTagDisc1/f");  
+	////_inputTree->Branch("bbjetBTagDisc2", &bbjetBTagDisc2, "bbjetBTagDisc2/f");  
+	////_inputTree->Branch("bbjetBTagDisc3", &bbjetBTagDisc3, "bbjetBTagDisc3/f");  
+	////_inputTree->Branch("bbjetBTagDisc4", &bbjetBTagDisc4, "bbjetBTagDisc4/f");  
+	////_inputTree->Branch("bbjetBTagDisc5", &bbjetBTagDisc5, "bbjetBTagDisc5/f");  
+	////_inputTree->Branch("bbjetBTagDisc6", &bbjetBTagDisc6, "bbjetBTagDisc6/f");  
+	////_inputTree->Branch("bbjetBTagDisc7", &bbjetBTagDisc7, "bbjetBTagDisc7/f");  
+	////_inputTree->Branch("bbjetBTagDisc8", &bbjetBTagDisc8, "bbjetBTagDisc8/f");  
+	////_inputTree->Branch("blightjetBTagDisc1", &blightjetBTagDisc1, "blightjetBTagDisc1/f");  
+	////_inputTree->Branch("blightjetBTagDisc2", &blightjetBTagDisc2, "blightjetBTagDisc2/f");  
+	////_inputTree->Branch("blightjetBTagDisc3", &blightjetBTagDisc3, "blightjetBTagDisc3/f");  
+	////_inputTree->Branch("blightjetBTagDisc4", &blightjetBTagDisc4, "blightjetBTagDisc4/f");  
+	////_inputTree->Branch("blightjetBTagDisc5", &blightjetBTagDisc5, "blightjetBTagDisc5/f");  
+	////_inputTree->Branch("blightjetBTagDisc6", &blightjetBTagDisc6, "blightjetBTagDisc6/f");  
+	////_inputTree->Branch("bmet", &bmet, "bmet/f");    
+	////_inputTree->Branch("bmetPhi", &bmetPhi, "bmetPhi/f");    
+	////_inputTree->Branch("baverageDeltaRjj", &baverageDeltaRjj, "baverageDeltaRjj/f"); 
+	////_inputTree->Branch("baverageDeltaRbb", &baverageDeltaRbb, "baverageDeltaRbb/f"); 
+	////_inputTree->Branch("baverageDeltaEtajj", &baverageDeltaEtajj, "baverageDeltaEtajj/f"); 
+	////_inputTree->Branch("baverageDeltaEtabb", &baverageDeltaEtabb, "baverageDeltaEtabb/f"); 
+	////_inputTree->Branch("bminDeltaRjj", &bminDeltaRjj, "bminDeltaRjj/f"); 
+	////_inputTree->Branch("bminDeltaRbb", &bminDeltaRbb, "bminDeltaRbb/f"); 
+	////_inputTree->Branch("bmaxDeltaEtabb", &bmaxDeltaEtabb, "bmaxDeltaEtabb/f"); 
+	////_inputTree->Branch("bmaxDeltaEtajj", &bmaxDeltaEtajj, "bmaxDeltaEtajj/f"); 
+	////_inputTree->Branch("bmaxDeltaEtabj", &bmaxDeltaEtabj, "bmaxDeltaEtabj/f"); 
+	////_inputTree->Branch("bminDeltaRbj", &bminDeltaRbj, "bminDeltaRbj/f"); 
+	////_inputTree->Branch("baverageDeltaEtabj", &baverageDeltaEtabj, "baverageDeltaEtabj/f"); 
+	////_inputTree->Branch("baverageDeltaRbj", &baverageDeltaRbj, "baverageDeltaRbj/f"); 
+	////_inputTree->Branch("bminDeltaRMassjj", &bminDeltaRMassjj, "bminDeltaRMassjj/f"); 
+	////_inputTree->Branch("bminDeltaRMassbb", &bminDeltaRMassbb, "bminDeltaRMassbb/f"); 
+	////_inputTree->Branch("bminDeltaRMassbj", &bminDeltaRMassbj, "bminDeltaRMassbj/f"); 
+	////_inputTree->Branch("bminDeltaRpTjj", &bminDeltaRpTjj, "bminDeltaRpTjj/f"); 
+	////_inputTree->Branch("bminDeltaRpTbb", &bminDeltaRpTbb, "bminDeltaRpTbb/f"); 
+	////_inputTree->Branch("bminDeltaRpTbj", &bminDeltaRpTbj, "bminDeltaRpTbj/f"); 
+	////_inputTree->Branch("bmaxPTmassjjj", &bmaxPTmassjjj, "bmaxPTmassjjj/f"); 
+	////_inputTree->Branch("bmaxPTmassjbb", &bmaxPTmassjbb, "bmaxPTmassjbb/f"); 
+	////_inputTree->Branch("bH0", &bH0, "bH0/f");
+	////_inputTree->Branch("bH1", &bH1, "bH1/f");
+	////_inputTree->Branch("bH2", &bH2, "bH2/f");
+	////_inputTree->Branch("bH3", &bH3, "bH3/f");
+	////_inputTree->Branch("bH4", &bH4, "bH4/f");
+	////_inputTree->Branch("bbH0", &bbH0, "bbH0/f");
+	////_inputTree->Branch("bbH1", &bbH1, "bbH1/f");
+	////_inputTree->Branch("bbH2", &bbH2, "bbH2/f");
+	////_inputTree->Branch("bbH3", &bbH3, "bbH3/f");
+	////_inputTree->Branch("bbH4", &bbH4, "bbH4/f");
+	////_inputTree->Branch("bR1", &bR1, "bR1/f");
+	////_inputTree->Branch("bR2", &bR2, "bR2/f");
+	////_inputTree->Branch("bR3", &bR3, "bR3/f");
+	////_inputTree->Branch("bR4", &bR4, "bR4/f");
+	////_inputTree->Branch("bbR1", &bbR1, "bbR1/f");
+	////_inputTree->Branch("bbR2", &bbR2, "bbR2/f");
+	////_inputTree->Branch("bbR3", &bbR3, "bbR3/f");
+	////_inputTree->Branch("bbR4", &bbR4, "bbR4/f");
+	////_inputTree->Branch("bjetAverageMass", &bjetAverageMass, "bjetAverageMass/f");
+	////_inputTree->Branch("bbJetAverageMass", &bbJetAverageMass, "bbJetAverageMass/f");
+	////_inputTree->Branch("bbJetAverageMassSqr", &bbJetAverageMassSqr, "bbJetAverageMassSqr/f");
+	////_inputTree->Branch("bjetHT", &bjetHT, "bjetHT/f");
+	////_inputTree->Branch("bbjetHT", &bbjetHT, "bbjetHT/f");
+	////_inputTree->Branch("blightjetHT", &blightjetHT, "blightjetHT/f");
+	////_inputTree->Branch("bjetNumber", &bjetNumber, "bjetNumber/i");
+	////_inputTree->Branch("bbjetNumber", &bbjetNumber, "bbjetNumber/i");
+	////_inputTree->Branch("blightjetNumber", &blightjetNumber, "blightjetNumber/i");
+	////_inputTree->Branch("binvMassZ1", &binvMassZ1, "binvMassZ1/f");
+	////_inputTree->Branch("binvMassZ2", &binvMassZ2, "binvMassZ2/f");
+	////_inputTree->Branch("binvMassH1", &binvMassH1, "binvMassH1/f");
+	////_inputTree->Branch("binvMassH2", &binvMassH2, "binvMassH2/f");
+	////_inputTree->Branch("bchi2Higgs", &bchi2Higgs, "bchi2Higgs/f");
+	////_inputTree->Branch("bchi2HadW", &bchi2HadW, "bchi2HadW/f");
+	////_inputTree->Branch("bchi2Z", &bchi2Z, "bchi2Z/f");
+	////_inputTree->Branch("bchi2HiggsZ", &bchi2HiggsZ, "bchi2HiggsZ/f");
+	////_inputTree->Branch("binvMassHiggsZ1", &binvMassHiggsZ1, "binvMassHiggsZ1/f");
+	////_inputTree->Branch("binvMassHiggsZ2", &binvMassHiggsZ2, "binvMassHiggsZ2/f");
+	////_inputTree->Branch("bPTH1", &bPTH1, "bPTH1/f");
+	////_inputTree->Branch("bPTH2", &bPTH2, "bPTH2/f");
 
+
+	////_inputTree->Branch("bcentralityjl", &bcentralityjl, "bcentralityjl/f");
+	////_inputTree->Branch("bcentralityjb", &bcentralityjb, "bcentralityjb/f");
+	////_inputTree->Branch("baplanarity", &baplanarity, "baplanarity/f");
+	////_inputTree->Branch("bsphericity", &bsphericity, "bsphericity/f");
+	////_inputTree->Branch("btransSphericity", &btransSphericity, "btransSphericity/f");
+	////_inputTree->Branch("bcValue", &bcValue, "bcValue/f");
+	////_inputTree->Branch("bdValue", &bdValue, "bdValue/f");
+	////_inputTree->Branch("bbaplanarity", &bbaplanarity, "bbaplanarity/f");
+	////_inputTree->Branch("bbsphericity", &bbsphericity, "bbsphericity/f");
+	////_inputTree->Branch("bbtransSphericity", &bbtransSphericity, "bbtransSphericity/f");
+	////_inputTree->Branch("bbcValue", &bbcValue, "bbcValue/f");
+	////_inputTree->Branch("bbdValue", &bbdValue, "bbdValue/f");
+	////////_inputTree->Branch("passHadTrig", &passHadTrig, "passHadTrig/O");
+
+	////_inputTree->Branch("bweight", &bweight, "bweight/f");
+
+	////_inputTree->Branch("bleptonPT1", &bleptonPT1, "bleptonPT1/f");
+	////_inputTree->Branch("bmuonPT1", &bmuonPT1, "bmuonPT1/f");
+	////_inputTree->Branch("belePT1", &belePT1, "belePT1/f");
+	////_inputTree->Branch("bleptonEta1", &bleptonEta1, "bleptonEta1/f");
+	////_inputTree->Branch("bmuonEta1", &bmuonEta1, "bmuonEta1/f");
+	////_inputTree->Branch("beleEta1", &beleEta1, "beleEta1/f");
+	////_inputTree->Branch("bleptonPT2", &bleptonPT2, "bleptonPT2/f");
+	////_inputTree->Branch("bmuonPT2", &bmuonPT2, "bmuonPT2/f");
+	////_inputTree->Branch("belePT2", &belePT2, "belePT2/f");
+	////_inputTree->Branch("bleptonEta2", &bleptonEta2, "bleptonEta2/f");
+	////_inputTree->Branch("bmuonEta2", &bmuonEta2, "bmuonEta2/f");
+	////_inputTree->Branch("beleEta2", &beleEta2, "beleEta2/f");
+	////_inputTree->Branch("bdiElectronMass", &bdiElectronMass, "bdiElectronMass/f");
+	////_inputTree->Branch("bdiMuonMass", &bdiMuonMass, "bdiMuonMass/f");
+	////_inputTree->Branch("bleptonHT", &bleptonHT, "bleptonHT/f");
+	////_inputTree->Branch("bST", &bST, "bST/f");
+	////_inputTree->Branch("bleptonCharge1", &bleptonCharge1, "bleptonCharge1/f");
+	////_inputTree->Branch("bleptonCharge2", &bleptonCharge2, "bleptonCharge2/f");
+
+	////_inputTree->Branch("bbjetHiggsMatched1", &bbjetHiggsMatched1, "bbjetHiggsMatched1/f");
+	////_inputTree->Branch("bbjetHiggsMatched2", &bbjetHiggsMatched2, "bbjetHiggsMatched2/f");
+	////_inputTree->Branch("bbjetHiggsMatched3", &bbjetHiggsMatched3, "bbjetHiggsMatched3/f");
+	////_inputTree->Branch("bbjetHiggsMatched4", &bbjetHiggsMatched4, "bbjetHiggsMatched4/f");
+	////_inputTree->Branch("bbjetHiggsMatched5", &bbjetHiggsMatched5, "bbjetHiggsMatched5/f");
+	////_inputTree->Branch("bbjetHiggsMatched6", &bbjetHiggsMatched6, "bbjetHiggsMatched6/f");
+	////_inputTree->Branch("bbjetHiggsMatched7", &bbjetHiggsMatched7, "bbjetHiggsMatched7/f");
+	////_inputTree->Branch("bbjetHiggsMatched8", &bbjetHiggsMatched8, "bbjetHiggsMatched8/f");
+
+	////_inputTree->Branch("bbjetHiggsMatcheddR1", &bbjetHiggsMatcheddR1, "bbjetHiggsMatcheddR1/f");
+	////_inputTree->Branch("bbjetHiggsMatcheddR2", &bbjetHiggsMatcheddR2, "bbjetHiggsMatcheddR2/f");
+	////_inputTree->Branch("bbjetHiggsMatcheddR3", &bbjetHiggsMatcheddR3, "bbjetHiggsMatcheddR3/f");
+	////_inputTree->Branch("bbjetHiggsMatcheddR4", &bbjetHiggsMatcheddR4, "bbjetHiggsMatcheddR4/f");
+	////_inputTree->Branch("bbjetHiggsMatcheddR5", &bbjetHiggsMatcheddR5, "bbjetHiggsMatcheddR5/f");
+	////_inputTree->Branch("bbjetHiggsMatcheddR6", &bbjetHiggsMatcheddR6, "bbjetHiggsMatcheddR6/f");
+	////_inputTree->Branch("bbjetHiggsMatcheddR7", &bbjetHiggsMatcheddR7, "bbjetHiggsMatcheddR7/f");
+	////_inputTree->Branch("bbjetHiggsMatcheddR8", &bbjetHiggsMatcheddR8, "bbjetHiggsMatcheddR8/f");
+
+	////_inputTree->Branch("bbjetMinChiHiggsIndex1", &bbjetMinChiHiggsIndex1, "bbjetMinChiHiggsIndex1/f");
+	////_inputTree->Branch("bbjetMinChiHiggsIndex2", &bbjetMinChiHiggsIndex2, "bbjetMinChiHiggsIndex2/f");
+	////_inputTree->Branch("bbjetMinChiHiggsIndex3", &bbjetMinChiHiggsIndex3, "bbjetMinChiHiggsIndex3/f");
+	////_inputTree->Branch("bbjetMinChiHiggsIndex4", &bbjetMinChiHiggsIndex4, "bbjetMinChiHiggsIndex4/f");
+	////_inputTree->Branch("bbjetMinChiHiggsIndex5", &bbjetMinChiHiggsIndex5, "bbjetMinChiHiggsIndex5/f");
+	////_inputTree->Branch("bbjetMinChiHiggsIndex6", &bbjetMinChiHiggsIndex6, "bbjetMinChiHiggsIndex6/f");
+	////_inputTree->Branch("bbjetMinChiHiggsIndex7", &bbjetMinChiHiggsIndex7, "bbjetMinChiHiggsIndex7/f");
+	////_inputTree->Branch("bbjetMinChiHiggsIndex8", &bbjetMinChiHiggsIndex8, "bbjetMinChiHiggsIndex8/f");
+
+////////////////////////////////////////////////////////////////////////////////////////    
         // Branch for Trigger Path                                                        
         _inputTree->Branch("passTrigger_HLT_IsoMu27", &passTrigger_HLT_IsoMu27, "passTrigger_HLT_IsoMu27/O");
         _inputTree->Branch("passTrigger_HLT_PFHT1050", &passTrigger_HLT_PFHT1050, "passTrigger_HLT_PFHT1050/O");
@@ -2704,28 +2966,6 @@ void writePrescanTree();
 	// (which now includes 61/62=tt+bbb, 71/72=tt+4b). Both are -1 on non-MC.
 	_inputTree->Branch("genTtbarId",      &_genTtbarIdNano,  "genTtbarId/I");
 	_inputTree->Branch("expandedTtbarId", &_expandedTtbarId, "expandedTtbarId/I");
-	// [stitch] per-event stitch multiplier (1.0 if not applicable). Lets
-	// derivative tools (b-tag reweight / trigger SF) rebuild the stitched
-	// pre-SF base weight without duplicating StitchFactors logic.
-	_inputTree->Branch("stitchWeight",    &_stitchWeight,    "stitchWeight/F");
-	// [STEP5] event shape branch (jets / b-jets)
-	_inputTree->Branch("aplanarity",          &_es_aplanarity,          "aplanarity/F");
-	_inputTree->Branch("sphericity",          &_es_sphericity,          "sphericity/F");
-	_inputTree->Branch("transSphericity",     &_es_transSphericity,     "transSphericity/F");
-	_inputTree->Branch("eventC",              &_es_C,                   "eventC/F");
-	_inputTree->Branch("eventD",              &_es_D,                   "eventD/F");
-	_inputTree->Branch("bjetAplanarity",      &_es_bjetAplanarity,      "bjetAplanarity/F");
-	_inputTree->Branch("bjetSphericity",      &_es_bjetSphericity,      "bjetSphericity/F");
-	_inputTree->Branch("bjetTransSphericity", &_es_bjetTransSphericity, "bjetTransSphericity/F");
-	_inputTree->Branch("bjetEventC",          &_es_bjetC,               "bjetEventC/F");
-	_inputTree->Branch("bjetEventD",          &_es_bjetD,               "bjetEventD/F");
-	// [STEP6] 추가 di-mother 가설 (HH는 기존 branch/hist 경로 유지)
-	_inputTree->Branch("chi2ZH",   &_hr_chi2ZH,   "chi2ZH/F");
-	_inputTree->Branch("mZcandZH", &_hr_mZcandZH, "mZcandZH/F");
-	_inputTree->Branch("mHcandZH", &_hr_mHcandZH, "mHcandZH/F");
-	_inputTree->Branch("chi2ZZ",   &_hr_chi2ZZ,   "chi2ZZ/F");
-	_inputTree->Branch("mZ1ZZ",    &_hr_mZ1ZZ,    "mZ1ZZ/F");
-	_inputTree->Branch("mZ2ZZ",    &_hr_mZ2ZZ,    "mZ2ZZ/F");
 	_inputTree->Branch("bTagWeight", &bTagWeight_central_, "bTagWeight/F");
 	_inputTree->Branch("failGoldenJson", &failGoldenJson, "failGoldenJson/O");
 	_inputTree->Branch("passMETFilters", &passMETFilters, "passMETFilters/O");

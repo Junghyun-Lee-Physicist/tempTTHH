@@ -127,57 +127,19 @@ LUMI_PB_INV = 41480.0
 #   hadronic value (σ_ttbb_total = 1.452/BR_HAD ≈ 3.195 pb, then × BR_c); replace
 #   with the official XSDB σ if your YAML uses those — result is unchanged as
 #   long as YAML and here agree.
-# ──────────────────────────────────────────────────────────────────────────────
-# [TrackC] σ·BR은 xsec_db(single source)에서 읽는다. compute_stitch_factors와
-# submitter(base weight)가 같은 db를 참조해야 r·base가 약분되어 yield가 보존된다
-# (과거: r은 σ_ded=(1.452/BR_HAD)×BR, main.yml은 1.452×BR — 불일치로 SL/DL이
-#  ~2.2x 과소정규화. db 통일로 원천 해소).
-#
-# σ_inc(채널) = db[inclusive].cross_section_pb × BR_channel
-# σ_ded       = db[dedicated].cross_section_pb × BR  (dedicated의 br 필드)
-# ──────────────────────────────────────────────────────────────────────────────
-import json as _json
-import os as _os
-
-XSEC_DB_PATH = _os.environ.get(
-    "TTHH_XSEC_DB",
-    _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "data", "samples_2017UL.json"))
-
-def _load_xsec_db(path=XSEC_DB_PATH):
-    with open(path) as f:
-        return _json.load(f)
-
-_XDB = _load_xsec_db()
-
-def _sigma_eff(sample):
-    """db의 cross_section_pb × br (= σ_eff). dedicated/inclusive 공통."""
-    rec = _XDB[sample]
-    xs = rec["cross_section_pb"]
-    if xs is None:
-        raise ValueError(f"{sample}: cross_section_pb is null (Data?)")
-    return xs * (rec.get("br", 1.0) or 1.0)
-
-def _sigma_total(sample):
-    """db의 cross_section_pb (BR 적용 전, total/inclusive)."""
-    return _XDB[sample]["cross_section_pb"]
-
-# BR (db meta가 아닌 표준 W BR — STITCH_PLANS의 σ_inc 채널 분해에 사용)
 W_HAD = 0.6741
-W_LEP = 1.0 - W_HAD
-BR_HAD = W_HAD * W_HAD                                         # 0.45441081
-BR_SL  = 2.0 * W_HAD * W_LEP                                   # 0.43937838
-BR_DL  = W_LEP * W_LEP                                         # 0.10621081
-
-# σ_inc total (tt+jets) — db의 TTToHadronic cross_section_pb (BR 적용 전)
-SIGMA_INC_NNLO_TOTAL_PB = _sigma_total("TTToHadronic")        # 831.76
-SIGMA_INC_NNLO          = SIGMA_INC_NNLO_TOTAL_PB * BR_HAD
-
-# σ_dedicated — db에서 σ_eff(=xsec×br)로 읽는다 (채널 BR 일관 적용)
-SIGMA_TTBB_HAD = _sigma_eff("ttbb_Hadronic")                  # 1.452 × BR_HAD = 0.6598
-SIGMA_TTBB_SL  = _sigma_eff("ttbb_SemiLeptonic")              # 1.452 × BR_SL  = 0.6380
-SIGMA_TTBB_DL  = _sigma_eff("ttbb_2L2Nu")                     # 1.452 × BR_DL  = 0.1542
-SIGMA_TTBB_LHE = SIGMA_TTBB_HAD                               # backward-compat alias
-SIGMA_TT4B_LHE = _sigma_eff("tt4b")                           # 0.296 (br=1)
+W_LEP = 1.0 - W_HAD                                            # 0.3259
+BR_HAD                  = W_HAD * W_HAD                        # 0.45441081
+BR_SL                   = 2.0 * W_HAD * W_LEP                  # 0.43937838
+BR_DL                   = W_LEP * W_LEP                        # 0.10621081
+SIGMA_INC_NNLO_TOTAL_PB = 831.76
+SIGMA_INC_NNLO          = SIGMA_INC_NNLO_TOTAL_PB * BR_HAD    # ≈ 377.964 pb
+SIGMA_TTBB_HAD          = 1.452                                # pb (1452 fb, hadronic 4FS)
+SIGMA_TTBB_LHE          = SIGMA_TTBB_HAD                       # backward-compat alias
+_SIGMA_TTBB_TOTAL       = SIGMA_TTBB_HAD / BR_HAD              # ≈ 3.1953 pb (4FS, all channels)
+SIGMA_TTBB_SL           = _SIGMA_TTBB_TOTAL * BR_SL            # ≈ 1.4040 pb (verify vs XSDB)
+SIGMA_TTBB_DL           = _SIGMA_TTBB_TOTAL * BR_DL            # ≈ 0.3394 pb (verify vs XSDB)
+SIGMA_TT4B_LHE          = 0.296                                # pb (296 fb)
 
 # True면 아래 EXPECTED_SAMPLE_DIRS에 적힌 디렉토리만 scan한다.
 # False면 ANALYZER_OUTPUT_DIR 아래의 모든 하위 디렉토리를 scan한다.

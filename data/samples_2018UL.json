@@ -1,0 +1,8 @@
+{
+  "_meta": {
+    "era": "2018UL",
+    "lumi_pb_inv": 59830.0,
+    "note": "STUB — 2018 prescan 후 채움",
+    "convention": "cross_section_pb=total σ(BR 전), br=채널 BR, σ_eff=xsec×br"
+  }
+}

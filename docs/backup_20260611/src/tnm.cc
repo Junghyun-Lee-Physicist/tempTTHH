@@ -253,9 +253,36 @@ commandLine::decode(int argc, char** argv)
           else if (arg == "--mode")       analysisMode = argv[++i];
           else if (arg == "--era")        eraName = argv[++i];
 
+          // ── [Validation Study] flags ──────────────────────────────
+          else if (arg == "--val-scenario")   valScenario      = argv[++i];
+          else if (arg == "--val-nbJetsCut")  valNbJetsCut     = std::atoi(argv[++i]);
+          else if (arg == "--val-hRecoMin")   valHRecoMin      = std::atoi(argv[++i]);
+          else if (arg == "--val-hadWWindow") valApplyHadW     = std::atoi(argv[++i]);
+          else if (arg == "--val-higgsWindow")valApplyHiggsWin = std::atoi(argv[++i]);
+          else if (arg == "--val-tightenJet8")valTightenJet8   = std::atoi(argv[++i]);
+          else if (arg == "--val-btagShape")  valApplyBtagShape= std::atoi(argv[++i]);
+          else if (arg == "--val-btagNorm")   valApplyBtagNorm = std::atoi(argv[++i]);
+          else if (arg == "--val-trig")       valApplyTrig     = std::atoi(argv[++i]);
+          else if (arg == "--val-topPt")      valApplyTopPt    = std::atoi(argv[++i]);
+          else if (arg == "--val-ttHVR")      valTtHVRStyle    = std::atoi(argv[++i]);
       }
   }
 
+  // [Validation] log the validation flags so we can see them in condor logs
+  if (analysisMode == "validation" || analysisMode == "ValidationStudy") {
+      std::cout << "[commandLine] validation scenario='" << valScenario
+                << "' nbJetsCut=" << valNbJetsCut
+                << " hRecoMin=" << valHRecoMin
+                << " hadW=" << valApplyHadW
+                << " higgsWin=" << valApplyHiggsWin
+                << " tightenJet8=" << valTightenJet8
+                << " btagShape=" << valApplyBtagShape
+                << " btagNorm=" << valApplyBtagNorm
+                << " trig=" << valApplyTrig
+                << " topPt=" << valApplyTopPt
+                << " ttHVR=" << valTtHVRStyle
+                << std::endl;
+  }
 
 
   // Strict Validation: Check Mandatory Arguments
