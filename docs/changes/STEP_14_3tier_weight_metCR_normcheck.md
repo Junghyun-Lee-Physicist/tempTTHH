@@ -85,3 +85,14 @@ TTHH_LEPCR=muon ./ttHHanalyzer_unified --mode main ...
 이 STEP 의 편집(3-tier, lepCR, WARN)을 .cc/.h 에서 제거. b-tag SF 를
 evtWeight 에 다시 곱하려면 SF 체인의 `_evtWeight *= bTagWeight_central_`/
 `*= btagNormReweight_` 복원.
+
+
+## 5. b-tag norm reweight SKIP 을 기본값으로 (condor 대비)
+8-group b-tag reweight JSON(tt+nb 키 포함)이 아직 없으므로, `_skipBtagReweight`
+default 를 **true** 로. condor job 이 env 없이도 FATAL 46 없이 돈다.
+- `evtWeight_full` tier 의 norm reweight 만 1.0 처리; 기본 `evtWeight`(trigSF만)와
+  `evtWeight_btagSF`(+shape) 는 무관.
+- `TTHH_SKIP_BTAGRW=0` 으로 명시적 해제 가능 (8-group JSON 준비 후).
+- 시작 로그: `[btagRW] b-tag norm reweight SKIP ...` (ACTIVE 시 다른 메시지).
+- 따라서 지금 제출 흐름: prescan(완료) → **btagtrig**(8-group JSON 입력 skim 생산)
+  → main(reweight skip 으로 stack plot). main 은 skip default 라 바로 제출 가능.

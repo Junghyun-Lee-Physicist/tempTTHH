@@ -1087,13 +1087,17 @@ class ttHHanalyzer_unified {
         // [lepton-CR] 영역은 CLI --region 으로 setRegion() 통해 주입 (생성자 후).
 
         // [debug-only] b-tag norm reweight 우회 토글
+        // 기본 SKIP(true). TTHH_SKIP_BTAGRW=0 으로 명시적 해제 가능(8-group JSON 준비 후).
         if (const char* sEnv = std::getenv("TTHH_SKIP_BTAGRW")) {
             _skipBtagReweight = (std::atoi(sEnv) != 0);
         }
         if (_skipBtagReweight) {
-            std::cout << "[debug-only] TTHH_SKIP_BTAGRW=1 -> b-tag norm reweight "
-                         "건너뜀 (btagNormReweight=1.0). ⚠ 정식 분석 아님: "
-                         "8-group JSON 준비 후 반드시 끌 것.\n";
+            std::cout << "[btagRW] b-tag norm reweight SKIP (btagNormReweight=1.0). "
+                         "evtWeight_full tier 만 영향. ⚠ 8-group JSON(tt+nb) 준비되면 "
+                         "TTHH_SKIP_BTAGRW=0 으로 끄거나 default 복원.\n";
+        } else {
+            std::cout << "[btagRW] b-tag norm reweight ACTIVE (TTHH_SKIP_BTAGRW=0). "
+                         "JSON 에 tt+nb 키 없으면 FATAL 46.\n";
         }
     }
     
@@ -1381,7 +1385,12 @@ private:
     //   흐름(stitch/trigSF/btagShape/selection)이 끝까지 도는지 확인하는 용도.
     //   켜지면 btagNormReweight_=1.0 으로 두고 getBTagReweight() 호출을 건너뛴다
     //   (= reweight 미적용). 끄면(기본) 기존대로 동작 + 키 없으면 FATAL 46.
-    bool _skipBtagReweight = false;
+    // [임시 default] 8-group b-tag reweight JSON(tt+nb 키 포함)이 아직 없으므로
+    // norm reweight 를 기본 SKIP (btagNormReweight=1.0). condor job 이 FATAL 46
+    // 없이 돌게 하기 위함. evtWeight_full tier 에만 영향 — 기본 evtWeight(trigSF만)
+    // 과 evtWeight_btagSF(+shape) 는 무관. 8-group JSON 준비되면 default 를 false 로
+    // 되돌리거나 TTHH_SKIP_BTAGRW=0 으로 끈다.
+    bool _skipBtagReweight = true;
 
     TH1D * _hJES, * _hbJES, *_hbJetEff, *_hJetEff, *_hSysbTagM ;
 
