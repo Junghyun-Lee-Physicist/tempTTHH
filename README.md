@@ -63,12 +63,42 @@ source setup.sh        # TNM_PATH / LD_LIBRARY_PATH / ROOT_INCLUDE_PATH 설정 (
 ```bash
 cmsenv
 source setup.sh
-make -j4               # exe: ttHHanalyzer_unified ; lib: libttHH, libEventShape
-make lib/libEventShape.a   # (선택) EventShape 정적 라이브러리 단독 빌드
-make -C bTagSF_ReweightStudy   # b-tag SF 도구 (공유 헤더 Config_TtCatGroup.hh 사용)
+make -j4               # 평소 빌드 (-O2 -g): exe ttHHanalyzer_unified, lib libttHH/libEventShape
+make -C bTagSF_ReweightStudy   # b-tag SF 도구 (공유 헤더 Config_TtCatGroup.hh)
 ```
-EventShape는 **정적 라이브러리(`lib/libEventShape.a`)로 분리 컴파일**되어
-링크된다 (과거 소스 직접 include 방식 폐기).
+EventShape는 **정적 라이브러리(`lib/libEventShape.a`)로 분리 컴파일**되어 링크된다.
+실행파일에는 `$ORIGIN/lib` RPATH가 박혀 `./lib`의 공유 라이브러리를 자동으로 찾는다.
+
+### 빌드 레벨 (build levels)
+디버깅 강도를 Makefile 옵션으로 토글한다. **디버그 심볼(`-g`)은 평소에도 항상**
+포함되므로(성능 영향 거의 없음, 바이너리만 커짐) gdb로 segfault 줄 번호를 언제든
+볼 수 있다. 무거운 진단(AddressSanitizer, `-O0`)만 `DEBUG=1`로 켠다.
+
+| 명령 | 플래그 | 용도 |
+|---|---|---|
+| `make` | `-O2 -g -Wall` | 평소. 최적화 + 디버그 심볼. gdb backtrace 가능 |
+| `make DEBUG=1` | `-O0 -g -Wall -Wextra -fsanitize=address -fno-omit-frame-pointer` | 메모리 오류(overflow·use-after-free·잘못된 free)를 런타임에 정확한 위치로 추적. 2~3배 느림 |
+| `make VERBOSE=1` | (위 + 빌드 로그 상세) | 컴파일/링크 명령 출력 |
+
+```bash
+# segfault·메모리 오류 추적 (AddressSanitizer)
+make clean && make DEBUG=1 -j4
+./ttHHanalyzer_unified --mode debug --filelist <list> --output dbg.root \
+    --weight 1.0 --year 2017 --dataOrMC MC --sample TTToHadronic
+#   → ASan이 잘못된 메모리 접근 시 파일:줄 + 호출 스택을 즉시 출력
+
+# 평소 빌드로 gdb (ASan 없이, -g 덕분에 줄 번호 나옴)
+make -j4
+gdb --args ./ttHHanalyzer_unified --mode debug --filelist <list> --output dbg.root \
+    --weight 1.0 --year 2017 --dataOrMC MC --sample TTToHadronic
+# (gdb) run
+# (gdb) backtrace      ← 크래시 지점 + 호출 스택
+# (gdb) frame N        ← 해당 프레임으로 이동
+# (gdb) print 변수명    ← 그 시점 변수값
+```
+
+> ASan 빌드(`DEBUG=1`)로 만든 실행파일은 ASan 런타임을 요구한다(cmsenv 환경에
+> 포함). Condor 대량 작업은 평소 빌드로, 메모리 버그 추적만 `DEBUG=1` 로컬에서.
 
 ## 4. 보정 입력 경로 (env / yml 통제)
 
@@ -132,6 +162,100 @@ python3 submit_job_FH_Tier3_unified.py --mode main --files-per-job 5 \
 - `AnalyzerConfig/*.yml` + `proxy.cert` 필요. 경로 통제는 §4.
 - `proxy.cert`: `voms-proxy-init --voms cms --valid 96:00 --out proxy.cert`
   후 `export X509_USER_PROXY=proxy.cert`.
+
+---
+
+## 8. 전체 워크플로우 (처음부터 끝까지)
+
+아래 순서대로 실행한다. **bootstrap(처음 1회)** 와 **재실행** 을 구분한다.
+
+### 8.0 컴파일 + 로컬 디버그 (가장 먼저)
+```bash
+cmsenv && source setup.sh
+make -j4                      # analyzer + libEventShape
+make -C bTagSF_ReweightStudy  # b-tag SF 도구 (공유 헤더)
+
+# [debug] 테스트 파일 1~2개로 각 로직 검증 (condor 전에 필수)
+TTHH_DEBUG_NEVENTS=20 ./ttHHanalyzer_unified --mode debug \
+    --filelist filelistTest/file_TTToHadronic_0.txt --output dbg.root \
+    --weight 1.0 --year 2017 --dataOrMC MC --sample TTToHadronic | tee dbg.log
+grep '\[dbg\]' dbg.log     # weight/stitch/sf/sel/evtshape/higgsreco/paths/seltable
+# 확인: [dbg][seltable] integrity: OK, BAD(NaN/Inf) 0건, cutflow 정상
+```
+
+### 8.1 prescan — ΣgenW 수집 (xsec_db·stitch 의 입력)
+```bash
+# (1) prescan 모드로 전 샘플 제출 (selection 없이 genWeight 누산)
+python3 submit_job_FH_Tier3_unified.py --mode prescan
+#     AnalyzerConfig/Tier3_2017_FH_unified_prescan.yml (analysis_mode: prescan) 사용
+#     → ANALYZER_OUTPUT_DIR 아래 prescan TTree 출력 (job=file 1:1)
+
+# (2) prescan ROOT → prescan_summary.json (Σgenw 집계 + runs vs tree 교차검증)
+python3 consolidate_prescan.py \
+    --input-base <prescan output base dir> \
+    --outdir ./prescan_summary
+#     → prescan_summary/prescan_summary.json
+#        samples[X].runs.genEventSumw  (★ weight·stitch 가 사용)
+#        samples[X].events.sumGenW_total (교차검증용; >0.01% 차이 시 경고)
+```
+
+### 8.2 stitch factor — r 계산 (xsec_db 를 읽음)
+```bash
+# compute_stitch_factors.py 는 ANALYZER_OUTPUT_DIR(prescan ROOT)를 직접 스캔하고,
+# σ·BR 은 data/samples_2017UL.json(xsec_db)에서 읽는다 (TTHH_XSEC_DB 로 override).
+# → submitter 의 base weight 와 같은 db 를 쓰므로 r·base 가 약분되어 yield 보존.
+python3 compute_stitch_factors.py
+#     입력: ANALYZER_OUTPUT_DIR (코드 상단 상수; 필요 시 수정)
+#           data/samples_2017UL.json (env TTHH_XSEC_DB 로 변경 가능)
+#     출력: DerivedCorr/stitchFactors/stitch_factors_2017.json
+#     ※ db 통일 후 r 값이 이전과 달라짐(예: ttbb_Had 1.09→2.40). base 도 함께
+#       바뀌어 base×r 은 보존 — 정상. (ttbb SL/DL 2.2x 과소정규화 해소)
+```
+
+### 8.3 main 분석 제출 (weight 자동 합성)
+```bash
+# 간소 yml(샘플 이름만). weight = lumi×xsec×br/Σgenw 를 submitter 가 합성.
+python3 submit_job_FH_Tier3_unified.py --mode main --files-per-job 5
+#   ( --mode main 이면 AnalyzerConfig/Tier3_2017_FH_unified_main.yml 자동 선택)
+#   filelist 규칙: filelist_<sample_name>.txt
+#   data/MC 자동 판정: xsec_db 의 cross_section_fb null 여부
+#   경로 통제: yml common.path_* (Step 4) — STITCH_FACTORS_JSON 등
+
+# 현황 확인 / 실패 재제출
+python3 submit_job_FH_Tier3_unified.py --mode main --report
+python3 submit_job_FH_Tier3_unified.py --mode main --files-per-job 5 \
+    --resubmit --resubmit-to retry1
+```
+
+### 8.4 cross section 확인 (The Barn)
+```
+barn/The_Barn.html 을 브라우저로 열기 (같은 위치에 data/ 필요).
+드롭다운에서 2017 UL 선택 → data/samples_2017UL.json 의 σ(fb)/br/N/ref/비고 표시.
+```
+
+### 8.5 단일-muon 검증 영역 (선택)
+```bash
+# main 과 동일하되 lepton veto → '정확히 muon 1 + electron 0' (SF 추가 없음)
+TTHH_REQUIRE_1MUON=1 ./ttHHanalyzer_unified --mode main \
+    --filelist <list> --output mu1.root \
+    --weight <w> --year 2017 --dataOrMC MC --sample TTToHadronic
+```
+
+### 의존 관계 요약
+```
+make → [debug 검증] → prescan 제출 → consolidate_prescan
+                                          ↓ (prescan_summary.json: runs.genEventSumw)
+                          data/samples_2017UL.json (xsec_db, σ·BR 단일 소스)
+                                          ↓
+                    ┌─────────────────────┴─────────────────────┐
+          compute_stitch_factors.py                    submitter base weight
+          (xsec_db + prescan ROOT)                     (xsec_db + prescan_summary)
+                    ↓                                            ↓
+          stitch_factors_2017.json  ──(STITCH_FACTORS_JSON)──→  main 분석
+```
+
+> 핵심: `data/samples_2017UL.json`(σ·BR) 과 `prescan_summary.json`(Σgenw) 이
+> 두 개의 단일 소스. weight 와 stitch r 이 **같은 σ** 를 쓰므로 정규화가 일관된다.
 
 ---
 

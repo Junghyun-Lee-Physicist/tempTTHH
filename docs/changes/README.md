@@ -17,6 +17,8 @@
 | 9 | readme | 최상위 README 전면 갱신 |
 | 10 | ttbb_weight_and_muon_option | ttbb SL/DL weight 보고(⚠AN 불일치) + single-muon offline 옵션 |
 | 11 | xsec_db_single_source | cross section 단일 소스(xsec_db) + weight 런타임 합성 + 과소정규화 해소 |
+| 12 | fb_units_and_xsec_fix | fb 단위 전환 + AN 기반 σ/BR 수정(k 미적용) + yml 통일 |
+| 13 | makefile_debug_levels | Makefile 빌드 레벨(평소 -g / DEBUG=1 ASan) |
 
 별도 트랙 (선행조건 대기):
 - **TRACK_A** (도구 업데이트) — btagtrig 재실행 후

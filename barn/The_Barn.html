@@ -1,9 +1,161 @@
-<!-- ============================================================
-  The Barn — CMS MC Sample Database (cross section library)
-  Author: junghyun-lee-physicist
-  이 파일은 사용자 제공 HTML. data/samples_<era>.json 을 fetch한다.
-  배치: 이 html과 같은 위치에 data/ 디렉토리 (samples_2017UL.json 등).
-  ※ 실제 HTML 본문은 사용자가 공유한 버전을 사용하세요.
-     (드롭다운 옵션 value: "data/samples_2017UL.json",
-                          "data/samples_2018UL.json")
-============================================================ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Barn — CMS MC Sample Database</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Instrument+Serif&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0c0e13;--surface:#14171e;--surface-2:#1a1e28;--border:#252a36;--border-v:#2a303c;
+    --text:#d4d8e3;--text-dim:#6b7280;--accent:#3b82f6;--accent-dim:#1d4ed8;--green:#22c55e;
+    --amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'DM Sans',system-ui,sans-serif;--serif:'Instrument Serif',Georgia,serif;}
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html{font-size:14px;} body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;line-height:1.5;}
+  .header{padding:2.8rem 2rem 1.2rem;max-width:1600px;margin:0 auto;display:flex;align-items:baseline;gap:1rem;flex-wrap:wrap;}
+  .header h1{font-family:var(--serif);font-size:2rem;font-weight:400;font-style:italic;letter-spacing:-.01em;
+    background:linear-gradient(135deg,#fbbf24,#f59e0b,#d97706);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:flex;align-items:baseline;gap:.5rem;}
+  .header h1 .sub-title{font-family:var(--sans);font-size:.9rem;font-weight:500;font-style:normal;color:var(--text-dim);-webkit-text-fill-color:var(--text-dim);}
+  .header .sub{color:var(--text-dim);font-size:.82rem;font-family:var(--mono);}
+  .badge{display:inline-block;font-family:var(--mono);font-size:.68rem;padding:.15rem .55rem;border-radius:9999px;vertical-align:middle;}
+  .badge-count{background:rgba(251,191,36,.12);color:var(--amber);} .badge-ok{background:rgba(34,197,94,.12);color:var(--green);}
+  .author{margin-left:auto;font-family:var(--mono);font-size:.8rem;color:var(--text-dim);}
+  .toolbar{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;padding:.8rem 2rem;max-width:1600px;margin:0 auto;}
+  .dataset-select{padding:.55rem 2rem .55rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--sans);font-size:.8rem;font-weight:600;outline:none;cursor:pointer;}
+  .search-box{flex:1;min-width:200px;max-width:420px;position:relative;}
+  .search-box input{width:100%;padding:.55rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:.8rem;outline:none;}
+  .filter-btn{padding:.5rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-size:.78rem;cursor:pointer;}
+  .filter-btn.active{background:var(--accent-dim);border-color:var(--accent);color:#fff;}
+  .stat{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--text-dim);}
+  .table-wrap{max-width:1600px;margin:0 auto;padding:.5rem 2rem 3rem;overflow-x:auto;}
+  table{border-collapse:collapse;font-size:.8rem;width:100%;}
+  thead th{position:sticky;top:0;z-index:10;background:var(--surface);padding:.7rem .6rem;text-align:left;font-weight:600;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);border-bottom:2px solid var(--border);cursor:pointer;white-space:nowrap;}
+  thead th .arr{margin-left:.3rem;opacity:.3;font-size:.6rem;} thead th.sorted .arr{opacity:1;color:var(--amber);}
+  tbody tr{border-bottom:1px solid var(--border);} tbody tr:hover{background:var(--surface-2);}
+  tbody td{padding:.5rem .6rem;vertical-align:top;white-space:nowrap;}
+  .c-name{font-family:var(--mono);font-weight:600;font-size:.74rem;color:#fbbf24;}
+  .c-das{font-family:var(--mono);font-size:.66rem;color:var(--text-dim);cursor:pointer;}
+  .c-das:hover{color:var(--amber);}
+  .c-num{font-family:var(--mono);text-align:right;} .c-xsec{font-family:var(--mono);font-weight:600;text-align:right;color:var(--green);}
+  .c-br{font-family:var(--mono);text-align:right;color:#60a5fa;} .c-eff{font-family:var(--mono);text-align:right;color:var(--amber);font-weight:600;}
+  .c-tag{font-family:var(--mono);font-size:.7rem;text-align:center;} .c-ref{font-size:.7rem;text-align:center;}
+  td.empty{color:var(--text-dim);font-style:italic;}
+  .note-icon{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;background:rgba(251,191,36,.1);color:var(--amber);font-size:.6rem;cursor:help;position:relative;}
+  .note-icon .tip{display:none;position:absolute;bottom:calc(100% + 8px);right:0;width:340px;padding:.6rem .8rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:.72rem;font-style:normal;color:var(--text);white-space:normal;line-height:1.5;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,.5);}
+  .note-icon:hover .tip{display:block;}
+  .loading{text-align:center;padding:4rem 2rem;color:var(--text-dim);font-family:var(--mono);}
+  .err{color:var(--red);}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>The Barn <span class="sub-title">cross section library (fb)</span></h1>
+  <span class="sub">CMS MC Sample Database</span>
+  <span class="badge badge-count" id="badge-total"></span>
+  <span class="badge badge-ok" id="badge-filled"></span>
+  <div class="author">Author : junghyun-lee-physicist</div>
+</div>
+<div class="toolbar">
+  <select id="dataset-select" class="dataset-select">
+    <option value="data/samples_2017UL.json">2017 UL (NanoAODv9)</option>
+    <option value="data/samples_2018UL.json">2018 UL (NanoAODv9)</option>
+  </select>
+  <div class="search-box"><input type="text" id="search" placeholder="Filter (e.g. DY, TT, QCD_HT, ttHH)"></div>
+  <button class="filter-btn active" data-f="all">All</button>
+  <button class="filter-btn" data-f="filled">Has σ</button>
+  <button class="filter-btn" data-f="pending">Data</button>
+  <span class="stat" id="stat"></span>
+</div>
+<div class="table-wrap">
+  <div class="loading" id="loading">Loading…</div>
+  <table id="tbl" style="display:none">
+    <thead><tr>
+      <th data-k="name" style="width:300px">Sample <span class="arr">▲</span></th>
+      <th data-k="das_path" style="width:360px">DAS Path <span class="arr">▲</span></th>
+      <th data-k="nevents" style="width:110px">N events <span class="arr">▲</span></th>
+      <th data-k="nfiles" style="width:60px">Files <span class="arr">▲</span></th>
+      <th data-k="cross_section_fb" style="text-transform:none;width:110px">σ_total (fb) <span class="arr">▲</span></th>
+      <th data-k="br" style="text-transform:none;width:90px">BR <span class="arr">▲</span></th>
+      <th data-k="kfactor" style="text-transform:none;width:60px">k <span class="arr">▲</span></th>
+      <th data-k="sigma_eff" style="text-transform:none;width:110px">σ_eff (fb) <span class="arr">▲</span></th>
+      <th data-k="accuracy" style="width:90px">Acc. <span class="arr">▲</span></th>
+      <th data-k="xsec_ref" style="width:120px">Ref <span class="arr">▲</span></th>
+      <th style="width:50px">Note</th>
+    </tr></thead>
+    <tbody id="tb"></tbody>
+  </table>
+</div>
+<script>
+;(function(){
+  'use strict';
+  const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+  const dom={loading:$('#loading'),tbl:$('#tbl'),tbody:$('#tb'),search:$('#search'),stat:$('#stat'),
+    badgeTotal:$('#badge-total'),badgeFilled:$('#badge-filled'),datasetSel:$('#dataset-select')};
+  let samples=[],filtered=[],curFilter='all',sortKey='name',sortAsc=true;
+  const _esc=document.createElement('span'); const esc=s=>{_esc.textContent=s??'';return _esc.innerHTML;};
+  const fmt=v=>{if(v==null)return null;if(v>=1000)return v.toLocaleString(undefined,{maximumFractionDigits:1});if(v>=1)return v.toFixed(2);return v.toPrecision(4);};
+  // σ_eff = σ_total × br × kfactor (계산 컬럼)
+  const sigmaEff=s=>(s.cross_section_fb==null)?null:s.cross_section_fb*(s.br??1)*(s.kfactor??1);
+  const debounce=(fn,ms)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};};
+
+  async function load(url){
+    dom.loading.style.display='block'; dom.loading.textContent='Loading…'; dom.loading.classList.remove('err');
+    dom.tbl.style.display='none'; dom.tbody.innerHTML='';
+    try{
+      const res=await fetch(url); if(!res.ok)throw new Error('HTTP '+res.status);
+      const raw=await res.json();
+      samples=Object.entries(raw).filter(([k])=>k!=='_meta').map(([name,data])=>({name,...data}));
+      const filled=samples.reduce((n,s)=>n+(s.cross_section_fb!=null?1:0),0);
+      dom.badgeTotal.textContent=samples.length+' samples';
+      dom.badgeFilled.textContent=filled+' with σ';
+      dom.loading.style.display='none'; dom.tbl.style.display=''; render();
+    }catch(e){
+      dom.loading.className='loading err';
+      dom.loading.innerHTML='데이터 로드 실패: '+esc(e.message)+'<br><br>'+
+        '⚠ <b>file://로 열면 브라우저가 fetch()를 차단합니다.</b><br>'+
+        'html이 있는 디렉토리에서 로컬 서버를 켜고 http로 여세요:<br>'+
+        '<code style="color:var(--amber)">python3 -m http.server 8000</code><br>'+
+        '→ 브라우저에서 <code style="color:var(--amber)">http://localhost:8000/The_Barn.html</code><br>'+
+        '(data/samples_2017UL.json 이 같은 위치에 있어야 합니다)';
+    }
+  }
+  const cmp=(a,b)=>{let va=sortKey==='sigma_eff'?sigmaEff(a):a[sortKey],vb=sortKey==='sigma_eff'?sigmaEff(b):b[sortKey];
+    if(va==null&&vb==null)return 0;if(va==null)return 1;if(vb==null)return -1;
+    if(typeof va==='string')return sortAsc?va.localeCompare(vb):vb.localeCompare(va);return sortAsc?va-vb:vb-va;};
+  function render(){
+    const q=dom.search.value.toLowerCase();
+    filtered=samples;
+    if(q)filtered=filtered.filter(s=>s.name.toLowerCase().includes(q)||(s.das_path||'').toLowerCase().includes(q));
+    if(curFilter==='filled')filtered=filtered.filter(s=>s.cross_section_fb!=null);
+    if(curFilter==='pending')filtered=filtered.filter(s=>s.cross_section_fb==null);
+    filtered.sort(cmp);
+    dom.stat.textContent=filtered.length+' shown';
+    const frag=document.createDocumentFragment();
+    for(const s of filtered){
+      const tr=document.createElement('tr');
+      const cell=(v,cls)=>{const td=document.createElement('td');td.className=cls;if(v!=null){td.textContent=v;}else{td.classList.add('empty');td.textContent='—';}tr.appendChild(td);};
+      const nm=document.createElement('td');nm.className='c-name';nm.title=s.name;nm.textContent=s.name;tr.appendChild(nm);
+      const das=document.createElement('td');das.className='c-das';das.title='클릭하면 복사';das.dataset.path=s.das_path||'';das.textContent=s.das_path||'—';tr.appendChild(das);
+      cell(s.nevents!=null?s.nevents.toLocaleString():null,'c-num');
+      cell(s.nfiles!=null?String(s.nfiles):null,'c-num');
+      cell(s.cross_section_fb!=null?fmt(s.cross_section_fb):null,'c-xsec');
+      cell(s.br!=null?(s.br).toPrecision(4):null,'c-br');
+      cell(s.kfactor!=null?String(s.kfactor):null,'c-num');
+      cell(sigmaEff(s)!=null?fmt(sigmaEff(s)):null,'c-eff');
+      cell(s.accuracy||null,'c-tag');
+      const rf=document.createElement('td');rf.className='c-ref';if(s.xsec_ref){rf.textContent=s.xsec_ref;}else{rf.classList.add('empty');rf.textContent='—';}tr.appendChild(rf);
+      const nt=document.createElement('td');const txt=s.weight_note||s.comment;if(txt){const ic=document.createElement('span');ic.className='note-icon';ic.textContent='📝';const tp=document.createElement('span');tp.className='tip';tp.textContent=txt;ic.appendChild(tp);nt.appendChild(ic);}tr.appendChild(nt);
+      frag.appendChild(tr);
+    }
+    dom.tbody.innerHTML='';dom.tbody.appendChild(frag);
+  }
+  dom.datasetSel.addEventListener('change',e=>load(e.target.value));
+  dom.search.addEventListener('input',debounce(render,150));
+  document.querySelector('.toolbar').addEventListener('click',e=>{const b=e.target.closest('.filter-btn');if(!b)return;curFilter=b.dataset.f;$$('.filter-btn').forEach(x=>x.classList.toggle('active',x.dataset.f===curFilter));render();});
+  dom.tbody.addEventListener('click',e=>{const td=e.target.closest('.c-das');if(!td||!td.dataset.path)return;navigator.clipboard.writeText(td.dataset.path);});
+  dom.tbl.querySelector('thead').addEventListener('click',e=>{const th=e.target.closest('th[data-k]');if(!th)return;const k=th.dataset.k;if(sortKey===k)sortAsc=!sortAsc;else{sortKey=k;sortAsc=true;}$$('thead th').forEach(h=>h.classList.remove('sorted'));th.classList.add('sorted');th.querySelector('.arr').textContent=sortAsc?'▲':'▼';render();});
+  load(dom.datasetSel.value);
+})();
+</script>
+</body>
+</html>

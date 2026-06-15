@@ -60,7 +60,11 @@ class CondorJobManager:
                             help="재제출 output을 별도 하위 디렉토리에 저장 (--resubmit 전용)")
         parser.add_argument("--report", action="store_true",
                             help="제출 없이 완료/미완료 현황 리포트만")
+        parser.add_argument("--config", default="",
+                            help="yml 경로 명시 (미지정: "
+                                 "AnalyzerConfig/Tier3_2017_FH_unified_<mode>.yml)")
         args = parser.parse_args()
+        self._cli_config = args.config.strip()
 
         # Variables for jobs, please check before running
         self.analyzer_path = f"{script_dir}"
@@ -82,10 +86,14 @@ class CondorJobManager:
         self.os_version = "el9"
         self.memorySize = "12 GB"
 
-        self.config_file_path = os.path.join(
-            self.analyzer_path,
-            f"AnalyzerConfig/Tier3_2017_FH_unified_{self.AnalyzerMode}.yml"
-        )
+        # [TrackC] --config 우선; 미지정 시 모드 이름으로 자동 결정 (기존 동작)
+        if getattr(self, "_cli_config", ""):
+            self.config_file_path = (self._cli_config if os.path.isabs(self._cli_config)
+                                     else os.path.join(self.analyzer_path, self._cli_config))
+        else:
+            self.config_file_path = os.path.join(
+                self.analyzer_path,
+                f"AnalyzerConfig/Tier3_2017_FH_unified_{self.AnalyzerMode}.yml")
         self.proxy_path = os.path.join(self.analyzer_path, "proxy.cert")
         self.condor_files_path = os.path.join(
             self.analyzer_path,
@@ -182,12 +190,13 @@ class CondorJobManager:
         if rec is None:
             raise ValueError(f"[FATAL] sample '{sample_name}' not in xsec_db "
                              f"({common['xsec_db']})")
-        xsec = rec.get("cross_section_pb")
+        xsec = rec.get("cross_section_fb")
         if xsec is None:
             return 1.0, "data"          # Data
         br   = rec.get("br", 1.0) or 1.0
+        kfac = rec.get("kfactor", 1.0) or 1.0
         meta = db.get("_meta", {})
-        lumi = float(common.get("lumi_pb_inv", meta.get("lumi_pb_inv")))
+        lumi = float(common.get("lumi_fb_inv", meta.get("lumi_fb_inv")))
         pre  = self._load_prescan(common["prescan"])
         prec = pre.get(sample_name)
         if prec is None:
@@ -201,8 +210,9 @@ class CondorJobManager:
         if sumw_tree > 0 and abs(sumw - sumw_tree)/sumw > 1e-4:
             print(f"  [warn] {sample_name}: sumGenW runs={sumw:.6e} vs "
                   f"tree={sumw_tree:.6e} differ >0.01% (using runs)")
-        w = lumi * xsec * br / sumw
-        return w, f"xsec={xsec}*br={br:.5f}*lumi={lumi}/sumGenW={sumw:.4e}"
+        w = lumi * xsec * br * kfac / sumw
+        return w, (f"xsec_fb={xsec}*br={br:.5f}*k={kfac}*lumi={lumi}"
+                   f"/sumGenW={sumw:.4e}")
 
     def parse_config_entry(self, entry, common):
 
@@ -225,7 +235,7 @@ class CondorJobManager:
         else:
             db = self._load_xsec_db(common["xsec_db"])
             rec = db.get(self.sample_name, {})
-            self.data_or_mc = "Data" if rec.get("cross_section_pb") is None else "MC"
+            self.data_or_mc = "Data" if rec.get("cross_section_fb") is None else "MC"
 
         # weight: yml 명시 우선, 없으면 xsec_db+prescan 으로 합성
         if "weight" in entry:

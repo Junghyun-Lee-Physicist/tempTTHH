@@ -9,18 +9,8 @@
 #      and link them against ROOT and lib$(LIB_NAME).
 #
 # Usage:
-#   make                # 평소 빌드: -O2 -g (디버그 심볼 항상 포함)
-#   make DEBUG=1        # 디버그 빌드: -O0 + AddressSanitizer (메모리 오류 추적)
-#   make VERBOSE=1      # 빌드 로그 상세 출력
-#   make DEBUG=1 VERBOSE=1   # 둘 다
-#
-# 빌드 레벨 (build levels):
-#   - 평소(default): -O2 -g -Wall. 디버그 심볼(-g)은 항상 넣는다 — gdb backtrace에
-#     줄 번호가 나와 segfault 추적이 가능하다(성능 영향 거의 없음, 바이너리만 커짐).
-#   - DEBUG=1: -O0 -g -Wall -Wextra -fsanitize=address -fno-omit-frame-pointer.
-#     AddressSanitizer가 heap/stack overflow·use-after-free·잘못된 free를 런타임에
-#     정확한 위치로 잡는다. 평소 빌드보다 느리고(2~3x) 메모리를 더 쓰므로, 버그
-#     추적할 때만 사용. ASan 빌드로 만든 실행파일은 ASan 런타임이 필요하다.
+#   make                # builds everything quietly
+#   make VERBOSE=1      # prints detailed info messages
 #
 # Shared headers from b-tag SF reweight tool:
 #   The header `Config_TtCatGroup.hh` (process group mapping for b-tag
@@ -55,24 +45,6 @@ HIDE := @
 CXX            := g++
 ROOT_CFLAGS    := $(shell root-config --cflags)
 ROOT_LIBS      := $(shell root-config --libs)
-
-# ----------------------
-#   Debug Level Control
-# ----------------------
-# 평소 빌드는 -O2 -g (디버그 심볼 항상). DEBUG=1 이면 -O0 + AddressSanitizer.
-# DEBUG_CXX  : 컴파일 단계 추가 플래그
-# DEBUG_LINK : 링크 단계 추가 플래그 (ASan은 컴파일·링크 양쪽에 필요)
-ifdef DEBUG
-  OPT_FLAGS    := -O0
-  DEBUG_CXX    := -Wextra -fsanitize=address -fno-omit-frame-pointer
-  DEBUG_LINK   := -fsanitize=address
-  $(info [Build Level] : DEBUG (-O0 + AddressSanitizer; 느림, 메모리 오류 정밀 추적))
-else
-  OPT_FLAGS    := -O2
-  DEBUG_CXX    :=
-  DEBUG_LINK   :=
-  $(info [Build Level] : default (-O2 -g; 디버그 심볼 포함, ASan 없음))
-endif
 
 # ───────────────────────────────
 #  correctionlib C++ component flags
@@ -118,8 +90,7 @@ LIB_NAME       := ToolsForAnalysis
 # Include ROOT, correctionlib, AND the shared b-tag SF headers
 INCLUDE_FLAGS  := -I. -I$(INC_DIR) -I$(SRC_DIR) -I$(BTAGSF_INCDIR) \
                   $(ROOT_CFLAGS) $(CORR_CFLAGS)
-# -g 는 평소에도 항상 포함 (gdb 줄번호). 최적화/ASan은 빌드 레벨에 따라.
-COMPILE_FLAGS  := -c $(OPT_FLAGS) -g -Wall -fPIC $(DEBUG_CXX)
+COMPILE_FLAGS  := -c -O2 -Wall -fPIC
 
 # Link against ROOT, correctionlib, and our shared library
 GENERAL_LINK   := $(ROOT_LIBS) $(CORR_LDFLAGS) -L$(LIB_DIR)
@@ -129,16 +100,9 @@ OS_Name        := $(shell uname -s)
 ifeq ($(OS_Name),Darwin)
 	SHARED_LINK_CMD := $(CXX) -dynamiclib
 	SHARED_LIB_EXT  := .dylib
-	# macOS: @loader_path 기준 (실행파일 위치 기준 상대 RPATH)
-	APP_RPATH       := -Wl,-rpath,@loader_path/$(LIB_DIR)
-	APP_EXTRA       :=
 else
 	SHARED_LINK_CMD := $(CXX) -shared
 	SHARED_LIB_EXT  := .so
-	# Linux: $ORIGIN(실행파일 위치) 기준 RPATH. 단, $ORIGIN 은 make 변수 평가에서
-	# 사라지므로 변수에 담지 않고 app 링크 레시피에서 리터럴로 전달한다(아래).
-	APP_RPATH       :=
-	APP_EXTRA       := -rdynamic
 endif
 
 SHARED_LIB     := $(LIB_DIR)/lib$(LIB_NAME)$(SHARED_LIB_EXT)
@@ -196,7 +160,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cc | prepare_dirs
 $(SHARED_LIB): $(LIB_OBJECTS) | prepare_dirs
 	$(INFO) "[Lib] Linking shared library $@"
 	$(HIDE) $(SHARED_LINK_CMD) -fPIC \
-           $(LIB_OBJECTS) $(DEBUG_LINK) $(GENERAL_LINK) -o $@
+           $(LIB_OBJECTS) $(GENERAL_LINK) -o $@
 
 # ----------------------
 #   Application Build
@@ -208,9 +172,7 @@ $(OBJ_DIR)/%.o: %.cc | prepare_dirs
 $(APPLICATIONS): % : $(OBJ_DIR)/%.o $(SHARED_LIB) $(EVTSHAPE_LIB)
 	$(INFO) "[App] Linking application $@"
 	$(HIDE) $(CXX) -fPIC $(OBJ_DIR)/$@.o -o $@ \
-                  $(DEBUG_LINK) $(GENERAL_LINK) -l$(LIB_NAME) -lEventShape \
-                  $(APP_RPATH) $(APP_EXTRA) \
-                  $(if $(APP_RPATH),,-Wl,-rpath,'$$ORIGIN/$(LIB_DIR)')
+                  $(GENERAL_LINK) -l$(LIB_NAME) -lEventShape
 
 # ----------------------
 #   Clean

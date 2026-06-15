@@ -150,16 +150,17 @@ def _load_xsec_db(path=XSEC_DB_PATH):
 _XDB = _load_xsec_db()
 
 def _sigma_eff(sample):
-    """db의 cross_section_pb × br (= σ_eff). dedicated/inclusive 공통."""
+    """db의 cross_section_fb × br × kfactor (= σ_eff, fb). dedicated/inclusive 공통.
+    stitch r은 σ_inc/σ_ded 비율이라 단위(fb/pb)에 무관하나, db 통일을 위해 fb 사용."""
     rec = _XDB[sample]
-    xs = rec["cross_section_pb"]
+    xs = rec["cross_section_fb"]
     if xs is None:
-        raise ValueError(f"{sample}: cross_section_pb is null (Data?)")
-    return xs * (rec.get("br", 1.0) or 1.0)
+        raise ValueError(f"{sample}: cross_section_fb is null (Data?)")
+    return xs * (rec.get("br", 1.0) or 1.0) * (rec.get("kfactor", 1.0) or 1.0)
 
 def _sigma_total(sample):
-    """db의 cross_section_pb (BR 적용 전, total/inclusive)."""
-    return _XDB[sample]["cross_section_pb"]
+    """db의 cross_section_fb (BR 적용 전, total/inclusive, fb)."""
+    return _XDB[sample]["cross_section_fb"]
 
 # BR (db meta가 아닌 표준 W BR — STITCH_PLANS의 σ_inc 채널 분해에 사용)
 W_HAD = 0.6741
