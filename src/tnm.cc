@@ -231,6 +231,7 @@ commandLine::decode(int argc, char** argv)
   filelist = "";
   outputfilename = "";
   externalweight = -999.0; // Impossible weight to check initialization
+  region = "";  // [lepton-CR] 기본 FH (lepton veto). "muon"/"electron" 이면 1ℓ+MET CR
   runYear = "";
   DataOrMC = "";
   sampleName = "";
@@ -252,6 +253,7 @@ commandLine::decode(int argc, char** argv)
           else if (arg == "--sample")     sampleName = argv[++i];
           else if (arg == "--mode")       analysisMode = argv[++i];
           else if (arg == "--era")        eraName = argv[++i];
+          else if (arg == "--region")     region = argv[++i];   // [lepton-CR]
 
       }
   }

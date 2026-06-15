@@ -721,9 +721,13 @@ void ttHHanalyzer_unified::applyEventScaleFactors(event* thisEvent){
         // ── b-tag shape SF ─────────────────────────────────────────────
         // Both chains get it (even if legacy _evtWeight skips it in
         // validation when toggle is off).
+        // [3-tier] b-tag shape SF 는 production evtWeight 에 곱하지 않는다.
+        //   evtWeight        = ... × trigSF                (b-tag SF/RW 없음, 기본)
+        //   evtWeight_btagSF = evtWeight × btagShape
+        //   evtWeight_full   = evtWeight_btagSF × btagNormRW
+        // 사용자 결정: stack plot 1차는 trigSF만; b-tag 영향은 별도 tier로 비교.
         _evtWeight_chain_btagSF *= bTagWeight_central_;
         _evtWeight_chain_full   *= bTagWeight_central_;
-        _evtWeight *= bTagWeight_central_;   // [STEP2] 토글 제거 — 항상 적용
         _dbg.kv("sf", "btagShape", bTagWeight_central_);
 
         // ── Trigger SF ────────────────────────────────────────────────
@@ -736,8 +740,10 @@ void ttHHanalyzer_unified::applyEventScaleFactors(event* thisEvent){
         triggerSF_up_   = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt, +1.0));
         triggerSF_down_ = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt, -1.0));
 
-        _evtWeight_chain_full *= triggerSF_;
-        _evtWeight *= triggerSF_;            // [STEP2] 토글 제거 — 항상 적용
+        // trigSF 는 세 tier 모두에 적용 (production evtWeight 포함).
+        _evtWeight_chain_btagSF *= triggerSF_;
+        _evtWeight_chain_full   *= triggerSF_;
+        _evtWeight *= triggerSF_;
         _dbg.kv("sf", "triggerSF", triggerSF_);
 
         // ── b-tag normalization reweight ──────────────────────────────
@@ -783,10 +789,12 @@ void ttHHanalyzer_unified::applyEventScaleFactors(event* thisEvent){
             }
         }
 
+        // [3-tier] norm reweight 는 full tier 에만. production evtWeight 미적용.
         _evtWeight_chain_full *= btagNormReweight_;
-        _evtWeight *= btagNormReweight_;     // [STEP2] 토글 제거 — 항상 적용
         _dbg.kv("sf", "btagNormRW", btagNormReweight_);
         _dbg.kv("sf", "evtWeight_afterSF", _evtWeight);
+        _dbg.kv("sf", "evtWeight_btagSF", _evtWeight_chain_btagSF);
+        _dbg.kv("sf", "evtWeight_full",   _evtWeight_chain_full);
 
         if (debugCorrections) {
             std::cout << "[selectObjects] Corrections (mode="
@@ -1041,6 +1049,16 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
         // (테이블 람다는 capture-less라 여기서 런타임 분기; 다른 step은 불변).
         if (_require1Muon && c.step == CutStep::kLeptonVeto) {
             ok = (thisEvent->getnSelMuon() == 1 && thisEvent->getnSelElectron() == 0);
+        }
+        // [lepton-CR] lepton veto step 을 '1ℓ + 반대flavor 0 + MET>cut' 으로 치환
+        if (!_lepCRmode.empty() && c.step == CutStep::kLeptonVeto) {
+            const int nMu = thisEvent->getnSelMuon();
+            const int nEl = thisEvent->getnSelElectron();
+            const float met = _ev->MET_pt;
+            if (_lepCRmode == "muon")
+                ok = (nMu == 1 && nEl == 0 && met > metCutCR);
+            else // "electron"
+                ok = (nEl == 1 && nMu == 0 && met > metCutCR);
         }
         if (!ok && (c.enforceIn & mBit)) {
             return false;                             // 강제 cut 실패 → reject
@@ -1787,7 +1805,9 @@ void ttHHanalyzer_unified::fillTree(event * thisEvent){
     eventNumber = _ev->event;
     runNumber = _ev->run;
  
-    evtWeight    = _evtWeight;
+    evtWeight        = _evtWeight;                              // trigSF만
+    evtWeight_btagSF = static_cast<float>(_evtWeight_chain_btagSF);  // +btagShape
+    evtWeight_full   = static_cast<float>(_evtWeight_chain_full);    // +btagNormRW
     SampleWeight = _SampleWeight;
     PUWeight = _PUWeight;
     L1PrefiringWeight = _L1PrefiringWeight;
@@ -2155,9 +2175,15 @@ void ttHHanalyzer_unified::writePrescanTree() {
         if (std::abs(_prescan_sumGW_id_52 - _prescan_sumGW_ttCat_1B2H) > tol) {
             std::cerr << "[Prescan][WARN] id=52 vs ttCat_1B2H drift\n";
         }
-        const double sum_2b_or_more = _prescan_sumGW_id_53 + _prescan_sumGW_id_54 + _prescan_sumGW_id_55;
+        // [tt+nb] 분해 카운터는 61/62/71/72(tt+nb)를 53/54/55에서 빼내 별도 빈으로
+        // 보낸다. ntuple의 ttCat_Add2Bjet 은 ≥2 add-b 전체(분리 안 함)이므로,
+        // cross-check 비교에는 tt+nb 빈을 다시 더해야 한다 (안 그러면 거짓 경고).
+        const double sum_2b_or_more = _prescan_sumGW_id_53 + _prescan_sumGW_id_54
+                                    + _prescan_sumGW_id_55
+                                    + _prescan_sumGW_id_61 + _prescan_sumGW_id_62
+                                    + _prescan_sumGW_id_71 + _prescan_sumGW_id_72;
         if (std::abs(sum_2b_or_more - _prescan_sumGW_ttCat_2B) > tol) {
-            std::cerr << "[Prescan][WARN] id∈53-55 (" << sum_2b_or_more
+            std::cerr << "[Prescan][WARN] id∈53-55+tt+nb (" << sum_2b_or_more
                       << ") != ttCat_Add2Bjet (" << _prescan_sumGW_ttCat_2B << ")\n";
         }
     }
@@ -2245,6 +2271,9 @@ int main(int argc, char** argv){
                                          : std::string("DerivedCorr/expandedTtbarId"));
     }
 
+    // [lepton-CR] CLI --region 주입 (QCD 억제 1ℓ+MET CR; main/debug 에서만 효과)
+    analysis.setRegion(cl.region);
+
     // ─────────────────────────────────────────────────────────────────────
     // [stitch] stitching multiplier JSON은 stitched 조성을 봐야 하는 모드에서만
     // 로드한다: main(최종 yield), btagtrig(b-tag norm reweight 문맥), debug(main
@@ -2271,4 +2300,3 @@ int main(int argc, char** argv){
 
     return 0;
 }
-

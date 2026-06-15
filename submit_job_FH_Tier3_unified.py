@@ -63,8 +63,13 @@ class CondorJobManager:
         parser.add_argument("--config", default="",
                             help="yml 경로 명시 (미지정: "
                                  "AnalyzerConfig/Tier3_2017_FH_unified_<mode>.yml)")
+        parser.add_argument("--region", default="",
+                            choices=["", "muon", "electron"],
+                            help="[lepton-CR] QCD 억제 1ℓ+MET 제어영역 "
+                                 "(기본: FH lepton veto). yml common.region 도 가능")
         args = parser.parse_args()
         self._cli_config = args.config.strip()
+        self._cli_region = args.region.strip()
 
         # Variables for jobs, please check before running
         self.analyzer_path = f"{script_dir}"
@@ -215,6 +220,7 @@ class CondorJobManager:
                    f"/sumGenW={sumw:.4e}")
 
     def parse_config_entry(self, entry, common):
+        self._common = common   # [lepton-CR] generate_argument_list 에서 region 참조용
 
         # [TrackC] 필수 키 완화: sample_name 만 필수. filelist/output_dir/
         # weight/data_or_mc 는 규칙·xsec_db에서 유도 (yml 명시 시 override).
@@ -552,6 +558,11 @@ class CondorJobManager:
                 )
                 if str(self.era).strip():
                     args += f" --era {self.era} "
+                # [lepton-CR] CLI --region 우선, 없으면 yml common.region
+                _region = (self._cli_region
+                           or str(self._common.get("region", "")).strip())
+                if _region:
+                    args += f" --region {_region} "
 
                 argout.write(args + "\n")
                 n_written += 1

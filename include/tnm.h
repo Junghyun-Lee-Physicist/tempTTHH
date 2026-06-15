@@ -58,6 +58,7 @@ struct commandLine
     std::string sampleName; //Gamze
     std::string eraName; //Gamze
     std::string analysisMode;  // NEW: Add this member
+    std::string region;        // [lepton-CR] "", "muon", "electron" (QCD 억제 1ℓ+MET CR)
 
     // ── [Validation Study] optional fields ─────────────────────────────
     // [STEP8] --val-* 필드 제거 — kValidationStudy 모드 삭제(STEP 2)의 잔재 정리.

@@ -1084,6 +1084,8 @@ class ttHHanalyzer_unified {
                          "'정확히 muon 1 + electron 0' 으로 대체 (SF 추가 없음)\n";
         }
 
+        // [lepton-CR] 영역은 CLI --region 으로 setRegion() 통해 주입 (생성자 후).
+
         // [debug-only] b-tag norm reweight 우회 토글
         if (const char* sEnv = std::getenv("TTHH_SKIP_BTAGRW")) {
             _skipBtagReweight = (std::atoi(sEnv) != 0);
@@ -1342,6 +1344,37 @@ void writePrescanTree();
     //   불변; 별도 SF 없음). AN trigger 측정 영역(1μ+FH baseline)을 offline에서
     //   흉내내는 용도 — 사용자 지시(별도 모드 만들지 않음).
     bool _require1Muon = false;
+
+    // [lepton-CR] QCD 억제용 1-lepton 제어영역 (CLI --region, setRegion()로 주입).
+    //   ""       : 기본 FH (lepton veto = 0 lepton)
+    //   "muon"     : 정확히 muon 1 + electron 0, 그리고 MET_pt > metCutCR
+    //   "electron" : 정확히 electron 1 + muon 0, 그리고 MET_pt > metCutCR
+    // QCD multijet 은 진짜 lepton·MET 가 거의 없으므로 1ℓ+MET 요구로 크게 준다.
+    // SF 추가 없음 (trigger SF 등 기존 체인 그대로). main/debug 에서만 활성.
+    std::string _lepCRmode = "";          // "", "muon", "electron"
+    static constexpr float metCutCR = 20.0f;   // GeV — 1ℓ CR 의 MET 하한
+public:
+    // [lepton-CR] CLI --region 값 주입 (main()에서 생성자 후 호출). main/debug 에서만 효과.
+    void setRegion(const std::string& r) {
+        if (r.empty()) return;
+        if (r != "muon" && r != "electron") {
+            std::cout << "[lepton-CR][WARN] --region '" << r
+                      << "' 무시 (muon|electron 만 허용)\n";
+            return;
+        }
+        if (_analysisMode != AnalysisMode::kMainAnalysis &&
+            _analysisMode != AnalysisMode::kDebug) {
+            std::cout << "[lepton-CR][WARN] --region 은 main/debug 에서만 적용 (무시)\n";
+            return;
+        }
+        _lepCRmode = r;
+        _policy.collectLeptons = true;   // lepton 수집 필요
+        std::cout << "[lepton-CR] --region=" << _lepCRmode
+                  << " -> lepton veto를 '정확히 " << _lepCRmode
+                  << " 1개 + 반대 flavor 0개 + MET_pt>" << metCutCR
+                  << " GeV' 로 대체 (QCD 억제, SF 추가 없음)\n";
+    }
+private:
 
     // [debug-only] b-tag norm reweight 임시 우회 (env TTHH_SKIP_BTAGRW=1).
     // ⚠ 정식 분석 금지 — 8-group JSON(tt+nb 포함)이 아직 없을 때, 나머지
@@ -2650,7 +2683,9 @@ void writePrescanTree();
     unsigned int eventNumber;
     unsigned int runNumber;
      
-    float evtWeight;
+    float evtWeight;          // [3-tier] base×PU×L1×genW×stitch×trigSF (b-tag SF/RW 없음)
+    float evtWeight_btagSF;   // [3-tier] evtWeight × btagShape SF
+    float evtWeight_full;     // [3-tier] evtWeight_btagSF × btagNormReweight
     float SampleWeight;
     float PUWeight;
     float L1PrefiringWeight;
@@ -2712,6 +2747,10 @@ void writePrescanTree();
         _inputTree->Branch("runNumber", &runNumber, "runNumber/i");
 
 	_inputTree->Branch("evtWeight", &evtWeight, "evtWeight/F");
+	// [3-tier] b-tag SF/reweight 영향 비교용. stack plotter가 셋 중 선택:
+	//   evtWeight(trigSF만) / evtWeight_btagSF(+shape) / evtWeight_full(+normRW)
+	_inputTree->Branch("evtWeight_btagSF", &evtWeight_btagSF, "evtWeight_btagSF/F");
+	_inputTree->Branch("evtWeight_full",   &evtWeight_full,   "evtWeight_full/F");
 	_inputTree->Branch("SampleWeight", &SampleWeight, "SampleWeight/F");
 	_inputTree->Branch("PUWeight", &PUWeight, "PUWeight/F");
 	_inputTree->Branch("L1PrefiringWeight", &L1PrefiringWeight, "L1PrefiringWeight/F");
@@ -2760,4 +2799,3 @@ void writePrescanTree();
     }
 };	
 #endif
-
