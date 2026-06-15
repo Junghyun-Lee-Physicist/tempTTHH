@@ -136,12 +136,19 @@ jets × ≥4 b)은 이후 분류 단계.
 
 ## 6. 로컬 실행 (Local Run)
 
-CLI는 `--flag value` 형식 (과거 위치 인자에서 변경):
+CLI는 `--flag value` 형식 (과거 위치 인자에서 변경). **`--mode` 는 필수**이다
+([STEP2] trigsf/validation 제거 시 모드 명시를 강제):
 ```bash
 ./ttHHanalyzer_unified \
     --filelist filelistTest/file_ttHH_0.txt --output out_ttHH_0.root \
-    --weight 0.00000109763773 --year 2017 --dataOrMC MC --sample ttHH
+    --weight 0.00000109763773 --year 2017 --dataOrMC MC --sample ttHH \
+    --mode main
 ```
+필수 인자 7개: `--filelist --output --weight --year --dataOrMC --sample --mode`.
+하나라도 빠지면 `[Error] Missing mandatory arguments:` 로 종료한다.
+
+> main/debug 모드는 stitch JSON + ttnb lookup 이 준비돼야 한다(없으면 FATAL).
+> 로직 흐름만 빠르게 볼 때: `--mode debug` + (b-tag JSON 없으면) `TTHH_SKIP_BTAGRW=1`.
 
 ## 7. Condor 실행
 
@@ -473,4 +480,3 @@ JSON에서 못 찾아 exit 46).
 - **Arrow operator on `std::array`**: Fixed `writeHistos()` where `->Write()` was called on `std::array<TH1F*, 6>` instead of individual elements
 
 ---
-
