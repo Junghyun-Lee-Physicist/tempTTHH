@@ -767,13 +767,20 @@ void ttHHanalyzer_unified::applyEventScaleFactors(event* thisEvent){
             if (_btagKeyByExpSub.find(esub) == _btagKeyByExpSub.end())
                 _btagKeyByExpSub[esub] = processKey;
         }
-        btagNormReweight_ = static_cast<float>(
-            corrMgr->getBTagReweight("central", processKey, nJets, ht));
-        if (!std::isfinite(btagNormReweight_)) {
-            std::cerr << "\n[FATAL][btagRW] non-finite reweight (" << btagNormReweight_
-                      << ") for processKey='" << processKey << "' nJets=" << nJets
-                      << " ht=" << ht << ". Aborting (exit 46).\n" << std::endl;
-            std::exit(46);
+        if (_skipBtagReweight) {
+            // [debug-only] TTHH_SKIP_BTAGRW=1 — getBTagReweight() 호출 자체를
+            // 건너뛴다 (tt+nb 등 키가 옛 JSON에 없을 때 FATAL 46 회피).
+            // reweight 미적용 == 1.0. processKey 진단은 위에서 이미 기록됨.
+            btagNormReweight_ = 1.0f;
+        } else {
+            btagNormReweight_ = static_cast<float>(
+                corrMgr->getBTagReweight("central", processKey, nJets, ht));
+            if (!std::isfinite(btagNormReweight_)) {
+                std::cerr << "\n[FATAL][btagRW] non-finite reweight (" << btagNormReweight_
+                          << ") for processKey='" << processKey << "' nJets=" << nJets
+                          << " ht=" << ht << ". Aborting (exit 46).\n" << std::endl;
+                std::exit(46);
+            }
         }
 
         _evtWeight_chain_full *= btagNormReweight_;
@@ -2264,3 +2271,4 @@ int main(int argc, char** argv){
 
     return 0;
 }
+

@@ -1083,6 +1083,16 @@ class ttHHanalyzer_unified {
             std::cout << "[muon-val] TTHH_REQUIRE_1MUON=1 -> lepton veto를 "
                          "'정확히 muon 1 + electron 0' 으로 대체 (SF 추가 없음)\n";
         }
+
+        // [debug-only] b-tag norm reweight 우회 토글
+        if (const char* sEnv = std::getenv("TTHH_SKIP_BTAGRW")) {
+            _skipBtagReweight = (std::atoi(sEnv) != 0);
+        }
+        if (_skipBtagReweight) {
+            std::cout << "[debug-only] TTHH_SKIP_BTAGRW=1 -> b-tag norm reweight "
+                         "건너뜀 (btagNormReweight=1.0). ⚠ 정식 분석 아님: "
+                         "8-group JSON 준비 후 반드시 끌 것.\n";
+        }
     }
     
     std::cout << "\n========================================" << std::endl;
@@ -1332,6 +1342,13 @@ void writePrescanTree();
     //   불변; 별도 SF 없음). AN trigger 측정 영역(1μ+FH baseline)을 offline에서
     //   흉내내는 용도 — 사용자 지시(별도 모드 만들지 않음).
     bool _require1Muon = false;
+
+    // [debug-only] b-tag norm reweight 임시 우회 (env TTHH_SKIP_BTAGRW=1).
+    // ⚠ 정식 분석 금지 — 8-group JSON(tt+nb 포함)이 아직 없을 때, 나머지
+    //   흐름(stitch/trigSF/btagShape/selection)이 끝까지 도는지 확인하는 용도.
+    //   켜지면 btagNormReweight_=1.0 으로 두고 getBTagReweight() 호출을 건너뛴다
+    //   (= reweight 미적용). 끄면(기본) 기존대로 동작 + 키 없으면 FATAL 46.
+    bool _skipBtagReweight = false;
 
     TH1D * _hJES, * _hbJES, *_hbJetEff, *_hJetEff, *_hSysbTagM ;
 
@@ -2743,3 +2760,4 @@ void writePrescanTree();
     }
 };	
 #endif
+
