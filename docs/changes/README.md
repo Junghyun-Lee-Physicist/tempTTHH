@@ -20,6 +20,8 @@
 | 12 | fb_units_and_xsec_fix | fb 단위 전환 + AN 기반 σ/BR 수정(k 미적용) + yml 통일 |
 | 13 | makefile_debug_levels | Makefile 빌드 레벨(평소 -g / DEBUG=1 ASan) |
 | 14 | 3tier_weight_metCR_normcheck | 3-tier weight(trigSF/+btagShape/+normRW) + lepton CR(1ℓ+MET) + prescan WARN 수정 |
+| 15 | resubmit_treecheck_region_output | resubmit 완료판정 중첩TTree 버그 + region output 분리 + report 거짓메시지 |
+| 16 | sf_toggles_and_dir_split | SF 적용 토글(--trigsf/--btagsf/--btagrw) + region/SF 조합 output 디렉토리 |
 
 별도 트랙 (선행조건 대기):
 - **TRACK_A** (도구 업데이트) — btagtrig 재실행 후

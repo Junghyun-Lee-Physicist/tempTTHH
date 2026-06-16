@@ -59,6 +59,14 @@ struct commandLine
     std::string eraName; //Gamze
     std::string analysisMode;  // NEW: Add this member
     std::string region;        // [lepton-CR] "", "muon", "electron" (QCD 억제 1ℓ+MET CR)
+    // [SF toggle] production evtWeight 에 각 SF 를 곱할지. "on"/"off" (기본 아래 참조).
+    //   trigsf : trigger SF        (기본 on)
+    //   btagsf : b-tag shape SF    (기본 off — 1차 stack 은 trigSF 만)
+    //   btagrw : b-tag norm reweight (기본 off — 8-group JSON 준비 전)
+    // tree 의 evtWeight_btagSF / evtWeight_full tier 는 토글과 무관하게 항상 기록.
+    std::string sfTrig;        // "", "on", "off"
+    std::string sfBtag;        // "", "on", "off"
+    std::string sfBtagRw;      // "", "on", "off"
 
     // ── [Validation Study] optional fields ─────────────────────────────
     // [STEP8] --val-* 필드 제거 — kValidationStudy 모드 삭제(STEP 2)의 잔재 정리.

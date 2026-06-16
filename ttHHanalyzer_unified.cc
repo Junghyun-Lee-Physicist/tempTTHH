@@ -728,6 +728,7 @@ void ttHHanalyzer_unified::applyEventScaleFactors(event* thisEvent){
         // 사용자 결정: stack plot 1차는 trigSF만; b-tag 영향은 별도 tier로 비교.
         _evtWeight_chain_btagSF *= bTagWeight_central_;
         _evtWeight_chain_full   *= bTagWeight_central_;
+        if (_applyBtagSF) _evtWeight *= bTagWeight_central_;   // [SF toggle]
         _dbg.kv("sf", "btagShape", bTagWeight_central_);
 
         // ── Trigger SF ────────────────────────────────────────────────
@@ -740,10 +741,10 @@ void ttHHanalyzer_unified::applyEventScaleFactors(event* thisEvent){
         triggerSF_up_   = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt, +1.0));
         triggerSF_down_ = static_cast<float>(corrMgr->getTriggerSF(nbjet, jet6eta, ht, jet6pt, -1.0));
 
-        // trigSF 는 세 tier 모두에 적용 (production evtWeight 포함).
+        // trigSF: tier 는 항상, production evtWeight 는 토글.
         _evtWeight_chain_btagSF *= triggerSF_;
         _evtWeight_chain_full   *= triggerSF_;
-        _evtWeight *= triggerSF_;
+        if (_applyTrigSF) _evtWeight *= triggerSF_;   // [SF toggle]
         _dbg.kv("sf", "triggerSF", triggerSF_);
 
         // ── b-tag normalization reweight ──────────────────────────────
@@ -789,8 +790,9 @@ void ttHHanalyzer_unified::applyEventScaleFactors(event* thisEvent){
             }
         }
 
-        // [3-tier] norm reweight 는 full tier 에만. production evtWeight 미적용.
+        // [3-tier] norm reweight: full tier 는 항상, production evtWeight 는 토글.
         _evtWeight_chain_full *= btagNormReweight_;
+        if (_applyBtagRW) _evtWeight *= btagNormReweight_;   // [SF toggle]
         _dbg.kv("sf", "btagNormRW", btagNormReweight_);
         _dbg.kv("sf", "evtWeight_afterSF", _evtWeight);
         _dbg.kv("sf", "evtWeight_btagSF", _evtWeight_chain_btagSF);
@@ -2273,6 +2275,9 @@ int main(int argc, char** argv){
 
     // [lepton-CR] CLI --region 주입 (QCD 억제 1ℓ+MET CR; main/debug 에서만 효과)
     analysis.setRegion(cl.region);
+
+    // [SF toggle] CLI --trigsf/--btagsf/--btagrw 주입 (production evtWeight 구성)
+    analysis.setSFflags(cl.sfTrig, cl.sfBtag, cl.sfBtagRw);
 
     // ─────────────────────────────────────────────────────────────────────
     // [stitch] stitching multiplier JSON은 stitched 조성을 봐야 하는 모드에서만

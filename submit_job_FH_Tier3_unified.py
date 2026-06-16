@@ -67,9 +67,19 @@ class CondorJobManager:
                             choices=["", "muon", "electron"],
                             help="[lepton-CR] QCD 억제 1ℓ+MET 제어영역 "
                                  "(기본: FH lepton veto). yml common.region 도 가능")
+        # [SF toggle] production evtWeight 에 각 SF 적용 여부. 기본: trig on, 나머지 off.
+        parser.add_argument("--trigsf", default="on",  choices=["on", "off"],
+                            help="trigger SF 적용 (기본 on)")
+        parser.add_argument("--btagsf", default="off", choices=["on", "off"],
+                            help="b-tag shape SF 적용 (기본 off)")
+        parser.add_argument("--btagrw", default="off", choices=["on", "off"],
+                            help="b-tag norm reweight 적용 (기본 off; 8-group JSON 필요)")
         args = parser.parse_args()
         self._cli_config = args.config.strip()
         self._cli_region = args.region.strip()
+        self._cli_trigsf  = args.trigsf
+        self._cli_btagsf  = args.btagsf
+        self._cli_btagrw  = args.btagrw
 
         # Variables for jobs, please check before running
         self.analyzer_path = f"{script_dir}"
@@ -84,9 +94,21 @@ class CondorJobManager:
         if self.resubmit_to and not self.resubmit_only:
             raise ValueError("[FATAL] --resubmit-to 는 --resubmit 과 함께만 사용 가능")
 
+        # [lepton-CR + SF toggle] output 디렉토리에 region + SF 조합 반영.
+        # FH/muon/electron, 그리고 SF on/off 조합이 서로 덮어쓰지 않게 suffix.
+        #   region : _muon / _electron (없으면 생략)
+        #   SF     : 기본(trig on, btag off, rw off)이면 생략; 벗어난 것만 태그
+        #            trig off -> _notrig ; btagsf on -> _btagsf ; btagrw on -> _btagrw
+        _region_suffix = f"_{self._cli_region}" if self._cli_region else ""
+        _sf_tags = []
+        if self._cli_trigsf == "off": _sf_tags.append("notrig")
+        if self._cli_btagsf == "on":  _sf_tags.append("btagsf")
+        if self._cli_btagrw == "on":  _sf_tags.append("btagrw")
+        _sf_suffix = ("_" + "_".join(_sf_tags)) if _sf_tags else ""
+        self._dir_suffix = f"{_region_suffix}{_sf_suffix}"
         self.path_output_base = (
             f"/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/"
-            f"AnalyzerOutput_{self.AnalyzerMode}"
+            f"AnalyzerOutput_{self.AnalyzerMode}{self._dir_suffix}"
         )
         self.os_version = "el9"
         self.memorySize = "12 GB"
@@ -102,7 +124,7 @@ class CondorJobManager:
         self.proxy_path = os.path.join(self.analyzer_path, "proxy.cert")
         self.condor_files_path = os.path.join(
             self.analyzer_path,
-            f"condor/filelistTier3_unified_{self.AnalyzerMode}"
+            f"condor/filelistTier3_unified_{self.AnalyzerMode}{self._dir_suffix}"
         )
         self.sample_list_path = os.path.join(self.analyzer_path, "filelistTier3")
 
@@ -476,11 +498,22 @@ class CondorJobManager:
             if self.analysis_mode == "prescan":
                 t = f.Get("prescan")
                 return bool(t) and t.InheritsFrom("TTree") and t.GetEntries() == 1
-            for key in f.GetListOfKeys():
-                obj = key.ReadObj()
-                if obj.InheritsFrom("TTree") and obj.GetEntries() > 0:
-                    return True
-            return False
+            # [fix] 분석 tree 는 디렉토리 안에 있을 수 있다(예: Tree/...). 최상위
+            # 키만 보면 TDirectoryFile 만 걸려 TTree 를 못 찾으므로(=거짓 missing),
+            # 디렉토리를 재귀로 내려가며 non-empty TTree 를 찾는다.
+            def _has_nonempty_tree(d, depth=0):
+                if depth > 4:               # 안전장치 (무한/과도 재귀 방지)
+                    return False
+                for key in d.GetListOfKeys():
+                    obj = key.ReadObj()
+                    if obj.InheritsFrom("TTree"):
+                        if obj.GetEntries() > 0:
+                            return True
+                    elif obj.InheritsFrom("TDirectory"):
+                        if _has_nonempty_tree(obj, depth + 1):
+                            return True
+                return False
+            return _has_nonempty_tree(f)
         finally:
             f.Close()
 
@@ -563,6 +596,10 @@ class CondorJobManager:
                            or str(self._common.get("region", "")).strip())
                 if _region:
                     args += f" --region {_region} "
+                # [SF toggle] production evtWeight 구성 (analyzer 로 전달)
+                args += (f" --trigsf {self._cli_trigsf}"
+                         f" --btagsf {self._cli_btagsf}"
+                         f" --btagrw {self._cli_btagrw} ")
 
                 argout.write(args + "\n")
                 n_written += 1
@@ -634,6 +671,10 @@ class CondorJobManager:
     def setup_and_submit_job(self):
         print(f"\nSetting up job for sample: {self.sample_name}")
         n_jobs = self.generate_argument_list()
+        # [report] report 모드는 집계만 하고 항상 0 을 반환한다(제출 안 함).
+        # 이때 'All outputs already complete' 는 거짓이므로 건너뛴다.
+        if self.report_only:
+            return
         if n_jobs == 0:
             print(f"  All outputs already complete for "
                   f"{self.sample_name} — nothing to submit.")

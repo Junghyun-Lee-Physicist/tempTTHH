@@ -232,6 +232,7 @@ commandLine::decode(int argc, char** argv)
   outputfilename = "";
   externalweight = -999.0; // Impossible weight to check initialization
   region = "";  // [lepton-CR] 기본 FH (lepton veto). "muon"/"electron" 이면 1ℓ+MET CR
+  sfTrig = ""; sfBtag = ""; sfBtagRw = "";  // [SF toggle] 빈 값이면 analyzer default 사용
   runYear = "";
   DataOrMC = "";
   sampleName = "";
@@ -254,6 +255,9 @@ commandLine::decode(int argc, char** argv)
           else if (arg == "--mode")       analysisMode = argv[++i];
           else if (arg == "--era")        eraName = argv[++i];
           else if (arg == "--region")     region = argv[++i];   // [lepton-CR]
+          else if (arg == "--trigsf")      sfTrig   = argv[++i]; // [SF toggle]
+          else if (arg == "--btagsf")      sfBtag   = argv[++i];
+          else if (arg == "--btagrw")      sfBtagRw = argv[++i];
 
       }
   }
@@ -318,6 +322,11 @@ commandLine::decode(int argc, char** argv)
   std::cout << "  Data/MC        : " << DataOrMC << std::endl;
   std::cout << "  Sample Name    : " << sampleName << std::endl;
   std::cout << "  Era Name       : " << (eraName.empty() ? "(empty)" : eraName) << std::endl;
+  std::cout << "  Region         : " << (region.empty() ? "(FH default)" : region) << std::endl;
+  std::cout << "  SF trig/btag/rw: "
+            << (sfTrig.empty()   ? "def" : sfTrig)   << " / "
+            << (sfBtag.empty()   ? "def" : sfBtag)   << " / "
+            << (sfBtagRw.empty() ? "def" : sfBtagRw) << std::endl;
   std::cout << "==================================================\n" << std::endl;
 
 }

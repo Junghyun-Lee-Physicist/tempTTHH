@@ -1088,8 +1088,10 @@ class ttHHanalyzer_unified {
 
         // [debug-only] b-tag norm reweight 우회 토글
         // 기본 SKIP(true). TTHH_SKIP_BTAGRW=0 으로 명시적 해제 가능(8-group JSON 준비 후).
+        // CLI --btagrw 가 우선이지만, env 도 하위호환 유지 (setSFflags 가 나중에 덮음).
         if (const char* sEnv = std::getenv("TTHH_SKIP_BTAGRW")) {
             _skipBtagReweight = (std::atoi(sEnv) != 0);
+            _applyBtagRW = !_skipBtagReweight;
         }
         if (_skipBtagReweight) {
             std::cout << "[btagRW] b-tag norm reweight SKIP (btagNormReweight=1.0). "
@@ -1378,6 +1380,26 @@ public:
                   << " 1개 + 반대 flavor 0개 + MET_pt>" << metCutCR
                   << " GeV' 로 대체 (QCD 억제, SF 추가 없음)\n";
     }
+
+    // [SF toggle] CLI --trigsf/--btagsf/--btagrw 주입 ("on"/"off"/""=기본).
+    // 빈 문자열이면 default 유지. _applyBtagRW 는 _skipBtagReweight 와 동기화.
+    void setSFflags(const std::string& trig, const std::string& btag,
+                    const std::string& btagrw) {
+        auto parse = [](const std::string& v, bool cur) -> bool {
+            if (v == "on")  return true;
+            if (v == "off") return false;
+            return cur;   // ""/unknown → 기존값
+        };
+        _applyTrigSF = parse(trig,   _applyTrigSF);
+        _applyBtagSF = parse(btag,   _applyBtagSF);
+        _applyBtagRW = parse(btagrw, _applyBtagRW);
+        _skipBtagReweight = !_applyBtagRW;   // 동기화 (skip == !apply)
+        std::cout << "[SF toggle] production evtWeight: "
+                  << "trigSF=" << (_applyTrigSF ? "ON" : "off")
+                  << "  btagShape=" << (_applyBtagSF ? "ON" : "off")
+                  << "  btagNormRW=" << (_applyBtagRW ? "ON" : "off")
+                  << "  (tier branches always recorded)\n";
+    }
 private:
 
     // [debug-only] b-tag norm reweight 임시 우회 (env TTHH_SKIP_BTAGRW=1).
@@ -1390,7 +1412,14 @@ private:
     // 없이 돌게 하기 위함. evtWeight_full tier 에만 영향 — 기본 evtWeight(trigSF만)
     // 과 evtWeight_btagSF(+shape) 는 무관. 8-group JSON 준비되면 default 를 false 로
     // 되돌리거나 TTHH_SKIP_BTAGRW=0 으로 끈다.
-    bool _skipBtagReweight = true;
+    bool _skipBtagReweight = true;   // = !_applyBtagRW (하위호환 유지; env TTHH_SKIP_BTAGRW)
+
+    // [SF toggle] production evtWeight 에 각 SF 를 곱할지 (CLI --trigsf/--btagsf/--btagrw).
+    // 3-tier(evtWeight_btagSF/full) 는 이 토글과 무관하게 항상 기록 — 비교 보존.
+    //   evtWeight = base×PU×L1×genW×stitch × (trigSF? × btagShape? × btagNormRW?)
+    bool _applyTrigSF = true;    // 기본 on
+    bool _applyBtagSF = false;   // 기본 off (1차 stack 은 trigSF 만)
+    bool _applyBtagRW = false;   // 기본 off (8-group JSON 준비 전; skip 과 동치)
 
     TH1D * _hJES, * _hbJES, *_hbJetEff, *_hJetEff, *_hSysbTagM ;
 
