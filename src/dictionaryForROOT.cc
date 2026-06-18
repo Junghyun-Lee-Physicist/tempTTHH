@@ -548,7 +548,7 @@ namespace ROOT {
       ::matchedPair *ptr = nullptr;
       static ::TVirtualIsAProxy* isa_proxy = new ::TIsAProxy(typeid(::matchedPair));
       static ::ROOT::TGenericClassInfo 
-         instance("matchedPair", "tnm.h", 71,
+         instance("matchedPair", "tnm.h", 80,
                   typeid(::matchedPair), ::ROOT::Internal::DefineBehavior(ptr, ptr),
                   &matchedPair_Dictionary, isa_proxy, 0,
                   sizeof(::matchedPair) );
@@ -593,7 +593,7 @@ namespace ROOT {
       ::ptThing *ptr = nullptr;
       static ::TVirtualIsAProxy* isa_proxy = new ::TIsAProxy(typeid(::ptThing));
       static ::ROOT::TGenericClassInfo 
-         instance("ptThing", "tnm.h", 81,
+         instance("ptThing", "tnm.h", 90,
                   typeid(::ptThing), ::ROOT::Internal::DefineBehavior(ptr, ptr),
                   &ptThing_Dictionary, isa_proxy, 0,
                   sizeof(::ptThing) );
