@@ -26,6 +26,8 @@ import os
 import sys
 import time
 import re
+import shlex
+import datetime
 import subprocess
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -161,6 +163,54 @@ class CondorJobManager:
                 print(f"Set permissions to 777 for {path}")
 
     # -------------------------------------------------------------------------
+    def _handle_command_log(self):
+        """제출 명령어를 condor 디렉토리(region+SF 별로 분리됨)에 기록한다.
+
+        - 실제 제출(report/resubmit 아님): submit_command.txt 에 현재 명령어 +
+          타임스탬프를 append. 같은 디렉토리 = 같은 region+SF 조합이므로,
+          나중에 report/resubmit 을 어떤 인자로 불러야 하는지 여기서 확인 가능.
+        - report/resubmit: 기존 submit_command.txt 를 읽어 '원래 이렇게 제출됨'
+          을 출력. 파일이 없으면 안내만.
+        """
+        log_path = os.path.join(self.condor_files_path, "submit_command.txt")
+        # 현재 명령어 재구성 (공백/특수문자 안전)
+        cmd = "python3 " + " ".join(shlex.quote(a) for a in sys.argv)
+        ts  = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        if self.report_only or self.resubmit_only:
+            # 조회 모드 — 원 제출 명령어를 보여준다
+            mode = "report" if self.report_only else "resubmit"
+            print(f"\n  [cmd-log] ({mode}) condor dir: {self.condor_files_path}")
+            if os.path.isfile(log_path):
+                print(f"  [cmd-log] 이 디렉토리(region+SF)의 기록된 제출 명령어:")
+                with open(log_path) as f:
+                    for line in f:
+                        line = line.rstrip()
+                        if line:
+                            print(f"      {line}")
+                print(f"  [cmd-log] → report/resubmit 은 위 제출과 같은 "
+                      f"--files-per-job / --region / SF 인자로 호출해야 정확합니다.\n")
+            else:
+                print(f"  [cmd-log][WARN] {log_path} 없음 — 이 조합으로 제출된 "
+                      f"기록이 없습니다(경로/인자 확인).\n")
+            return
+
+        # 실제 제출 — 명령어 append
+        header = ""
+        if not os.path.isfile(log_path):
+            header = ("# 이 파일은 submit_job_FH_Tier3_unified.py 가 자동 기록.\n"
+                      "# 이 condor 디렉토리(region+SF 조합)로 제출된 명령어 이력.\n"
+                      "# report/resubmit 시 같은 --files-per-job/--region/SF 로 호출할 것.\n")
+        try:
+            with open(log_path, "a") as f:
+                if header:
+                    f.write(header)
+                f.write(f"[{ts}] {cmd}\n")
+            print(f"  [cmd-log] 제출 명령어 기록: {log_path}")
+        except Exception as e:
+            print(f"  [cmd-log][WARN] 명령어 기록 실패: {e}")
+
+    # -------------------------------------------------------------------------
     def process_config_file(self):
         config = self.load_yaml_config(self.config_file_path)
         common = config.get("common", {})
@@ -177,6 +227,9 @@ class CondorJobManager:
                 f"Valid: {valid_modes}. "
                 "(trigsf/validation은 2026-06 리팩토링에서 제거 — "
                 "docs/changes/STEP_2 참조)")
+
+        # [cmd log] 제출 시 명령어를 condor 디렉토리에 기록 / report·resubmit 시 조회.
+        self._handle_command_log()
 
         for entry in samples:
             try:
@@ -257,13 +310,29 @@ class CondorJobManager:
         self.sample_output_dir = entry.get("output_dir", self.sample_name)
         self.era = entry.get("era", "")
 
-        # data_or_mc: xsec_db의 cross_section_pb null 여부로 자동 판정 (override 가능)
+        # data_or_mc: xsec_db의 cross_section_fb null 여부로 자동 판정 (override 가능)
         if "data_or_mc" in entry:
             self.data_or_mc = entry["data_or_mc"]
         else:
             db = self._load_xsec_db(common["xsec_db"])
             rec = db.get(self.sample_name, {})
             self.data_or_mc = "Data" if rec.get("cross_section_fb") is None else "MC"
+
+        # [era] Data 는 analyzer 가 --era 를 필수로 요구한다(트리거 PD 분기 isEraB 등).
+        # yml 이 bare-string 샘플이라 era 필드가 없으므로, 샘플명 끝 '_<X>' 에서
+        # era 를 자동 추출한다 (예: SingleMuon_C -> 'C', JetHT_E -> 'E').
+        # yml 에 명시적 era 가 있으면 그게 우선. MC 는 era 를 두지 않는다.
+        if self.data_or_mc == "Data" and not str(self.era).strip():
+            m = re.search(r"_([A-Z])$", self.sample_name)
+            if m:
+                self.era = m.group(1)
+                print(f"  [era] {self.sample_name}: Data -> era '{self.era}' "
+                      f"(샘플명에서 자동 추출)")
+            else:
+                raise ValueError(
+                    f"[FATAL] Data 샘플 '{self.sample_name}' 의 era 를 결정할 수 "
+                    f"없습니다. 샘플명이 '<PD>_<era>' (era=단일 대문자) 규칙이 "
+                    f"아니면 yml 에 era 를 명시하세요.")
 
         # weight: yml 명시 우선, 없으면 xsec_db+prescan 으로 합성
         if "weight" in entry:

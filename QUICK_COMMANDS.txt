@@ -1,0 +1,79 @@
+================================================================================
+  QUICK COMMANDS — ttHH FH Tier3 condor 제출/현황/재제출
+  (cat QUICK_COMMANDS.txt 로 뽑아서 복사-붙여넣기)
+================================================================================
+
+  공통 주의
+  ----------------------------------------------------------------------------
+  * --files-per-job 값은 submit/report/resubmit 에서 모두 같아야 한다 (아래는 5).
+  * --report / --resubmit 에는 submit 때와 같은 --region 을 붙여야 한다
+    (안 붙이면 FH = AnalyzerOutput_main 만 본다).
+  * region+SF 별로 output·condor 디렉토리가 분리되고, 각 condor 디렉토리의
+    submit_command.txt 에 제출 명령어가 기록된다 (헷갈리면 그 파일 확인).
+  * 기본 SF = trigSF only (b-tag shape/reweight off). 그대로 두면 trigSF 만 적용.
+  * Data era 는 샘플명에서 자동 추출(SingleMuon_C→C 등) — 별도 인자 불필요.
+  * lepton CR(muon/electron)은 hadronic phase space + hadronic trigger 유지이므로
+    Data 는 hadronic PD(JetHT, BTagCSV) 사용 (SingleMuon PD 부적합).
+
+
+  ── prescan (stitch genEventSumw 수집; 먼저 1회) ──────────────────────────────
+  python3 submit_job_FH_Tier3_unified.py --mode prescan
+  python3 submit_job_FH_Tier3_unified.py --mode prescan --report
+  python3 submit_job_FH_Tier3_unified.py --mode prescan --resubmit
+
+
+  ── btagtrig (8-group b-tag reweight JSON 입력 skim 생산) ─────────────────────
+  python3 submit_job_FH_Tier3_unified.py --mode btagtrig --files-per-job 5
+  python3 submit_job_FH_Tier3_unified.py --mode btagtrig --files-per-job 5 --report
+  python3 submit_job_FH_Tier3_unified.py --mode btagtrig --files-per-job 5 --resubmit
+
+
+  ══ main : 3 영역 (trigSF only) ══════════════════════════════════════════════
+
+  ── (1) FH  [AnalyzerOutput_main] ────────────────────────────────────────────
+  # submit
+  python3 submit_job_FH_Tier3_unified.py --mode main --files-per-job 5
+  # report
+  python3 submit_job_FH_Tier3_unified.py --mode main --files-per-job 5 --report
+  # resubmit (missing 만, 원래 위치에 덮어씀)
+  python3 submit_job_FH_Tier3_unified.py --mode main --files-per-job 5 --resubmit
+
+  ── (2) muon CR  [AnalyzerOutput_main_muon] ──────────────────────────────────
+  # submit
+  python3 submit_job_FH_Tier3_unified.py --mode main --region muon --files-per-job 5
+  # report
+  python3 submit_job_FH_Tier3_unified.py --mode main --region muon --files-per-job 5 --report
+  # resubmit
+  python3 submit_job_FH_Tier3_unified.py --mode main --region muon --files-per-job 5 --resubmit
+
+  ── (3) electron CR  [AnalyzerOutput_main_electron] ──────────────────────────
+  # submit
+  python3 submit_job_FH_Tier3_unified.py --mode main --region electron --files-per-job 5
+  # report
+  python3 submit_job_FH_Tier3_unified.py --mode main --region electron --files-per-job 5 --report
+  # resubmit
+  python3 submit_job_FH_Tier3_unified.py --mode main --region electron --files-per-job 5 --resubmit
+
+
+  ── (옵션) resubmit 분리 — 재제출분을 하위폴더로 (원본 안 건드림) ─────────────
+  python3 submit_job_FH_Tier3_unified.py --mode main --region muon --files-per-job 5 \
+          --resubmit --resubmit-to retry1
+
+
+  ── (옵션) SF 조합 예시 — output 디렉토리가 조합별로 분리됨 ───────────────────
+  # SF 전혀 없이 (raw, trigSF off)         -> AnalyzerOutput_main_notrig
+  python3 submit_job_FH_Tier3_unified.py --mode main --trigsf off --files-per-job 5
+  # 8-group JSON 준비 후 전체 SF on        -> AnalyzerOutput_main_btagsf_btagrw
+  python3 submit_job_FH_Tier3_unified.py --mode main --btagsf on --btagrw on --files-per-job 5
+  # muon CR + b-tag shape on                -> AnalyzerOutput_main_muon_btagsf
+  python3 submit_job_FH_Tier3_unified.py --mode main --region muon --btagsf on --files-per-job 5
+
+
+  ── prescan 후처리 (stitch factor 유도) ──────────────────────────────────────
+  python3 consolidate_prescan.py \
+      --input-base /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan \
+      --outdir ./prescan_summary
+  ANALYZER_OUTPUT_DIR=/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan \
+      python3 compute_stitch_factors.py
+
+================================================================================

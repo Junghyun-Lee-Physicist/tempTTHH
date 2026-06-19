@@ -66,3 +66,23 @@ python3 submit_job_FH_Tier3_unified.py --mode main --trigsf on --btagsf on --bta
 
 ## 롤백
 SF 토글 멤버/ setSFflags/ 3분기 제거, submitter argparse/suffix 원복.
+
+
+## 3. 제출 명령어 자동 기록 (condor 디렉토리)
+condor job 을 여러 region/SF 조합으로 뿌리면 나중에 report/resubmit 을 어떤
+인자로 불러야 할지 헷갈린다. → 제출 시 명령어를 condor 디렉토리에 기록.
+- 실제 제출: `condor/filelistTier3_unified_main<suffix>/submit_command.txt` 에
+  `[타임스탬프] python3 submit_job_... --mode main --region muon ...` append.
+- report/resubmit: 같은 디렉토리(=같은 region+SF)의 `submit_command.txt` 를 읽어
+  '원래 이렇게 제출됨' 을 출력. 인자 불일치 디버깅이 쉬워진다.
+- region+SF 별로 condor 디렉토리가 분리(STEP16 §2)되므로, 각 조합의 제출 이력이
+  자연히 분리 기록된다.
+
+
+## 4. Data --era 자동 추출 (제출 버그 수정)
+증상: Data condor job 이 `[Error] Argument '--era' is mandatory for Data samples!`
+로 실패. analyzer 는 Data 에 `--era` 를 필수로 요구(트리거 PD 분기 isEraB 등)하나,
+yml 이 bare-string 샘플이라 era 필드가 없어 submitter 가 `--era` 를 안 넘김.
+**수정**: Data 샘플명 끝 `_<대문자>` 에서 era 자동 추출
+(`SingleMuon_C`→`C`, `JetHT_E`→`E`, `BTagCSV_B`→`B`). yml 에 명시적 era 있으면
+우선. 검증: MC 24종 오검출 0, Data 15종 전부 추출 성공. 추출 불가 시 FATAL.

@@ -55,3 +55,29 @@ python3 submit_job_FH_Tier3_unified.py --mode main --region muon --files-per-job
 ## 롤백
 `_output_is_complete` 의 재귀 블록을 원래 최상위 루프로, output base/report 분기
 원복.
+
+
+## 6. 완료판정(report/resubmit)의 한계 — 알려진 거짓 양성/음성
+`_output_is_complete` 는 "output 파일 존재 → TFile 열림(not zombie) → (디렉토리
+재귀로) non-empty TTree 1개 이상" 으로 판정한다. files-per-job/filelist 를
+일치시켜도 다음 경우는 **여전히 틀릴 수 있다**:
+
+**거짓 음성 (완료인데 missing — 재제출 낭비, 위험 낮음)**
+- cmsenv 밖 실행 → PyROOT 없음 → 전부 incomplete. 단 WARN 출력되어 인지 가능.
+- 제출 후 마스터 filelist 변경(파일 추가/순서 변경) → chunk↔job_idx 어긋남.
+- output tree 깊이 5단 이상(현재 재귀 depth≤4). 현 구조는 Tree/ 1단이라 무관.
+
+**거짓 양성 (미완료인데 complete — 조용한 누락, 위험 높음)**
+- **half-written**: job 이 중간에 죽었어도 이미 write 된 TTree 에 entry 가 1개라도
+  있으면 complete 로 본다. entry 수가 기대치와 맞는지는 **검사하지 않음**. → 가장
+  주의할 케이스. yield 가 조용히 적게 나올 수 있다.
+- 옛 output 잔존: 다른 설정/N 으로 만든 `_i.root` 가 남아 있으면 complete 로 오인.
+  (대책: region/SF 별 디렉토리 분리 + 재제출 전 옛 output 정리.)
+- ROOT recover: 깨진 파일을 TFile 이 자동 복구해 IsZombie=false 가 되면, 복구된
+  일부 TTree 로 통과 가능(드묾; Warning 은 gErrorIgnoreLevel 로 억제됨).
+
+**실무 방어**: (a) 제출 후 filelist 고정, (b) 재제출/영역전환 시 옛 output 정리,
+(c) half-written 의심 시 entry 수 직접 확인:
+`root -l -b -q f.root -e '((TTree*)gFile->Get("Tree/<name>"))->GetEntries()'`.
+**근본 개선(미구현)**: 정상 종료 마커(예: output 에 nProcessed 스칼라 기록 후
+report 가 그 존재/값을 검사)를 두면 half-written 을 거를 수 있다. → 향후 과제.

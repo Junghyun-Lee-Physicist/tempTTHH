@@ -161,11 +161,74 @@ python3 submit_job_FH_Tier3_unified.py --mode main --files-per-job 5
 python3 submit_job_FH_Tier3_unified.py --mode main --files-per-job 5 \
         --resubmit --resubmit-to retry1
 ```
+
+### 7.1 selection 영역 (region) + SF 토글
+`--region` 으로 QCD 억제 1ℓ 제어영역을 선택한다(없으면 FH = lepton veto). output
+디렉토리가 영역별로 자동 분리되므로 서로 덮어쓰지 않는다:
+
+| 명령 | selection | output 디렉토리 |
+|---|---|---|
+| `--mode main` | FH (0 lepton) | `AnalyzerOutput_main/` |
+| `--mode main --region muon` | muon 1 + MET>20 | `AnalyzerOutput_main_muon/` |
+| `--mode main --region electron` | electron 1 + MET>20 | `AnalyzerOutput_main_electron/` |
+
+SF 적용은 `--trigsf/--btagsf/--btagrw {on,off}` 로 production `evtWeight` 구성을
+고른다. **기본값(trigSF on, b-tag shape/reweight off)이 곧 'trigSF만'** 이므로
+세 영역에 trigSF 만 적용하려면 추가 인자 없이 그대로 둔다. (tree 의
+`evtWeight_btagSF`/`evtWeight_full` tier 는 토글과 무관하게 항상 기록.)
+
+**세 영역 제출 (trigSF 만):**
+```bash
+python3 submit_job_FH_Tier3_unified.py --mode main --files-per-job 5                    # FH
+python3 submit_job_FH_Tier3_unified.py --mode main --region muon --files-per-job 5       # muon CR
+python3 submit_job_FH_Tier3_unified.py --mode main --region electron --files-per-job 5   # electron CR
+```
+
+**세 영역 report / resubmit** — `--report`/`--resubmit` 에도 **같은 `--region`** 을
+붙여야 해당 디렉토리의 현황을 본다(안 붙이면 FH 만 봄):
+```bash
+# FH
+python3 submit_job_FH_Tier3_unified.py --mode main --report
+python3 submit_job_FH_Tier3_unified.py --mode main --resubmit --files-per-job 5
+# muon CR
+python3 submit_job_FH_Tier3_unified.py --mode main --region muon --report
+python3 submit_job_FH_Tier3_unified.py --mode main --region muon --resubmit --files-per-job 5
+# electron CR
+python3 submit_job_FH_Tier3_unified.py --mode main --region electron --report
+python3 submit_job_FH_Tier3_unified.py --mode main --region electron --resubmit --files-per-job 5
+```
+
 - 샘플당 **마스터 filelist 하나**(`filelist_<sample>.txt`)만 있으면 `--files-per-job
   N` 으로 결정적 분할 — `<sample>_<jobIdx>.root` ↔ chunk가 영구 1:1.
   (per-file split 디렉토리 불필요. `N=1` 이면 한 줄=한 job 기존 동작.)
-- ⚠ `--resubmit`/`--report` 는 **원 제출과 같은 `--files-per-job`** 으로 호출해야
-  chunk↔output 매핑이 유지된다.
+- ⚠ `--resubmit`/`--report` 는 **원 제출과 같은 `--files-per-job` + 같은 `--region`
+  + 같은 SF 인자** 로 호출해야 chunk↔output 매핑과 디렉토리가 일치한다.
+
+### 7.2 Data 샘플 era (자동 추출)
+analyzer 는 Data 에 `--era` 를 필수로 요구한다(트리거 PD 분기 등). yml 이
+bare-string 샘플이라 era 필드가 없으므로, submitter 가 **샘플명 끝 `_<대문자>`
+에서 era 를 자동 추출**한다(`SingleMuon_C`→`C`, `JetHT_E`→`E`, `BTagCSV_B`→`B`).
+yml 에 명시적 era 가 있으면 우선. MC 는 거치지 않는다. 추출 불가 시 FATAL.
+
+### 7.3 Data PD 와 phase space 일치
+lepton CR(muon/electron)은 hadronic phase space(`nJets≥6`, `HT>500`, **hadronic
+trigger 유지**) 위에 'lepton 1 + MET>20' 을 얹어 QCD 만 떨어낸 부분집합이다.
+trigger 가 여전히 hadronic 이므로 **Data 도 hadronic PD(JetHT, BTagCSV)** 를 써야
+MC 와 trigger·phase space 가 일치한다. SingleMuon PD 는 muon-trigger 데이터라
+부적합(MC 와 trigger 경로 불일치). PD-exclusivity(BTagCSV→4J3T,
+JetHT→multiJet OR PFHT1050)는 그대로 유지된다 — muon 은 selection cut 이지
+trigger 가 아니다.
+
+### 7.4 제출 명령어 자동 기록 (cmd-log)
+제출 시 명령어가 condor 디렉토리(region+SF 별 분리)의 `submit_command.txt` 에
+타임스탬프와 함께 기록된다. `--report`/`--resubmit` 시 그 파일을 읽어 '원래 이렇게
+제출됨' 을 출력하므로, 나중에 어떤 `--files-per-job`/`--region`/SF 로 제출했는지
+헷갈릴 때 확인할 수 있다.
+
+### 7.5 완료판정(report)의 한계
+files-per-job/filelist 를 맞춰도 거짓 양성/음성이 가능하다(특히 half-written:
+job 이 죽어도 entry>0 이면 complete 로 봄 — entry 수 미검사). 상세는
+`docs/changes/STEP_15_resubmit_treecheck_region_output.md` §6 참조.
 - `AnalyzerConfig/*.yml` + `proxy.cert` 필요. 경로 통제는 §4.
 - `proxy.cert`: `voms-proxy-init --voms cms --valid 96:00 --out proxy.cert`
   후 `export X509_USER_PROXY=proxy.cert`.
@@ -480,3 +543,4 @@ JSON에서 못 찾아 exit 46).
 - **Arrow operator on `std::array`**: Fixed `writeHistos()` where `->Write()` was called on `std::array<TH1F*, 6>` instead of individual elements
 
 ---
+
