@@ -109,7 +109,7 @@ public:
     //   - weight: (Xsec * Lumi) / Sum(genEventSumw) for MC, 1.0 for Data
     //
     // Usage:
-    //   auto info = Config::GetSampleInfo("TTTo2L2Nu");
+    //   auto info = Config::GetSampleInfo("TTbar_DiLep");
     //   if (!info) { /* unknown sample → error */ }
     //   bool isData = info->isData;
     //   double w    = info->weight;
@@ -140,21 +140,21 @@ private:
             {"JetHT_E",            {true,  1.0}},
             {"JetHT_F",            {true,  1.0}},
             // MC: ttbar inclusive
-            {"TTToHadronic",       {false, 0.000214351205}},
-            {"TTTo2L2Nu",          {false, 0.0004761561474}},
-            {"TTToSemiLeptonic",   {false, 0.0001455793461}},
+            {"TTbar_Hadronic",       {false, 0.000214351205}},
+            {"TTbar_DiLep",          {false, 0.0004761561474}},
+            {"TTbar_SemiLep",   {false, 0.0001455793461}},
             // MC: ttHH signal & rare
-            {"ttHH",               {false, 0.00000109763773}},
-            {"tt4b",               {false, 0.001292157441}},
-            {"ttHtobb",            {false, 0.003125301546}},
-            {"tttt",               {false, 0.00399317683}},
-            {"tttW",               {false, 0.00008453854444}},
-            {"ttWH",               {false, 0.000131699}},
-            {"ttWW",               {false, 0.0004155131232}},
-            {"ttWZ",               {false, 0.0002901229714}},
-            {"ttZHto4b",           {false, 0.00000111247369}},
-            {"ttZtobb",            {false, 0.006587820794}},
-            {"ttZZto4b",           {false, 0.0000003824366722}},
+            {"TTHHto4b",               {false, 0.00000109763773}},
+            {"TT4b",               {false, 0.001292157441}},
+            {"ttHTobb",            {false, 0.003125301546}},
+            {"TTTT",               {false, 0.00399317683}},
+            {"TTTW",               {false, 0.00008453854444}},
+            {"TTWH",               {false, 0.000131699}},
+            {"TTWW",               {false, 0.0004155131232}},
+            {"TTWZ",               {false, 0.0002901229714}},
+            {"TTZHTo4b",           {false, 0.00000111247369}},
+            {"TTZToBB",            {false, 0.006587820794}},
+            {"TTZZTo4b",           {false, 0.0000003824366722}},
             {"ttbb",               {false, 0.0005295497645}},
             // MC: QCD
             {"QCD_HT200to300",     {false, 1071.943332}},

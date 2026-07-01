@@ -12,9 +12,9 @@ scenarios produced by the new condor pipeline can be plotted in one go.
 [ 2. Input layout produced by submit_job_FH_Tier3_unified.py ]
     <output_base>/
     ├── baseline/
-    │   ├── TTToHadronic/
-    │   │   ├── TTToHadronic_0.root
-    │   │   ├── TTToHadronic_1.root
+    │   ├── TTbar_Hadronic/
+    │   │   ├── TTbar_Hadronic_0.root
+    │   │   ├── TTbar_Hadronic_1.root
     │   │   └── ...
     │   ├── ttHH/...
     │   └── ...37 sample dirs total
@@ -360,7 +360,7 @@ def run_scenario(scenario_name: str,
     else:
         # pick a representative MC sample to extract from
         ref_file = None
-        for name in ("TTToHadronic", "ttHH", "tt4b"):
+        for name in ("TTbar_Hadronic", "TTHHto4b", "TT4b"):
             if name in samples and samples[name]["files"]:
                 ref_file = Path(samples[name]["files"][0])
                 break
@@ -481,7 +481,7 @@ def main(argv: list[str]) -> int:
             print(f"\n[master] extracting shared structure_info.yml from {first}")
             samples_first = scan_scenario(first)
             ref_file = None
-            for nm in ("TTToHadronic", "ttHH", "tt4b"):
+            for nm in ("TTbar_Hadronic", "TTHHto4b", "TT4b"):
                 if nm in samples_first and samples_first[nm]["files"]:
                     ref_file = Path(samples_first[nm]["files"][0])
                     break

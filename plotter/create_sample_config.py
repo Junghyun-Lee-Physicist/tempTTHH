@@ -11,7 +11,7 @@ It generates a 'samples_config.yml' file compatible with the stack plotter.
 [ 2. Assumption ]
 You have already run 'hadd' so that you have files like:
   - /path/to/merged/ttHH.root
-  - /path/to/merged/tttt.root
+  - /path/to/merged/TTTT.root
   - /path/to/merged/Data.root
   (Instead of folders full of split files)
 

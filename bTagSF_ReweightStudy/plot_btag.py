@@ -6,9 +6,9 @@ Read plotdata/<sample>.json files (produced by PlotBTagReweight.C)
 and generate matplotlib plots as PNG.
 
 Usage:
-    python3 plot_btag.py TTToHadronic
+    python3 plot_btag.py TTbar_Hadronic
     python3 plot_btag.py all
-    python3 plot_btag.py TTToHadronic ttHH tt4b
+    python3 plot_btag.py TTbar_Hadronic ttHH tt4b
 
 Author: Junghyun Lee
 """
@@ -24,9 +24,9 @@ from pathlib import Path
 
 # ── All samples ──
 ALL_MC = [
-    "TTToHadronic", "TTTo2L2Nu", "TTToSemiLeptonic",
-    "ttHH", "tt4b", "ttHtobb", "tttt", "tttW",
-    "ttWH", "ttWW", "ttWZ", "ttZHto4b", "ttZtobb", "ttZZto4b", "ttbb",
+    "TTbar_Hadronic", "TTbar_DiLep", "TTbar_SemiLep",
+    "TTHHto4b", "TT4b", "ttHTobb", "TTTT", "TTTW",
+    "TTWH", "TTWW", "TTWZ", "TTZHTo4b", "TTZToBB", "TTZZTo4b", "ttbb",
     "QCD_HT200to300", "QCD_HT300to500", "QCD_HT500to700",
     "QCD_HT700to1000", "QCD_HT1000to1500", "QCD_HT1500to2000", "QCD_HT2000toInf",
 ]
@@ -133,7 +133,7 @@ def plot_one_sample(sample: str):
 def main():
     if len(sys.argv) < 2:
         print("Usage: python3 plot_btag.py <sample|all>")
-        print("  e.g.: python3 plot_btag.py TTToHadronic")
+        print("  e.g.: python3 plot_btag.py TTbar_Hadronic")
         print("        python3 plot_btag.py all")
         sys.exit(1)
 

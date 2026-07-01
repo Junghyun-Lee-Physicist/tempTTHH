@@ -36,14 +36,14 @@ SAMPLES: List[str] = [
     # Data: JetHT
 ##    "JetHT_B",    "JetHT_C",    "JetHT_D",    "JetHT_E",    "JetHT_F",
     # MC: ttbar inclusive
-##    "TTToHadronic",  "TTTo2L2Nu",  "TTToSemiLeptonic",
+##    "TTbar_Hadronic",  "TTbar_DiLep",  "TTbar_SemiLep",
     # MC: signal & rare
-##    "ttHH",  "tt4b",  "ttHtobb",  "tttt",  "tttW",
-##    "ttWH",  "ttWW",  "ttWZ",  "ttZHto4b",  "ttZtobb",  "ttZZto4b",  "ttbb",
+##    "TTHHto4b",  "TT4b",  "ttHTobb",  "TTTT",  "TTTW",
+##    "TTWH",  "TTWW",  "TTWZ",  "TTZHTo4b",  "TTZToBB",  "TTZZTo4b",  "ttbb",
     # MC: QCD
 ##    "QCD_HT200to300",  "QCD_HT300to500",  "QCD_HT500to700",
 ##    "QCD_HT700to1000",  "QCD_HT1000to1500",  "QCD_HT1500to2000",  "QCD_HT2000toInf",
-    "ttZZto4b"
+    "TTZZTo4b"
 ]
 
 # ============================================================================

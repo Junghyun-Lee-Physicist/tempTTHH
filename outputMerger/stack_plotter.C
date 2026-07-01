@@ -294,7 +294,7 @@ int GetSmartColor(const std::string& name) {
     }
     if (name.find("ttHH") != std::string::npos || name.find("TTHH") != std::string::npos)
         return TColor::GetColor("#FF8C00");
-    if (name.find("tttt") != std::string::npos || name.find("TTTT") != std::string::npos)
+    if (name.find("TTTT") != std::string::npos || name.find("TTTT") != std::string::npos)
         return TColor::GetColor("#9B59B6");
     if (name.find("ttH")  != std::string::npos || name.find("TTH") != std::string::npos)
         return TColor::GetColor("#F1C40F");
@@ -340,7 +340,7 @@ std::string ShortenLabel(const std::string& rawName) {
     }
     if (name.find("ttHH") != std::string::npos || name.find("TTHH") != std::string::npos)
         return "t#bar{t}HH";
-    if (name.find("tttt") != std::string::npos || name.find("TTTT") != std::string::npos)
+    if (name.find("TTTT") != std::string::npos || name.find("TTTT") != std::string::npos)
         return "t#bar{t}t#bar{t}";
     if (name.find("ttH")  != std::string::npos || name.find("TTH") != std::string::npos)
         return "t#bar{t}H";

@@ -56,7 +56,7 @@ Default (1-D hists only, default in/out paths):
 Custom input file, custom output yml:
 
     python3 extract_structure.py \
-        --input /pnfs/.../baseline/TTToHadronic/TTToHadronic_0.root \
+        --input /pnfs/.../baseline/TTbar_Hadronic/TTbar_Hadronic_0.root \
         --output structure_info.yml
 
 Filter examples:
@@ -276,7 +276,7 @@ def main(argv: list[str]) -> int:
     )
     parser.add_argument(
         "--input",
-        default="/Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTToHadronic.root",
+        default="/Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTbar_Hadronic.root",
         help="Input ROOT file (default mirrors the previous hardcode)"
     )
     parser.add_argument(

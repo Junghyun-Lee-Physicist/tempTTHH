@@ -27,7 +27,7 @@
 // Usage:
 //   make exe_MakeJSON
 //   ./exe_MakeJSON                     # uses all MC samples from Config
-//   ./exe_MakeJSON TTToHadronic ttbb   # specific samples only
+//   ./exe_MakeJSON TTbar_Hadronic ttbb   # specific samples only
 //
 // IMPORTANT:
 //   exe_BTagSF and exe_MakeJSON MUST be compiled with the same

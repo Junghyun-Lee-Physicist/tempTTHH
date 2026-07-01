@@ -43,7 +43,7 @@ public:
     // runYear: "2016PreVFP_UL", "2016PostVFP_UL", "2017_UL", "2018_UL"
     // dataEra: "B", "C", ..., "F" (only meaningful if isData==true)
     // isData: true->Data, false->MC
-    // sampleName: MC 프로세스 이름 (e.g. "TTToHadronic"), b-tag reweight lookup에 사용
+    // sampleName: MC 프로세스 이름 (e.g. "TTbar_Hadronic"), b-tag reweight lookup에 사용
     //             Data일 경우 빈 문자열 허용
     // [STEP4] requireDerivedCorr: true(main/debug)이면 파생 보정(trigger SF,
     // b-tag norm reweight) 누락/로드 실패가 FATAL(exit 47/48)이다.
@@ -164,7 +164,7 @@ public:
     // Minor backgrounds (V+jets, single t, ttV, QCD, ...) borrow tt+LF.
     //
     // Process key dispatch (per event):
-    //   inclusive ttbar (TTToHadronic / SemiLep / 2L2Nu) → tt+LF/tt+cc/tt+B
+    //   inclusive ttbar (TTbar_Hadronic / SemiLep / 2L2Nu) → tt+LF/tt+cc/tt+B
     //                                                     by genTtbarId
     //   other samples → fixed mapping by sample name
     //   See Config_TtCatGroup.hh::MakeProcessKey().

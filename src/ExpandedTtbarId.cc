@@ -3,6 +3,7 @@
 //  ExpandedTtbarId.cc  -- see ExpandedTtbarId.h for the rationale.
 // =============================================================================
 #include "ExpandedTtbarId.h"
+#include "ExitCodes.h"   // [STEP18] canonical exit codes
 
 #include <cstdio>
 #include <cstdlib>
@@ -28,10 +29,10 @@ void ExpandedTtbarId::loadFromDir(const std::string& dir,
   if (fileExists(path)) { load(path, sampleKey, treeName); return; }
 
   // 2) fallback: a known, distinctive process token contained in sampleKey.
-  //    (longest/most-specific first so ttbb_SemiLeptonic is not shadowed.)
+  //    (longest/most-specific first so TTbb_SemiLep is not shadowed.)
   static const char* kTokens[] = {
-      "ttbb_SemiLeptonic", "ttbb_Hadronic", "ttbb_2L2Nu",
-      "TTToSemiLeptonic",  "TTToHadronic",  "TTTo2L2Nu", "tt4b"};
+      "TTbb_SemiLep", "TTbb_Hadronic", "TTbb_DiLep",
+      "TTbar_SemiLep",  "TTbar_Hadronic",  "TTbar_DiLep", "TT4b"};
   for (const char* tk : kTokens) {
     if (sampleKey.find(tk) == std::string::npos) continue;
     const std::string p2 = dir + sep + "ttnb_" + std::string(tk) + ".root";
@@ -82,7 +83,7 @@ void ExpandedTtbarId::load(const std::string& path,
     std::fprintf(stderr,
                  "[ExpandedTtbarId] FATAL: cannot add '%s' (tree '%s') to chain.\n",
                  path.c_str(), treeName.c_str());
-    std::exit(41);
+    std::exit(tthh::EXPTTID_CHAIN_FAIL);
   }
 
   UInt_t    run = 0, lumi = 0;
@@ -107,7 +108,7 @@ void ExpandedTtbarId::load(const std::string& path,
     std::fprintf(stderr,
                  "[ExpandedTtbarId] FATAL: tree '%s' in '%s' has %lld entries.\n",
                  treeName.c_str(), path.c_str(), (long long)nIn);
-    std::exit(42);
+    std::exit(tthh::EXPTTID_TREE_EMPTY);
   }
   std::printf("[ExpandedTtbarId]   entries in lookup = %lld\n", (long long)nIn);
   std::fflush(stdout);
@@ -144,7 +145,7 @@ void ExpandedTtbarId::load(const std::string& path,
         std::fprintf(stderr,
             "[ExpandedTtbarId] FATAL: conflicting duplicate key in lookup '%s'.\n",
             path.c_str());
-        std::exit(43);
+        std::exit(tthh::EXPTTID_DUP_KEY);
       }
       continue;  // keep the first
     }
@@ -215,7 +216,7 @@ int ExpandedTtbarId::resolve(unsigned int run, unsigned int lumi,
       std::fprintf(stderr,
           "[ExpandedTtbarId] FATAL: lookup '%s' does not correspond to this "
           "sample (genTtbarId mismatch on a matched key).\n", _path.c_str());
-      std::exit(44);
+      std::exit(tthh::EXPTTID_SAMPLE_MISMATCH);
     }
   }
 

@@ -36,25 +36,6 @@ import ProxyChecker
 import resultChecker  # noqa: F401  (kept for backward compat)
 
 
-# ============================================================================
-# [STEP18] Canonical exit codes (mirror of include/ExitCodes.h, 10-29 band).
-#   Numbered so a failed *submit* is identifiable from the log (grep "[FATAL][E").
-#   Full table: docs/reference/ERROR_CODES.md (keep in sync with ExitCodes.h).
-# ============================================================================
-EXIT = {
-    "CONFIG_PATH_ENV_MISSING":   12,   # required/empty correction path (no default)
-    "CONFIG_PATH_NULL_REQUIRED": 13,   # required correction path set to null
-    "XSEC_DB_MISSING":           20,   # sample absent from xsec_db
-    "PRESCAN_MISSING":           21,   # sample absent/invalid in prescan_summary
-}
-NULL_SENTINEL = "__NULL__"             # yml null -> this sentinel reaches the analyzer
-
-def _fatal(code, msg):
-    """Print a numbered FATAL line and exit with that code (log-detectable)."""
-    sys.stderr.write(f"\n[FATAL][E{code}] {msg}\n")
-    sys.exit(code)
-
-
 class CondorJobManager:
 
     def __init__(self):
@@ -287,8 +268,8 @@ class CondorJobManager:
         db = self._load_xsec_db(common["xsec_db"])
         rec = db.get(sample_name)
         if rec is None:
-            _fatal(EXIT["XSEC_DB_MISSING"],
-                   f"sample '{sample_name}' not in xsec_db ({common['xsec_db']}).")
+            raise ValueError(f"[FATAL] sample '{sample_name}' not in xsec_db "
+                             f"({common['xsec_db']})")
         xsec = rec.get("cross_section_fb")
         if xsec is None:
             return 1.0, "data"          # Data
@@ -299,14 +280,12 @@ class CondorJobManager:
         pre  = self._load_prescan(common["prescan"])
         prec = pre.get(sample_name)
         if prec is None:
-            _fatal(EXIT["PRESCAN_MISSING"],
-                   f"sample '{sample_name}' not in prescan ({common['prescan']}) "
-                   f"— run prescan first.")
+            raise ValueError(f"[FATAL] sample '{sample_name}' not in prescan "
+                             f"({common['prescan']}) — prescan 먼저 실행 필요")
         sumw = prec["runs"]["genEventSumw"]              # ★ runs.genEventSumw 사용
         sumw_tree = prec["events"]["sumGenW_total"]      # 비교용
         if sumw <= 0:
-            _fatal(EXIT["PRESCAN_MISSING"],
-                   f"{sample_name}: sumGenW(runs)={sumw} <= 0 (invalid prescan).")
+            raise ValueError(f"[FATAL] {sample_name}: sumGenW(runs)={sumw} <= 0")
         # runs vs tree 합 불일치 경고 (사용은 runs)
         if sumw_tree > 0 and abs(sumw - sumw_tree)/sumw > 1e-4:
             print(f"  [warn] {sample_name}: sumGenW runs={sumw:.6e} vs "
@@ -331,19 +310,9 @@ class CondorJobManager:
         self.sample_output_dir = entry.get("output_dir", self.sample_name)
         self.era = entry.get("era", "")
 
-        # [STEP17] prescan 모드는 normalization 불필요 → xsec_db/prescan_summary 와
-        # 완전 분리한다. MC/Data 는 PD 이름으로 판정(Data 는 genWeight 없음), weight 는
-        # 1.0 고정(아래). 이로써 새 샘플을 xsec_db/prescan_summary 에 먼저 등록하지
-        # 않아도 prescan 이 바로 돈다 (prescan 이 그 둘의 입력을 만드는 단계이므로).
-        _is_prescan = (str(common.get("analysis_mode", "")).strip() == "prescan")
-
-        # data_or_mc: override > (prescan: PD 이름) > xsec_db(cross_section_fb null 여부)
+        # data_or_mc: xsec_db의 cross_section_fb null 여부로 자동 판정 (override 가능)
         if "data_or_mc" in entry:
             self.data_or_mc = entry["data_or_mc"]
-        elif _is_prescan:
-            self.data_or_mc = ("Data"
-                               if re.search(r"(JetHT|BTagCSV|SingleMuon)", self.sample_name)
-                               else "MC")
         else:
             db = self._load_xsec_db(common["xsec_db"])
             rec = db.get(self.sample_name, {})
@@ -354,8 +323,7 @@ class CondorJobManager:
         # era 를 자동 추출한다 (예: SingleMuon_C -> 'C', JetHT_E -> 'E').
         # yml 에 명시적 era 가 있으면 그게 우선. MC 는 era 를 두지 않는다.
         if self.data_or_mc == "Data" and not str(self.era).strip():
-            m = (re.search(r"Run2017([A-Z])$", self.sample_name)
-                 or re.search(r"_([A-Z])$", self.sample_name))
+            m = re.search(r"_([A-Z])$", self.sample_name)
             if m:
                 self.era = m.group(1)
                 print(f"  [era] {self.sample_name}: Data -> era '{self.era}' "
@@ -366,12 +334,9 @@ class CondorJobManager:
                     f"없습니다. 샘플명이 '<PD>_<era>' (era=단일 대문자) 규칙이 "
                     f"아니면 yml 에 era 를 명시하세요.")
 
-        # weight: yml 명시 우선 > (prescan: 1.0) > xsec_db+prescan 합성
+        # weight: yml 명시 우선, 없으면 xsec_db+prescan 으로 합성
         if "weight" in entry:
             self.weight = entry["weight"]
-        elif _is_prescan:
-            self.weight = 1.0   # prescan 미사용 (runPrescan 이 Σgenw 만 누산)
-            print(f"  [weight] {self.sample_name}: 1.0  (prescan — normalization 불필요)")
         else:
             self.weight, prov = self._compute_base_weight(self.sample_name, common)
             print(f"  [weight] {self.sample_name}: {self.weight:.10g}  ({prov})")
@@ -388,12 +353,9 @@ class CondorJobManager:
             raise ValueError(f"[FATAL] files_per_job must be >= 1 (got {fpj})")
         self.files_per_job = fpj
 
-        # [STEP18] 보정 입력 경로 정책 (코드 default 폐기 — ConfigPath.h 와 동일 계약):
-        #   - 빈 문자열 / 키 누락  -> FATAL E12 (빈 값은 더 이상 'default 사용' 신호 아님)
-        #   - null                 -> 선택 보정이면 비활성(sentinel "__NULL__" 주입),
-        #                             필수 보정이면 FATAL E13
-        #   - 실제 경로            -> 그대로 주입
-        # analyzer 는 항상 env 를 받는다(실제 경로 또는 "__NULL__").
+        # [STEP4] 보정 입력 경로 — yml common.path_* 를 condor 실행 sh의
+        # export로 주입한다. 비어 있거나 없으면 export하지 않음 → analyzer가
+        # 코드 내 default(Tier3)를 사용 (하위호환).
         path_env_map = {
             "path_jsonpog":               "TTHH_JSONPOG_PATH",
             "path_goldenjson":            "TTHH_GOLDENJSON_PATH",
@@ -402,40 +364,11 @@ class CondorJobManager:
             "path_stitch_json":           "STITCH_FACTORS_JSON",
             "path_expanded_ttbarid_dir":  "EXPANDED_TTBARID_DIR",
         }
-        is_data     = (self.data_or_mc == "Data")
-        derived_req = self.AnalyzerMode in ("main", "debug")
-        # 필수 여부: jsonpog 는 항상(JME/PU); goldenjson 은 Data; trigsf/btagrw 는
-        # main·debug 에서 해당 SF 토글이 on 일 때.
-        required_keys = {"path_jsonpog"}
-        if is_data:
-            required_keys.add("path_goldenjson")
-        if derived_req and self._cli_trigsf == "on":
-            required_keys.add("path_trigsf_dir")
-        if derived_req and self._cli_btagrw == "on":
-            required_keys.add("path_btag_reweight_json")
-
         self.env_exports = {}
         for yml_key, env_name in path_env_map.items():
-            required = yml_key in required_keys
             v = common.get(yml_key, "")
-            if v is None:                                   # yml null
-                if required:
-                    _fatal(EXIT["CONFIG_PATH_NULL_REQUIRED"],
-                           f"{yml_key} is REQUIRED for mode={self.AnalyzerMode} "
-                           f"data_or_mc={self.data_or_mc} "
-                           f"(trigsf={self._cli_trigsf}, btagrw={self._cli_btagrw}) "
-                           f"but is null. Provide a real path, or change mode/toggle.")
-                self.env_exports[env_name] = NULL_SENTINEL  # 선택 보정 -> 비활성
-                continue
-            if isinstance(v, str):
-                v = v.strip()
-            if v == "":                                     # 빈 문자열 / 키 누락
-                _fatal(EXIT["CONFIG_PATH_ENV_MISSING"],
-                       f"{yml_key} is empty/missing in the yml common: block. "
-                       f"Blank is no longer 'use default'. Give a real path, or "
-                       f"null to disable an optional correction. "
-                       f"(required here: {sorted(required_keys)})")
-            self.env_exports[env_name] = v                  # 실제 경로
+            if isinstance(v, str) and v.strip():
+                self.env_exports[env_name] = v.strip()
 
         if self.data_or_mc == "MC" and str(self.era).strip():
             raise ValueError(
@@ -494,11 +427,6 @@ class CondorJobManager:
             if (value.startswith('"') and value.endswith('"')) or \
                (value.startswith("'") and value.endswith("'")):
                 return value[1:-1]
-            # [STEP18] unquoted null / ~ / none -> None (선택 보정 "비활성" 신호).
-            #   주의: 따옴표 "" 는 위에서 빈 문자열로 반환됨 → null 과 구분된다
-            #   (빈 문자열 = FATAL E12, null = 선택 비활성/필수 FATAL E13).
-            if value.lower() in ("null", "~", "none"):
-                return None
             # bool
             if value.lower() == "true":  return True
             if value.lower() == "false": return False
@@ -545,8 +473,8 @@ class CondorJobManager:
                     section_prev_list = "samples"
                     continue
                 # ── List items (start with "- ") ──────────────────────────
-                # [TrackC] bare string 항목 지원: "- TTbar_Hadronic" →
-                #   {sample_name: TTbar_Hadronic}. 기존 "- key: value" 도 호환.
+                # [TrackC] bare string 항목 지원: "- TTToHadronic" →
+                #   {sample_name: TTToHadronic}. 기존 "- key: value" 도 호환.
                 if section == "samples" and line.startswith("- "):
                     if current_item is not None:
                         config[section_prev_list].append(current_item)

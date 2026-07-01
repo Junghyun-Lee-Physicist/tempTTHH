@@ -12,7 +12,7 @@
 //   ./exe_BTagSF <SampleName>
 //
 // Examples:
-//   ./exe_BTagSF TTToHadronic        # MC sample
+//   ./exe_BTagSF TTbar_Hadronic        # MC sample
 //   ./exe_BTagSF JetHT_B             # Data sample
 //   ./exe_BTagSF QCD_HT500to700      # QCD MC sample
 //
@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 {
     if (argc < 2) {
         std::cerr << "Usage: ./exe_BTagSF <SampleName>\n\n"
-                  << "  SampleName : e.g. TTToHadronic, JetHT_B, QCD_HT500to700\n"
+                  << "  SampleName : e.g. TTbar_Hadronic, JetHT_B, QCD_HT500to700\n"
                   << "  Output     : bTagReweight_<SampleName>.root\n";
         return 1;
     }

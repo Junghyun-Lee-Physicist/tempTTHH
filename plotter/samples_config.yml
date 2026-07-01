@@ -119,26 +119,26 @@ samples:
     - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/QCD_HT700to1000.root
     label: QCD_HT700to1000
     color: '#CC6677'
-  TTTo2L2Nu:
+  TTbar_DiLep:
     type: MC
     path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
     files:
-    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTTo2L2Nu.root
-    label: TTTo2L2Nu
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTbar_DiLep.root
+    label: TTbar_DiLep
     color: '#882255'
-  TTToHadronic:
+  TTbar_Hadronic:
     type: MC
     path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
     files:
-    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTToHadronic.root
-    label: TTToHadronic
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTbar_Hadronic.root
+    label: TTbar_Hadronic
     color: '#AA4499'
-  TTToSemiLeptonic:
+  TTbar_SemiLep:
     type: MC
     path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
     files:
-    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTToSemiLeptonic.root
-    label: TTToSemiLeptonic
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTbar_SemiLep.root
+    label: TTbar_SemiLep
     color: '#DDDDDD'
   tt4b:
     type: MC
@@ -154,87 +154,87 @@ samples:
     - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/ttHH.root
     label: ttHH
     color: '#88CCEE'
-  ttHtobb:
+  ttHTobb:
     type: MC
     path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
     files:
-    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/ttHtobb.root
-    label: ttHtobb
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/ttHTobb.root
+    label: ttHTobb
     color: '#44AA99'
-  ttWH:
+  TTWH:
     type: MC
     path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
     files:
-    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/ttWH.root
-    label: ttWH
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTWH.root
+    label: TTWH
     color: '#117733'
-  ttWW:
+  TTWW:
     type: MC
     path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
     files:
-    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/ttWW.root
-    label: ttWW
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTWW.root
+    label: TTWW
     color: '#999933'
-  ttWZ:
+  TTWZ:
     type: MC
     path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
     files:
-    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/ttWZ.root
-    label: ttWZ
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTWZ.root
+    label: TTWZ
     color: '#DDCC77'
-  ttZHto4b:
+  TTZHTo4b:
     type: MC
     path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
     files:
-    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/ttZHto4b.root
-    label: ttZHto4b
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTZHTo4b.root
+    label: TTZHTo4b
     color: '#CC6677'
-  ttZZto4b:
+  TTZZTo4b:
     type: MC
     path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
     files:
-    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/ttZZto4b.root
-    label: ttZZto4b
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTZZTo4b.root
+    label: TTZZTo4b
     color: '#882255'
-  ttZtobb:
+  TTZToBB:
     type: MC
     path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
     files:
-    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/ttZtobb.root
-    label: ttZtobb
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTZToBB.root
+    label: TTZToBB
     color: '#AA4499'
-  ttbb_2L2Nu:
+  TTbb_DiLep:
     type: MC
     path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
     files:
-    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/ttbb_2L2Nu.root
-    label: ttbb_2L2Nu
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTbb_DiLep.root
+    label: TTbb_DiLep
     color: '#DDDDDD'
-  ttbb_Hadronic:
+  TTbb_Hadronic:
     type: MC
     path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
     files:
-    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/ttbb_Hadronic.root
-    label: ttbb_Hadronic
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTbb_Hadronic.root
+    label: TTbb_Hadronic
     color: '#332288'
-  ttbb_SemiLeptonic:
+  TTbb_SemiLep:
     type: MC
     path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
     files:
-    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/ttbb_SemiLeptonic.root
-    label: ttbb_SemiLeptonic
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTbb_SemiLep.root
+    label: TTbb_SemiLep
     color: '#88CCEE'
-  tttW:
+  TTTW:
     type: MC
     path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
     files:
-    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/tttW.root
-    label: tttW
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTTW.root
+    label: TTTW
     color: '#44AA99'
-  tttt:
+  TTTT:
     type: MC
     path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
     files:
-    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/tttt.root
-    label: tttt
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTTT.root
+    label: TTTT
     color: '#117733'

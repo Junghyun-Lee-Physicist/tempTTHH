@@ -22,6 +22,7 @@
 | 14 | 3tier_weight_metCR_normcheck | 3-tier weight(trigSF/+btagShape/+normRW) + lepton CR(1ℓ+MET) + prescan WARN 수정 |
 | 15 | resubmit_treecheck_region_output | resubmit 완료판정 중첩TTree 버그 + region output 분리 + report 거짓메시지 |
 | 16 | sf_toggles_and_dir_split | SF 적용 토글(--trigsf/--btagsf/--btagrw) + region/SF 조합 output 디렉토리 |
+| 17 | fullNano_dataset_and_categorization | **fullNano_v20 dataset 갱신**(make_filelists+prescan yml, 신규 MC 61) + **prescan↔xsec_db/prescan_summary 분리**(weight=1.0) + **categorization full-Nano 전환**(ntuple ttCat_* → 표준 genTtbarId 디코드) |
 
 별도 트랙 (선행조건 대기):
 - **TRACK_A** (도구 업데이트) — btagtrig 재실행 후
@@ -90,3 +91,4 @@
 | `docs/backup_20260611/src/tnm.cc`, `include/tnm.h` | Step 8 변경 전 원본 (--val-* 파서/필드 포함) | Step 8 |
 | `docs/backup_20260611/README.md` | Step 9 변경 전 원본 (구식 el7/위치인자) | Step 9 |
 | (Step 10은 analyzer만 변경 — Step 0 백업이 원본; ttbb weight는 코드 미변경) | | Step 10 |
+| `docs/backup_20260629/` | `make_filelists.py`, `Tier3_2017_FH_unified_{prescan,main}.yml`, `submit_job_FH_Tier3_unified.py`, `ttHHanalyzer_unified.{h,cc}` — Step 17 변경 전 원본 (slim-ntuple ttCat_* 의존 버전) | Step 17 |

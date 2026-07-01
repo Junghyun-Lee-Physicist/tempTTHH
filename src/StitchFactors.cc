@@ -2,6 +2,7 @@
 //  StitchFactors implementation
 // ============================================================================
 #include "StitchFactors.h"
+#include "ExitCodes.h"   // [STEP18] canonical exit codes
 
 #include <nlohmann/json.hpp>
 
@@ -34,18 +35,18 @@ void StitchFactors::load(const std::string& jsonPath, const std::string& sampleN
   if (!f.good())
     fatal("cannot open stitch-factors JSON '" + jsonPath +
           "'. Set $STITCH_FACTORS_JSON or place it at "
-          "DerivedCorr/stitchFactors/stitch_factors_2017.json.", 40);
+          "DerivedCorr/stitchFactors/stitch_factors_2017.json.", tthh::STITCH_JSON_OPEN_FAIL);
 
   json j;
   try {
     f >> j;
   } catch (const std::exception& e) {
-    fatal("failed to parse '" + jsonPath + "': " + std::string(e.what()), 41);
+    fatal("failed to parse '" + jsonPath + "': " + std::string(e.what()), tthh::STITCH_JSON_PARSE_FAIL);
   }
 
   if (!j.contains("analyzer_perEvent_factor"))
     fatal("'" + jsonPath + "' has no 'analyzer_perEvent_factor' block "
-          "(wrong file? re-run compute_stitch_factors.py).", 42);
+          "(wrong file? re-run compute_stitch_factors.py).", tthh::STITCH_JSON_SCHEMA_FAIL);
   const json& a = j.at("analyzer_perEvent_factor");
 
   // option string (cosmetic / log only)
@@ -56,16 +57,16 @@ void StitchFactors::load(const std::string& jsonPath, const std::string& sampleN
 
   // sub_to_category : { "0":"LF", "41":"cc", ..., "61":"ttbbb", "71":"tt4b" }
   if (!a.contains("sub_to_category"))
-    fatal("'analyzer_perEvent_factor' has no 'sub_to_category' map.", 42);
+    fatal("'analyzer_perEvent_factor' has no 'sub_to_category' map.", tthh::STITCH_JSON_SCHEMA_FAIL);
   for (auto it = a.at("sub_to_category").begin();
             it != a.at("sub_to_category").end(); ++it) {
     int sub = 0;
     try { sub = std::stoi(it.key()); }
-    catch (...) { fatal("sub_to_category key '" + it.key() + "' is not an int.", 42); }
+    catch (...) { fatal("sub_to_category key '" + it.key() + "' is not an int.", tthh::STITCH_JSON_SCHEMA_FAIL); }
     _subToCat[sub] = it.value().get<std::string>();
   }
   if (_subToCat.empty())
-    fatal("sub_to_category is empty.", 42);
+    fatal("sub_to_category is empty.", tthh::STITCH_JSON_SCHEMA_FAIL);
 
   // this sample's multiplier row (absent -> not in plan, multiplier 1)
   if (a.contains("samples") && a.at("samples").contains(_sample)) {
@@ -73,7 +74,7 @@ void StitchFactors::load(const std::string& jsonPath, const std::string& sampleN
     _inPlan = true;
     if (s.contains("role")) _role = s.at("role").get<std::string>();
     if (!s.contains("by_category"))
-      fatal("sample '" + _sample + "' is listed but has no 'by_category' row.", 43);
+      fatal("sample '" + _sample + "' is listed but has no 'by_category' row.", tthh::STITCH_JSON_SCHEMA_FAIL);
     for (auto it = s.at("by_category").begin();
               it != s.at("by_category").end(); ++it)
       _byCat[it.key()] = it.value().get<double>();
@@ -82,7 +83,7 @@ void StitchFactors::load(const std::string& jsonPath, const std::string& sampleN
     for (const auto& kv : _subToCat) {
       if (_byCat.find(kv.second) == _byCat.end())
         fatal("sample '" + _sample + "' (role " + _role + ") is missing a "
-              "multiplier for category '" + kv.second + "'.", 43);
+              "multiplier for category '" + kv.second + "'.", tthh::STITCH_JSON_SCHEMA_FAIL);
     }
   }
 

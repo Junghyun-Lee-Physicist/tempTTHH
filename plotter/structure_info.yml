@@ -1,5 +1,5 @@
-description: Plottable histograms extracted from /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTToHadronic.root
-input_file: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTToHadronic.root
+description: Plottable histograms extracted from /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTbar_Hadronic.root
+input_file: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTbar_Hadronic.root
 total_count: 620
 histograms:
   - key_path: jet/h_JEC_DiffRatio_0

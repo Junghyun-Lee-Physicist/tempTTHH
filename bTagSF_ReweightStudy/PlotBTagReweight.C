@@ -16,7 +16,7 @@
 //   plotdata/<sample>.json          — histogram data for Python/matplotlib
 //
 // Usage:
-//   root -l -b -q 'PlotBTagReweight.C("TTToHadronic")'
+//   root -l -b -q 'PlotBTagReweight.C("TTbar_Hadronic")'
 //   root -l -b -q 'PlotBTagReweight.C("all")'       // all samples
 //
 // Author: Junghyun Lee
@@ -42,9 +42,9 @@
 // ============================================================================
 
 const std::vector<std::string> allMCSamples = {
-    "TTToHadronic", "TTTo2L2Nu", "TTToSemiLeptonic",
-    "ttHH", "tt4b", "ttHtobb", "tttt", "tttW",
-    "ttWH", "ttWW", "ttWZ", "ttZHto4b", "ttZtobb", "ttZZto4b", "ttbb",
+    "TTbar_Hadronic", "TTbar_DiLep", "TTbar_SemiLep",
+    "TTHHto4b", "TT4b", "ttHTobb", "TTTT", "TTTW",
+    "TTWH", "TTWW", "TTWZ", "TTZHTo4b", "TTZToBB", "TTZZTo4b", "ttbb",
     "QCD_HT200to300", "QCD_HT300to500", "QCD_HT500to700",
     "QCD_HT700to1000", "QCD_HT1000to1500", "QCD_HT1500to2000", "QCD_HT2000toInf"
 };
@@ -335,7 +335,7 @@ void PlotOneSample(const TString& sampleName) {
 // Main entry: single sample or "all"
 // ============================================================================
 
-void PlotBTagReweight(TString sampleName = "TTToHadronic") {
+void PlotBTagReweight(TString sampleName = "TTbar_Hadronic") {
     if (sampleName == "all") {
         for (const auto& s : allMCSamples)  PlotOneSample(TString(s.c_str()));
         for (const auto& s : allDataSamples) PlotOneSample(TString(s.c_str()));

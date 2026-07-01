@@ -12,6 +12,8 @@
 // Author: Junghyun Lee
 // ============================================================================
 #include "CorrectionsManager.h"
+#include "ExitCodes.h"     // [STEP18] canonical exit codes
+#include "ConfigPath.h"    // [STEP18] cfgpath::resolve (no code-default)
 #include <cstdlib>   // [STEP4] std::getenv, std::exit
 #include <fstream>
 #include <iostream>
@@ -30,16 +32,8 @@ static constexpr bool kVerbose = false;
 // env는 AnalyzerConfig yml의 common.path_* → condor sh의 export →
 // 로컬 실행 시엔 쉘에서 직접 export로 통제된다 (docs/changes/STEP_4 참조).
 // ----------------------------------------------------------------------------
-static std::string envOr(const char* envName,
-                         const std::string& defaultPath,
-                         const char* what) {
-    const char* v = std::getenv(envName);
-    const std::string chosen = (v && *v) ? std::string(v) : defaultPath;
-    std::cout << "[CorrectionsManager][path] " << what << " = " << chosen
-              << ((v && *v) ? "   (env " : "   (default; env ")
-              << envName << ((v && *v) ? ")" : " unset)") << std::endl;
-    return chosen;
-}
+// [STEP18] envOr() (env-or-hardcoded-default) REMOVED — paths now come
+// explicitly from config via cfgpath::resolve() (see ConfigPath.h).
 
 CorrectionsManager::CorrectionsManager(const std::string& runYear,
                                        const std::string& dataEra,
@@ -53,24 +47,18 @@ CorrectionsManager::CorrectionsManager(const std::string& runYear,
 {
     requireDerived_ = requireDerivedCorr;
 
-    // [STEP4] 경로는 env 우선, 미설정 시 기존 Tier3 하드코딩 값이 default
-    // (하위호환 — env 없이 돌리면 이전과 동일하게 동작).
-    jsonPath = envOr("TTHH_JSONPOG_PATH",
-        "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration",
-        "jsonpog-integration");
-    goldenJsonPath = envOr("TTHH_GOLDENJSON_PATH",
-        "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/GoldenJson",
-        "GoldenJSON dir");
-    trigSFPath = envOr("TTHH_TRIGSF_DIR",
-        "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/DerivedCorr/TriggerSF",
-        "trigger SF dir");
-    btagReweightPath = envOr("TTHH_BTAGRW_JSON",
-        "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/DerivedCorr/bTagReweight/btagNormReweight.json",
-        "b-tag norm reweight JSON");
+    // [STEP18] 경로는 config(yml common.path_*)에서 명시적으로 온다. 코드 default 폐기.
+    //   필수: jsonpog (JME/PU, MC·Data 공통), goldenjson (Data 한정)
+    //   선택: trigsf / btagrw — config가 null 이면 resolve()가 "" 반환 → 비활성(SF=1)
+    //   빈/미설정 env → FATAL(E12); 필수인데 null → FATAL(E13). (ConfigPath.h 참조)
+    jsonPath         = cfgpath::resolve("TTHH_JSONPOG_PATH",    "jsonpog-integration",      /*required=*/true);
+    goldenJsonPath   = cfgpath::resolve("TTHH_GOLDENJSON_PATH", "GoldenJSON dir",           /*required=*/isData_);
+    trigSFPath       = cfgpath::resolve("TTHH_TRIGSF_DIR",      "trigger SF dir",           /*required=*/false);
+    btagReweightPath = cfgpath::resolve("TTHH_BTAGRW_JSON",     "b-tag norm reweight JSON", /*required=*/false);
     std::cout << "[CorrectionsManager] derived-correction policy: "
-              << (requireDerived_ ? "REQUIRED (missing -> FATAL 47/48)"
-                                  : "optional (bootstrap; missing -> WARN, SF=1)")
-              << std::endl;
+              << (requireDerived_ ? "REQUIRED if path given (load fail -> FATAL 50/51)"
+                                  : "optional (bootstrap; load fail -> WARN, SF=1)")
+              << "; null path -> disabled (SF=1)" << std::endl;
 
     // [STEP4] 중앙(POG) 보정 입력의 누락/손상은 모드 무관 FATAL(49) —
     // correctionlib의 throw를 여기서 잡아 Condor가 식별 가능한 exit로 변환.
@@ -84,7 +72,7 @@ CorrectionsManager::CorrectionsManager(const std::string& runYear,
                   << e.what() << "\n"
                   << "  -> check TTHH_JSONPOG_PATH / TTHH_GOLDENJSON_PATH "
                   << "(or yml common.path_*).\n";
-        std::exit(49);
+        std::exit(tthh::CENTRAL_CORR_LOAD_FAIL);
     }
 
     // 파생 보정 — requireDerived_에 따라 FATAL(47/48) 또는 WARN
@@ -268,7 +256,7 @@ void CorrectionsManager::loadGoldenJSON_() {
             std::cerr << "[FATAL][CorrectionsManager] GoldenJSON not found for Data: "
                       << txt << "\n"
                       << "  -> TTHH_GOLDENJSON_PATH (yml common.path_goldenjson)를 확인하세요.\n";
-            std::exit(49);
+            std::exit(tthh::GOLDENJSON_DATA_MISSING);
         }
         std::cerr << "[loadGoldenJSON] ERROR opening " << txt << "\n";
         return;
@@ -310,6 +298,10 @@ void CorrectionsManager::loadTrigger_() {
 
     // [파일 경로] trigSFPath 디렉토리 아래의 trigger_sf.json.gz
     // DeriveSF.cpp의 출력 파일명은 Config::sfOutputJSON (= "trigger_sf.json.gz")
+    if (trigSFPath.empty()) {   // [STEP18] config null -> trigger SF disabled
+        std::cout << "[CorrectionsManager] trigger SF DISABLED (config null) -> SF=1\n";
+        return;
+    }
     std::string fileName = trigSFPath + "/trigger_sf.json.gz";
 
     if (kVerbose) std::cout << "[loadTrigger] Loading from " << fileName << "\n";
@@ -323,7 +315,7 @@ void CorrectionsManager::loadTrigger_() {
                       << "  -> main/debug 모드는 trigger SF가 필수입니다.\n"
                       << "  -> DeriveSF로 생성하거나 TTHH_TRIGSF_DIR"
                       << " (yml common.path_trigsf_dir)를 확인하세요.\n";
-            std::exit(47);
+            std::exit(tthh::TRIGSF_LOAD_FAIL);
         }
         std::cerr << "[CorrectionsManager][WARN] Trigger SF JSON not found: "
                   << fileName << "\n"
@@ -373,7 +365,7 @@ void CorrectionsManager::loadTrigger_() {
         if (requireDerived_) {   // [STEP4]
             std::cerr << "[FATAL][CorrectionsManager] Failed to load trigger SF JSON: "
                       << e.what() << "\n";
-            std::exit(47);
+            std::exit(tthh::TRIGSF_LOAD_FAIL);
         }
         std::cerr << "[CorrectionsManager][ERROR] Failed to load trigger SF JSON: "
                   << e.what() << "\n"
@@ -424,6 +416,10 @@ void CorrectionsManager::loadJECUncertainty_() {
 void CorrectionsManager::loadBTagReweight_() {
     // Data에는 적용하지 않음
     if (isData_) return;
+    if (btagReweightPath.empty()) {   // [STEP18] config null -> b-tag reweight disabled
+        std::cout << "[CorrectionsManager] b-tag norm reweight DISABLED (config null) -> 1.0\n";
+        return;
+    }
 
     // 파일 존재 확인 (filesystem)
     namespace fs = std::filesystem;
@@ -434,7 +430,7 @@ void CorrectionsManager::loadBTagReweight_() {
                       << "  -> main/debug 모드는 b-tag norm reweight가 필수입니다.\n"
                       << "  -> makeReweightJSON으로 생성하거나 TTHH_BTAGRW_JSON"
                       << " (yml common.path_btag_reweight_json)를 확인하세요.\n";
-            std::exit(48);
+            std::exit(tthh::BTAGRW_LOAD_FAIL);
         }
         std::cerr << "[CorrectionsManager][WARN] B-tag reweight JSON not found: "
                   << btagReweightPath << "\n"
@@ -469,7 +465,7 @@ void CorrectionsManager::loadBTagReweight_() {
         if (requireDerived_) {   // [STEP4]
             std::cerr << "[FATAL][CorrectionsManager] Failed to load b-tag reweight JSON: "
                       << e.what() << "\n";
-            std::exit(48);
+            std::exit(tthh::BTAGRW_LOAD_FAIL);
         }
         std::cerr << "[CorrectionsManager][ERROR] Failed to load b-tag reweight JSON: "
                   << e.what() << "\n"
@@ -695,7 +691,7 @@ double CorrectionsManager::getTriggerSF(int nbJets, double eta, double ht, doubl
                       << "\n  nbJets=" << nbJets << " eta=" << eta
                       << " ht=" << ht << " pt=" << pt << " syst=" << syst
                       << "\n  -> trigger SF JSON과 입력 정의가 맞는지 확인.\n";
-            std::exit(47);
+            std::exit(tthh::TRIGSF_LOAD_FAIL);
         }
         // bootstrap(btagtrig): 첫 수회 에러만 출력 (스팸 방지)
         static int errCount = 0;
@@ -857,7 +853,7 @@ double CorrectionsManager::getBTagReweight(const std::string& systematic,
                       << " nJets=" << nJets << " HT=" << HT
                       << "\n  -> processKey가 JSON에 없으면 매핑 변경 후 JSON"
                       << " 재생성 누락입니다 (makeReweightJSON 재실행).\n";
-            std::exit(46);
+            std::exit(tthh::BTAGRW_LOAD_FAIL);
         }
         // bootstrap(btagtrig): 첫 수회 에러만 출력 (스팸 방지)
         static int errCount = 0;

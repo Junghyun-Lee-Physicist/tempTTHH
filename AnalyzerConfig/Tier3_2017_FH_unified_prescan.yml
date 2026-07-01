@@ -1,49 +1,80 @@
-# [TrackC] prescan 모드 — ΣgenW 수집 (selection 없음, MC만)
+# [STEP17] prescan 모드 — ΣgenW 수집 (selection 없음, MC만)
 # ============================================================================
-# [TrackC] 간소화된 submit yml — 샘플은 "이름만", weight는 런타임 합성
+# ntuple production ttHH2017UL_fullNano_v20 의 전체 MC 샘플 (config_ttHH2017UL.yaml).
 # ----------------------------------------------------------------------------
-#   - weight: xsec_db(cross_section_pb × br) × lumi / Σgenw(prescan runs.genEventSumw)
-#   - filelist: 규칙 'filelist_<sample_name>.txt'
-#   - data_or_mc: xsec_db의 cross_section_pb null 여부로 자동 판정
-# 기존 형식(- filelist:/weight: 명시)도 그대로 호환됨 (override).
+#   - prescan 은 normalization 불필요: runPrescan() 이 Runs tree 의 genEventSumw 합과
+#     genTtbarId%100 분해만 누산한다 (selectObjects/SF/btag reweight/stitching 미호출).
+#   - [STEP17] submitter 가 prescan 모드에서 weight=1.0 으로 고정하고 MC/Data 를
+#     PD 이름으로 판정한다 → 아래 xsec_db / prescan 경로는 prescan 에서는 미사용
+#     (main/btagtrig 호환을 위해 남겨둠).
+#   - filelist: 규칙 'filelist_<sample_name>.txt' (make_filelists.py 산출).
 # ============================================================================
 common:
   year: "2017"
   analysis_mode: prescan
   lumi_fb_inv: 41.48
-  xsec_db: "data/samples_2017UL.json"            # ★ cross section 단일 소스 (The Barn)
-  prescan: "prescan_summary/prescan_summary.json" # ★ Σgenw 소스 (runs.genEventSumw)
+  xsec_db: "data/samples_2017UL.json"            # prescan 에서는 미사용(STEP17)
+  prescan: "prescan_summary/prescan_summary.json" # prescan 에서는 미사용(STEP17)
   files_per_job: 1
-  # 보정 입력 경로 (Step 4) — 비우면 코드 default
-  path_jsonpog: ""
-  path_goldenjson: ""
-  path_trigsf_dir: ""
-  path_btag_reweight_json: ""
-  path_stitch_json: ""
-  path_expanded_ttbarid_dir: ""
-
+  # [STEP18] 보정 입력 경로 정책 (코드 default 폐기 — ConfigPath.h / submitter 동일 계약):
+  #   "" (빈 값)/키 누락 -> FATAL E12 (더 이상 'default 사용' 신호 아님)
+  #   null               -> 선택 보정 비활성(그 보정 없이 동작); 필수 경로면 FATAL E13
+  #   "<경로>"           -> 사용 (로드 실패 시 해당 subsystem FATAL: 40/41/50/51/60-63/70-73)
+  # 필수: path_jsonpog(항상, JME/PU), path_goldenjson(Data). 나머지는 선택.
+  # 아래 trigsf/btagrw/stitch/expttid 는 신규 dataset(ttHH2017UL_fullNano_v20)용으로
+  # 아직 미생성 -> null(비활성). 주의: main/debug + (--trigsf on / --btagrw on) 이면
+  # 해당 경로가 필수가 되어 null 이 E13 -> 재유도 전에는 그 SF 토글을 off 로 둘 것.
+  path_jsonpog: "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration"
+  path_goldenjson: "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/GoldenJson"   # OPEN: 환경별 절대경로 확인
+  path_trigsf_dir: null               # DISABLED (신규 dataset trigger SF 미유도)
+  path_btag_reweight_json: null       # DISABLED (_skipBtagReweight; tt+nb key JSON 미재생성)
+  path_stitch_json: null              # DISABLED (신규 dataset stitch factors 미유도)
+  path_expanded_ttbarid_dir: null     # DISABLED (신규 dataset ttnb_<sample>.root 미생성)
+# [STEP18] Sample 이름 = NtupleForge campaign config(campaign_ttHH2017UL_fullNano_v20) 기준.
+#   main/btagtrig 는 각 샘플이 xsec_db(data/samples_2017UL.json) 등록 + prescan_summary 존재해야 동작
+#   (없으면 FATAL). 신규 dataset 은 prescan 먼저 실행할 것.
 samples:
-  # ── signal / 4b-like ──
-  - ttHH
-  - ttHtobb
-  - ttZHto4b
-  - ttZZto4b
-  # ── tt+jets inclusive (stitching anchor) ──
-  - TTToHadronic
-  - TTToSemiLeptonic
-  - TTTo2L2Nu
-  # ── ttbb / tt4b dedicated ──
-  - ttbb_Hadronic
-  - ttbb_SemiLeptonic
-  - ttbb_2L2Nu
-  - tt4b
-  # ── ttV / rare ──
-  - ttZtobb
-  - tttt
-  - tttW
-  - ttWH
-  - ttWW
-  - ttWZ
+  # ── signal / ttH / 4b-like ──
+  - TTHHto4b
+  - ttHTobb
+  - ttHToNonbb
+  - TTZHTo4b
+  - TTZZTo4b
+  # ── tH (single-top + H) ──
+  - tHq
+  - tHW
+  # ── tt+jets inclusive (5FS, stitching anchor) ──
+  - TTbar_Hadronic
+  - TTbar_SemiLep
+  - TTbar_DiLep
+  # ── tt+bb (4FS) dedicated ──
+  - TTbb_Hadronic
+  - TTbb_SemiLep
+  - TTbb_DiLep
+  # ── tt+4b dedicated (LO madgraph) ──
+  - TT4b
+  # ── ttV ──
+  - TTZToBB
+  - TTWJetsToQQ
+  - TTWJetsToLNu
+  - TTZToLLNuNu
+  # ── ttVV / ttVH / multi-top ──
+  - TTTT
+  - TTTW
+  - TTWH
+  - TTWW
+  - TTWZ
+  # ── single top (non-Higgs) ──
+  - ST_t_top
+  - ST_t_antitop
+  - ST_tW_top
+  - ST_tW_antitop
+  - ST_s_lep
+  - ST_s_had
+  # ── diboson ──
+  - WW
+  - WZ
+  - ZZ
   # ── QCD multijet (HT-binned) ──
   - QCD_HT200to300
   - QCD_HT300to500
@@ -52,4 +83,28 @@ samples:
   - QCD_HT1000to1500
   - QCD_HT1500to2000
   - QCD_HT2000toInf
-  # (prescan: MC만 — Data는 genWeight 없음)
+  # ── V->qq (HT-binned) ──
+  - WJetsToQQ_HT400to600
+  - WJetsToQQ_HT600to800
+  - WJetsToQQ_HT800toInf
+  - ZJetsToQQ_HT400to600
+  - ZJetsToQQ_HT600to800
+  - ZJetsToQQ_HT800toInf
+  # ── W->lnu (HT-binned) ──
+  - WJetsToLNu_HT70To100
+  - WJetsToLNu_HT100To200
+  - WJetsToLNu_HT200To400
+  - WJetsToLNu_HT400To600
+  - WJetsToLNu_HT600To800
+  - WJetsToLNu_HT800To1200
+  - WJetsToLNu_HT1200To2500
+  - WJetsToLNu_HT2500ToInf
+  # ── DY M-50 (HT-binned) ──
+  - DYJetsToLL_M50_HT70to100
+  - DYJetsToLL_M50_HT100to200
+  - DYJetsToLL_M50_HT200to400
+  - DYJetsToLL_M50_HT400to600
+  - DYJetsToLL_M50_HT600to800
+  - DYJetsToLL_M50_HT800to1200
+  - DYJetsToLL_M50_HT1200to2500
+  - DYJetsToLL_M50_HT2500toInf

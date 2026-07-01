@@ -1133,7 +1133,7 @@ class ttHHanalyzer_unified {
 
     // [변경] sampleName을 4번째 인자로 전달 → process별 b-tag reweight 조회용
     // [STEP4] main/debug는 파생 보정(trigger SF, b-tag norm RW) 필수 —
-    // 누락 시 CorrectionsManager가 FATAL(50/51)로 종료한다.
+    // 누락 시 CorrectionsManager가 FATAL(47/48)로 종료한다.
     // btagtrig/prescan은 부트스트랩 허용 (그 보정의 입력을 만드는 모드).
     const bool requireDerived = (_analysisMode == AnalysisMode::kMainAnalysis ||
                                  _analysisMode == AnalysisMode::kDebug);
@@ -1912,25 +1912,46 @@ private:
     }
 
     // ──────────────────────────────────────────────────────────────────
-    // [STEP17] ntuple categorization branch 제거 (full-NanoAOD 전환).
+    // Read the ntuple's two ttCat branch sets.
     //
-    // ttHH2017UL_fullNano_v20 production 은 full NanoAOD pass-through 라
-    // ntuplizer 가 쓰던 custom branch (ttCat_* / ttCatXval_*) 가 없다.
-    // 따라서 readNtuplePrimaryCategory()/readNtupleXvalCategory() (그 branch 를
-    // 읽던 함수) 는 삭제했다. 카테고리의 single source of truth 는 이제 표준
-    // NanoAOD `genTtbarId` 의 런타임 디코드(computeTtCategoryFromGenTtbarId)로
-    // 이동한다 — 이는 CMS GenTtbarCategorizer 가 MiniAOD→NanoAOD 단계에서
-    // 계산해 둔 값이며, 옛 ntuplizer 의 ttCat_* primary 가 genTtbarId 에서
-    // 유도되던 경로(ttCatSource=GENTTBARID)와 동일한 값을 준다(값 보존).
-    //   근거: CMS GenTtbarCategorizer.cc; ttHH AN-2022/122 §3.3·§3.4
-    //         (ttbar categorization); ttH AN-19-094 §A.2.1.
-    //   교차검증(GenPart)용 computeTtCategoryFromGenPart() 는 그대로 유지.
+    // These are the values written by the ntuplizer's TtbarCategorizer
+    // module. They are the "single source of truth" for downstream
+    // stitching and hist split — the analyzer never overrides them.
+    //
+    // For each set, exactly one of the five Bool branches is True on
+    // ttbar events; on non-ttbar events all five are False and the
+    // event maps to kNoTTJets here.
     // ──────────────────────────────────────────────────────────────────
+    TtCat readNtuplePrimaryCategory() const {
+        if (_ev->ttCat_LightFlavour)  return TtCat::kLightFlavour;
+        if (_ev->ttCat_AddCjet)       return TtCat::kAddCjet;
+        if (_ev->ttCat_Add1Bjet_1Had) return TtCat::kAdd1Bjet1Had;
+        if (_ev->ttCat_Add1Bjet_2Had) return TtCat::kAdd1Bjet2Had;
+        if (_ev->ttCat_Add2Bjet)      return TtCat::kAdd2Bjet;
+        // All five False: depends on source code.
+        // 0 = GENTTBARID (impossible if ttbar — would have set a Bool)
+        // 2 = NO_TTBAR
+        // 3 = NO_GENTTBARID (data, or missing branch)
+        if (_ev->ttCatSource == 2) return TtCat::kNoTTJets;
+        return TtCat::kUnknown;
+    }
 
-    // The "official" category the analyzer uses for downstream decisions
-    // (stitching, hist split). [STEP17] 이제 표준 genTtbarId 디코드가 source.
+    TtCat readNtupleXvalCategory() const {
+        if (_ev->ttCatXval_LightFlavour)  return TtCat::kLightFlavour;
+        if (_ev->ttCatXval_AddCjet)       return TtCat::kAddCjet;
+        if (_ev->ttCatXval_Add1Bjet_1Had) return TtCat::kAdd1Bjet1Had;
+        if (_ev->ttCatXval_Add1Bjet_2Had) return TtCat::kAdd1Bjet2Had;
+        if (_ev->ttCatXval_Add2Bjet)      return TtCat::kAdd2Bjet;
+        if (_ev->ttCatXvalSource == 2) return TtCat::kNoTTJets;
+        return TtCat::kUnknown;
+    }
+
+    // The "official" category the analyzer uses for downstream decisions.
+    // By project convention this is always the ntuple primary set —
+    // never the analyzer's own GenPart computation, which exists only
+    // as a sanity check.
     TtCat officialTtCategory() const {
-        return computeTtCategoryFromGenTtbarId();
+        return readNtuplePrimaryCategory();
     }
 
     // ──────────────────────────────────────────────────────────────────
@@ -1970,14 +1991,19 @@ private:
     // 1D histograms hold per-category event counts for each estimator.
     // ──────────────────────────────────────────────────────────────────
 
-    // [STEP17] full-Nano 전환: ntuple ttCat_*/ttCatXval_* 가 없으므로 NTU_* 추정자
-    // 제거. 남은 두 source(analyzer GenPart, analyzer genTtbarId 디코드)만 교차검증.
     // 1D event counts per estimator
     TH1F* _hTtCat_Counts_AnaGenPart  = nullptr;
     TH1F* _hTtCat_Counts_AnaGenId    = nullptr;
+    TH1F* _hTtCat_Counts_NtuPrimary  = nullptr;
+    TH1F* _hTtCat_Counts_NtuXval     = nullptr;
 
-    // 2D pair-wise comparison (GenPart vs genTtbarId 디코드; ~97% diagonal 기대)
+    // 2D pair-wise comparisons (6 pairs)
     TH2F* _hTtCat_AnaGenPart_vs_AnaGenId    = nullptr;
+    TH2F* _hTtCat_AnaGenPart_vs_NtuPrimary  = nullptr;
+    TH2F* _hTtCat_AnaGenPart_vs_NtuXval     = nullptr;  // expected: diagonal
+    TH2F* _hTtCat_AnaGenId_vs_NtuPrimary    = nullptr;  // expected: diagonal
+    TH2F* _hTtCat_AnaGenId_vs_NtuXval       = nullptr;
+    TH2F* _hTtCat_NtuPrimary_vs_NtuXval     = nullptr;
 
     // genTtbarId mod 100 distribution split by analyzer category
     TH2F* _hTtCat_GenTtbarIdMod100         = nullptr;
@@ -2551,9 +2577,9 @@ private:
         // ═══════════════════════════════════════════════════════════════
         // tt+jets categorization validation histograms
         //
-        // [STEP17] full-Nano 전환: ntuple ttCat_*/ttCatXval_* 부재 → 2 source
-        // (analyzer GenPart, analyzer genTtbarId 디코드) + 1 pair-wise 2D +
-        // genTtbarId mod 100 분포. (이전 4 source / 6 pair 에서 축소.)
+        // Four estimators of the same per-event label, six pair-wise
+        // 2D histograms, four 1D count histograms, plus a genTtbarId
+        // mod 100 distribution. See header docstring for layout.
         // ═══════════════════════════════════════════════════════════════
         _of->file->cd();
         TDirectory *ttCatDir = _of->file->mkdir("TtCatValidation"+trail);
@@ -2582,20 +2608,47 @@ private:
             return h;
         };
 
-        // ── 1D event counts per estimator ── [STEP17] full-Nano: 2 source 만 ──
+        // ── 1D event counts per estimator ──
         _hTtCat_Counts_AnaGenPart = makeCounts(
             "ttCat_Counts_AnaGenPart",
             "Events per category (analyzer GenPart);Category;Events");
         _hTtCat_Counts_AnaGenId = makeCounts(
             "ttCat_Counts_AnaGenId",
             "Events per category (analyzer genTtbarId decode);Category;Events");
+        _hTtCat_Counts_NtuPrimary = makeCounts(
+            "ttCat_Counts_NtuPrimary",
+            "Events per category (ntuple ttCat_*);Category;Events");
+        _hTtCat_Counts_NtuXval = makeCounts(
+            "ttCat_Counts_NtuXval",
+            "Events per category (ntuple ttCatXval_*);Category;Events");
 
-        // ── 2D pair-wise comparison ──
-        // Naming: <X>_vs_<Y>  →  X = rows, Y = columns (confusion matrix).
-        // Diagonal = agreement, off-diagonal = disagreement.
+        // ── 2D pair-wise comparisons (6 pairs) ──
+        // Naming: <X>_vs_<Y>  →  X = rows, Y = columns when viewed as
+        // a confusion matrix. Diagonal = agreement, off-diagonal = disagreement.
+
         _hTtCat_AnaGenPart_vs_AnaGenId = makePair(
             "ttCat_AnaGenPart_vs_AnaGenId",
             "Analyzer GenPart", "Analyzer genTtbarId decode");
+
+        _hTtCat_AnaGenPart_vs_NtuPrimary = makePair(
+            "ttCat_AnaGenPart_vs_NtuPrimary",
+            "Analyzer GenPart", "Ntuple ttCat_* (primary)");
+
+        _hTtCat_AnaGenPart_vs_NtuXval = makePair(
+            "ttCat_AnaGenPart_vs_NtuXval",
+            "Analyzer GenPart", "Ntuple ttCatXval_*");
+
+        _hTtCat_AnaGenId_vs_NtuPrimary = makePair(
+            "ttCat_AnaGenId_vs_NtuPrimary",
+            "Analyzer genTtbarId decode", "Ntuple ttCat_* (primary)");
+
+        _hTtCat_AnaGenId_vs_NtuXval = makePair(
+            "ttCat_AnaGenId_vs_NtuXval",
+            "Analyzer genTtbarId decode", "Ntuple ttCatXval_*");
+
+        _hTtCat_NtuPrimary_vs_NtuXval = makePair(
+            "ttCat_NtuPrimary_vs_NtuXval",
+            "Ntuple ttCat_* (primary)", "Ntuple ttCatXval_*");
 
         // ── genTtbarId mod 100 distribution split by analyzer category ──
         _hTtCat_GenTtbarIdMod100 = new TH2F(

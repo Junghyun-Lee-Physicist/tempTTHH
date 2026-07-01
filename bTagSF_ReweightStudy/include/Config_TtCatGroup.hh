@@ -21,17 +21,17 @@
 // Final 4 + 3 process groups (= 7 total):
 //   ─ Main 4 (ttH AN A.2.1) ─
 //   tt+LF      <- inclusive ttbar LF events + ALL minor BG
-//                 (QCD, V+jets, single t, diboson, ttV {ttZtobb, tttt,
-//                  ttWH/WW/WZ, tttW} — all per ttH AN A.2.1 strict reading)
+//                 (QCD, V+jets, single t, diboson, ttV {TTZToBB, TTTT,
+//                  TTWH/WW/WZ, TTTW} — all per ttH AN A.2.1 strict reading)
 //   tt+cc      <- inclusive ttbar cc events
 //   tt+B       <- inclusive ttbar B events (genTtbarId 51/52/53-55)
 //                 + ttbb dedicated (4FS NLO)
 //                 + tt4b dedicated (LO; see note below on possible promotion)
-//   ttH        <- ttHtobb (own measurement, ttH AN App. A.2)
+//   ttH        <- ttHTobb (own measurement, ttH AN App. A.2)
 //   ─ ttHH-extension 3 (own measurement, ttHH AN §6.1.4 / D.0.x) ─
 //   ttHH       <- ttHH signal (D.0.1 own closure)
-//   ttZH4b     <- ttZHto4b (4-b final state; own group by analogy with ttHH)
-//   ttZZ4b     <- ttZZto4b (4-b final state; own group by analogy with ttHH)
+//   ttZH4b     <- TTZHTo4b (4-b final state; own group by analogy with ttHH)
+//   ttZZ4b     <- TTZZTo4b (4-b final state; own group by analogy with ttHH)
 //
 // === FUTURE UPDATE TRIGGERS ===
 //   These mappings may evolve as the ttHH FH analysis matures:
@@ -42,9 +42,9 @@
 //     [ttZH4b / ttZZ4b]   → may be merged back into "tt+LF" (ttH AN strict)
 //                            if ttHH FH DNN does not separate them.
 //                            Decision pending Data/MC validation.
-//     [ttZtobb / tttt /
-//      ttWH / ttWW / ttWZ
-//      / tttW]            → currently in "tt+LF" per ttH AN A.2.1 strict.
+//     [TTZToBB / TTTT /
+//      TTWH / TTWW / TTWZ
+//      / TTTW]            → currently in "tt+LF" per ttH AN A.2.1 strict.
 //                            May move to "tt+B" if Data/MC mismodelling
 //                            appears in 4b-rich phase space (small yield,
 //                            so impact expected to be sub-percent).
@@ -125,23 +125,23 @@ inline Group Classify(int genTtbarId) {
 
 // Era-aware note: this list assumes 2017 UL sample naming. When extending
 // to other eras (2016 PreVFP/PostVFP, 2018, Run3) verify that inclusive
-// ttbar names match (e.g. "TTToHadronic_2018" suffix conventions) and
+// ttbar names match (e.g. "TTbar_Hadronic_2018" suffix conventions) and
 // extend this function accordingly. See docs/ARCHITECTURE.md §"Era policy".
 inline bool IsInclusiveTtbar(const std::string& sampleName) {
-    return sampleName == "TTToHadronic"
-        || sampleName == "TTToSemiLeptonic"
-        || sampleName == "TTTo2L2Nu";
+    return sampleName == "TTbar_Hadronic"
+        || sampleName == "TTbar_SemiLep"
+        || sampleName == "TTbar_DiLep";
 }
 
 // [STEP7.5] dedicated ttbar HF 샘플 — per-channel 명명(현 main.yml) 포함.
-// ⚠ 기존 코드는 "ttbb"만 알아서 ttbb_Hadronic 등 per-channel 샘플이
+// ⚠ 기존 코드는 "ttbb"만 알아서 TTbb_Hadronic 등 per-channel 샘플이
 //   default("tt+LF")로 미스라우트되는 라이브 버그가 있었다 (STEP_7.5 문서).
 inline bool IsDedicatedTtbarHF(const std::string& sampleName) {
     return sampleName == "ttbb"                 // 구(통합) 명명 호환
-        || sampleName == "ttbb_Hadronic"
-        || sampleName == "ttbb_SemiLeptonic"
-        || sampleName == "ttbb_2L2Nu"
-        || sampleName == "tt4b";
+        || sampleName == "TTbb_Hadronic"
+        || sampleName == "TTbb_SemiLep"
+        || sampleName == "TTbb_DiLep"
+        || sampleName == "TT4b";
 }
 
 // inclusive + dedicated 전체 — 이 family는 전부 HF category로 디스패치한다
@@ -154,7 +154,7 @@ inline bool IsTtbarFamily(const std::string& sampleName) {
 // ──────────────────────────────────────────────────────────────────────────
 // MakeProcessKey: returns the process group key for a given event.
 //
-//   inclusive ttbar (TTToHadronic / SemiLep / 2L2Nu):
+//   inclusive ttbar (TTbar_Hadronic / SemiLep / 2L2Nu):
 //       genTtbarId  →  "tt+LF" / "tt+cc" / "tt+B"
 //
 //   dedicated ttbar HF samples & 4b signal-like processes:
@@ -190,10 +190,10 @@ inline std::string MakeProcessKey(const std::string& sampleName, int genTtbarId)
     //    DNN classification (§7.x) treats them as separate categories. May
     //    be merged back to "tt+LF" if FH DNN doesn't separate them and
     //    yield impact remains sub-percent. See FUTURE UPDATE TRIGGERS.
-    if (sampleName == "ttHH")        return "ttHH";
-    if (sampleName == "ttHtobb")     return "ttH";
-    if (sampleName == "ttZHto4b")    return "ttZH4b";
-    if (sampleName == "ttZZto4b")    return "ttZZ4b";
+    if (sampleName == "TTHHto4b")        return "ttHH";
+    if (sampleName == "ttHTobb")     return "ttH";
+    if (sampleName == "TTZHTo4b")    return "ttZH4b";
+    if (sampleName == "TTZZTo4b")    return "ttZZ4b";
 
     // 4. low b-jet minor backgrounds + ttV/4-top → tt+LF
     //    Per ttH AN A.2.1: "Due to the poor statistics of simulated events
@@ -202,8 +202,8 @@ inline std::string MakeProcessKey(const std::string& sampleName, int genTtbarId)
     //    Falls through to the default below.
 
     // 5. default: tt+LF (per ttH AN A.2.1)
-    //    Includes: QCD HT slices, V+jets, single t, diboson, ttZtobb, tttt,
-    //              ttWH, ttWW, ttWZ, tttW, and any unknown future sample.
+    //    Includes: QCD HT slices, V+jets, single t, diboson, TTZToBB, TTTT,
+    //              TTWH, TTWW, TTWZ, TTTW, and any unknown future sample.
     return "tt+LF";
 }
 
@@ -331,7 +331,7 @@ inline double StitchingWeight(const std::string& sampleName,
 
     const bool isIncl = IsInclusiveTtbar(sampleName);
     const bool isTtbb = (sampleName == "ttbb");
-    const bool isTt4b = (sampleName == "tt4b");
+    const bool isTt4b = (sampleName == "TT4b");
 
     // Inclusive ttbar: drop the ≥2 add-b region in stitched modes.
     // (Coarser than DL's "4-b only" — see LIMITATION above.)

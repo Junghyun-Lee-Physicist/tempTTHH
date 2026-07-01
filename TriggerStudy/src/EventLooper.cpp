@@ -321,7 +321,7 @@ void EventLooper::Loop()
     // [Phase 4] Determine if the sample is Data or MC, and parse dataset/era if Data
     //
     // Naming convention assumed:
-    //   - MC:   TTTo2L2Nu.root, TTToSemiLeptonic.root, TTToHadronic.root
+    //   - MC:   TTbar_DiLep.root, TTbar_SemiLep.root, TTbar_Hadronic.root
     //   - Data: <DataSet>_<Era>.root   (e.g. SingleMuon_B.root, JetHT_D.root)
     // ------------------------------------------------------------------------
 //    TString sampleName = getInputName();
@@ -336,15 +336,15 @@ void EventLooper::Loop()
 //
 //    // --- Explicit MC identification (same policy as your original code) ---
 //    double MC_weight = -9999999.9; // (Xsec * Lumi) / Sum(Runs.genEventSumw)
-//    if (sampleName == "TTTo2L2Nu") {
+//    if (sampleName == "TTbar_DiLep") {
 //        isData  = false;
 //        MC_weight = 0.0004761561474;
 //    }
-//    else if (sampleName == "TTToHadronic") {
+//    else if (sampleName == "TTbar_Hadronic") {
 //        isData  = false;
 //        MC_weight = 0.000214351205;
 //    }
-//    else if (sampleName == "TTToSemiLeptonic") {
+//    else if (sampleName == "TTbar_SemiLep") {
 //        isData  = false;
 //        MC_weight = 0.0001455793461;
 //    }

@@ -1,0 +1,55 @@
+# [TrackC] prescan 모드 — ΣgenW 수집 (selection 없음, MC만)
+# ============================================================================
+# [TrackC] 간소화된 submit yml — 샘플은 "이름만", weight는 런타임 합성
+# ----------------------------------------------------------------------------
+#   - weight: xsec_db(cross_section_pb × br) × lumi / Σgenw(prescan runs.genEventSumw)
+#   - filelist: 규칙 'filelist_<sample_name>.txt'
+#   - data_or_mc: xsec_db의 cross_section_pb null 여부로 자동 판정
+# 기존 형식(- filelist:/weight: 명시)도 그대로 호환됨 (override).
+# ============================================================================
+common:
+  year: "2017"
+  analysis_mode: prescan
+  lumi_fb_inv: 41.48
+  xsec_db: "data/samples_2017UL.json"            # ★ cross section 단일 소스 (The Barn)
+  prescan: "prescan_summary/prescan_summary.json" # ★ Σgenw 소스 (runs.genEventSumw)
+  files_per_job: 1
+  # 보정 입력 경로 (Step 4) — 비우면 코드 default
+  path_jsonpog: ""
+  path_goldenjson: ""
+  path_trigsf_dir: ""
+  path_btag_reweight_json: ""
+  path_stitch_json: ""
+  path_expanded_ttbarid_dir: ""
+
+samples:
+  # ── signal / 4b-like ──
+  - ttHH
+  - ttHtobb
+  - ttZHto4b
+  - ttZZto4b
+  # ── tt+jets inclusive (stitching anchor) ──
+  - TTToHadronic
+  - TTToSemiLeptonic
+  - TTTo2L2Nu
+  # ── ttbb / tt4b dedicated ──
+  - ttbb_Hadronic
+  - ttbb_SemiLeptonic
+  - ttbb_2L2Nu
+  - tt4b
+  # ── ttV / rare ──
+  - ttZtobb
+  - tttt
+  - tttW
+  - ttWH
+  - ttWW
+  - ttWZ
+  # ── QCD multijet (HT-binned) ──
+  - QCD_HT200to300
+  - QCD_HT300to500
+  - QCD_HT500to700
+  - QCD_HT700to1000
+  - QCD_HT1000to1500
+  - QCD_HT1500to2000
+  - QCD_HT2000toInf
+  # (prescan: MC만 — Data는 genWeight 없음)

@@ -280,7 +280,7 @@ int GetSmartColor(const std::string& name) {
     // ── dedicated heavy-flavour ttbar (the stitched tt+B / tt+nb pieces) ──
     // Checked BEFORE the inclusive "TTTo" / ttH / ttZ / ttW branches.
     // (Names like "ttbb_*"/"tt4b" do not contain "TTTo"/"ttH"/"ttW"/"ttZ", so
-    //  there is no collision; ttHtobb has no "ttbb" substring.)
+    //  there is no collision; ttHTobb has no "ttbb" substring.)
     //   ttbb_* (dedicated tt+2b, 4FS NLO)  → violet family by decay channel
     //   tt4b   (dedicated tt+nb, LO)        → one bold standout colour
     if (name.find("ttbb") != std::string::npos || name.find("ttBB") != std::string::npos) {
@@ -304,7 +304,7 @@ int GetSmartColor(const std::string& name) {
     }
     if (name.find("ttHH") != std::string::npos || name.find("TTHH") != std::string::npos)
         return TColor::GetColor("#FF8C00");          // orange — signal
-    if (name.find("tttt") != std::string::npos || name.find("TTTT") != std::string::npos)
+    if (name.find("TTTT") != std::string::npos || name.find("TTTT") != std::string::npos)
         return TColor::GetColor("#34495E");          // dark slate (moved off purple)
     if (name.find("ttH")  != std::string::npos || name.find("TTH") != std::string::npos)
         return TColor::GetColor("#F1C40F");          // yellow
@@ -360,7 +360,7 @@ std::string ShortenLabel(const std::string& rawName) {
     }
     if (name.find("ttHH") != std::string::npos || name.find("TTHH") != std::string::npos)
         return "t#bar{t}HH";
-    if (name.find("tttt") != std::string::npos || name.find("TTTT") != std::string::npos)
+    if (name.find("TTTT") != std::string::npos || name.find("TTTT") != std::string::npos)
         return "t#bar{t}t#bar{t}";
     if (name.find("ttH")  != std::string::npos || name.find("TTH") != std::string::npos)
         return "t#bar{t}H";
@@ -389,17 +389,17 @@ std::string ShortenLabel(const std::string& rawName) {
 //   key      label                samples folded in
 //   -------  -------------------  ----------------------------------------------
 //   QCD      QCD                  QCD_HT* (all HT slices)
-//   ttbar    t#bar{t}             TTToHadronic / SemiLeptonic / 2L2Nu (inclusive)
-//   ttbb     t#bar{t}b#bar{b}     ttbb_Hadronic / SemiLeptonic / 2L2Nu (tt+2b)
+//   ttbar    t#bar{t}             TTbar_Hadronic / SemiLeptonic / 2L2Nu (inclusive)
+//   ttbb     t#bar{t}b#bar{b}     TTbb_Hadronic / SemiLeptonic / 2L2Nu (tt+2b)
 //   tt4b     t#bar{t}+4b          tt4b (tt+nb — kept separate; the categorization point)
-//   ttH      t#bar{t}H            ttHtobb
-//   ttV      t#bar{t}+V           ttZ*, ttW*, ttWW, ttWZ, ttZZ*, ttWH, ttZH*, tttW
-//   tttt     t#bar{t}t#bar{t}     tttt
+//   ttH      t#bar{t}H            ttHTobb
+//   ttV      t#bar{t}+V           ttZ*, ttW*, TTWW, TTWZ, ttZZ*, TTWH, ttZH*, TTTW
+//   TTTT     t#bar{t}t#bar{t}     TTTT
 //   ttHH     t#bar{t}HH           ttHH (signal)
 //   Other    Other                anything unmatched
 //
 // Check ORDER matters (substring collisions): ttbb/tt4b before ttH/ttV; ttHH
-// before ttH; tttt before ttV (tttW contains "ttW"). ttZHto4b/ttZZto4b contain
+// before ttH; TTTT before ttV (TTTW contains "ttW"). TTZHTo4b/TTZZTo4b contain
 // "to4b" (not "tt4b") so they fall to ttV, not tt4b — intended.
 // ============================================================================
 struct ProcessGroup { std::string key; std::string label; const char* colorHex; };
@@ -414,8 +414,8 @@ ProcessGroup GetProcessGroup(const std::string& name) {
         name.find("TTto") != std::string::npos) return {"ttbar","t#bar{t}",            "#2C5AA0"};
     if (name.find("ttHH") != std::string::npos ||
         name.find("TTHH") != std::string::npos) return {"ttHH", "t#bar{t}HH",          "#FF8C00"};
-    if (name.find("tttt") != std::string::npos ||
-        name.find("TTTT") != std::string::npos) return {"tttt", "t#bar{t}t#bar{t}",    "#34495E"};
+    if (name.find("TTTT") != std::string::npos ||
+        name.find("TTTT") != std::string::npos) return {"TTTT", "t#bar{t}t#bar{t}",    "#34495E"};
     if (name.find("ttH")  != std::string::npos ||
         name.find("TTH")  != std::string::npos) return {"ttH",  "t#bar{t}H",           "#F1C40F"};
     if (name.find("ttZ")  != std::string::npos || name.find("TTZ") != std::string::npos ||

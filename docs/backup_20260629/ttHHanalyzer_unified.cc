@@ -8,8 +8,6 @@
 #include <iostream>
 #include <iomanip>
 #include <cstdlib>   // [tt+nb] std::getenv for EXPANDED_TTBARID_DIR override
-#include "ExitCodes.h"    // [STEP18] canonical exit codes
-#include "ConfigPath.h"   // [STEP18] cfgpath::resolve (no code-default)
 
 #include "correction.h"
 
@@ -150,7 +148,7 @@ void ttHHanalyzer_unified::loop(sysName sysType, bool up){
                                    "STITCH_FACTORS_JSON", "EXPANDED_TTBARID_DIR" };
         for (const char* pe : pathEnvs) {
             const char* v = std::getenv(pe);
-            std::printf("[dbg][paths] %-22s = %s\n", pe, (v && *v) ? v : "(unset/__NULL__)");
+            std::printf("[dbg][paths] %-22s = %s\n", pe, (v && *v) ? v : "(unset -> default)");
         }
     }
 
@@ -188,7 +186,7 @@ void ttHHanalyzer_unified::loop(sysName sysType, bool up){
     }
     print("--------------------------------------------------------------------------", "b");
     cout<<endl;
-    if(exitFlag) std::exit(tthh::CONFIG_BAD_RUNINFO);
+    if(exitFlag) std::exit(EXIT_FAILURE);
 
     // ── [stitch] setup report + Condor-catchable prerequisite check ──────────
     // Only when the stitch JSON was loaded (main / btagtrig). trigsf, validation
@@ -201,8 +199,8 @@ void ttHHanalyzer_unified::loop(sysName sysType, bool up){
                       << "lookup is INACTIVE (no ttnb_<sample>.root loaded).\n"
                       << "  tt+nb (61/62/71/72) would never be tagged -> wrong stitch.\n"
                       << "  Provide the lookup (DerivedCorr/expandedTtbarId or "
-                      << "$EXPANDED_TTBARID_DIR). Aborting (exit 63).\n" << std::endl;
-            std::exit(tthh::STITCH_EXPTTID_INACTIVE);
+                      << "$EXPANDED_TTBARID_DIR). Aborting (exit 43).\n" << std::endl;
+            std::exit(43);
         }
     }
 
@@ -348,11 +346,9 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
             passHadTrig = (group_BTagCSV || group_JetHT);
         }
         else {
-            // 안전장치 — 미인식 Data PD 는 trigger 경로가 정의되지 않음
-             std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO
-                       << "] Unknown Data Sample (no JetHT/BTagCSV/SingleMuon trigger-PD match): "
-                       << _sampleName << std::endl;
-             std::exit(tthh::CONFIG_BAD_RUNINFO);
+            // 안전장치
+             std::cerr << "[ERROR] Unknown Data Sample: " << _sampleName << std::endl;
+             std::exit(EXIT_FAILURE);
         }
     }
 
@@ -769,7 +765,7 @@ void ttHHanalyzer_unified::applyEventScaleFactors(event* thisEvent){
                       << (((_expandedTtbarId % 100) + 100) % 100) << ").\n"
                       << "  Config_TtCatGroup.hh must map this code. Aborting (exit 45)"
                       << " so the Condor job is flagged.\n" << std::endl;
-            std::exit(tthh::PROCESSKEY_EMPTY);
+            std::exit(45);
         }
         // diagnostic: remember the (expandedSub -> processKey) mapping once, so
         // the end-of-job log shows whether 61/62/71/72 get keys distinct from 53.
@@ -790,7 +786,7 @@ void ttHHanalyzer_unified::applyEventScaleFactors(event* thisEvent){
                 std::cerr << "\n[FATAL][btagRW] non-finite reweight (" << btagNormReweight_
                           << ") for processKey='" << processKey << "' nJets=" << nJets
                           << " ht=" << ht << ". Aborting (exit 46).\n" << std::endl;
-                std::exit(tthh::REWEIGHT_NONFINITE);
+                std::exit(46);
             }
         }
 
@@ -1242,22 +1238,28 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
     computeBTagWeight(thisEvent);
 
     // ═══════════════════════════════════════════════════════════════════════
-    // tt+jets categorization 2-way validation (runs on ALL MC events,
-    // pre-selection).  [STEP17] full-NanoAOD 전환으로 ntuple ttCat_*/ttCatXval_*
-    // branch 가 없어 NTU_PRIMARY/NTU_XVAL 추정자를 제거했다. 남은 두 source:
+    // tt+jets categorization 4-way validation (runs on ALL MC events,
+    // pre-selection).
+    //
+    // Four estimators of the same per-event label, all computed and
+    // compared:
     //
     //   ANA_GENPART  analyzer's own GenPart algorithm
     //                (computeTtCategoryFromGenPart)
     //   ANA_GENID    analyzer's decode of genTtbarId%100
     //                (computeTtCategoryFromGenTtbarId)
+    //   NTU_PRIMARY  ntuple ttCat_*       (= ntuplizer's POG path)
+    //                (readNtuplePrimaryCategory)
+    //   NTU_XVAL     ntuple ttCatXval_*   (= ntuplizer's GenPart path)
+    //                (readNtupleXvalCategory)
     //
     // Expected:
-    //   ANA_GENID vs ANA_GENPART     ~97% 일치 (POG vs GenPart, real diff)
+    //   ANA_GENID  ≡  NTU_PRIMARY    (both decode the same integer)
+    //   ANA_GENPART ≡  NTU_XVAL      (same algorithm in two languages)
+    //   ANA_GENID vs ANA_GENPART     ~97% (POG vs GenPart, real diff)
     //
-    // Downstream physics 는 officialTtCategory() 를 쓰며, 이는 이제 ANA_GENID
-    // (표준 genTtbarId 디코드)를 반환한다 — CMS GenTtbarCategorizer 가 NanoAOD
-    // 단계에서 계산한 값으로 옛 ntuplizer ttCat_* primary 와 값 동일.
-    //   근거: CMS GenTtbarCategorizer.cc; ttHH AN-2022/122 §3.3·§3.4; ttH AN §A.2.1.
+    // Downstream physics never uses ANA_*; it uses officialTtCategory()
+    // which reads NTU_PRIMARY by project convention.
     // ═══════════════════════════════════════════════════════════════════════
     if (_DataOrMC != "Data") {
 
@@ -1276,7 +1278,13 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
             std::cout << "  GenJet_phi.size()                = " << _ev->GenJet_phi.size() << "\n";
             std::cout << "  GenJet_hadronFlavour.size()      = " << _ev->GenJet_hadronFlavour.size() << "\n";
             std::cout << "  genTtbarId                       = " << _ev->genTtbarId << "\n";
-            // [STEP17] full-Nano: ntuple ttCat_*/ttCatXval_* branch 부재 — 출력 제거.
+            std::cout << "  ttCatSource (ntuple primary)     = " << _ev->ttCatSource << "\n";
+            std::cout << "  ttCatXvalSource (ntuple xval)    = " << _ev->ttCatXvalSource << "\n";
+            std::cout << "  ttCat_LightFlavour (ntuple)      = " << _ev->ttCat_LightFlavour << "\n";
+            std::cout << "  ttCat_AddCjet (ntuple)           = " << _ev->ttCat_AddCjet << "\n";
+            std::cout << "  ttCat_Add1Bjet_1Had (ntuple)     = " << _ev->ttCat_Add1Bjet_1Had << "\n";
+            std::cout << "  ttCat_Add1Bjet_2Had (ntuple)     = " << _ev->ttCat_Add1Bjet_2Had << "\n";
+            std::cout << "  ttCat_Add2Bjet (ntuple)          = " << _ev->ttCat_Add2Bjet << "\n";
             if (_ev->GenPart_statusFlags.size() == 0) {
                 std::cout << "  *** WARNING: GenPart_statusFlags is EMPTY! ***\n"
                           << "  *** isLastCopy cannot be checked -> all events will fall to LightFlavour ***\n";
@@ -1325,19 +1333,29 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
             }
         }
 
-        // ── [STEP17] full-Nano: 2 estimator (ntuple ttCat_*/ttCatXval_* 부재) ──
-        //   ANA_GENPART : computeTtCategoryFromGenPart()   (GenPart 알고리즘)
-        //   ANA_GENID   : computeTtCategoryFromGenTtbarId() (표준 genTtbarId 디코드)
-        // officialTtCategory() 가 쓰는 것은 ANA_GENID. 둘은 POG vs GenPart 차이로
-        // ~97% 일치(완전 일치 아님; real algorithmic diff).
+        // ── Compute all four estimators ──
         const TtCat anaGenPart = computeTtCategoryFromGenPart();
         const TtCat anaGenId   = computeTtCategoryFromGenTtbarId();
+        const TtCat ntuPrim    = readNtuplePrimaryCategory();
+        const TtCat ntuXval    = readNtupleXvalCategory();
 
         const int anaGenPartIdx = static_cast<int>(anaGenPart);
         const int anaGenIdIdx   = static_cast<int>(anaGenId);
+        const int ntuPrimIdx    = static_cast<int>(ntuPrim);
+        const int ntuXvalIdx    = static_cast<int>(ntuXval);
 
-        // Did the two estimators disagree?
-        const bool anyDisagreement = (anaGenPartIdx != anaGenIdIdx);
+        // Counters for the two "must agree" pairs
+        const bool agreeAnaGenIdVsNtuPrim   = (anaGenIdIdx == ntuPrimIdx);
+        const bool agreeAnaGenPartVsNtuXval = (anaGenPartIdx == ntuXvalIdx);
+
+        // Did anything disagree at all?
+        const bool anyDisagreement =
+            (anaGenPartIdx != anaGenIdIdx) ||
+            (anaGenPartIdx != ntuPrimIdx)  ||
+            (anaGenPartIdx != ntuXvalIdx)  ||
+            (anaGenIdIdx   != ntuPrimIdx)  ||
+            (anaGenIdIdx   != ntuXvalIdx)  ||
+            (ntuPrimIdx    != ntuXvalIdx);
 
         // ── Per-event debug print ──
         // First 20 events always; events 20–100 only if a "must agree"
@@ -1347,9 +1365,11 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
         const bool isHeavyFlav = (anaGenPart == TtCat::kAdd1Bjet1Had ||
                                   anaGenPart == TtCat::kAdd1Bjet2Had ||
                                   anaGenPart == TtCat::kAdd2Bjet);
+        const bool mustAgreeBroken =
+            !agreeAnaGenIdVsNtuPrim || !agreeAnaGenPartVsNtuXval;
         const bool shouldPrint =
             (dbgCount < 5) ||
-            (dbgCount < 10 && (anyDisagreement || isHeavyFlav));
+            (dbgCount < 10 && (mustAgreeBroken || isHeavyFlav));
 
         if (shouldPrint) {
             std::cout << "\n===== [ttCatDebug] Event #" << dbgCount
@@ -1366,7 +1386,19 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
             std::cout << "  [genTtbarId] " << _ev->genTtbarId
                       << " (mod100=" << (_ev->genTtbarId % 100) << ")\n";
 
-            // 3) [STEP17] ntuple ttCat_*/ttCatXval_* 부재 (full-Nano) — 출력 제거.
+            // 3) ntuple ttCat_* booleans (primary + xval)
+            std::cout << "  [ntuple ttCat_* primary] LF=" << _ev->ttCat_LightFlavour
+                      << " Cj=" << _ev->ttCat_AddCjet
+                      << " 1B1H=" << _ev->ttCat_Add1Bjet_1Had
+                      << " 1B2H=" << _ev->ttCat_Add1Bjet_2Had
+                      << " 2B+=" << _ev->ttCat_Add2Bjet
+                      << " src=" << _ev->ttCatSource << "\n";
+            std::cout << "  [ntuple ttCatXval_*]      LF=" << _ev->ttCatXval_LightFlavour
+                      << " Cj=" << _ev->ttCatXval_AddCjet
+                      << " 1B1H=" << _ev->ttCatXval_Add1Bjet_1Had
+                      << " 1B2H=" << _ev->ttCatXval_Add1Bjet_2Had
+                      << " 2B+=" << _ev->ttCatXval_Add2Bjet
+                      << " src=" << _ev->ttCatXvalSource << "\n";
 
             // 4) tt pair
             const bool hasTT = eventHasTTPair();
@@ -1420,32 +1452,50 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
                 }
             }
 
-            // 6) [STEP17] 두 estimator 비교
+            // 6) The four estimators side by side
             auto fmt = [](TtCat c) {
                 return std::string(ttCatShortName(static_cast<int>(c)));
             };
-            std::cout << "  [2-way label] "
+            std::cout << "  [4-way label] "
                       << "ANA_GENPART=" << fmt(anaGenPart)
                       << "  ANA_GENID=" << fmt(anaGenId)
+                      << "  NTU_PRIMARY=" << fmt(ntuPrim)
+                      << "  NTU_XVAL=" << fmt(ntuXval)
                       << "\n";
 
-            // 7) Mismatch flag (POG vs GenPart real diff)
-            if (anyDisagreement) {
+            // 7) Mismatch flags
+            if (!agreeAnaGenIdVsNtuPrim) {
+                std::cout << "  *** MUST-AGREE BROKEN: ANA_GENID != NTU_PRIMARY"
+                          << " (both decode the same int!) ***\n";
+            }
+            if (!agreeAnaGenPartVsNtuXval) {
+                std::cout << "  *** MUST-AGREE BROKEN: ANA_GENPART != NTU_XVAL"
+                          << " (same algorithm, two languages!) ***\n";
+            }
+            if (anaGenPartIdx != anaGenIdIdx) {
                 std::cout << "  [info] ANA_GENPART != ANA_GENID"
                           << " (POG vs GenPart, real algorithmic diff)\n";
-            } else {
-                std::cout << "  [2-way] BOTH AGREE\n";
+            }
+            if (!anyDisagreement) {
+                std::cout << "  [4-way] ALL FOUR AGREE\n";
             }
 
             ++dbgCount;
         }
 
-        // ── Fill 1D count histograms ── [STEP17] 2 source 만
+        // ── Fill 1D count histograms ──
         _hTtCat_Counts_AnaGenPart->Fill(anaGenPartIdx + 0.5);
         _hTtCat_Counts_AnaGenId  ->Fill(anaGenIdIdx   + 0.5);
+        _hTtCat_Counts_NtuPrimary->Fill(ntuPrimIdx    + 0.5);
+        _hTtCat_Counts_NtuXval   ->Fill(ntuXvalIdx    + 0.5);
 
-        // ── Fill 2D pair-wise comparison (GenPart vs genTtbarId 디코드) ──
-        _hTtCat_AnaGenPart_vs_AnaGenId->Fill(anaGenPartIdx + 0.5, anaGenIdIdx + 0.5);
+        // ── Fill 2D pair-wise comparisons (6 pairs) ──
+        _hTtCat_AnaGenPart_vs_AnaGenId   ->Fill(anaGenPartIdx + 0.5, anaGenIdIdx + 0.5);
+        _hTtCat_AnaGenPart_vs_NtuPrimary ->Fill(anaGenPartIdx + 0.5, ntuPrimIdx  + 0.5);
+        _hTtCat_AnaGenPart_vs_NtuXval    ->Fill(anaGenPartIdx + 0.5, ntuXvalIdx  + 0.5);
+        _hTtCat_AnaGenId_vs_NtuPrimary   ->Fill(anaGenIdIdx   + 0.5, ntuPrimIdx  + 0.5);
+        _hTtCat_AnaGenId_vs_NtuXval      ->Fill(anaGenIdIdx   + 0.5, ntuXvalIdx  + 0.5);
+        _hTtCat_NtuPrimary_vs_NtuXval    ->Fill(ntuPrimIdx    + 0.5, ntuXvalIdx  + 0.5);
 
         // ── genTtbarId mod 100 vs analyzer GenPart category ──
         const int gtidMod = _ev->genTtbarId % 100;
@@ -1611,12 +1661,18 @@ void ttHHanalyzer_unified::writeHistos(){
     }
 
     // ── tt+jets categorization validation histograms (write + summary) ──
-    // [STEP17] full-Nano: NTU_* 제거, 2 source + 1 pair + GenTtbarIdMod100 만.
     _histoDirs.at(3)->cd();
     _hTtCat_Counts_AnaGenPart->Write();
     _hTtCat_Counts_AnaGenId  ->Write();
+    _hTtCat_Counts_NtuPrimary->Write();
+    _hTtCat_Counts_NtuXval   ->Write();
 
     _hTtCat_AnaGenPart_vs_AnaGenId  ->Write();
+    _hTtCat_AnaGenPart_vs_NtuPrimary->Write();
+    _hTtCat_AnaGenPart_vs_NtuXval   ->Write();
+    _hTtCat_AnaGenId_vs_NtuPrimary  ->Write();
+    _hTtCat_AnaGenId_vs_NtuXval     ->Write();
+    _hTtCat_NtuPrimary_vs_NtuXval   ->Write();
 
     _hTtCat_GenTtbarIdMod100->Write();
 
@@ -1643,6 +1699,8 @@ void ttHHanalyzer_unified::writeHistos(){
     };
     dumpCounts("ANA_GENPART (analyzer GenPart)",   _hTtCat_Counts_AnaGenPart);
     dumpCounts("ANA_GENID   (analyzer genTtbarId)", _hTtCat_Counts_AnaGenId);
+    dumpCounts("NTU_PRIMARY (ntuple ttCat_*)",      _hTtCat_Counts_NtuPrimary);
+    dumpCounts("NTU_XVAL    (ntuple ttCatXval_*)",  _hTtCat_Counts_NtuXval);
 
     // Pair-wise agreement summary
     auto pairAgreement = [&](const char* label, TH2F* h, bool listOff) {
@@ -1673,11 +1731,23 @@ void ttHHanalyzer_unified::writeHistos(){
         std::cout << std::endl;
     };
 
-    // [STEP17] full-Nano: ntuple ttCat_*/ttCatXval_* 부재 → 단일 pair
-    // (POG genTtbarId 디코드 vs GenPart). off-diagonal cell 을 나열한다.
-    std::cout << "[ttCatSummary] --- ANA_GENPART vs ANA_GENID (POG vs GenPart, ~97% 기대) ---" << std::endl;
+    // The two "must agree" pairs — list every off-diagonal cell.
+    std::cout << "[ttCatSummary] --- MUST-AGREE PAIRS (any disagreement = bug) ---" << std::endl;
+    pairAgreement("ANA_GENID   vs NTU_PRIMARY",
+                  _hTtCat_AnaGenId_vs_NtuPrimary,   /*listOff=*/true);
+    pairAgreement("ANA_GENPART vs NTU_XVAL    ",
+                  _hTtCat_AnaGenPart_vs_NtuXval,    /*listOff=*/true);
+
+    // The other four pairs — informational only (real algorithmic differences).
+    std::cout << "[ttCatSummary] --- INFORMATIONAL PAIRS (real algorithmic diff) ---" << std::endl;
     pairAgreement("ANA_GENPART vs ANA_GENID    ",
-                  _hTtCat_AnaGenPart_vs_AnaGenId,   /*listOff=*/true);
+                  _hTtCat_AnaGenPart_vs_AnaGenId,   /*listOff=*/false);
+    pairAgreement("ANA_GENPART vs NTU_PRIMARY  ",
+                  _hTtCat_AnaGenPart_vs_NtuPrimary, /*listOff=*/false);
+    pairAgreement("ANA_GENID   vs NTU_XVAL     ",
+                  _hTtCat_AnaGenId_vs_NtuXval,      /*listOff=*/false);
+    pairAgreement("NTU_PRIMARY vs NTU_XVAL     ",
+                  _hTtCat_NtuPrimary_vs_NtuXval,    /*listOff=*/false);
 
     std::cout << "[ttCatSummary] ═══════════════════════════════════════════════\n"
               << std::endl;
@@ -1918,12 +1988,11 @@ void ttHHanalyzer_unified::accumulatePrescanEvent() {
         }
     }
 
-    // --- 5-bucket ttCat cross-check --- [STEP17]
-    // full-Nano 전환: officialTtCategory() 가 genTtbarId 디코드를 쓰므로 아래
-    // ttCat-bucket 합은 위 genTtbarId%100 bin 합과 구성상 일치한다(자기일관성
-    // 점검). prescan tree schema(sumGenW_ttCat_*)는 downstream(consolidate_prescan/
-    // compute_stitch_factors) 호환을 위해 유지.
-    const TtCat cat = officialTtCategory();
+    // --- 5-bucket ttCat (ntuple primary) cross-check ---
+    // Sanity: sum over id-bins must equal the corresponding ttCat-bucket sum
+    // (within float rounding). If not, ntuplizer↔analyzer categorization
+    // disagreement — see ttHHanalyzer_unified.h::readNtuplePrimaryCategory.
+    const TtCat cat = readNtuplePrimaryCategory();
     switch (cat) {
         case TtCat::kLightFlavour:
             _prescan_sumGW_ttCat_LF   += gw; ++_prescan_n_ttCat_LF;   break;
@@ -2146,7 +2215,7 @@ int main(int argc, char** argv){
     }
     catch (const std::invalid_argument& e) {
         std::cerr << e.what() << std::endl;
-        return tthh::CONFIG_BAD_MODE;
+        return 1;
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -2165,11 +2234,7 @@ int main(int argc, char** argv){
     // 3. Open input ntuple stream
     // ─────────────────────────────────────────────────────────────────────
     itreestream stream(filenames, "Events");
-    if ( !stream.good() ) {
-        std::cerr << "\n[FATAL][E" << tthh::INPUT_OPEN_FAIL
-                  << "] can't read root input files (Events tree).\n" << std::endl;
-        std::exit(tthh::INPUT_OPEN_FAIL);
-    }
+    if ( !stream.good() ) error("can't read root input files");
     eventBuffer ev(stream);
     std::cout << " Output filename: " << cl.outputfilename << std::endl;
 
@@ -2203,10 +2268,9 @@ int main(int argc, char** argv){
     // performAnalysis), so the prescan partition sees the same lookup.
     // ─────────────────────────────────────────────────────────────────────
     {
-        // [STEP18] config 명시 경로만 (default 폐기). null -> "" -> lookup INACTIVE.
-        analysis.setExpandedTtbarIdDir(
-            cfgpath::resolve("EXPANDED_TTBARID_DIR",
-                             "Expanded_genTtbarId lookup dir", /*required=*/false));
+        const char* d = std::getenv("EXPANDED_TTBARID_DIR");
+        analysis.setExpandedTtbarIdDir(d ? std::string(d)
+                                         : std::string("DerivedCorr/expandedTtbarId"));
     }
 
     // [lepton-CR] CLI --region 주입 (QCD 억제 1ℓ+MET CR; main/debug 에서만 효과)
@@ -2220,13 +2284,14 @@ int main(int argc, char** argv){
     // 로드한다: main(최종 yield), btagtrig(b-tag norm reweight 문맥), debug(main
     // 미러). prescan은 의도적으로 stitch-free:
     //   - prescan은 이 JSON의 입력(ΣgenW 분해)을 "생산"하는 모드이므로.
-    // 경로는 config(STITCH_FACTORS_JSON)에서 명시. null -> 미로드(stitch-free), 손상 -> fatal(60-62).
+    // 경로는 $STITCH_FACTORS_JSON 으로 override. 누락/손상 -> fatal-exit(40).
     if (mode == AnalysisMode::kMainAnalysis ||
         mode == AnalysisMode::kBTagAndTriggerStudy ||
         mode == AnalysisMode::kDebug) {
-        const std::string sj = cfgpath::resolve("STITCH_FACTORS_JSON",
-                                   "ttbar stitch-factors JSON", /*required=*/false);
-        if (!sj.empty()) analysis.setStitchFactorsFile(sj);
+        const char* sj = std::getenv("STITCH_FACTORS_JSON");
+        analysis.setStitchFactorsFile(
+            sj ? std::string(sj)
+               : std::string("DerivedCorr/stitchFactors/stitch_factors_2017.json"));
     }
 
     // ─────────────────────────────────────────────────────────────────────

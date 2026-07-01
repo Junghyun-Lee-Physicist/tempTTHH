@@ -12,7 +12,7 @@
 #
 # Output area layout (produced by submit_job_FH_Tier3_unified.py):
 #   <input-base>/<sample>/<sample>_<count>.root      (count = 0,1,2,...)
-#   e.g. AnalyzerOutput_prescan/TTToSemiLeptonic/TTToSemiLeptonic_140.root
+#   e.g. AnalyzerOutput_prescan/TTbar_SemiLep/TTbar_SemiLep_140.root
 #
 # Each `prescan` row carries (see writePrescanTree() in the analyzer):
 #   metadata : sampleName, runYear, dataEra, isData, xsec_used, nFiles
@@ -25,7 +25,7 @@
 #   cmsenv               # PyROOT must be importable
 #   ./consolidate_prescan.py                       # all defaults
 #   ./consolidate_prescan.py --input-base <dir> --outdir <dir>
-#   ./consolidate_prescan.py --only TTToSemiLeptonic ttbb   # subset
+#   ./consolidate_prescan.py --only TTbar_SemiLep ttbb   # subset
 #
 # Run inside a CMSSW environment (needs PyROOT).
 ###############################################################################

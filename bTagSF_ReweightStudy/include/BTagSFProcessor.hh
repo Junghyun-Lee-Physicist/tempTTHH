@@ -49,7 +49,7 @@ private:
 
     // [NEW] ttbar category dispatch helper.
     // Returns the process key for the *current* event being processed.
-    //   - inclusive ttbar (TTToHadronic / TTToSemiLeptonic / TTTo2L2Nu):
+    //   - inclusive ttbar (TTbar_Hadronic / TTbar_SemiLep / TTbar_DiLep):
     //     "<sample>_LF" / "<sample>_cc" / "<sample>_B"  (via genTtbarId)
     //   - other samples: sample name unchanged
     // [Ref] ttH AN-19-094 §A.2

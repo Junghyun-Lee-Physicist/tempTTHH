@@ -12,9 +12,9 @@ This is the *sample-local* closure (sample-internal yield preservation check).
 For the true *group-level* ratio map, see plot_group_ratios.py.
 
 Usage:
-    python3 plot_btag_pyroot.py TTToHadronic
+    python3 plot_btag_pyroot.py TTbar_Hadronic
     python3 plot_btag_pyroot.py all
-    python3 plot_btag_pyroot.py TTToHadronic ttHH tt4b
+    python3 plot_btag_pyroot.py TTbar_Hadronic ttHH tt4b
 
 Author: Junghyun Lee
 """
@@ -30,9 +30,9 @@ ROOT.gStyle.SetOptTitle(0)
 
 # ─── Sample lists ──────────────────────────────────────────────────────────
 ALL_MC = [
-    "TTToHadronic", "TTTo2L2Nu", "TTToSemiLeptonic",
-    "ttHH", "tt4b", "ttHtobb", "tttt", "tttW",
-    "ttWH", "ttWW", "ttWZ", "ttZHto4b", "ttZtobb", "ttZZto4b", "ttbb",
+    "TTbar_Hadronic", "TTbar_DiLep", "TTbar_SemiLep",
+    "TTHHto4b", "TT4b", "ttHTobb", "TTTT", "TTTW",
+    "TTWH", "TTWW", "TTWZ", "TTZHTo4b", "TTZToBB", "TTZZTo4b", "ttbb",
     "QCD_HT200to300", "QCD_HT300to500", "QCD_HT500to700",
     "QCD_HT700to1000", "QCD_HT1000to1500", "QCD_HT1500to2000", "QCD_HT2000toInf",
 ]
@@ -292,9 +292,9 @@ def plot_one_sample(sample_name):
 def main():
     if len(sys.argv) < 2:
         print("Usage: python3 plot_btag_pyroot.py <sample|all> [<sample> ...]")
-        print("  e.g.: python3 plot_btag_pyroot.py TTToHadronic")
+        print("  e.g.: python3 plot_btag_pyroot.py TTbar_Hadronic")
         print("        python3 plot_btag_pyroot.py all")
-        print("        python3 plot_btag_pyroot.py TTToHadronic ttHH tt4b")
+        print("        python3 plot_btag_pyroot.py TTbar_Hadronic ttHH tt4b")
         sys.exit(1)
 
     samples = []
