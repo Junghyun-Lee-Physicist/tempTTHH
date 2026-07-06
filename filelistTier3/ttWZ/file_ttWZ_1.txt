@@ -1,1 +1,0 @@
-/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2017UL_08thApr2026_v18/TTWZ_TuneCP5_13TeV-madgraph-pythia8/TTWZ/260408_093019/0000/slimmedNtuple_2.root

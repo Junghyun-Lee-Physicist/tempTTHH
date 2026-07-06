@@ -1,1 +1,0 @@
-/Users/jhlee/ttHH/ntuple/NanoAOD_NTuples/JetHT_C.root

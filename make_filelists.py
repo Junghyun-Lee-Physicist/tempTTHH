@@ -52,14 +52,14 @@ sample_mapping = {
     "QCD_HT2000toInf_TuneCP5_13TeV-madgraphMLM-pythia8":  "QCD_HT2000toInf",
 
     # ── ttbar inclusive (5FS Powheg) ── [OLD short_name 유지]
-    "TTbar_DiLep_TuneCP5_13TeV-powheg-pythia8":        "TTbar_DiLep",
-    "TTbar_Hadronic_TuneCP5_13TeV-powheg-pythia8":     "TTbar_Hadronic",
-    "TTbar_SemiLep_TuneCP5_13TeV-powheg-pythia8": "TTbar_SemiLep",
+    "TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8":        "TTbar_DiLep",
+    "TTToHadronic_TuneCP5_13TeV-powheg-pythia8":     "TTbar_Hadronic",
+    "TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8": "TTbar_SemiLep",
 
     # ── tt+bb (4FS Powheg-OpenLoops) dedicated ── [OLD short_name 유지]
-    "TTbb_4f_TTbar_Hadronic_TuneCP5-Powheg-Openloops-Pythia8":     "TTbb_Hadronic",
-    "TTbb_4f_TTbar_SemiLep_TuneCP5-Powheg-Openloops-Pythia8": "TTbb_SemiLep",
-    "TTbb_4f_TTbar_DiLep_TuneCP5-Powheg-Openloops-Pythia8":        "TTbb_DiLep",
+    "TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8":     "TTbb_Hadronic",
+    "TTbb_4f_TTToSemiLeptonic_TuneCP5-Powheg-Openloops-Pythia8": "TTbb_SemiLep",
+    "TTbb_4f_TTTo2L2Nu_TuneCP5-Powheg-Openloops-Pythia8":        "TTbb_DiLep",
 
     # ── tt4b dedicated (madgraph LO) ── [OLD short_name 유지]
     "TT4b_TuneCP5_13TeV_madgraph_pythia8": "TT4b",
