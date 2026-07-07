@@ -25,6 +25,7 @@
 #include <stdexcept>
 #include <array>
 #include <set>
+#include "ExitCodes.h"   // [STEP18] canonical exit codes (E11 for runinfo checks below)
 
 //#include "fifo_map.hpp" // No need now, I'll update cutflow logic
 
@@ -1115,14 +1116,17 @@ class ttHHanalyzer_unified {
     std::string sampleEra = extractEraFromSampleName(_sampleName);
     if (_DataOrMC == "MC") {
         if (!_era.empty()) {
-            std::cerr << "[ERROR] MC samples must not define an eraName. Provided eraName: " << _era << std::endl;
-            std::exit(EXIT_FAILURE);
+            std::cerr << "[FATAL][E" << tthh::CONFIG_BAD_RUNINFO
+                      << "] MC samples must not define an eraName. Provided eraName: " << _era << std::endl;
+            std::_Exit(tthh::CONFIG_BAD_RUNINFO);  // _Exit: skip ROOT teardown (std::exit segfaults here)
         }
     } else if (_DataOrMC == "Data") {
         if (_era.empty() || sampleEra.empty() || sampleEra != _era) {
-            std::cerr << "[ERROR] eraName mismatch between config and sampleName. "
-                      << "eraName: " << _era << ", sampleName: " << _sampleName << std::endl;
-            std::exit(EXIT_FAILURE);
+            std::cerr << "[FATAL][E" << tthh::CONFIG_BAD_RUNINFO
+                      << "] eraName mismatch between config and sampleName. "
+                      << "eraName: " << _era << ", sampleName: " << _sampleName
+                      << ", extracted: '" << sampleEra << "'" << std::endl;
+            std::_Exit(tthh::CONFIG_BAD_RUNINFO);
         }
     }
 
@@ -2004,6 +2008,20 @@ private:
     }
 
     static std::string extractEraFromSampleName(const std::string& sampleName) {
+        // [STEP18 naming] "<PD>_Run20YYE" (e.g. BTagCSV_Run2017D) — era-agnostic:
+        // "Run20" + 2 digits + 1 letter, and the letter must end the token
+        // (end-of-string or followed by '_', so "Run2017D_ext1" still works).
+        std::size_t rp = sampleName.rfind("Run20");
+        if (rp != std::string::npos && rp + 7 < sampleName.size()) {
+            const unsigned char d1 = sampleName[rp + 5];
+            const unsigned char d2 = sampleName[rp + 6];
+            const unsigned char er = sampleName[rp + 7];
+            const bool tokenEnds = (rp + 8 == sampleName.size()) || (sampleName[rp + 8] == '_');
+            if (std::isdigit(d1) && std::isdigit(d2) && std::isalpha(er) && tokenEnds) {
+                return std::string(1, static_cast<char>(er));
+            }
+        }
+        // [legacy naming] "<PD>_E" (e.g. JetHT_B): last '_'-token is a single letter.
         std::size_t pos = sampleName.rfind('_');
         if (pos == std::string::npos || pos + 1 >= sampleName.size()) {
             return "";

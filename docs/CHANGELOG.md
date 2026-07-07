@@ -31,3 +31,9 @@
 ## Earlier — STEP 0–16
 
 See the per-step records in [`changes/`](changes/) (indexed by [`changes/README.md`](changes/README.md)). Notable: STEP 11 (xsec_db single source), STEP 12 (fb units), STEP 14 (3-tier weight + MET-CR + norm check), STEP 16 (SF toggles + output-dir split), STEP 4 (paths/yml FATAL — superseded in part by STEP 18 part C path policy).
+
+## 2026-07-06 — Data era-check fix (STEP_18 follow-up #2)
+- **Bug**: all Data jobs in `main` mode died with `[ERROR] eraName mismatch ... eraName: D, sampleName: BTagCSV_Run2017D` followed by a segfault. Root cause: `ttHHanalyzer_unified.h::extractEraFromSampleName()` still assumed the *legacy* Data naming (`JetHT_B`, single-letter last token). STEP_18 renamed Data samples to `<PD>_Run2017<E>`, so extraction returned `""` → mismatch → FATAL. MC does not take this branch, hence "MC runs fine, Data dies".
+- **Fix 1**: `extractEraFromSampleName()` now recognizes `Run20YY<E>` (era-agnostic: 2016/2017/2018; tolerant of `_ext1` suffixes) with the legacy single-letter form kept as fallback. Unit-tested against 13 old/new/edge sample names.
+- **Fix 2**: the two runinfo exits (`MC must not define era`, `era mismatch`) now emit `[FATAL][E11]` (tthh::CONFIG_BAD_RUNINFO) and use `std::_Exit` — `std::exit` triggered a ROOT-teardown segfault that polluted the exit status (139 instead of a canonical code). `ExitCodes.h` is now included by the header directly.
+- Files: `ttHHanalyzer_unified.h` only. Rebuild required (`make`).
