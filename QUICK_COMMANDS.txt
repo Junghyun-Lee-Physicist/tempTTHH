@@ -6,7 +6,9 @@
   공통 주의
   ----------------------------------------------------------------------------
   * --files-per-job 값은 submit/report/resubmit 에서 모두 같아야 한다 (아래는 5).
-  * --report / --resubmit 에는 submit 때와 같은 --region 을 붙여야 한다
+  * --report / --status / --resubmit 에는 submit 때와 같은 --region 을 붙여야 한다
+  * [STEP20] --report = 요약 테이블 (sample|jobs|done|miss|done%), --status = 샘플별
+    상세 (weight + missing idx 목록; 구 --report 동작). 둘 다 read-only.
     (안 붙이면 FH = AnalyzerOutput_main 만 본다).
   * region+SF 별로 output·condor 디렉토리가 분리되고, 각 condor 디렉토리의
     submit_command.txt 에 제출 명령어가 기록된다 (헷갈리면 그 파일 확인).

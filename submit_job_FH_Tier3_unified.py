@@ -80,7 +80,13 @@ class CondorJobManager:
         parser.add_argument("--resubmit-to", default="",
                             help="재제출 output을 별도 하위 디렉토리에 저장 (--resubmit 전용)")
         parser.add_argument("--report", action="store_true",
-                            help="제출 없이 완료/미완료 현황 리포트만")
+                            help="[STEP20] 제출 없이 완료/미완료 요약 테이블만 "
+                                 "(sample | jobs | done | miss | done%%). "
+                                 "read-only — 디렉토리/파일 생성·수정 없음")
+        parser.add_argument("--status", action="store_true",
+                            help="[STEP20] 제출 없이 샘플별 상세 현황 "
+                                 "(weight, missing idx 목록 포함; 구 --report "
+                                 "동작). read-only")
         parser.add_argument("--config", default="",
                             help="yml 경로 명시 (미지정: "
                                  "AnalyzerConfig/Tier3_2017_FH_unified_<mode>.yml)")
@@ -110,7 +116,19 @@ class CondorJobManager:
         # ── Resubmit / report control ([STEP7] CLI로 제어) ─────────────────
         self.resubmit_only = bool(args.resubmit)
         self.resubmit_to   = args.resubmit_to.strip().strip("/")
-        self.report_only   = bool(args.report)
+        # [STEP20] 조회 모드 2종 — 내부적으로는 report_only 하나로 묶고
+        #   (기존 report_only 분기 전부 재사용: 제출 없음 + read-only),
+        #   report_verbose 로 출력 형태만 가른다.
+        #     --status : verbose (샘플별 [weight]/[report] 라인 + missing idx)
+        #     --report : compact (마지막에 요약 테이블 한 장)
+        # 두 모드 모두 마지막에 테이블은 출력한다 (status = 상세 + 테이블).
+        self.report_only    = bool(args.report) or bool(args.status)
+        self.report_verbose = bool(args.status)
+        if bool(args.report) and bool(args.status):
+            raise ValueError("[FATAL] --report 와 --status 는 동시 사용 불가")
+        if self.report_only and self.resubmit_only:
+            raise ValueError("[FATAL] --report/--status 는 --resubmit 과 동시 사용 불가")
+        self._report_rows = []   # [STEP20] (sample, jobs, done, miss) 누적 → 테이블
         self.cli_files_per_job = args.files_per_job
         if self.resubmit_to and not self.resubmit_only:
             raise ValueError("[FATAL] --resubmit-to 는 --resubmit 과 함께만 사용 가능")
@@ -198,7 +216,8 @@ class CondorJobManager:
 
         if self.report_only or self.resubmit_only:
             # 조회 모드 — 원 제출 명령어를 보여준다
-            mode = "report" if self.report_only else "resubmit"
+            mode = ("status" if (self.report_only and self.report_verbose)
+                    else "report" if self.report_only else "resubmit")
             print(f"\n  [cmd-log] ({mode}) condor dir: {self.condor_files_path}")
             if os.path.isfile(log_path):
                 print(f"  [cmd-log] 이 디렉토리(region+SF)의 기록된 제출 명령어:")
@@ -253,11 +272,19 @@ class CondorJobManager:
         for entry in samples:
             try:
                 self.parse_config_entry(entry, common)
-                self.prepare_output_directory()
+                # [STEP20] 조회 모드(report/status)는 read-only — output 디렉토리
+                # 생성/chmod/출력(prepare_output_directory)을 건너뛴다.
+                if not self.report_only:
+                    self.prepare_output_directory()
                 self.setup_and_submit_job()
             except Exception as e:
                 print(f"  Error with sample {entry} : {e}")
                 continue
+
+        # [STEP20] 조회 모드 마무리: 요약 테이블 (report = 테이블만,
+        # status = 샘플별 상세 출력 뒤 테이블)
+        if self.report_only:
+            self._print_report_table()
 
     # -------------------------------------------------------------------------
     # -------------------------------------------------------------------------
@@ -371,10 +398,13 @@ class CondorJobManager:
             self.weight = entry["weight"]
         elif _is_prescan:
             self.weight = 1.0   # prescan 미사용 (runPrescan 이 Σgenw 만 누산)
-            print(f"  [weight] {self.sample_name}: 1.0  (prescan — normalization 불필요)")
+            if not self.report_only or self.report_verbose:
+                print(f"  [weight] {self.sample_name}: 1.0  (prescan — normalization 불필요)")
         else:
             self.weight, prov = self._compute_base_weight(self.sample_name, common)
-            print(f"  [weight] {self.sample_name}: {self.weight:.10g}  ({prov})")
+            # [STEP20] compact report 는 테이블만 — [weight] 라인은 --status 에서만
+            if not self.report_only or self.report_verbose:
+                print(f"  [weight] {self.sample_name}: {self.weight:.10g}  ({prov})")
 
         self.year = common["year"]
         self.analysis_mode = common["analysis_mode"]
@@ -461,7 +491,12 @@ class CondorJobManager:
             self.condor_files_path,
             f"tmp_{sanitized}_{self.time_info}"
         )
-        self.make_directory(self.tmp_folder)
+        # [STEP20] tmp 디렉토리는 여기서 만들지 않는다(lazy). 기존에는 모든
+        # 호출(report/resubmit 포함)이 샘플마다 무조건 mkdir 해서, 재큐할 job
+        # 이 0개인 샘플·조회 모드에서도 빈 tmp_<sample>_<ts>/ 가 쌓였다.
+        # 이제 generate_argument_list 가 첫 per-job filelist 를 쓰기 직전에만
+        # 생성한다 → 빈 디렉토리 리터 제거. (job .out/.err 도 이 디렉토리에
+        # 남으므로, 생성 = "이 invocation 이 이 샘플에 실제 job 을 큐잉했다".)
 
     # -------------------------------------------------------------------------
     def load_yaml_config(self, path):
@@ -692,74 +727,92 @@ class CondorJobManager:
         chunks = [lines[i:i + N] for i in range(0, len(lines), N)]
         sanitized = self.output_dir.replace("/", "_")
 
+        # [STEP20] 조회 모드는 완전 read-only 여야 한다. 기존 구현은 report
+        # 모드에서도 arguments_<sample>.txt 를 "w" 로 열어 — 아무것도 안 쓰고
+        # 닫히며 — 직전 제출의 인자 기록을 **빈 파일로 truncate** 했다(큐잉된
+        # job 은 제출 시점에 인자를 이미 읽었으므로 실행엔 무해하나, provenance
+        # 소실). 이제 인자 라인을 메모리에 모았다가 제출/재제출일 때만 쓴다.
         n_written = 0
         n_complete = 0
         missing = []
-        with open(self.arg_list_file, "w") as argout:
-            for job_idx, chunk in enumerate(chunks):
-                full_output_path = (
-                    f"{self.path_output}{self.sample_output_dir}_{job_idx}.root"
-                )
+        arg_lines = []
+        for job_idx, chunk in enumerate(chunks):
+            full_output_path = (
+                f"{self.path_output}{self.sample_output_dir}_{job_idx}.root"
+            )
 
-                # 완료 판정은 resubmit/report 모드에서만 수행 (일반 제출은 불필요)
-                complete = ((self.resubmit_only or self.report_only)
-                            and self._output_is_complete(full_output_path))
-                if complete:
-                    n_complete += 1
-                else:
-                    missing.append(job_idx)
+            # 완료 판정은 resubmit/report 모드에서만 수행 (일반 제출은 불필요)
+            complete = ((self.resubmit_only or self.report_only)
+                        and self._output_is_complete(full_output_path))
+            if complete:
+                n_complete += 1
+            else:
+                missing.append(job_idx)
 
-                # [STEP7] report 모드: 현황만 집계 — job 생성/제출 없음
-                if self.report_only:
-                    continue
-                if self.resubmit_only and complete:
-                    continue
+            # [STEP7] report 모드: 현황만 집계 — job 생성/제출 없음
+            if self.report_only:
+                continue
+            if self.resubmit_only and complete:
+                continue
 
-                # [STEP7] 재제출 분리 저장: --resubmit-to SUB → output을
-                # <path_output>/<SUB>/ 아래로 (원본과 비교/검증 용이)
-                if self.resubmit_only and self.resubmit_to:
-                    resub_dir = os.path.join(self.path_output, self.resubmit_to)
-                    os.makedirs(resub_dir, exist_ok=True)
-                    full_output_path = os.path.join(
-                        resub_dir, f"{self.sample_output_dir}_{job_idx}.root")
+            # [STEP7] 재제출 분리 저장: --resubmit-to SUB → output을
+            # <path_output>/<SUB>/ 아래로 (원본과 비교/검증 용이)
+            if self.resubmit_only and self.resubmit_to:
+                resub_dir = os.path.join(self.path_output, self.resubmit_to)
+                os.makedirs(resub_dir, exist_ok=True)
+                full_output_path = os.path.join(
+                    resub_dir, f"{self.sample_output_dir}_{job_idx}.root")
 
-                per_job_filelist_name = f"filelist_{sanitized}_{job_idx}.txt"
-                per_job_filelist_path = os.path.join(
-                    self.tmp_folder, per_job_filelist_name)
-                with open(per_job_filelist_path, 'w') as per_job_filelist:
-                    for line in chunk:
-                        per_job_filelist.write(line + '\n')
+            per_job_filelist_name = f"filelist_{sanitized}_{job_idx}.txt"
+            per_job_filelist_path = os.path.join(
+                self.tmp_folder, per_job_filelist_name)
+            # [STEP20] lazy tmp mkdir — 실제로 쓸 filelist 가 생길 때만 생성
+            os.makedirs(self.tmp_folder, exist_ok=True)
+            with open(per_job_filelist_path, 'w') as per_job_filelist:
+                for line in chunk:
+                    per_job_filelist.write(line + '\n')
 
-                args = (
-                    f"--filelist {per_job_filelist_path} "
-                    f"--output {full_output_path} "
-                    f"--weight {self.weight} "
-                    f"--year {self.year} "
-                    f"--dataOrMC {self.data_or_mc} "
-                    f"--sample {self.sample_name} "
-                    f"--mode {self.analysis_mode} "
-                )
-                if str(self.era).strip():
-                    args += f" --era {self.era} "
-                # [lepton-CR] CLI --region 우선, 없으면 yml common.region
-                _region = (self._cli_region
-                           or str(self._common.get("region", "")).strip())
-                if _region:
-                    args += f" --region {_region} "
-                # [SF toggle] production evtWeight 구성 (analyzer 로 전달)
-                args += (f" --trigsf {self._cli_trigsf}"
-                         f" --btagsf {self._cli_btagsf}"
-                         f" --btagrw {self._cli_btagrw} ")
+            args = (
+                f"--filelist {per_job_filelist_path} "
+                f"--output {full_output_path} "
+                f"--weight {self.weight} "
+                f"--year {self.year} "
+                f"--dataOrMC {self.data_or_mc} "
+                f"--sample {self.sample_name} "
+                f"--mode {self.analysis_mode} "
+            )
+            if str(self.era).strip():
+                args += f" --era {self.era} "
+            # [lepton-CR] CLI --region 우선, 없으면 yml common.region
+            _region = (self._cli_region
+                       or str(self._common.get("region", "")).strip())
+            if _region:
+                args += f" --region {_region} "
+            # [SF toggle] production evtWeight 구성 (analyzer 로 전달)
+            args += (f" --trigsf {self._cli_trigsf}"
+                     f" --btagsf {self._cli_btagsf}"
+                     f" --btagrw {self._cli_btagrw} ")
 
-                argout.write(args + "\n")
-                n_written += 1
+            arg_lines.append(args)
+            n_written += 1
+
+        # 인자 파일은 제출/재제출 경로에서만 기록 (조회 모드는 미접촉)
+        if not self.report_only:
+            with open(self.arg_list_file, "w") as argout:
+                for a in arg_lines:
+                    argout.write(a + "\n")
 
         if self.report_only:
-            print(f"  [report] {self.sample_name}: files={len(lines)} "
-                  f"files/job={N} jobs={len(chunks)} "
-                  f"complete={n_complete} missing={len(missing)}"
-                  + (f" -> idx {missing[:20]}{' ...' if len(missing) > 20 else ''}"
-                     if missing else ""))
+            # [STEP20] 테이블용 누적 (report/status 공통)
+            self._report_rows.append(
+                (self.sample_name, len(chunks), n_complete, len(missing)))
+            # 샘플별 상세 라인은 --status 에서만
+            if self.report_verbose:
+                print(f"  [report] {self.sample_name}: files={len(lines)} "
+                      f"files/job={N} jobs={len(chunks)} "
+                      f"complete={n_complete} missing={len(missing)}"
+                      + (f" -> idx {missing[:20]}{' ...' if len(missing) > 20 else ''}"
+                         if missing else ""))
             return 0
         if self.resubmit_only:
             print(f"  [resubmit] {self.sample_name}: {n_written} job(s) to "
@@ -819,7 +872,9 @@ class CondorJobManager:
         subprocess.call(["condor_submit", self.condor_submit_name])
 
     def setup_and_submit_job(self):
-        print(f"\nSetting up job for sample: {self.sample_name}")
+        # [STEP20] compact report 는 조용히 집계만 — 배너는 --status/제출에서만
+        if not self.report_only or self.report_verbose:
+            print(f"\nSetting up job for sample: {self.sample_name}")
         n_jobs = self.generate_argument_list()
         # [report] report 모드는 집계만 하고 항상 0 을 반환한다(제출 안 함).
         # 이때 'All outputs already complete' 는 거짓이므로 건너뛴다.
@@ -832,6 +887,48 @@ class CondorJobManager:
         self.create_executable_script()
         self.write_condor_submission_file()
         self.submit_job()
+
+    # -------------------------------------------------------------------------
+    def _print_report_table(self):
+        """[STEP20] 완료/미완료 요약 테이블 (NtupleForge crab --report 스타일).
+
+        판정 기준은 STEP19 의 종료 마커(output 에 cutflow_w_full 존재)이므로
+        'done' = analyzer 가 event loop 를 완주하고 output 을 닫은 job 이다.
+        아직 큐/실행 중인 job 도 output 이 없으니 'miss' 로 집계된다 — 즉
+        miss = 실패 + 미실행 + 실행중. 실시간 큐 상태는 condor_q 로 볼 것.
+        """
+        rows = self._report_rows
+        if not rows:
+            print("\n[report] no samples processed — nothing to summarize.")
+            return
+        name_w = max([len("sample")] + [len(r[0]) for r in rows])
+        header = (f"{'sample':<{name_w}}  {'jobs':>6}  {'done':>6}  "
+                  f"{'miss':>6}  {'done%':>7}")
+        bar = "=" * len(header)
+        mode_tag = f"mode={self.AnalyzerMode}{self._dir_suffix or ''}"
+        print("\n" + bar)
+        print(f"Condor output report ({mode_tag})  "
+              f"[done = end-marker complete (STEP19)]")
+        print(bar)
+        print(header)
+        print("-" * len(header))
+        t_jobs = t_done = t_miss = 0
+        for name, jobs, done, miss in rows:
+            pct = (100.0 * done / jobs) if jobs else 0.0
+            flag = "" if miss == 0 else "  <-- missing"
+            print(f"{name:<{name_w}}  {jobs:>6}  {done:>6}  "
+                  f"{miss:>6}  {pct:>6.1f}%{flag}")
+            t_jobs += jobs; t_done += done; t_miss += miss
+        print("-" * len(header))
+        t_pct = (100.0 * t_done / t_jobs) if t_jobs else 0.0
+        print(f"{'TOTAL':<{name_w}}  {t_jobs:>6}  {t_done:>6}  "
+              f"{t_miss:>6}  {t_pct:>6.1f}%")
+        print(bar)
+        if t_miss:
+            print("  -> missing idx 목록: --status  |  재큐: --resubmit "
+                  "(같은 --files-per-job/--region/SF 인자로)")
+        else:
+            print("  -> all outputs complete.")
 
 
 def main():

@@ -11,6 +11,7 @@ The analyzer + submitter are migrated to the `ttHH2017UL_fullNano_v20` ntuple ca
 
 ## What is ready (DECIDED)
 
+- **report 요약 테이블 / --status (STEP 20, 2026-07-10):** `--report` = 전체 요약 테이블(done/miss/done% + TOTAL), `--status` = 샘플별 상세(missing idx). 조회는 read-only(인자 파일 truncate 부작용 수정), tmp 디렉토리는 job 을 실제 큐잉할 때만 생성. 상세: [`changes/STEP_20_report_table_status_readonly.md`](changes/STEP_20_report_table_status_readonly.md).
 - **report/resubmit 완료판정 (STEP 19, 2026-07-10):** `--report`/`--resubmit` 은 이제 종료 마커(`cutflow_w_full`) 기준으로 판정한다. selection 통과 0건인 정상 job(저-HT WJets/QCD)의 거짓 missing → 영구 재제출 루프와 half-written 거짓 complete 를 동시에 해소. 기존 output 에 소급 적용 — 재실행 없이 `--report` 재실행. 상세: [`changes/STEP_19_completion_marker_and_ttcat_note.md`](changes/STEP_19_completion_marker_and_ttcat_note.md). **주의: analyzer(`ttHHanalyzer_unified.cc` — non-tt ttCatSummary 게이트) 재빌드 필요.**
 - **Naming:** all components key off NtupleForge campaign names (see [`DECISIONS.md`](DECISIONS.md) D-2026-06-30-A and `changes/STEP_18_*.md`). yml↔xsec_db verified consistent (0 missing MC, 0 null-xsec MC); process-group keys (8) intact.
 - **Normalization inputs:** `data/samples_2017UL.json` (xsec_db, 91 entries) updated; k-factors folded to notes (`kfactor=1.0`).
