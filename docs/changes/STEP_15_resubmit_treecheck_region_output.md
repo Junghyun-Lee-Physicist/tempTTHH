@@ -81,3 +81,10 @@ python3 submit_job_FH_Tier3_unified.py --mode main --region muon --files-per-job
 `root -l -b -q f.root -e '((TTree*)gFile->Get("Tree/<name>"))->GetEntries()'`.
 **근본 개선(미구현)**: 정상 종료 마커(예: output 에 nProcessed 스칼라 기록 후
 report 가 그 존재/값을 검사)를 두면 half-written 을 거를 수 있다. → 향후 과제.
+
+> **[2026-07-10 후속]** 위 근본 개선은 **STEP_19 에서 구현됨** — analyzer 가
+> loop() 마지막에 Write 하는 `cutflow_w_full` 을 종료 마커로 사용하도록
+> `_output_is_complete` 를 교체 (analyzer 무수정, 기존 output 소급 적용).
+> 이 문서의 "거짓 음성" 목록에 빠져 있던 케이스(**정당하게 빈 output**:
+> selection 통과 0건 → Tree entries=0 → 영구 재제출 루프)도 같이 해소.
+> 상세: [`STEP_19_completion_marker_and_ttcat_note.md`](STEP_19_completion_marker_and_ttcat_note.md).

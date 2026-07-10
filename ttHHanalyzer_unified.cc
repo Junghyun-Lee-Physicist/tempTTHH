@@ -1675,9 +1675,31 @@ void ttHHanalyzer_unified::writeHistos(){
 
     // [STEP17] full-Nano: ntuple ttCat_*/ttCatXval_* 부재 → 단일 pair
     // (POG genTtbarId 디코드 vs GenPart). off-diagonal cell 을 나열한다.
-    std::cout << "[ttCatSummary] --- ANA_GENPART vs ANA_GENID (POG vs GenPart, ~97% 기대) ---" << std::endl;
-    pairAgreement("ANA_GENPART vs ANA_GENID    ",
-                  _hTtCat_AnaGenPart_vs_AnaGenId,   /*listOff=*/true);
+    //
+    // [STEP19] 비교의 유효 범위를 샘플로 게이트한다 (진단 출력만 변경; 물리 무관).
+    //   - ttbar family (TTbar_*/TTbb_*/TT4b): 두 estimator 모두 유의미.
+    //     기대 agreement: HF-enriched >97%, LF-dominated inclusive tt ~73%
+    //     (docs/ttbarCategorization.md §4.1).
+    //   - 그 외(non-tt: V+jets/QCD/single-t/diboson/ttV/...): NanoAOD
+    //     ttbarCategorization sequence 는 모든 MC 에서 돌아 genTtbarId>=0 을
+    //     채우고(top 제외 대상이 없어 모든 HF jet 이 "additional"), 디코드는
+    //     gtid<0 에서만 noTT 를 내므로 noTT 를 표현할 수 없다. 반면 GenPart
+    //     경로는 eventHasTTPair() 게이트로 전부 noTT(정답). → agreement 는
+    //     정의상 0% 이며 비교가 무의미하다. 이때 ANA_GENID breakdown 은
+    //     "이 샘플의 additional-HF 조성" 참고용으로만 읽을 것.
+    if (TtCatGroup::IsTtbarFamily(_sampleName)) {
+        std::cout << "[ttCatSummary] --- ANA_GENPART vs ANA_GENID (POG vs GenPart, ~97% 기대) ---" << std::endl;
+        pairAgreement("ANA_GENPART vs ANA_GENID    ",
+                      _hTtCat_AnaGenPart_vs_AnaGenId,   /*listOff=*/true);
+    } else {
+        std::cout << "[ttCatSummary] --- ANA_GENPART vs ANA_GENID: SKIPPED (non-tt sample '"
+                  << _sampleName << "') ---\n"
+                  << "[ttCatSummary]     genTtbarId 디코드는 non-tt 에서 noTT 를 표현 못함(gtid>=0 항상)\n"
+                  << "[ttCatSummary]     → agreement 0% 는 정의상 결과. ANA_GENID breakdown 은 additional-HF 조성 참고용."
+                  << std::endl;
+        pairAgreement("ANA_GENPART vs ANA_GENID    ",
+                      _hTtCat_AnaGenPart_vs_AnaGenId,   /*listOff=*/false);
+    }
 
     std::cout << "[ttCatSummary] ═══════════════════════════════════════════════\n"
               << std::endl;

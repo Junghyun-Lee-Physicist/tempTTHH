@@ -639,22 +639,31 @@ class CondorJobManager:
             if self.analysis_mode == "prescan":
                 t = f.Get("prescan")
                 return bool(t) and t.InheritsFrom("TTree") and t.GetEntries() == 1
-            # [fix] 분석 tree 는 디렉토리 안에 있을 수 있다(예: Tree/...). 최상위
-            # 키만 보면 TDirectoryFile 만 걸려 TTree 를 못 찾으므로(=거짓 missing),
-            # 디렉토리를 재귀로 내려가며 non-empty TTree 를 찾는다.
-            def _has_nonempty_tree(d, depth=0):
+            # [STEP19] 완료판정 = "종료 마커" 검사 (기존: non-empty TTree).
+            #
+            # analyzer(loop() 끝, ttHHanalyzer_unified.cc)는 writeHistos →
+            # writeTree 이후 **마지막으로** cutflow 4종(cutflow / cutflow_w /
+            # cutflow_w_btagSF / cutflow_w_full)을 Write 한다. 따라서
+            # 'cutflow_w_full' 키의 존재 자체가 "event loop 완주" 마커다.
+            #
+            # 이 기준은 기존 non-empty TTree 기준의 두 오류를 동시에 고친다:
+            #   - 거짓 missing: selection 을 아무 이벤트도 통과 못한 정상
+            #     job (Tree entries=0; 저-HT WJets/QCD 에서 구조적으로 발생)
+            #     → cutflow 는 있으므로 complete.
+            #   - 거짓 complete(half-written, STEP15 §6 의 고위험 케이스):
+            #     중간에 죽은 job 은 Tree 에 entry 가 남아도 cutflow 를
+            #     끝내 Write 하지 못함 → incomplete 로 정확히 재큐.
+            def _has_end_marker(d, depth=0):
                 if depth > 4:               # 안전장치 (무한/과도 재귀 방지)
                     return False
                 for key in d.GetListOfKeys():
-                    obj = key.ReadObj()
-                    if obj.InheritsFrom("TTree"):
-                        if obj.GetEntries() > 0:
-                            return True
-                    elif obj.InheritsFrom("TDirectory"):
-                        if _has_nonempty_tree(obj, depth + 1):
+                    if key.GetName() == "cutflow_w_full":
+                        return True
+                    if key.GetClassName().startswith("TDirectory"):
+                        if _has_end_marker(key.ReadObj(), depth + 1):
                             return True
                 return False
-            return _has_nonempty_tree(f)
+            return _has_end_marker(f)
         finally:
             f.Close()
 

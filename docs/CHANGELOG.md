@@ -7,6 +7,12 @@
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
 
+## 2026-07-10 — STEP 19: report/resubmit 완료판정 = 종료 마커 + non-tt ttCat 요약 게이트
+
+- `submit_job_FH_Tier3_unified.py` `_output_is_complete` (non-prescan): "non-empty TTree" 기준 → **`cutflow_w_full` 종료 마커** 기준으로 교체. selection 을 아무 이벤트도 통과 못한 정상 job(저-HT WJets/QCD 에서 구조적 발생)의 거짓 missing(→ 영구 재제출 루프)과, STEP_15 §6 의 고위험 half-written 거짓 complete 를 동시에 해소. 기존 output 에 소급 적용 — 재실행 없이 `--report` 재실행으로 충분. prescan 분기 불변.
+- `ttHHanalyzer_unified.cc` `printTtCatSummary`: pair 비교(ANA_GENPART vs ANA_GENID)를 `IsTtbarFamily` 로 게이트. non-tt 샘플은 genTtbarId 디코드가 noTT 를 표현할 수 없어(NanoAOD 가 모든 MC 에 gtid≥0 기록) agreement 0% 가 정의상 결과 — "~97% 기대" 라벨 대신 SKIPPED 사유를 출력. 진단 stdout 만 변경, 물리/branch 무영향. **analyzer 재빌드 필요.**
+- Detail: [`changes/STEP_19_completion_marker_and_ttcat_note.md`](changes/STEP_19_completion_marker_and_ttcat_note.md).
+
 ## 2026-06-30 — fix: make_filelists TTbar/ttbb disk-directory keys
 
 - `make_filelists.py` `SAMPLE_MAP`: corrected 6 keys (on-disk dataset dir names) that STEP 18 had wrongly renamed to the short_name form (`TTbar_Hadronic_…`, `TTbb_4f_TTbar_…`). Real dirs are `TTToHadronic_…` / `TTToSemiLeptonic_…` / `TTTo2L2Nu_…` and `TTbb_4f_TTTo*_…`; this fixes the 6 `[MISSING] Directory not found` errors. short_names (values, = project keys) unchanged, so analyzer/xsec_db/yml/group-map are unaffected. Restores the module's own documented invariant ("on-disk primary dataset 이름은 불변").
