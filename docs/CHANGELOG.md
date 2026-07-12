@@ -2,10 +2,16 @@
 
 > **Purpose:** one chronological line per change, newest first, linking to the full record. The detail lives in [`changes/STEP_*.md`](changes/); this file is the index, not a copy.
 > **Audience:** anyone tracing when and why something changed.
-> **Status:** append-only · last meaningful update **2026-07-10**.
+> **Status:** append-only · last meaningful update **2026-07-12**.
 > **Links:** decisions [`DECISIONS.md`](DECISIONS.md) · state [`STATUS.md`](STATUS.md).
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
+
+## 2026-07-12 — STEP 22: merge_outputs.py — AnalyzerOutput 자동 발견 hadd (local 병렬/condor)
+
+- 신규 `outputMerger/merge_outputs.py`: `<base>/<proc>/<proc>_*.root` → `<base>/<proc>.root` merge 를 **디렉토리 자동 발견**으로 수행 — 구 merge_submitter.py 의 하드코딩 목록(stale 이름으로 다수 샘플이 조용히 누락될 상태) 제거. `--mode local --jobs N`(병렬 + 완료 대기 + OK/FAIL 요약 + exit 전파) / `--mode condor`(proc 당 1 job, submit_hadd_validation 템플릿), `--only/--exclude/--skip-existing/--list/--dry-run`. 실행 단위는 검증된 `run_one_hadd.sh` 재사용.
+- 검증: 74개 실디렉토리명 가짜 트리 + stub runner 로 발견/필터/병렬/실패복구/condor 생성 end-to-end 테스트 전부 통과. 실제 hadd 는 Tier3 에서 `--list` → `--dry-run` 순 확인 권장.
+- Detail: [`changes/STEP_22_merge_outputs_autodiscovery.md`](changes/STEP_22_merge_outputs_autodiscovery.md).
 
 ## 2026-07-10 — STEP 21: plotter 전체 샘플 + compact/detailed 2-모드 그룹핑 + cutflow legend 수율 + PDF
 

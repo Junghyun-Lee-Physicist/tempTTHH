@@ -720,3 +720,21 @@ Top 늘리려면 4번째 인자를 0.92 등으로.
 ---
 
 문제 발생 시 condor log + dry-run output 같이 첨부해서 알려 주세요.
+
+---
+
+## [STEP22] main/btagtrig output merge — `merge_outputs.py`
+
+위 파이프라인은 **validation** 레이아웃(`<base>/<scenario>/<sample>/`) 전용이다.
+main/btagtrig 의 flat 레이아웃(`<base>/<proc>/<proc>_*.root` → `<base>/<proc>.root`)은
+`merge_outputs.py` 를 쓴다 — process 목록 하드코딩 없이 디렉토리 자동 발견.
+
+```bash
+python3 merge_outputs.py --base /pnfs/.../AnalyzerOutput_main --list          # 발견 확인
+python3 merge_outputs.py --base ... --mode local --jobs 8                     # 로컬 8-way
+python3 merge_outputs.py --base ... --mode condor                             # condor
+python3 merge_outputs.py --base ... --mode local --jobs 8 --skip-existing     # 실패분 재시도
+# 필터: --only 'QCD_*' 'TTbar_*' / --exclude 'SingleMuon_*'
+```
+
+실행 단위는 두 모드 모두 `run_one_hadd.sh <indir> <outfile>` 재사용.
