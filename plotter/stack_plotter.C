@@ -21,7 +21,7 @@
  *     Bin labels from the analyzer are used as the x-axis tick labels.
  *   - Higgs mass plots (cutStep_<N>_higgs can01/02) are drawn as before;
  *     output file names with spaces are now sanitized to underscores so the
- *     PNGs land at  cutStep_8_higgs_can01.png  (space-free, easier to ls).
+ *     PDFs land at  cutStep_8_higgs_can01.pdf  (space-free, easier to ls).
  *   - Each MC entry in the legend now carries its integrated yield in
  *     parentheses, e.g.  "t#bar{t} (had)   12345.6"
  *   - Data legend entry shows the data yield as a bare integer.
@@ -42,6 +42,7 @@
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
+#include <cstdlib>    // [STEP21] std::getenv — TTHH_PLOT_GROUPING 모드 선택
 
 // ROOT Headers
 #include "TFile.h"
@@ -380,48 +381,121 @@ std::string ShortenLabel(const std::string& rawName) {
 }
 
 // ============================================================================
-// 2.6  CMS-STYLE PHYSICS-GROUP MERGE  [added 2026-06]
+// 2.6  CMS-STYLE PHYSICS-GROUP MERGE  [added 2026-06, reworked STEP21 2026-07]
 // ----------------------------------------------------------------------------
-// Collapse the ~20 individual samples into a handful of physics groups so the
-// stack is readable and shows "who contributes most". One merged histogram per
-// group → each group is ONE contiguous block in the stack and ONE legend row.
+// Collapse the ~61 individual samples into physics groups so the stack is
+// readable. One merged histogram per group → each group is ONE contiguous
+// block in the stack and ONE legend row.
 //
-//   key      label                samples folded in
-//   -------  -------------------  ----------------------------------------------
-//   QCD      QCD                  QCD_HT* (all HT slices)
-//   ttbar    t#bar{t}             TTbar_Hadronic / SemiLeptonic / 2L2Nu (inclusive)
-//   ttbb     t#bar{t}b#bar{b}     TTbb_Hadronic / SemiLeptonic / 2L2Nu (tt+2b)
-//   tt4b     t#bar{t}+4b          tt4b (tt+nb — kept separate; the categorization point)
-//   ttH      t#bar{t}H            ttHTobb
-//   ttV      t#bar{t}+V           ttZ*, ttW*, TTWW, TTWZ, ttZZ*, TTWH, ttZH*, TTTW
-//   TTTT     t#bar{t}t#bar{t}     TTTT
-//   ttHH     t#bar{t}HH           ttHH (signal)
-//   Other    Other                anything unmatched
+// [STEP21] 두 가지 그룹핑 모드 (env TTHH_PLOT_GROUPING 로 선택):
+//   compact  (기본) : MC 10줄 — ttH+tH 통합, tt+X(rare) 통합, V+jets/VV 통합
+//   detailed        : MC 13줄 — tH / tt+VV,VH / 3t,4t / V+jets / VV 분리
+// TTZHTo4b/TTZZTo4b (signal 유사 4b 배경) 는 **두 모드 모두** 별도 줄.
 //
-// Check ORDER matters (substring collisions): ttbb/tt4b before ttH/ttV; ttHH
-// before ttH; TTTT before ttV (TTTW contains "ttW"). TTZHTo4b/TTZZTo4b contain
-// "to4b" (not "tt4b") so they fall to ttV, not tt4b — intended.
+// [STEP21] 매칭은 substring → **exact-name 테이블** + HT-slice prefix 규칙으로
+// 교체. 기존 substring 라우팅은 (a) 충돌 순서 주석 관리가 필요했고 (b) 실제
+// 오배정이 있었다: TTWW/TTWZ(tt+VV), TTWH/TTZH*(tt+VH), TTTW(3top) 가 전부
+// "t#bar{t}+V" 로 묶임. 구 hadd 파일명(tt4b/ttHH/ttbb_* 등)은 alias 로 유지.
+// 미배정 샘플은 Other 로 가고 stderr 경고 1회 출력 (안전망).
 // ============================================================================
 struct ProcessGroup { std::string key; std::string label; const char* colorHex; };
 
+// ── grouping mode (stack_plotter() 에서 env 로 설정) ─────────────────────────
+static std::string gGroupingMode = "compact";   // "compact" | "detailed"
+
+// fine key: 물리적으로 정확한 최소 단위 (detailed 모드의 그룹과 동일)
+static std::string GetFineProcessKey(const std::string& name) {
+    // ── exact-name table (condor 샘플명 + 구 hadd 별칭) ──
+    static const std::map<std::string, std::string> kExact = {
+        // signal
+        {"TTHHto4b", "ttHH"}, {"ttHH", "ttHH"},
+        // ttbar inclusive (decay channel)
+        {"TTbar_Hadronic", "ttbar"}, {"TTbar_SemiLep", "ttbar"}, {"TTbar_DiLep", "ttbar"},
+        // tt+bb dedicated
+        {"TTbb_Hadronic", "ttbb"}, {"TTbb_SemiLep", "ttbb"}, {"TTbb_DiLep", "ttbb"},
+        // tt+4b
+        {"TT4b", "tt4b"}, {"tt4b", "tt4b"},
+        // ttH
+        {"ttHTobb", "ttH"}, {"ttHToNonbb", "ttH"},
+        // tH
+        {"tHq", "tH"}, {"tHW", "tH"},
+        // tt + single V (진짜 ttV 만)
+        {"TTZToBB", "ttV"}, {"TTZToLLNuNu", "ttV"},
+        {"TTWJetsToQQ", "ttV"}, {"TTWJetsToLNu", "ttV"},
+        // tt + ZH/ZZ → 4b : signal 유사 배경, 두 모드 모두 별도 줄
+        {"TTZHTo4b", "ttZHZZ"}, {"TTZZTo4b", "ttZHZZ"},
+        // tt + VV / VH (나머지)
+        {"TTWW", "ttVVVH"}, {"TTWZ", "ttVVVH"}, {"TTWH", "ttVVVH"},
+        // 3-top / 4-top
+        {"TTTT", "tttx"}, {"TTTW", "tttx"},
+        // single top
+        {"ST_t_top", "singletop"}, {"ST_t_antitop", "singletop"},
+        {"ST_tW_top", "singletop"}, {"ST_tW_antitop", "singletop"},
+        {"ST_s_lep", "singletop"}, {"ST_s_had", "singletop"},
+        // diboson
+        {"WW", "vv"}, {"WZ", "vv"}, {"ZZ", "vv"},
+    };
+    auto it = kExact.find(name);
+    if (it != kExact.end()) return it->second;
+
+    // ── HT-slice prefix rules (샘플군 전체가 같은 그룹) ──
+    static const std::vector<std::pair<std::string, std::string>> kPrefix = {
+        {"QCD_HT",            "QCD"},
+        {"WJetsToLNu_HT",     "vjets"},
+        {"WJetsToQQ_HT",      "vjets"},
+        {"ZJetsToQQ_HT",      "vjets"},
+        {"DYJetsToLL_M50_HT", "vjets"},
+    };
+    for (const auto& p : kPrefix)
+        if (name.rfind(p.first, 0) == 0) return p.second;
+
+    // 미배정 → Other (경고 1회)
+    static std::set<std::string> warned;
+    if (warned.insert(name).second)
+        std::cerr << "\n[StackPlotter][warn] sample '" << name
+                  << "' not in grouping table -> 'Other'" << std::endl;
+    return "other";
+}
+
+// fine key → (mode 별) 그룹 정의. label/색은 여기 한 곳에서만 관리.
 ProcessGroup GetProcessGroup(const std::string& name) {
-    if (name.find("QCD")  != std::string::npos) return {"QCD",  "QCD",                 "#C0392B"};
-    if (name.find("ttbb") != std::string::npos ||
-        name.find("ttBB") != std::string::npos) return {"ttbb", "t#bar{t}b#bar{b}",    "#8E44AD"};
-    if (name.find("tt4b") != std::string::npos ||
-        name.find("TT4b") != std::string::npos) return {"tt4b", "t#bar{t}+4b",         "#16A085"};
-    if (name.find("TTTo") != std::string::npos ||
-        name.find("TTto") != std::string::npos) return {"ttbar","t#bar{t}",            "#2C5AA0"};
-    if (name.find("ttHH") != std::string::npos ||
-        name.find("TTHH") != std::string::npos) return {"ttHH", "t#bar{t}HH",          "#FF8C00"};
-    if (name.find("TTTT") != std::string::npos ||
-        name.find("TTTT") != std::string::npos) return {"TTTT", "t#bar{t}t#bar{t}",    "#34495E"};
-    if (name.find("ttH")  != std::string::npos ||
-        name.find("TTH")  != std::string::npos) return {"ttH",  "t#bar{t}H",           "#F1C40F"};
-    if (name.find("ttZ")  != std::string::npos || name.find("TTZ") != std::string::npos ||
-        name.find("ttW")  != std::string::npos || name.find("TTW") != std::string::npos)
-                                                 return {"ttV",  "t#bar{t}+V",          "#27AE60"};
-    return {"Other", "Other", "#BDC3C7"};
+    const std::string fine = GetFineProcessKey(name);
+
+    // detailed: fine key = 그룹 (MC 13줄)
+    static const std::map<std::string, ProcessGroup> kDetailed = {
+        {"ttHH",     {"ttHH",     "t#bar{t}HH",           "#FF8C00"}},
+        {"QCD",      {"QCD",      "QCD",                  "#C0392B"}},
+        {"ttbar",    {"ttbar",    "t#bar{t}",             "#2C5AA0"}},
+        {"ttbb",     {"ttbb",     "t#bar{t}b#bar{b}",     "#8E44AD"}},
+        {"tt4b",     {"tt4b",     "t#bar{t}+4b",          "#16A085"}},
+        {"ttH",      {"ttH",      "t#bar{t}H",            "#F1C40F"}},
+        {"tH",       {"tH",       "tH",                   "#B7950B"}},
+        {"ttV",      {"ttV",      "t#bar{t}+V",           "#27AE60"}},
+        {"ttZHZZ",   {"ttZHZZ",   "t#bar{t}+ZH/ZZ(4b)",   "#17A2B8"}},
+        {"ttVVVH",   {"ttVVVH",   "t#bar{t}+VV/VH",       "#52BE80"}},
+        {"tttx",     {"tttx",     "3t/4t",                "#34495E"}},
+        {"singletop",{"singletop","single t",             "#7F8C8D"}},
+        {"vjets",    {"vjets",    "V+jets",               "#5DADE2"}},
+        {"vv",       {"vv",       "VV",                   "#AF7AC5"}},
+        {"other",    {"Other",    "Other",                "#BDC3C7"}},
+    };
+    // compact: 일부 fine key 를 통합 (MC 10줄; ttZHZZ 는 유지)
+    static const std::map<std::string, ProcessGroup> kCompactMerge = {
+        {"ttH",      {"ttHtH",    "t#bar{t}H+tH",         "#F1C40F"}},
+        {"tH",       {"ttHtH",    "t#bar{t}H+tH",         "#F1C40F"}},
+        {"ttVVVH",   {"rare",     "t#bar{t}+X (rare)",    "#34495E"}},
+        {"tttx",     {"rare",     "t#bar{t}+X (rare)",    "#34495E"}},
+        {"vjets",    {"vjetsvv",  "V+jets/VV",            "#5DADE2"}},
+        {"vv",       {"vjetsvv",  "V+jets/VV",            "#5DADE2"}},
+    };
+
+    if (gGroupingMode == "compact") {
+        auto m = kCompactMerge.find(fine);
+        if (m != kCompactMerge.end()) return m->second;
+    }
+    auto d = kDetailed.find(fine);
+    if (d != kDetailed.end()) return d->second;
+    return kDetailed.at("other");
 }
 
 /**
@@ -437,6 +511,33 @@ ProcessGroup GetProcessGroup(const std::string& name) {
  * Used only as the x-axis title; the file-name still uses clean_name so this
  * cosmetic remap does not impact saved file paths.
  */
+/**
+ * [STEP21] cutflow 히스토그램 판별 (경로 tail 기준).
+ * analyzer 의 cutflow 계열: cutflow / cutflow_w / cutflow_w_btagSF /
+ * cutflow_w_full (구명 hCutFlow*).  legend yield 와 ratio 패널 설정에 공용.
+ */
+bool IsCutflowHist(const std::string& path) {
+    auto slash = path.find_last_of('/');
+    std::string tail = (slash == std::string::npos) ? path : path.substr(slash + 1);
+    return tail == "cutflow" || tail == "cutflow_w"
+        || tail == "cutflow_w_btagSF" || tail == "cutflow_w_full"
+        || tail == "hCutFlow" || tail == "hCutFlow_w";
+}
+
+/**
+ * [STEP21] legend 에 쓸 yield.
+ *   일반 hist : Integral(0, N+1)  — 그 selection 단계의 수율 (기존 동작)
+ *   cutflow   : 마지막 bin(GetBinContent(N)) — 최종 cut(nTotal) 이후 수율.
+ * 기존에는 cutflow 도 Integral 이라 "noCut+각 step 의 합"(noCut 지배 →
+ * 사실상 cut 전 total 로 보임)이 표시됐다. 그룹 정렬도 이 yield 를 쓰므로
+ * cutflow 플롯의 stack/legend 순서도 최종 수율 기준으로 정렬된다.
+ */
+double LegendYield(const TH1F* h, bool isCutflow) {
+    if (!h) return 0.0;
+    if (isCutflow) return h->GetBinContent(h->GetNbinsX());
+    return h->Integral(0, h->GetNbinsX() + 1);
+}
+
 std::string PrettyAxisTitle(const std::string& path) {
     // grab the last path component
     auto slash = path.find_last_of('/');
@@ -536,7 +637,23 @@ void stack_plotter() {
     std::cout << "===========================================\n" << std::endl;
 
     double LUMI = 41.48;  // Lumi for 2017 UL
-    std::string outDir = "plots";
+
+    // ── [STEP21] grouping 모드 선택 ────────────────────────────────────────
+    // env TTHH_PLOT_GROUPING = "compact"(기본) | "detailed"
+    //   compact  : MC 10줄 (ttH+tH, tt+X rare, V+jets/VV 통합)
+    //   detailed : MC 13줄 (tH, tt+VV/VH, 3t/4t, V+jets, VV 분리)
+    // 두 모드 output 이 서로 덮어쓰지 않게 디렉토리를 분리한다.
+    if (const char* env = std::getenv("TTHH_PLOT_GROUPING")) {
+        gGroupingMode = env;
+        if (gGroupingMode != "compact" && gGroupingMode != "detailed") {
+            std::cerr << "[StackPlotter][FATAL] TTHH_PLOT_GROUPING='"
+                      << gGroupingMode << "' (allowed: compact | detailed)"
+                      << std::endl;
+            gSystem->Exit(1);
+        }
+    }
+    std::string outDir = "plots_" + gGroupingMode;
+    Log("Grouping mode: " + gGroupingMode + "  (output -> " + outDir + "/)");
 
     // ── stack ordering policy ──────────────────────────────────────────────
     // The stack is ALWAYS grouped + ordered by yield; this flag only chooses
@@ -587,6 +704,9 @@ void stack_plotter() {
         TH1F* hData = nullptr;
         TH1F* hMcSum = nullptr;
 
+        // [STEP21] cutflow 여부는 loop 전체(legend yield, ratio 패널)에서 공용
+        const bool isCutflow = IsCutflowHist(hInfo.key_path);
+
         // ── Legend (slightly taller to accommodate yields + Total MC row) ──
         TLegend* leg = new TLegend(0.42, 0.55, 0.93, 0.89);
         leg->SetBorderSize(0);
@@ -594,6 +714,8 @@ void stack_plotter() {
         leg->SetTextSize(0.034);
         leg->SetTextFont(42);
         leg->SetNColumns(2);
+        // [STEP21] cutflow 플롯의 legend 수치는 '최종 cut 이후' 수율임을 명시
+        if (isCutflow) leg->SetHeader("yields after final cut");
 
         bool hasData = false;
         bool hasMC = false;
@@ -621,7 +743,7 @@ void stack_plotter() {
 
             // ── MC: route into its physics group ──
             const ProcessGroup pg = GetProcessGroup(sample.name);
-            const double thisYield = h->Integral(0, h->GetNbinsX() + 1);
+            const double thisYield = LegendYield(h, isCutflow);   // [STEP21] cutflow=최종 bin
 
             auto it = groupMap.find(pg.key);
             if (it == groupMap.end()) {
@@ -667,7 +789,7 @@ void stack_plotter() {
         // Data first, then MC groups by descending yield (most-contributing
         // first → "who matters" is read top-down), then a Total-MC row.
         if (hasData && hData) {
-            const double dataYield = hData->Integral(0, hData->GetNbinsX() + 1);
+            const double dataYield = LegendYield(hData, isCutflow);
             leg->AddEntry(hData,
                           Form("Data   %s", FormatYield(dataYield).c_str()),
                           "lp");
@@ -679,7 +801,7 @@ void stack_plotter() {
                           "f");
         }
         if (hasMC && hMcSum) {
-            const double mcYield = hMcSum->Integral(0, hMcSum->GetNbinsX() + 1);
+            const double mcYield = LegendYield(hMcSum, isCutflow);
             leg->AddEntry((TObject*)nullptr,
                           Form("Total MC   %s",
                                FormatYield(mcYield).c_str()),
@@ -761,11 +883,7 @@ void stack_plotter() {
         // range a touch (cutflows can swing more in early bins where stats
         // are dominated by a few events) and to propagate per-bin labels
         // from the histograms onto the ratio panel.
-        const std::string tail = (hInfo.key_path.find_last_of('/') == std::string::npos)
-            ? hInfo.key_path
-            : hInfo.key_path.substr(hInfo.key_path.find_last_of('/') + 1);
-        const bool isCutflow = (tail == "cutflow" || tail == "cutflow_w"
-                              || tail == "hCutFlow" || tail == "hCutFlow_w");
+        // [STEP21] isCutflow 는 loop 상단에서 IsCutflowHist() 로 1회 계산 — 재사용.
 
         pad2->cd(); pad2->SetGridy();
         if (hasData && hMcSum) {
@@ -797,7 +915,7 @@ void stack_plotter() {
             line->SetLineStyle(2); line->SetLineColor(kRed); line->Draw();
         }
 
-        c->SaveAs(Form("%s/%s.png", outDir.c_str(), hInfo.clean_name.c_str()));
+        c->SaveAs(Form("%s/%s.pdf", outDir.c_str(), hInfo.clean_name.c_str()));   // [STEP21] PDF(벡터)
 
         delete c; delete hMcSum; if(hData) delete hData;
         if (hSigOverlay) delete hSigOverlay;

@@ -1,4 +1,9 @@
 description: Configuration for HADD-merged samples
+# [STEP21] full sample set (MC 61 + Data JetHT/BTagCSV). NOTE:
+#  - path 는 로컬 hadd 결과 위치 — 환경에 맞게 일괄 치환해서 쓸 것.
+#  - 아직 hadd 안 된 샘플이 있어도 안전: 파일 열기 실패 시 그 샘플만 skip.
+#  - stack 색/legend 는 stack_plotter.C 의 그룹 테이블이 결정 — 여기 color 는
+#    그룹핑 모드에서는 사용되지 않는 placeholder.
 samples:
   BTagCSV_B:
     type: DATA
@@ -238,3 +243,262 @@ samples:
     - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTTT.root
     label: TTTT
     color: '#117733'
+  ttHToNonbb:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/ttHToNonbb.root
+    label: ttHToNonbb
+    color: '#BDC3C7'
+  tHq:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/tHq.root
+    label: tHq
+    color: '#BDC3C7'
+  tHW:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/tHW.root
+    label: tHW
+    color: '#BDC3C7'
+  TTWJetsToQQ:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTWJetsToQQ.root
+    label: TTWJetsToQQ
+    color: '#BDC3C7'
+  TTWJetsToLNu:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTWJetsToLNu.root
+    label: TTWJetsToLNu
+    color: '#BDC3C7'
+  TTZToLLNuNu:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTZToLLNuNu.root
+    label: TTZToLLNuNu
+    color: '#BDC3C7'
+  ST_t_top:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/ST_t_top.root
+    label: ST_t_top
+    color: '#BDC3C7'
+  ST_t_antitop:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/ST_t_antitop.root
+    label: ST_t_antitop
+    color: '#BDC3C7'
+  ST_tW_top:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/ST_tW_top.root
+    label: ST_tW_top
+    color: '#BDC3C7'
+  ST_tW_antitop:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/ST_tW_antitop.root
+    label: ST_tW_antitop
+    color: '#BDC3C7'
+  ST_s_lep:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/ST_s_lep.root
+    label: ST_s_lep
+    color: '#BDC3C7'
+  ST_s_had:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/ST_s_had.root
+    label: ST_s_had
+    color: '#BDC3C7'
+  WW:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/WW.root
+    label: WW
+    color: '#BDC3C7'
+  WZ:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/WZ.root
+    label: WZ
+    color: '#BDC3C7'
+  ZZ:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/ZZ.root
+    label: ZZ
+    color: '#BDC3C7'
+  WJetsToQQ_HT400to600:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/WJetsToQQ_HT400to600.root
+    label: WJetsToQQ_HT400to600
+    color: '#BDC3C7'
+  WJetsToQQ_HT600to800:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/WJetsToQQ_HT600to800.root
+    label: WJetsToQQ_HT600to800
+    color: '#BDC3C7'
+  WJetsToQQ_HT800toInf:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/WJetsToQQ_HT800toInf.root
+    label: WJetsToQQ_HT800toInf
+    color: '#BDC3C7'
+  ZJetsToQQ_HT400to600:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/ZJetsToQQ_HT400to600.root
+    label: ZJetsToQQ_HT400to600
+    color: '#BDC3C7'
+  ZJetsToQQ_HT600to800:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/ZJetsToQQ_HT600to800.root
+    label: ZJetsToQQ_HT600to800
+    color: '#BDC3C7'
+  ZJetsToQQ_HT800toInf:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/ZJetsToQQ_HT800toInf.root
+    label: ZJetsToQQ_HT800toInf
+    color: '#BDC3C7'
+  WJetsToLNu_HT70To100:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/WJetsToLNu_HT70To100.root
+    label: WJetsToLNu_HT70To100
+    color: '#BDC3C7'
+  WJetsToLNu_HT100To200:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/WJetsToLNu_HT100To200.root
+    label: WJetsToLNu_HT100To200
+    color: '#BDC3C7'
+  WJetsToLNu_HT200To400:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/WJetsToLNu_HT200To400.root
+    label: WJetsToLNu_HT200To400
+    color: '#BDC3C7'
+  WJetsToLNu_HT400To600:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/WJetsToLNu_HT400To600.root
+    label: WJetsToLNu_HT400To600
+    color: '#BDC3C7'
+  WJetsToLNu_HT600To800:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/WJetsToLNu_HT600To800.root
+    label: WJetsToLNu_HT600To800
+    color: '#BDC3C7'
+  WJetsToLNu_HT800To1200:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/WJetsToLNu_HT800To1200.root
+    label: WJetsToLNu_HT800To1200
+    color: '#BDC3C7'
+  WJetsToLNu_HT1200To2500:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/WJetsToLNu_HT1200To2500.root
+    label: WJetsToLNu_HT1200To2500
+    color: '#BDC3C7'
+  WJetsToLNu_HT2500ToInf:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/WJetsToLNu_HT2500ToInf.root
+    label: WJetsToLNu_HT2500ToInf
+    color: '#BDC3C7'
+  DYJetsToLL_M50_HT70to100:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/DYJetsToLL_M50_HT70to100.root
+    label: DYJetsToLL_M50_HT70to100
+    color: '#BDC3C7'
+  DYJetsToLL_M50_HT100to200:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/DYJetsToLL_M50_HT100to200.root
+    label: DYJetsToLL_M50_HT100to200
+    color: '#BDC3C7'
+  DYJetsToLL_M50_HT200to400:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/DYJetsToLL_M50_HT200to400.root
+    label: DYJetsToLL_M50_HT200to400
+    color: '#BDC3C7'
+  DYJetsToLL_M50_HT400to600:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/DYJetsToLL_M50_HT400to600.root
+    label: DYJetsToLL_M50_HT400to600
+    color: '#BDC3C7'
+  DYJetsToLL_M50_HT600to800:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/DYJetsToLL_M50_HT600to800.root
+    label: DYJetsToLL_M50_HT600to800
+    color: '#BDC3C7'
+  DYJetsToLL_M50_HT800to1200:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/DYJetsToLL_M50_HT800to1200.root
+    label: DYJetsToLL_M50_HT800to1200
+    color: '#BDC3C7'
+  DYJetsToLL_M50_HT1200to2500:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/DYJetsToLL_M50_HT1200to2500.root
+    label: DYJetsToLL_M50_HT1200to2500
+    color: '#BDC3C7'
+  DYJetsToLL_M50_HT2500toInf:
+    type: MC
+    path: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3
+    files:
+    - /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/DYJetsToLL_M50_HT2500toInf.root
+    label: DYJetsToLL_M50_HT2500toInf
+    color: '#BDC3C7'

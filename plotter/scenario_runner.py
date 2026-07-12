@@ -329,7 +329,8 @@ def run_scenario(scenario_name: str,
                  plotter_path: Path,
                  structure_yml_master: Path | None,
                  helper_dir: Path | None,
-                 dry_run: bool) -> tuple[str, bool, str]:
+                 dry_run: bool,
+                 groupings: list[str] | None = None) -> tuple[str, bool, str]:
     """
     Process one scenario end-to-end. Returns (name, success, message).
     """
@@ -390,23 +391,29 @@ def run_scenario(scenario_name: str,
     plotter_copy = workdir / plotter_path.name
     shutil.copy(plotter_path, plotter_copy)
 
-    cmd = ["root", "-l", "-b", "-q", plotter_copy.name]
-    print(f"    running: cd {workdir} && {' '.join(cmd)}")
-    proc = subprocess.run(
-        cmd, cwd=str(workdir),
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
-    )
-    log_path = workdir / "plotter.log"
-    log_path.write_text(proc.stdout)
-    if proc.returncode != 0:
-        tail = "\n".join(proc.stdout.splitlines()[-25:])
-        msg = f"plotter exited {proc.returncode}; tail:\n{tail}"
-        print(f"    [error] {msg}")
-        return (scenario_name, False, msg)
-
-    plot_dir = workdir / "plots"
-    n_plots = len(list(plot_dir.glob("*.png"))) if plot_dir.exists() else 0
-    msg = f"OK — {n_plots} plots in {plot_dir}"
+    # [STEP21] grouping 모드별 실행 — env TTHH_PLOT_GROUPING 로 plotter 에
+    # 전달, output 은 plots_<grouping>/ 에 분리 저장 (PDF).
+    groupings = groupings or ["compact"]
+    counts = []
+    for grp in groupings:
+        env = dict(os.environ, TTHH_PLOT_GROUPING=grp)
+        cmd = ["root", "-l", "-b", "-q", plotter_copy.name]
+        print(f"    running: cd {workdir} && TTHH_PLOT_GROUPING={grp} {' '.join(cmd)}")
+        proc = subprocess.run(
+            cmd, cwd=str(workdir), env=env,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+        )
+        log_path = workdir / f"plotter_{grp}.log"
+        log_path.write_text(proc.stdout)
+        if proc.returncode != 0:
+            tail = "\n".join(proc.stdout.splitlines()[-25:])
+            msg = f"plotter({grp}) exited {proc.returncode}; tail:\n{tail}"
+            print(f"    [error] {msg}")
+            return (scenario_name, False, msg)
+        plot_dir = workdir / f"plots_{grp}"
+        n = len(list(plot_dir.glob("*.pdf"))) if plot_dir.exists() else 0
+        counts.append(f"{grp}:{n}")
+    msg = f"OK — plots ({', '.join(counts)}) in {workdir}/plots_<grouping>/"
     print(f"    [{scenario_name}] {msg}")
     return (scenario_name, True, msg)
 
@@ -438,6 +445,11 @@ def main(argv: list[str]) -> int:
                         "is single-threaded per scenario)")
     p.add_argument("--dry-run", action="store_true",
                    help="Build YAMLs but do not invoke ROOT")
+    p.add_argument("--grouping", default="compact",
+                   choices=["compact", "detailed", "both"],
+                   help="[STEP21] legend 그룹핑: compact(MC 10줄, 기본) / "
+                        "detailed(MC 13줄) / both(둘 다 생성; "
+                        "plots_compact/, plots_detailed/ 분리 저장)")
     args = p.parse_args(argv)
 
     if not args.base.is_dir():
@@ -470,11 +482,15 @@ def main(argv: list[str]) -> int:
     print(f"  workdir    : {workdir_root}")
     print(f"  scenarios  : {scenarios}")
     print(f"  jobs       : {args.jobs}")
+    print(f"  grouping   : {args.grouping}")
     print(f"  dry-run    : {args.dry_run}")
     print("=" * 70)
 
     # Master structure: extract once from the FIRST scenario, reuse elsewhere
     master_struct = None
+    groupings = (["compact", "detailed"] if args.grouping == "both"
+                 else [args.grouping])
+
     if not args.structure_per_scenario:
         first = args.base / scenarios[0]
         if first.is_dir():
@@ -508,7 +524,7 @@ def main(argv: list[str]) -> int:
                 ex.submit(run_scenario,
                           name, args.base / name, workdir_root,
                           args.plotter, master_struct, helpers,
-                          args.dry_run): name
+                          args.dry_run, groupings): name
                 for name in scenarios
                 if (args.base / name).is_dir()
             }
@@ -524,7 +540,7 @@ def main(argv: list[str]) -> int:
             tasks.append(run_scenario(
                 name, sdir, workdir_root,
                 args.plotter, master_struct, helpers,
-                args.dry_run))
+                args.dry_run, groupings))
 
     # Summary
     print("\n" + "=" * 70)
@@ -537,7 +553,7 @@ def main(argv: list[str]) -> int:
         print(f"  [{flag}] {name:20s} {msg}")
     print(f"  {n_ok}/{len(tasks)} scenarios succeeded "
           f"({n_bad} failed)")
-    print(f"  outputs under: {workdir_root}/<scenario>/plots/")
+    print(f"  outputs under: {workdir_root}/<scenario>/plots_<grouping>/")
     return 0 if n_bad == 0 else 1
 
 

@@ -7,6 +7,14 @@
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
 
+## 2026-07-10 — STEP 21: plotter 전체 샘플 + compact/detailed 2-모드 그룹핑 + cutflow legend 수율 + PDF
+
+- `plotter/samples_config.yml`: MC 24 → **61** (ttHToNonbb, tH, ttW/ttZ 잔여, single-top, VV, V+jets, DY 등 37개 추가; 미존재 파일은 자동 skip).
+- `plotter/stack_plotter.C`: 그룹핑을 substring → **exact-name 테이블**로 교체 — 구 라우팅의 오배정(TTWW/TTWZ/TTWH/TTZH*/TTZZ*/TTTW 가 전부 "tt+V" 흡수) 수정. env `TTHH_PLOT_GROUPING` 으로 **compact(MC 10줄, 기본)/detailed(MC 13줄)** 2-모드; TTZHTo4b/TTZZTo4b 는 두 모드 모두 별도 줄(`tt+ZH/ZZ(4b)`). cutflow legend 수율을 Integral(≈noCut 지배) → **최종 cut bin(nTotal)** 으로 (`LegendYield`), legend 에 "yields after final cut" 헤더. 출력 PNG → **PDF**, 모드별 `plots_<grouping>/` 분리.
+- `plotter/scenario_runner.py`: `--grouping compact|detailed|both` 추가(env 전달, 모드별 로그/PDF 카운트).
+- 검증: 그룹핑 함수 g++ 실컴파일 전수 테스트(61 샘플 × 2 모드 + 회귀 방어) ALL PASSED. ROOT 렌더링은 로컬 1회 확인 권장.
+- Detail: [`changes/STEP_21_plotter_full_samples_two_mode_grouping.md`](changes/STEP_21_plotter_full_samples_two_mode_grouping.md).
+
 ## 2026-07-10 — STEP 20: --report 요약 테이블 + --status 상세 + 조회 read-only + lazy tmp
 
 - `submit_job_FH_Tier3_unified.py`: `--report` 는 이제 CRAB 스타일 요약 테이블(`sample|jobs|done|miss|done%` + TOTAL)만 출력하고, 구 상세 출력(weight + missing idx 목록)은 신규 `--status` 로 이동. 조회 모드를 완전 read-only 화 — report 가 `arguments_<sample>.txt` 를 빈 파일로 truncate 하던 부작용 수정, output dir mkdir/chmod skip. tmp 디렉토리는 lazy 생성으로 전환: 첫 per-job filelist 를 쓸 때만 생성 → 모든 호출이 샘플마다 빈 `tmp_<sample>_<ts>/` 를 만들던 리터 제거 (빈 tmp 존재 = 그 invocation 에서 재큐 0건이던 원인 규명 포함). 판정 기준은 STEP 19 종료 마커 그대로.
