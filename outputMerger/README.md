@@ -729,12 +729,66 @@ Top 늘리려면 4번째 인자를 0.92 등으로.
 main/btagtrig 의 flat 레이아웃(`<base>/<proc>/<proc>_*.root` → `<base>/<proc>.root`)은
 `merge_outputs.py` 를 쓴다 — process 목록 하드코딩 없이 디렉토리 자동 발견.
 
+### 의존성
+
+이 디렉토리의 `merge_outputs.py` + `run_one_hadd.sh` 두 파일만으로 동작
+(Python 은 표준 라이브러리만 사용, repo 다른 모듈 import 없음).
+`run_one_hadd.sh` 실행 권한이 없으면 `chmod +x run_one_hadd.sh`.
+
+**env 정책 [STEP22.1]: 스크립트는 ROOT 환경을 만들지 않는다.**
+- **local**: 실행 전 사용자가 cmsenv(또는 자체 ROOT)로 `hadd` 를 PATH 에
+  올려둘 것. 없으면 preflight 에서 즉시 명확히 실패한다.
+- **condor**: `--cmssw-src <CMSSW>/src` 로 worker cmsenv 경로 지정.
+  **cmsenv 된 셸에서 제출하면 `$CMSSW_BASE/src` 가 자동 기본값** — 보통
+  아무것도 안 적어도 된다. proxy(`proxy.cert`) + `condor_submit` 필요.
+
+### 실행 순서
+
 ```bash
-python3 merge_outputs.py --base /pnfs/.../AnalyzerOutput_main --list          # 발견 확인
-python3 merge_outputs.py --base ... --mode local --jobs 8                     # 로컬 8-way
-python3 merge_outputs.py --base ... --mode condor                             # condor
-python3 merge_outputs.py --base ... --mode local --jobs 8 --skip-existing     # 실패분 재시도
-# 필터: --only 'QCD_*' 'TTbar_*' / --exclude 'SingleMuon_*'
+cd outputMerger/
+
+# 0) (condor 모드만) proxy 준비 — 스크립트 옆 proxy.cert (--proxy 로 위치 변경 가능)
+voms-proxy-init --voms cms --valid 168:00
+cp $(voms-proxy-info --path) ./proxy.cert
+
+# 1) 발견 확인 — 아무것도 실행 안 함, 대상/스킵/미매칭 표만 출력
+python3 merge_outputs.py --base /pnfs/.../AnalyzerOutput_main --list
+
+# 2-a) 로컬 병렬 hadd — 반드시 cmsenv 후! (N개 동시, 완료 대기 + OK/FAIL 요약표)
+cd <CMSSW>/src && cmsenv && cd -
+python3 merge_outputs.py --base /pnfs/.../AnalyzerOutput_main --mode local --jobs 8
+
+# 2-b) 또는 condor 제출 (프로세스당 1 job; 제출 전 .sub 확인은 --dry-run)
+python3 merge_outputs.py --base /pnfs/.../AnalyzerOutput_main --mode condor --dry-run
+python3 merge_outputs.py --base /pnfs/.../AnalyzerOutput_main --mode condor
+
+# 3) 실패분만 재시도 — 이미 <proc>.root 생긴 프로세스는 자동 제외
+python3 merge_outputs.py --base /pnfs/.../AnalyzerOutput_main --mode local --jobs 8 --skip-existing
 ```
 
-실행 단위는 두 모드 모두 `run_one_hadd.sh <indir> <outfile>` 재사용.
+### 자주 쓰는 옵션
+
+| 옵션 | 의미 |
+|---|---|
+| `--only 'QCD_*' 'TTbar_*'` | glob 매칭 프로세스만 (여러 개 가능) |
+| `--exclude 'SingleMuon_*'` | glob 매칭 프로세스 제외 |
+| `--jobs N` | [local] 동시 hadd 개수 (기본 4) |
+| `--skip-existing` | `<proc>.root` 존재 시 건너뜀 (재시도용) |
+| `--list` / `--dry-run` | 표만 / 실행·제출 직전까지만 |
+| `--base .../AnalyzerOutput_btagtrig` | 다른 base 도 동일하게 동작 |
+
+### 출력/로그 위치
+
+- merge 결과: `<base>/<proc>.root`
+- 실행 로그: `outputMerger/_merge_workdir/<base명>_<시각>/logs/<proc>.log`
+  (condor 모드는 같은 위치에 `merge.sub`, `arguments.txt`, job 로그)
+- condor 상태: `condor_q`
+- 발견 규칙: `<base>` 하위 디렉토리 중 `<이름>_*.root` 가 1개 이상인 것만
+  대상. 그 외(재제출 분리 폴더, `_plot_workdir` 등)는 "패턴 미매칭"으로
+  리포트만 되고 미대상.
+
+첫 사용은 1) `--list` 로 대상 개수 확인 → 2) 실행 순서를 권장.
+상세 설계/검증 기록: `docs/changes/STEP_22_merge_outputs_autodiscovery.md`.
+
+실행 단위는 두 모드 모두 `run_one_hadd.sh <indir> <outfile>` 재사용
+(cmsenv bootstrap, `@filelist` 로 argv 한계 회피, 출력 sanity 내장).

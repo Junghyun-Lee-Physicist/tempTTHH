@@ -3,7 +3,7 @@
 # run_one_hadd.sh
 # -----------------------------------------------------------------------------
 # Single-job hadd runner used by submit_hadd_validation.py.
-# Condor invokes:    run_one_hadd.sh <indir> <outfile>
+# Invocation:        run_one_hadd.sh <indir> <outfile> [cmssw_src]
 #
 # <indir>    : directory containing the per-file split outputs to merge
 #              (e.g.  <base>/baseline/TTToHadronic/  )
@@ -28,33 +28,36 @@ echo "  date          : $(date)"
 echo "  argv          : $@"
 echo "==============================================================="
 
-if [ $# -ne 2 ]; then
-    echo "[fatal] expected 2 args (indir, outfile), got $#"
+if [ $# -lt 2 ] || [ $# -gt 3 ]; then
+    echo "[fatal] expected 2-3 args (indir, outfile, [cmssw_src]), got $#"
     exit 2
 fi
 
 INDIR="$1"
 OUTFILE="$2"
+CMSSW_SRC="${3:-}"
 
-# ── CMSSW environment ────────────────────────────────────────────────────────
-echo "[env] sourcing cmsset_default.sh"
-source /cvmfs/cms.cern.ch/cmsset_default.sh
-
-# ── Verify ROOT/hadd availability ────────────────────────────────────────────
-if ! command -v hadd >/dev/null 2>&1; then
-    echo "[env] hadd not on PATH; bootstrapping a CMSSW area"
-    # Use a CMSSW release available on cvmfs to get ROOT into PATH.
-    # Adjust the release here if KISTI uses a different default.
-    cd /tmp
-    if [ ! -d CMSSW_14_2_1 ]; then
-        scram project CMSSW CMSSW_14_2_1
-    fi
-    cd CMSSW_14_2_1/src
+# ── ROOT/hadd environment ───────────────────────────────────────────────────
+# 정책 [STEP22.1 — 2026-07-12]: 이 스크립트는 환경을 만들지 않는다.
+#   local  : 사용자가 cmsenv (또는 자체 ROOT 설치) 로 hadd 를 PATH 에 올려둘 것.
+#            없으면 아래에서 명확한 메시지와 함께 실패한다 (자동 복구 없음).
+#   condor : merge_outputs.py --cmssw-src <CMSSW>/src 로 경로를 넘기면
+#            (3번째 인자) 여기서 cvmfs cmsset + cmsenv 를 수행한다.
+# (구 구현의 "hadd 없으면 /tmp 에 scram project" 자동 bootstrap 은 제거 —
+#  동시 실행 race 로 2026-07-12 전멸 사례의 원인이었고, 환경 설정 책임은
+#  스크립트가 아니라 호출자에게 있다는 정책 결정.)
+if [ -n "${CMSSW_SRC}" ]; then
+    echo "[env] cmsenv from: ${CMSSW_SRC}"
+    source /cvmfs/cms.cern.ch/cmsset_default.sh
+    cd "${CMSSW_SRC}"
     eval $(scram runtime -sh)
+    cd - >/dev/null
 fi
 
 if ! command -v hadd >/dev/null 2>&1; then
-    echo "[fatal] hadd still not available after env setup"
+    echo "[fatal] hadd not on PATH."
+    echo "        local : run cmsenv (or set up your own ROOT) first."
+    echo "        condor: pass --cmssw-src <CMSSW>/src to merge_outputs.py."
     exit 3
 fi
 echo "[env] hadd: $(command -v hadd)"

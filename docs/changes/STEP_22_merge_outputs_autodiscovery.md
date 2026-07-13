@@ -52,3 +52,52 @@ python3 merge_outputs.py --base ... --mode local --jobs 8 --skip-existing   # �
 
 ## 롤백
 `merge_outputs.py` 삭제 (기존 스크립트 무변경 — 신규 파일 추가만).
+
+---
+
+## [2026-07-12 후속: STEP 22.1] env 정책 확정 — bootstrap 제거, 명시적 cmsenv
+
+### 실패 사례 (root cause)
+cmsenv 안 된 셸에서 `--mode local --jobs 8` 실행 → 76/76 전멸. 원인:
+`run_one_hadd.sh` 의 "hadd 없으면 /tmp/CMSSW_14_2_1 에 scram project" 자동
+bootstrap 이 8개 worker 에서 **동시에 같은 고정 경로를 두고 race** — 첫
+batch 8개가 scram 충돌(~76s), 이후 68개는 깨진 area 를 보고 0.3~0.4s
+fast-fail. (같은 노드에 condor job 2개 이상 앉아도 동일 race 가능했음.)
+
+### 정책 결정 (사용자)
+**스크립트는 환경을 만들지 않는다.**
+- local : ROOT/hadd 를 PATH 에 올리는 것은 사용자 책임(cmsenv 또는 자체
+  ROOT). 없으면 자동 복구 없이 명확히 실패한다.
+- condor: 제출 시 cmsenv 경로를 **지정**해서 worker 가 수행하게 한다.
+
+### 변경
+- `run_one_hadd.sh`: bootstrap 블록 전체 삭제. 3번째 optional 인자
+  `[cmssw_src]` — 있으면 cvmfs cmsset + 해당 src 에서 `scram runtime` 수행,
+  없으면 그대로 진행. hadd 미존재 시 exit 3 + local/condor 각각의 해결책
+  안내. 무조건적 cmsset source 도 제거(cmssw_src 있을 때만).
+- `merge_outputs.py`:
+  - `--cmssw-src PATH` (condor): arguments.txt 3번째 컬럼으로 전달.
+    **기본값 = 제출 셸의 `$CMSSW_BASE/src`** — cmsenv 된 셸에서 제출하면
+    자동으로 worker cmsenv 가 걸린다. 미지정+미cmsenv 이면 2-인자
+    (getenv 전파 의존) + 제출 시 안내 출력.
+  - local preflight: `shutil.which("hadd")` 없으면 worker 76개가 같은
+    이유로 실패하기 전에 **한 번만** 명확히 실패 (환경은 안 만듦 — 정책
+    그대로, 실패 시점만 앞당김).
+
+### 검증 (stub 시뮬레이션, 이 환경)
+- hadd 無 + cmssw_src 無 → exit 3, 안내 메시지 (자동 복구 없음 확인)
+- hadd 無 + cmssw_src 지정 → cmsenv 경로 수행 후 merge OK
+- hadd 有 → env 일절 건드리지 않고 merge OK
+- condor arguments.txt: `--cmssw-src` 지정 / `$CMSSW_BASE` 자동 / 둘 다 없음
+  세 경우 모두 기대 형태(3/3/2-인자) 확인. local preflight 동작 확인.
+
+### 사용
+```bash
+# local: cmsenv 먼저 (사용자 책임)
+cd <CMSSW>/src && cmsenv && cd tempTTHH/outputMerger
+python3 merge_outputs.py --base ... --mode local --jobs 8
+
+# condor: cmsenv 셸에서 제출하면 --cmssw-src 자동, 아니면 명시
+python3 merge_outputs.py --base ... --mode condor [--cmssw-src <CMSSW>/src]
+```
+

@@ -7,6 +7,11 @@
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
 
+## 2026-07-12 — STEP 22.1: merge env 정책 — bootstrap 제거, 명시적 cmsenv
+
+- 실전 첫 실행에서 76/76 전멸 — cmsenv 없는 셸의 local 병렬 실행이 `run_one_hadd.sh` 의 `/tmp/CMSSW_14_2_1` 자동 bootstrap 을 8-way 로 race 시킨 것이 원인. **정책 결정: 스크립트는 환경을 만들지 않는다** — bootstrap 전체 삭제. local 은 사용자가 cmsenv/ROOT 준비(없으면 preflight 에서 1회 명확히 실패), condor 는 `--cmssw-src`(기본: 제출 셸 `$CMSSW_BASE/src` 자동)로 worker 가 cmsenv. runner 는 optional 3번째 인자 `[cmssw_src]` 수용, hadd 미존재 시 exit 3 + 안내.
+- Detail: [`changes/STEP_22_merge_outputs_autodiscovery.md`](changes/STEP_22_merge_outputs_autodiscovery.md) 후속 섹션.
+
 ## 2026-07-12 — STEP 22: merge_outputs.py — AnalyzerOutput 자동 발견 hadd (local 병렬/condor)
 
 - 신규 `outputMerger/merge_outputs.py`: `<base>/<proc>/<proc>_*.root` → `<base>/<proc>.root` merge 를 **디렉토리 자동 발견**으로 수행 — 구 merge_submitter.py 의 하드코딩 목록(stale 이름으로 다수 샘플이 조용히 누락될 상태) 제거. `--mode local --jobs N`(병렬 + 완료 대기 + OK/FAIL 요약 + exit 전파) / `--mode condor`(proc 당 1 job, submit_hadd_validation 템플릿), `--only/--exclude/--skip-existing/--list/--dry-run`. 실행 단위는 검증된 `run_one_hadd.sh` 재사용.

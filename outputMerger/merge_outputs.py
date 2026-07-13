@@ -47,6 +47,8 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
+import os
+import shutil
 import subprocess
 import sys
 import time
@@ -161,13 +163,17 @@ def run_local(jobs, runner: Path, n_workers: int, log_dir: Path) -> int:
 # Condor mode — submit_hadd_validation.py 템플릿 컨벤션
 # -----------------------------------------------------------------------------
 def write_condor(jobs, runner: Path, workdir: Path, proxy: Path,
-                 os_version: str, memory: str) -> Path:
+                 os_version: str, memory: str,
+                 cmssw_src: Path | None) -> Path:
     log_dir = workdir / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     args_file = workdir / "arguments.txt"
+    # [STEP22.1] cmssw_src 가 있으면 3번째 인자로 — run_one_hadd.sh 가 worker
+    # 에서 cmsenv. 없으면 2-인자 (getenv=True 전파에 의존).
+    tail = f" {cmssw_src}" if cmssw_src else ""
     with args_file.open("w") as f:
         for j in jobs:
-            f.write(f"{j['indir']} {j['outfile']}\n")
+            f.write(f"{j['indir']} {j['outfile']}{tail}\n")
     sub = workdir / "merge.sub"
     with sub.open("w") as f:
         f.write(f"x509userproxy           = {proxy}\n")
@@ -208,6 +214,13 @@ def main(argv: list[str]) -> int:
                    help=f"hadd 실행 스크립트 (기본: {DEFAULT_RUNNER})")
     p.add_argument("--proxy", type=Path, default=DEFAULT_PROXY_PATH,
                    help="[condor] x509 proxy 경로")
+    p.add_argument("--cmssw-src", type=Path,
+                   default=(Path(os.environ["CMSSW_BASE"]) / "src"
+                            if os.environ.get("CMSSW_BASE") else None),
+                   help="[condor] worker 에서 cmsenv 할 CMSSW src 경로 "
+                        "(기본: 제출 셸의 $CMSSW_BASE/src — cmsenv 된 셸에서 "
+                        "제출하면 자동. 미지정+미cmsenv 이면 job 은 getenv 에 "
+                        "의존하며, hadd 없으면 명확히 실패)")
     p.add_argument("--os-version", default=DEFAULT_OS_VERSION)
     p.add_argument("--memory", default=DEFAULT_MEMORY)
     args = p.parse_args(argv)
@@ -236,6 +249,14 @@ def main(argv: list[str]) -> int:
     workdir = SCRIPT_DIR / "_merge_workdir" / f"{args.base.name}_{stamp}"
 
     if args.mode == "local":
+        # [STEP22.1] preflight: local 모드의 ROOT/hadd 환경은 사용자 책임 —
+        # 스크립트는 환경을 만들지 않는다. 없으면 worker 76개가 같은 이유로
+        # 실패하기 전에 여기서 한 번만 명확히 실패한다.
+        if shutil.which("hadd") is None:
+            print("[fatal] hadd 가 PATH 에 없음 — cmsenv 또는 자체 ROOT 환경을 "
+                  "설정한 뒤 실행하세요. (condor 모드는 --cmssw-src 로 worker "
+                  "에서 cmsenv 하도록 지정 가능)")
+            return 2
         if args.dry_run:
             print("[dry-run] local 실행 생략.")
             return 0
@@ -248,9 +269,15 @@ def main(argv: list[str]) -> int:
               f"        voms-proxy-init --voms cms --valid 168:00 후\n"
               f"        cp $(voms-proxy-info --path) {args.proxy}")
         return 2
+    if args.cmssw_src and not args.cmssw_src.is_dir():
+        print(f"[fatal] --cmssw-src 가 디렉토리가 아님: {args.cmssw_src}")
+        return 2
     sub = write_condor(jobs, args.runner, workdir, args.proxy,
-                       args.os_version, args.memory)
+                       args.os_version, args.memory, args.cmssw_src)
     print(f"[condor] submit file: {sub}  ({len(jobs)} jobs)")
+    print(f"[condor] worker env : "
+          + (f"cmsenv from {args.cmssw_src}" if args.cmssw_src
+             else "getenv 전파만 (cmsenv 셸에서 제출했는지 확인)"))
     if args.dry_run:
         print("[dry-run] condor_submit 생략.")
         return 0
