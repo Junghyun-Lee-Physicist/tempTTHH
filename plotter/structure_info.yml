@@ -1,6 +1,6 @@
 description: Plottable histograms extracted from /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTbar_Hadronic.root
 input_file: /Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/TTbar_Hadronic.root
-total_count: 620
+total_count: 618
 histograms:
   - key_path: jet/h_JEC_DiffRatio_0
     classname: TH1D
@@ -3683,18 +3683,6 @@ histograms:
   - key_path: TtCatValidation/ttCat_Counts_AnaGenId
     classname: TH1F
     title: Events per category (analyzer genTtbarId decode)
-    nbins: 7
-    xlow: 0.0
-    xhigh: 7.0
-  - key_path: TtCatValidation/ttCat_Counts_NtuPrimary
-    classname: TH1F
-    title: 'Events per category (ntuple ttCat_*)'
-    nbins: 7
-    xlow: 0.0
-    xhigh: 7.0
-  - key_path: TtCatValidation/ttCat_Counts_NtuXval
-    classname: TH1F
-    title: 'Events per category (ntuple ttCatXval_*)'
     nbins: 7
     xlow: 0.0
     xhigh: 7.0
