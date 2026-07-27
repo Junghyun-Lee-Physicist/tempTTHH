@@ -4,6 +4,16 @@
 **Run2 2017 NanoAODv9 UltraLegacy, CMSSW_14_2_1**
 *Last updated: 2026-04-12*
 
+> **Editorial corrections (2026-07-27) — the note body is otherwise unchanged.**
+> Two artefacts this note refers to as existing do **not** exist in the repository;
+> the note is kept as the design record, but do not try to run them:
+> - **§7.3 `scripts/plot_ttcat_validation.py`** — never written (`tempTTHH/scripts/`
+>   does not exist). See `tempTTHH/README.md` "Validation plotter — DOES NOT EXIST
+>   (PROPOSED)" for the spec and a `root -l` workaround.
+> - **Reference #6 `README_ntuplizer.md`** — the actual file is
+>   `../NtupleForge/README.md` (details in `../NtupleForge/docs/04_architecture.md`).
+> Reference #7's `README_analyzer.md` is now `tempTTHH/README.md`.
+
 ---
 
 ## Abstract

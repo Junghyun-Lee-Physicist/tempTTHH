@@ -7,3 +7,42 @@ tmp
 .DS_Store
 *.root
 *.pdf
+
+# preflight logs (--preflight, read-only checker output)
+preflight_*.log
+
+# era-scoped filelists produced by make_filelists.py <era> (regenerable).
+# filelistTier3/ (2017) is the committed reference; year-suffixed ones are not.
+filelistTier3_20*/
+make_filelists_20*.log
+
+# ---------------------------------------------------------------------------
+# Python bytecode (2026-07-27: was missing here while the other two repos had
+# it, so tempTTHH/__pycache__ and python/ttHHmodules/__pycache__ showed up as
+# untracked noise on every status).
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+
+# ---------------------------------------------------------------------------
+# Condor / batch job stdout+stderr and driver logs. These are per-job scratch,
+# regenerable, and used to be committed by the hundred (bTagSF_ReweightStudy/
+# logs/ had 64 files). Keep them out.
+# ---------------------------------------------------------------------------
+*.out
+*.err
+*.condor_log
+manager.log
+logs/
+*/logs/
+
+# ---------------------------------------------------------------------------
+# consolidate_prescan.py outputs. prescan_summary/ (2017) is the committed
+# reference; year-suffixed ones are regenerable.
+# ---------------------------------------------------------------------------
+prescan_summary_20*/
+
+# NOTE on the blanket *.root / *.pdf rules above: they also block deliverables
+# (merged histograms, plots). Add those with `git add -f` deliberately, or move
+# them outside the repo -- do NOT relax the rules, since analyzer output files
+# are large and easy to commit by accident.

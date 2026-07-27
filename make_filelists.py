@@ -5,10 +5,35 @@ import os
 # ==============================================================================
 # [STEP17] ntuple production 갱신: ttHH2017UL_fullNano_v20.
 #   - config_ttHH2017UL.yaml (NtupleForge) 로 생산된 full-NanoAOD pass-through.
-#   - 출력 파일명은 기존과 동일하게 slimmedNtuple_<N>.root (glob 불변).
+#   - 출력 파일명: 2026-07-26 부터 forgedNtuple_<N>.root (NtupleForge D-F rename).
+#     기존 생산물은 slimmedNtuple_<N>.root 이므로 **두 prefix 를 모두 매칭**한다
+#     (NTUPLE_PREFIXES 참조) — 전 캠페인 재생산 전까지 이 이중 매칭을 유지할 것.
 #   - 새 dataset(렙토닉 V+jets/DY, single t, diboson, tH, 렙토닉 ttV 등) 추가.
-SAMPLE_DIR = "/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2017UL_fullNano_v20"
-OUTPUT_DIR = "filelistTier3"
+# 2026-07-26: era(연도) 인자 추가.
+#   이전에는 SAMPLE_DIR/OUTPUT_DIR 이 2017 고정이라 다른 연도로 쓰려면 파일을
+#   직접 고쳐야 했고, 그 상태로 실행하면 커밋된 2017 filelistTier3/ 를 **덮어썼다**.
+#   (analyzer 는 filelist 디렉토리를 --sample-list-path 가 아니라 규약으로 찾으므로
+#    연도별 디렉토리를 분리하고 실행 시 인자로 고른다.)
+#   사용법:
+#     python3 make_filelists.py                    # 2017 -> filelistTier3/ (기존 동작)
+#     python3 make_filelists.py 2018               # 2018 -> filelistTier3_2018/
+#     python3 make_filelists.py 2018 /pnfs/.../<다른_소스_디렉토리>
+import sys
+
+SAMPLE_DIR_BY_ERA = {
+    "2017": "/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2017UL_fullNano_v20",
+    # 2018: NtupleForge campaign 출력 경로. prescan 스모크는
+    #       ttHH2018UL_prescanSlim_v1, 본생산은 별도 캠페인 이름을 쓴다.
+    #       실제 경로가 확정되면 여기를 고치거나 2번째 인자로 넘길 것.
+    "2018": "/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_prescanSlim_v1",
+}
+
+ERA = sys.argv[1] if len(sys.argv) > 1 else "2017"
+if ERA not in SAMPLE_DIR_BY_ERA:
+    sys.exit(f"FATAL: unsupported era '{ERA}' (expected one of {sorted(SAMPLE_DIR_BY_ERA)})")
+
+SAMPLE_DIR = sys.argv[2] if len(sys.argv) > 2 else SAMPLE_DIR_BY_ERA[ERA]
+OUTPUT_DIR = "filelistTier3" if ERA == "2017" else f"filelistTier3_{ERA}"
 
 # ==============================================================================
 # [샘플 매핑] CRAB on-disk 디렉토리(=DAS primary dataset 이름) -> 출력 short_name
@@ -135,13 +160,20 @@ sample_mapping = {
 }
 
 
+# NtupleForge 산출 ntuple 파일명 prefix.
+#   forgedNtuple  : 2026-07-26 이후 생산 (NtupleForge D-F rename; crab/PSet.py)
+#   slimmedNtuple : 그 이전 생산 — ttHH2017UL_fullNano_v20 등 **이미 Tier-3 에 있는
+#                   파일들의 실제 이름**. 재생산 전까지 둘 다 매칭해야 한다.
+NTUPLE_PREFIXES = ("forgedNtuple", "slimmedNtuple")
+
+
 def find_root_files(start_path):
-    """주어진 경로 아래의 slimmedNtuple*.root 파일의 절대 경로를 리스트로 반환.
+    """주어진 경로 아래의 forgedNtuple*/slimmedNtuple*.root 절대 경로 리스트를 반환.
     base+ext 가 같은 primary dataset 디렉토리에 있으면 os.walk 로 함께 수집됨."""
     root_files = []
     for root, dirs, files in os.walk(start_path):
         for file in files:
-            if file.startswith("slimmedNtuple") and file.endswith(".root"):
+            if file.startswith(NTUPLE_PREFIXES) and file.endswith(".root"):
                 absolute_path = os.path.abspath(os.path.join(root, file))
                 root_files.append(absolute_path)
     return root_files

@@ -4,6 +4,16 @@
 **Run2 2017 NanoAODv9 UltraLegacy, CMSSW_14_2_1**
 *최종 수정: 2026-04-12*
 
+> **편집 정정 (2026-07-27) — 본문은 그대로 둔다.**
+> 이 노트가 "있는 것"처럼 참조하는 두 산출물은 저장소에 **존재하지 않는다**.
+> 설계 기록으로서 노트는 보존하되, 실행하려 하지 말 것:
+> - **§7.3 `scripts/plot_ttcat_validation.py`** — 작성되지 않았다(`tempTTHH/scripts/`
+>   디렉토리 자체가 없다). 사양과 `root -l` 대안은 `tempTTHH/README.md` 의
+>   "Validation plotter — DOES NOT EXIST (PROPOSED)" 절 참조.
+> - **참고문헌 #6 `README_ntuplizer.md`** — 실제 파일은 `../NtupleForge/README.md`
+>   (상세는 `../NtupleForge/docs/04_architecture.md`).
+> 참고문헌 #7 의 `README_analyzer.md` 는 현재 `tempTTHH/README.md` 다.
+
 ---
 
 ## Abstract

@@ -153,6 +153,8 @@ CLI는 `--flag value` 형식 (과거 위치 인자에서 변경). **`--mode` 는
 ## 7. Condor 실행
 
 ```bash
+# 제출 전 필수 — 읽기 전용 사전 점검 (제출·디렉토리 생성 없음, FAIL 시 exit 1)
+python3 submit_job_FH_Tier3_unified.py --mode main --preflight
 # 현황만 (제출 없이 샘플별 complete/missing + 인덱스)
 python3 submit_job_FH_Tier3_unified.py --mode main --report
 # 제출 — 마스터 filelist를 N개씩 자동 분할
@@ -161,6 +163,51 @@ python3 submit_job_FH_Tier3_unified.py --mode main --files-per-job 5
 python3 submit_job_FH_Tier3_unified.py --mode main --files-per-job 5 \
         --resubmit --resubmit-to retry1
 ```
+
+`--preflight`(2026-07-26 신설)가 보는 것: yml 스키마(**제출과 동일한 파서**로 파싱) ·
+`analysis_mode` 와 `--mode` 일치 · 실행파일 빌드 여부 · **보정 경로 null 정책**(키 누락→E12,
+필수인데 null→E13 를 미리 예측) · `xsec_db`/`prescan_summary` 커버리지(MC 별 xsec·Σgenw>0) ·
+filelist 존재·개수·job 수 추정 · **Data era 추출 가능 여부** · output·condor 디렉토리 쓰기권한 ·
+`proxy.cert` 존재와 나이 · lumi 값 일관성(yml ↔ xsec_db `_meta`).
+로그: `preflight_<mode><suffix>_<timestamp>.log`.
+
+### 7.0 다른 연도(2018 UL) 실행 — 현재 **차단 상태**
+
+**2018 은 아직 돌릴 수 없다.** 연도 의존 지점 전수 감사(2026-07-27) 결과 P0 7건 +
+배관 5건을 먼저 고쳐야 하며, 그중 셋은 **조용히 틀린 결과**를 낸다(L1 prefiring 이 2018 에
+없어 전 MC weight 가 0 / 2017 전용 trigger PD veto / DeepJet WP 가 2017 값). 전체 목록·조치·
+근거는 [`docs/STATUS.md`](docs/STATUS.md) **OPEN #5** 와 워크스페이스
+`RUNBOOK_UL18_to_controlplots.md` §4 에 있다.
+
+준비된 것과 실행 순서(예정):
+
+```bash
+# 준비 완료: data/samples_2018UL.json (85 샘플, NtupleForge config 와 1:1)
+# (1) 연도별 filelist — 2017 것을 덮어쓰지 않는다 (era 인자 필수)
+python3 make_filelists.py 2018 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_fullNano_v1
+#     -> filelistTier3_2018/   (인자 생략 시 2017 + filelistTier3/)
+#     ⚠ 한계: Data 분기는 아직 2017 하드코딩(`Run2017`)이라 2018 Data filelist 는 생성되지 않는다.
+
+# (2) 2018 yml 을 먼저 만든다 — AnalyzerConfig/ 에는 Tier3_2017_* 3개만 있고
+#     Tier3_2018_* 은 아직 없다. 2017 yml 에서 파생시키는 스니펫은
+#     워크스페이스 RUNBOOK_UL18_to_controlplots.md §5 (Phase 4) 에 있다(정본).
+#     그 다음 prescan (P0 #1 runYear 매핑만 고치면 실행 가능 —
+#     prescan 은 loop()/createObjects() 를 타지 않아 trigger·WP 문제와 무관하다)
+python3 submit_job_FH_Tier3_unified.py --mode prescan \
+        --config AnalyzerConfig/Tier3_2018_FH_unified_prescan.yml \
+        --filelist-dir filelistTier3_2018 --preflight
+
+# (3) main 은 P0 전부 완료 후. 첫 plot 은 SF 없이:
+#     --trigsf off --btagrw off
+```
+
+> ⚠️ **output 디렉토리에 연도 성분이 없다** (`submit_job_FH_Tier3_unified.py:158-160` →
+> `AnalyzerOutput_<mode><suffix>`). 2018 을 돌리면 2017 산출물과 **같은 디렉토리에 섞인다**
+> — merge·plot 단계에서 두 연도가 합쳐진다. 2018 을 돌리기 전에 2017 산출물을 옮기거나
+> 경로에 연도를 넣어라 (감사 P0′ #9). `consolidate_prescan.py` 도 같은 이유로
+> `--input-base`·`--outdir` 를 반드시 명시해야 한다(P0′ #10).
+
+`--filelist-dir`(2026-07-26 신설)로 연도별 filelist 디렉토리를 고른다.
 
 ### 7.1 selection 영역 (region) + SF 토글
 `--region` 으로 QCD 억제 1ℓ 제어영역을 선택한다(없으면 FH = lepton veto). output
@@ -424,30 +471,26 @@ the two must-agree pairs explicitly.
   `officialTtCategory()` (= `NTU_PRIMARY`) is used. Removing the four
   validation estimators would not change a single physics result.
 
-### Validation plotter — `scripts/plot_ttcat_validation.py`
+### Validation plotter — **DOES NOT EXIST (PROPOSED)**
 
-A standalone PyROOT script that reads a single analyzer output file
-and renders all 11 histograms in `TtCatValidation/` to PNG. Zero
-external dependencies — `cmsenv` already provides ROOT.
+> **[2026-07-27 정정]** 이 절은 `scripts/plot_ttcat_validation.py` 를 기존 도구처럼
+> 설명하고 있었으나 **그 파일도, `tempTTHH/scripts/` 디렉토리도 존재하지 않는다.**
+> 아래는 만들 때의 사양으로만 남긴다 — 명령을 그대로 복사하면 실패한다.
+
+**PROPOSED 사양**: analyzer output 1개를 읽어 `TtCatValidation/` 의 11개 히스토그램을
+PNG 로 렌더하는 standalone 스크립트. 산출: count PNG 4장, grouped count overlay 1장,
+pair-wise confusion matrix 6장(must-agree 2쌍은 제목에 `MUST-AGREE OK`/`BROKEN` 자동
+표기), `genTtbarId` 분포 1장, 4×3 `summary.png` 1장.
+
+**"좋다"의 정의**: must-agree 2쌍이 대각 성분만 갖고 `agreement = 100.0000%`.
+off-diagonal 이 하나라도 있으면 멈추고 ntuplizer ↔ analyzer parity 를 디버그한다.
+
+지금 당장 히스토그램을 보려면 ROOT 로 직접 열면 된다:
 
 ```bash
-cmsenv
-python scripts/plot_ttcat_validation.py output_TTToHadronic.root
-python scripts/plot_ttcat_validation.py output_TTToHadronic.root -o plots/
-python scripts/plot_ttcat_validation.py output_TTToHadronic.root --normalize row
-python scripts/plot_ttcat_validation.py output_TTToHadronic.root --log-counts
+root -l output_TTToHadronic.root
+# root [1] TtCatValidation->cd(); .ls
 ```
-
-Output: 4 individual count PNGs, 1 grouped count overlay, 6 pair-wise
-confusion matrices (the two must-agree pairs are auto-marked in their
-title with `MUST-AGREE OK` or `MUST-AGREE BROKEN`), 1 `genTtbarId`
-distribution, and 1 one-page `summary.png` with everything in a 4×3
-grid. See the script's docstring for details.
-
-**What "good" looks like:** both must-agree pair plots are
-diagonal-only with `agreement = 100.0000%`. If a must-agree pair shows
-any off-diagonal entry, stop and debug ntuplizer ↔ analyzer parity
-before trusting the sample.
 
 ### Legacy: `TTCatDebug.h`
 
@@ -489,7 +532,8 @@ removed entirely) on the next cleanup pass.
   GenTtbarCategorizer plugin chain as the official categoriser.
 - **ttH AN-19-094**, §6.1.2 — earlier reference on the same plugin
   chain for the ttH analysis.
-- **NtupleForge README** (`README_ntuplizer.md`) — canonical
+- **NtupleForge README** (`../NtupleForge/README.md`; 상세는
+  `../NtupleForge/docs/04_architecture.md`) — canonical
   description of where the `ttCat_*` and `ttCatXval_*` branches come
   from. Read it before touching the analyzer's categorization code.
 

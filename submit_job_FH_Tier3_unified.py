@@ -101,7 +101,17 @@ class CondorJobManager:
                             help="b-tag shape SF 적용 (기본 off)")
         parser.add_argument("--btagrw", default="off", choices=["on", "off"],
                             help="b-tag norm reweight 적용 (기본 off; 8-group JSON 필요)")
+        parser.add_argument("--filelist-dir", default="filelistTier3",
+                            help="master filelist 디렉토리 (기본 filelistTier3). "
+                                 "연도별로 분리된 경우 지정: 예) --filelist-dir filelistTier3_2018 "
+                                 "(make_filelists.py 2018 이 만드는 디렉토리)")
+        parser.add_argument("--preflight", action="store_true",
+                            help="읽기 전용 사전 점검: yml/xsec_db/prescan_summary/"
+                                 "filelist/실행파일/보정 경로/era 추출/output 디렉토리 "
+                                 "쓰기권한을 검사하고 로그를 남긴 뒤 종료 "
+                                 "(제출·디렉토리 생성 없음, FAIL 있으면 exit 1)")
         args = parser.parse_args()
+        self.preflight_only = bool(args.preflight)
         self._cli_config = args.config.strip()
         self._cli_region = args.region.strip()
         self._cli_trigsf  = args.trigsf
@@ -165,7 +175,14 @@ class CondorJobManager:
             self.analyzer_path,
             f"condor/filelistTier3_unified_{self.AnalyzerMode}{self._dir_suffix}"
         )
-        self.sample_list_path = os.path.join(self.analyzer_path, "filelistTier3")
+        self.sample_list_path = os.path.join(self.analyzer_path,
+                                             args.filelist_dir.strip() or "filelistTier3")
+
+        # ── [--preflight] 읽기 전용 사전 점검 ────────────────────────────────
+        # 디렉토리 생성/proxy 체크/제출을 일절 하지 않고, 필요한 것들이 갖춰졌는지만
+        # 검사한 뒤 로그 파일을 남기고 종료한다 (FAIL 있으면 exit 1).
+        if self.preflight_only:
+            sys.exit(self.run_preflight())
 
         self.make_directory(self.condor_files_path)
         self.make_directory(self.path_output_base, 777)
@@ -181,6 +198,278 @@ class CondorJobManager:
 
         self.print_memory_status()
         self.process_config_file()
+
+    # -------------------------------------------------------------------------
+    def run_preflight(self):
+        """[--preflight] 제출 전 읽기 전용 점검. 반환값 = exit code (0/1).
+
+        아무것도 만들지 않고(디렉토리·filelist·condor 파일 없음) 아무것도 제출하지
+        않는다. 결과는 화면과 preflight_<mode><suffix>_<timestamp>.log 에 동시 기록
+        되므로 그대로 붙여 공유할 수 있다.
+        """
+        import json          # 이 파일의 기존 관례(지역 import)를 따른다
+        rows = []   # (level, check, detail)
+        lines = []
+
+        def emit(level, check, detail=""):
+            rows.append((level, check, detail))
+            line = f"[{level:<4}] {check:<40} {detail}"
+            print(line)
+            lines.append(line)
+
+        def note(text=""):
+            print(text)
+            lines.append(text)
+
+        ok   = lambda c, d="": emit("PASS", c, d)
+        warn = lambda c, d="": emit("WARN", c, d)
+        bad  = lambda c, d="": emit("FAIL", c, d)
+
+        ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_path = os.path.join(
+            self.analyzer_path,
+            f"preflight_{self.AnalyzerMode}{self._dir_suffix}_{ts}.log")
+
+        note("=" * 84)
+        note("tempTTHH condor PREFLIGHT (read-only)")
+        note(f"  mode        : {self.AnalyzerMode}{self._dir_suffix}")
+        note(f"  config      : {self.config_file_path}")
+        note(f"  analyzer    : {self.analyzer_path}")
+        note(f"  SF toggles  : trigsf={self._cli_trigsf} btagsf={self._cli_btagsf} btagrw={self._cli_btagrw}")
+        note(f"  time        : {datetime.datetime.now().isoformat(timespec='seconds')}")
+        note("=" * 84)
+
+        # ---- 1. config yml --------------------------------------------------
+        if not os.path.isfile(self.config_file_path):
+            bad("config yml", f"not found: {self.config_file_path}")
+            return self._preflight_finish(rows, lines, log_path)
+        ok("config yml", self.config_file_path)
+        # 주의: 이 저장소는 PyYAML 의존을 피하려고 자체 파서를 쓴다
+        # (load_yaml_config). 점검도 실제 제출과 **같은 파서**로 해야 의미가 있다.
+        try:
+            cfg = self.load_yaml_config(self.config_file_path)
+        except Exception as e:
+            bad("config yml parse", str(e).replace("\n", " ")[:150])
+            return self._preflight_finish(rows, lines, log_path)
+        ok("config yml parse", "ok (load_yaml_config, 제출 때와 동일 파서)")
+
+        common  = (cfg or {}).get("common", {}) or {}
+        samples = (cfg or {}).get("samples", []) or []
+
+        mode_yml = str(common.get("analysis_mode", "")).strip()
+        if mode_yml and mode_yml != self.AnalyzerMode:
+            bad("analysis_mode vs --mode",
+                f"yml='{mode_yml}' but --mode='{self.AnalyzerMode}' (mismatched config?)")
+        else:
+            ok("analysis_mode vs --mode", f"{mode_yml or '(unset)'} == {self.AnalyzerMode}")
+        is_prescan = (mode_yml == "prescan")
+
+        for key in ("year", "lumi_fb_inv", "xsec_db", "prescan", "files_per_job"):
+            if common.get(key) not in (None, ""):
+                ok(f"common.{key}", str(common[key]))
+            else:
+                bad(f"common.{key}", "missing or empty")
+        if not samples:
+            bad("samples", "empty list -- nothing to submit")
+            return self._preflight_finish(rows, lines, log_path)
+        ok("samples", f"{len(samples)} entries")
+
+        # ---- 2. executable --------------------------------------------------
+        exe = os.path.join(self.analyzer_path, self.nameofExe)
+        if os.path.isfile(exe) and os.access(exe, os.X_OK):
+            ok("analyzer executable", exe)
+        else:
+            bad("analyzer executable",
+                f"not built/executable: {exe} (run `make` first)")
+
+        # ---- 3. correction paths (null 정책) --------------------------------
+        # "" 또는 키 누락 -> E12, null -> 선택 보정 비활성(필수면 E13)
+        required_now = {"path_jsonpog"}
+        if any(str(s).startswith(("JetHT", "BTagCSV", "SingleMuon")) for s in samples):
+            required_now.add("path_goldenjson")
+        if self.AnalyzerMode in ("main", "debug"):
+            if self._cli_trigsf == "on":
+                required_now.add("path_trigsf_dir")
+            if self._cli_btagrw == "on":
+                required_now.add("path_btag_reweight_json")
+        for key in ("path_jsonpog", "path_goldenjson", "path_trigsf_dir",
+                    "path_btag_reweight_json", "path_stitch_json",
+                    "path_expanded_ttbarid_dir"):
+            if key not in common:
+                bad(f"{key}", "KEY MISSING -> analyzer exits E12 (no silent default)")
+                continue
+            val = common[key]
+            is_null = (val is None) or (str(val).strip().lower() in ("none", "null", "~"))
+            if str(val).strip() == "":
+                bad(f"{key}", 'empty string -> E12 (use null to disable explicitly)')
+            elif is_null:
+                if key in required_now:
+                    bad(f"{key}", f"null but REQUIRED for mode={self.AnalyzerMode} "
+                                  f"(trigsf={self._cli_trigsf}, btagrw={self._cli_btagrw}) -> E13")
+                else:
+                    ok(f"{key}", "null -> disabled (ok for this mode/toggles)")
+            else:
+                p = str(val)
+                exists = os.path.exists(p)
+                if exists:
+                    ok(f"{key}", p)
+                elif p.startswith("/cvmfs"):
+                    warn(f"{key}", f"not visible here (cvmfs not mounted?): {p}")
+                else:
+                    bad(f"{key}", f"path does not exist: {p}")
+
+        # ---- 4. xsec_db / prescan_summary ----------------------------------
+        db = {}
+        db_path = os.path.join(self.analyzer_path, str(common.get("xsec_db", "")))
+        if os.path.isfile(db_path):
+            try:
+                with open(db_path) as f:
+                    db = json.load(f)
+                meta = db.get("_meta", {})
+                ok("xsec_db loaded",
+                   f"{db_path} ({len(db) - (1 if '_meta' in db else 0)} samples"
+                   + (f", era={meta.get('era')}, lumi={meta.get('lumi_fb_inv')}" if meta else "") + ")")
+                if meta.get("lumi_fb_inv") and str(meta["lumi_fb_inv"]) != str(common.get("lumi_fb_inv")):
+                    warn("lumi consistency",
+                         f"yml lumi_fb_inv={common.get('lumi_fb_inv')} != xsec_db _meta={meta['lumi_fb_inv']}")
+                else:
+                    ok("lumi consistency", str(common.get("lumi_fb_inv")))
+            except Exception as e:
+                bad("xsec_db parse", str(e)[:150])
+        else:
+            (warn if is_prescan else bad)(
+                "xsec_db", f"not found: {db_path}"
+                + (" (prescan does not need it)" if is_prescan else ""))
+
+        prec = {}
+        pre_path = os.path.join(self.analyzer_path, str(common.get("prescan", "")))
+        if os.path.isfile(pre_path):
+            try:
+                with open(pre_path) as f:
+                    # 실제 로더(_load_prescan)와 동일하게 top-level "samples" 아래를 본다
+                    prec = json.load(f).get("samples", {})
+                ok("prescan_summary loaded", f"{pre_path} ({len(prec)} samples)")
+            except Exception as e:
+                bad("prescan_summary parse", str(e)[:150])
+        else:
+            (ok if is_prescan else bad)(
+                "prescan_summary",
+                f"absent: {pre_path}" + (" (expected: prescan CREATES it)" if is_prescan
+                                         else " -- run prescan first"))
+
+        # ---- 5. per-sample: filelist / era / xsec / prescan -----------------
+        note("-" * 84)
+        note(f"Per-sample checks ({len(samples)} samples; filelist dir = {self.sample_list_path})")
+        miss_fl, empty_fl, miss_db, miss_pre, era_fail, n_data, n_mc = [], [], [], [], [], 0, 0
+        total_files = 0
+        for s in samples:
+            name = s["sample_name"] if isinstance(s, dict) else str(s)
+            fl = os.path.join(self.sample_list_path, f"filelist_{name}.txt")
+            if not os.path.isfile(fl):
+                miss_fl.append(name)
+            else:
+                n = sum(1 for l in open(fl) if l.strip())
+                total_files += n
+                if n == 0:
+                    empty_fl.append(name)
+            is_data = bool(re.search(r"(JetHT|BTagCSV|SingleMuon|EGamma|MuonEG|DoubleMuon)", name))
+            if is_data:
+                n_data += 1
+                if not (re.search(r"Run\d{4}([A-Z])$", name) or re.search(r"_([A-Z])$", name)):
+                    era_fail.append(name)
+            else:
+                n_mc += 1
+                if not is_prescan:
+                    rec = db.get(name)
+                    if rec is None:
+                        miss_db.append(name)
+                    elif rec.get("cross_section_fb") in (None, 0):
+                        miss_db.append(name + "(xsec null)")
+                    if name not in prec:
+                        miss_pre.append(name)
+                    else:
+                        try:
+                            if float(prec[name]["runs"]["genEventSumw"]) <= 0:
+                                miss_pre.append(name + "(sumw<=0)")
+                        except Exception:
+                            miss_pre.append(name + "(malformed)")
+        ok("MC / Data in config", f"{n_mc} MC, {n_data} Data")
+        if miss_fl:
+            bad("filelists present", f"{len(miss_fl)} missing (run make_filelists.py): {miss_fl[:6]}")
+        else:
+            ok("filelists present", f"all {len(samples)} found, {total_files} input files total")
+        if empty_fl:
+            bad("filelists non-empty", f"{empty_fl[:6]}")
+        elif not miss_fl:
+            ok("filelists non-empty", "ok")
+        fpj = self.cli_files_per_job or int(common.get("files_per_job", 1) or 1)
+        if total_files:
+            ok("job count estimate",
+               f"~{-(-total_files // max(fpj,1))} jobs (files={total_files}, files-per-job={fpj})")
+        if era_fail:
+            bad("Data era extraction", f"cannot derive era for: {era_fail[:6]} "
+                                       f"(need '<PD>_Run<year><ERA>' or '<PD>_<ERA>')")
+        elif n_data:
+            ok("Data era extraction", f"ok for all {n_data} Data samples")
+        if not is_prescan:
+            if miss_db:
+                bad("xsec_db coverage", f"{len(miss_db)} problem(s): {miss_db[:6]}")
+            elif db:
+                ok("xsec_db coverage", f"all {n_mc} MC samples present with non-null xsec")
+            if miss_pre:
+                bad("prescan coverage", f"{len(miss_pre)} problem(s): {miss_pre[:6]}")
+            elif prec:
+                ok("prescan coverage", f"all {n_mc} MC samples have runs.genEventSumw > 0")
+        else:
+            ok("xsec_db / prescan coverage", "not required in prescan mode (weight=1.0)")
+
+        # ---- 6. output / condor dirs (생성하지 않고 확인만) -----------------
+        note("-" * 84)
+        for label, path in (("condor dir", self.condor_files_path),
+                            ("output base", self.path_output_base)):
+            if os.path.isdir(path):
+                if os.access(path, os.W_OK):
+                    ok(f"{label} (exists)", path)
+                else:
+                    bad(f"{label} not writable", path)
+            else:
+                parent = os.path.dirname(path.rstrip("/"))
+                while parent and not os.path.isdir(parent):
+                    parent = os.path.dirname(parent)
+                if parent and os.access(parent, os.W_OK):
+                    ok(f"{label} (will be created)", f"{path}  [parent writable: {parent}]")
+                else:
+                    bad(f"{label} not creatable", f"{path}  [no writable parent: {parent}]")
+        proxy = self.proxy_path
+        if os.path.isfile(proxy):
+            age_h = (time.time() - os.path.getmtime(proxy)) / 3600.0
+            (ok if age_h < 24 else warn)("condor proxy.cert",
+                                         f"{proxy} (age {age_h:.1f} h)")
+        else:
+            bad("condor proxy.cert",
+                f"not found: {proxy} -- copy your grid proxy there (worker nodes need it)")
+
+        return self._preflight_finish(rows, lines, log_path)
+
+    # -------------------------------------------------------------------------
+    def _preflight_finish(self, rows, lines, log_path):
+        n_fail = sum(1 for l, _, _ in rows if l == "FAIL")
+        n_warn = sum(1 for l, _, _ in rows if l == "WARN")
+        n_pass = sum(1 for l, _, _ in rows if l == "PASS")
+        tail = ["-" * 84,
+                f"PREFLIGHT SUMMARY: {n_pass} PASS, {n_warn} WARN, {n_fail} FAIL"]
+        tail.append("RESULT: NOT READY TO SUBMIT -- fix the FAIL items above." if n_fail
+                    else "RESULT: READY TO SUBMIT" + (" (review the WARNs first)" if n_warn else ""))
+        for t in tail:
+            print(t)
+        lines.extend(tail)
+        try:
+            with open(log_path, "w") as f:
+                f.write("\n".join(lines) + "\n")
+            print(f"Log written: {log_path}")
+        except OSError as e:
+            print(f"WARNING: could not write log {log_path}: {e}")
+        return 1 if n_fail else 0
 
     # -------------------------------------------------------------------------
     def make_directory(self, path, permission=755):
@@ -381,7 +670,11 @@ class CondorJobManager:
         # era 를 자동 추출한다 (예: SingleMuon_C -> 'C', JetHT_E -> 'E').
         # yml 에 명시적 era 가 있으면 그게 우선. MC 는 era 를 두지 않는다.
         if self.data_or_mc == "Data" and not str(self.era).strip():
-            m = (re.search(r"Run2017([A-Z])$", self.sample_name)
+            # 2026-07-26: Run2017 하드코딩 -> Run<4자리연도> 일반화.
+            #   기존: r"Run2017([A-Z])$" 는 2018 키(JetHT_Run2018A)를 못 잡고,
+            #   fallback r"_([A-Z])$" 도 'A' 앞 문자가 '8' 이라 실패 -> FATAL.
+            #   이제 Run2016/2017/2018/Run3 키 모두 era 를 추출한다.
+            m = (re.search(r"Run\d{4}([A-Z])$", self.sample_name)
                  or re.search(r"_([A-Z])$", self.sample_name))
             if m:
                 self.era = m.group(1)
