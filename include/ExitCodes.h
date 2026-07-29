@@ -37,8 +37,9 @@ enum ExitCode {
     XSEC_DB_MISSING          = 20,  // sample absent from xsec_db
     PRESCAN_MISSING          = 21,  // sample absent from prescan_summary
 
-    // 30-39 — input data
+    // 30-39 — input / output data
     INPUT_OPEN_FAIL          = 30,  // cannot read input ntuple / "Events" tree
+    OUTPUT_OPEN_FAIL         = 31,  // cannot create the output TFile (--output)
 
     // 40-49 — central (POG) corrections
     CENTRAL_CORR_LOAD_FAIL   = 40,  // JME/PU/BTag-SF correctionlib load failed

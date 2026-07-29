@@ -1092,6 +1092,22 @@ class ttHHanalyzer_unified {
 	_sys = false;
 
 	_of = new outputFile(_cl);
+	// [2026-07-29] output TFile 열기 실패를 여기서 끊는다.
+	//   outputFile 의 생성자(src/tnm.cc:101)는 실패 시 "[Error] ... cannot open
+	//   output TFile" 만 찍고 `file = nullptr` 로 **그냥 돌아온다.** 호출부가
+	//   확인하지 않으면 곧바로 initHistograms() 의 `_of->file->cd()` 에서
+	//   null 역참조 → segfault 다. 그러면 진짜 원인(경로 오타/권한 없음) 한 줄이
+	//   60줄짜리 ROOT stack trace 에 묻힌다.
+	//   Condor 에서도 같은 문제다: 세그폴트 exit code 는 "왜" 를 말해주지 않는다.
+	if (!_of || !_of->file) {
+		std::cerr << "\n[FATAL][E" << tthh::OUTPUT_OPEN_FAIL
+		          << "] cannot create the output TFile: '" << _cl << "'\n"
+		          << "  --output 는 디렉토리가 아니라 **파일 경로**여야 한다\n"
+		          << "  (예: /path/to/TTbb_DiLep_0.root).\n"
+		          << "  상위 디렉토리가 존재하는지, 쓰기 권한이 있는지 확인할 것.\n"
+		          << std::endl;
+		std::exit(tthh::OUTPUT_OPEN_FAIL);
+	}
 	_runYear = runYear;
 	_DataOrMC = DataOrMC;
 	_sampleName = sampleName;
