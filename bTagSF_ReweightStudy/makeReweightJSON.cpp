@@ -250,7 +250,54 @@ int main(int argc, char** argv)
         }
     }
 
+    // ── [2026-07-29] "source 는 있는데 내용이 비어 있는" group 탐지 ──────────
+    //
+    //   위의 "(no samples — group will be all-1.0!)" 경고는 **source 목록이
+    //   비었을 때만** 뜬다. 그런데 실제로 겪은 사고는 그게 아니었다:
+    //   `ProcessKeysForSample()` 이 ttbar family 에 4개 키를 미리 예약하므로
+    //   `groupSources["tt+nb"]` 는 항상 비지 않는다. 그런데 dispatch 가 원본
+    //   genTtbarId 로 돌면 그 키에 이벤트가 한 건도 안 들어와서 히스토그램은
+    //   존재하되 전부 0 이 된다. 그러면 위 ratio 규칙 `(sW>0) ? sN/sW : 1.0`
+    //   에 의해 **전 bin 이 정확히 1.0** 이 되고, 결과 JSON 은 8-key 로
+    //   멀쩡해 보인다. 경고도 크래시도 없다.
+    //
+    //   그래서 "Σ_withSF 가 모든 bin 에서 0" 인 group 을 따로 잡아낸다.
+    //   이건 reweight 가 그 group 에 대해 아무 일도 안 한다는 뜻이다.
+    {
+        std::vector<std::string> hollow;
+        for (const auto& g : allGroups) {
+            if (groupSources[g].empty()) continue;   // 위에서 이미 경고함
+            double tot = 0.0;
+            for (int b = 0; b < totalBins; ++b) tot += groupSumWithSF[g]["central"][b];
+            if (tot <= 0.0) hollow.push_back(g);
+        }
+        if (!hollow.empty()) {
+            std::cerr << "\n[WARN] 아래 group 은 기여 샘플이 있는데도 Σ_withSF 가 "
+                         "모든 bin 에서 0 이다:\n";
+            for (const auto& g : hollow) {
+                std::cerr << "    - " << std::left << std::setw(10) << g << " <- ";
+                for (size_t i = 0; i < groupSources[g].size(); ++i) {
+                    std::cerr << groupSources[g][i];
+                    if (i + 1 < groupSources[g].size()) std::cerr << ", ";
+                }
+                std::cerr << "\n";
+            }
+            std::cerr <<
+              "  -> 이 group 은 전 bin ratio = 1.0 으로 나간다. JSON 은 정상적인\n"
+              "     " << allGroups.size() << "-key 로 보이지만 이 key 는 무효다.\n"
+              "  흔한 원인:\n"
+              "    · tt+nb : BTagSFProcessor 가 expandedTtbarId 가 아니라 원본\n"
+              "              genTtbarId 로 dispatch (%100 이 55 를 안 넘어 61/62/71/72\n"
+              "              가 한 건도 안 생긴다). skim 에 expandedTtbarId branch 가\n"
+              "              있는지, btagtrig yml 의 path_expanded_ttbarid_dir 가\n"
+              "              켜져 있는지 확인. tools/check_ttnb_coverage.py 도 볼 것.\n"
+              "    · 그 외   : 해당 샘플이 measurement 영역(≥6 jet, HT>500, hadronic\n"
+              "              trigger, lepton veto)을 통과하는 이벤트가 정말 0 인지.\n\n";
+        }
+    }
+
     // ── Print central ratios for inspection ──
+    //   tt+nb 가 정확히 1.00000 으로 나오면 위 [WARN] 을 먼저 볼 것.
     std::cout << ">>> Central ratios per group (representative bins):\n";
     for (const auto& g : allGroups) {
         // Pick two representative bins to display

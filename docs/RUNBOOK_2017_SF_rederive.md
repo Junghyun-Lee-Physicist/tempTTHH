@@ -180,6 +180,65 @@ event 가 늘어날 때다. ttbar family 7종은 `_ext*` 항목이 없고 전부
 
 ## 3. Trigger SF (muon control)
 
+### btagtrig 을 두 번 돌려야 하나 — 아니다, 한 번이면 된다
+
+skim 하나에 **두 집단이 같이 들어 있다**. analyzer 의 btagtrig 모드는
+
+- hadronic trigger 를 **강제하지 않는다** (`kCutSequence` 1번이 `kSelBitMainLike`) — bit 만 저장.
+  → trigger 효율의 **분모**가 살아 있다.
+- lepton veto 도 **강제하지 않는다** (6번이 `kSelBitMainLike`).
+- lead-muon gate 는 lepton 을 *수집할지*만 정하고 **이벤트를 버리지 않는다**
+  (`if (passGate) { ...collect... }`). → lead muon 이 없는 FH 이벤트는 `nMuons=0` 으로 통과.
+
+그래서 같은 파일에서 selection 만 달리 걸면 된다:
+
+| 도구 | selection | 역할 |
+|---|---|---|
+| `TriggerStudy` | `passTrigger_HLT_IsoMu27` + `nMuons==1 && nElecs==0` | SF **측정** 영역 |
+| `bTagSF_ReweightStudy` | hadronic trigger + `nVetoLeptons==0` | reweight 유도 = **적용** 영역 |
+
+trigger SF 는 원래 "muon 으로 trigger 한 orthogonal 표본에서 hadronic trigger 효율을
+재고, 그 SF 를 FH 에 적용" 하는 방법이다. 측정 영역과 적용 영역이 다른 것이 정상이며,
+그래서 skim 을 두 번 만들 이유가 없다.
+
+> `--region muon` 과 헷갈리지 말 것. 그건 QCD 억제용 **1ℓ+MET 제어영역**(main/debug 전용,
+> `setRegion()` 이 `main`/`debug` 아니면 무시)이고 trigger SF 측정과 무관하다.
+
+### offline selection 동기화 — 사본을 없앴다
+
+trigger SF 는 offline selection 을 건 뒤 유도하므로, **analyzer 의 baseline 이 바뀌면
+측정 영역과 적용 영역이 갈라진다.** 그런데 `EventLooper.cpp` 는 `6` / `40.0` / `500.0` /
+`2.4` 를 손으로 옮겨 적은 사본으로 갖고 있었다 (`bTagSF` 도 `500.0` 이 하드코딩).
+
+이제 두 도구 모두 analyzer 의 `include/SelectionCuts.h` 를 직접 include 해서
+`Cuts::nJets` / `Cuts::sixthJetPt` / `Cuts::HT` / `Cuts::jetEta` 를 쓴다. baseline 을
+고치면 세 곳이 자동으로 따라온다.
+
+### "muon + MET selection 도 trigger SF 에 반영해야 하나"
+
+**nominal 은 아니오.** trigger SF 는 ε_data/ε_MC 를 **(nb, HT, 6th-jet pT)** 로
+매개변수화한 값이다. hadronic trigger 의 응답은 그 세 변수로 결정되고 MET 과는 무관하다.
+그 factorization 이 성립하는 한 SF 는 어느 영역에도 그대로 옮겨진다 — 애초에
+측정(muon CR) 과 적용(FH) 이 다른 영역인 것이 이 방법의 전제다.
+측정 영역에 MET cut 을 더하면 통계만 깎여 low-stat bin(`kMinPassData=10`)이 늘어난다.
+
+**다만 factorization 은 약속이 아니라 검사 대상이다.** 그래서 검사할 수단을 열어 뒀다:
+
+- analyzer skim 에 **`MET_pt` branch 추가** (2026-07-29). 이전에는 skim 에 `passMETFilters`
+  (bool) 뿐이라 `--region muon`(MET_pt>20) 을 downstream 에서 **재현할 수조차 없었다.**
+- `TriggerStudy/include/Config.hh` 의 **`metCut`** (기본 `0.0` = 끔). `20.0` 으로 두면
+  측정 영역에 MET cut 이 걸린다. analyzer 의 `metCutCR` 과 **같은 값**을 쓸 것.
+- 켰는데 skim 에 branch 가 없으면 FATAL — "MET cut 을 걸고 유도했다"고 믿으면서 실제로는
+  안 건 SF 가 나오는 것을 막는다.
+
+closure 보는 법: `metCut=20.0` 으로 빌드 → Step 2(`applySF`) → `PlotTriggerEfficiency.cpp`
+에서 SF 적용 후 data/MC 가 맞는지. **이건 systematic 확인용이고, 배포하는 SF 는 `metCut=0`
+으로 유도한 것이다.**
+
+> 참고: 진짜 남는 systematic 은 MET 이 아니라 **측정 영역이 ttbar semileptonic 지배,
+> 적용 영역(FH)이 QCD-rich** 라는 조성 차이다. nb 로 binning 해서 상당 부분 흡수하지만
+> 잔차는 남는다. MET cut 을 추가해도 이건 개선되지 않는다.
+
 측정 영역: `IsoMu27` reference + `nMuons==1 && nElecs==0`.
 
 ```bash
@@ -233,12 +292,59 @@ python3 run_all.py -j 8
   `nMuons==0` 으로 대체하면 안 된다 — lead-muon gate 를 못 넘은 soft lepton 이벤트가
   살아남아 main 과 위상공간이 어긋난다.
 
+### 4-1. process group 은 8개 — 무엇이 어떻게 묶이나
+
+`Config_TtCatGroup.hh` `AllProcessGroupKeys()` 가 정본이다.
+
+| group | 무엇이 들어가나 |
+|---|---|
+| `tt+LF` | genTtbarId 0 · **그리고 minor BG 전부** (QCD, V+jets, single-t, diboson, TTZToBB, TTTT, TTW*, TTTW …) |
+| `tt+cc` | 41–45 |
+| `tt+B`  | **51, 52, 53, 54, 55** — tt+b · tt+2b · tt+bb 가 **하나로 병합** |
+| `tt+nb` | **61, 62** (tt+bbb = tt+3b) **+ 71, 72** (tt+4b) |
+| `ttH` | `ttHTobb` |
+| `ttHH` | `TTHHto4b` |
+| `ttZH4b` | `TTZHTo4b` |
+| `ttZZ4b` | `TTZZTo4b` |
+
+**tt+bb 와 tt+3b 는 각각 별개 그룹이 아니다.** tt+bb 는 `tt+B` 안에, tt+3b 는
+`tt+nb` 안에 tt+4b 와 함께 들어간다. 병합은 의도된 것이다 — ttH AN-19-094 §A.2.1 이
+sub-category 별 MC 통계가 부족해 4개 그룹(ttH / tt+bb / tt+cc / tt+LF)으로만 유도하라고
+처방한다. 우리는 거기에 ttHH AN §D.0.5 근거로 `tt+nb` 를, 4b 최종상태 3종을 자체 그룹으로
+추가해 8개다.
+
+> 더 잘게(예: tt+b / tt+2b / tt+bb 분리) 가려면 `Config_TtCatGroup.hh` 의 `Classify()` 와
+> `AllProcessGroupKeys()` 만 고치면 된다 — 유도와 적용이 **이 파일 하나**를 공유하므로
+> 양쪽이 자동으로 따라온다. 다만 group 당 통계가 줄어 ratio 가 불안정해지므로 AN 근거가
+> 필요하다.
+
+### 4-2. 적용(main) 쪽 정합성 — 확인됨
+
+- `Config_TtCatGroup.hh` 는 **파일이 하나**다. analyzer 의 `Makefile` 이
+  `bTagSF_ReweightStudy/include` 를 직접 include 한다(`BTAGSF_INCDIR`). 유도와 적용이
+  같은 정의를 문자 그대로 공유하므로 복사본 표류가 불가능하다.
+- 적용부(`ttHHanalyzer_unified.cc`)는
+  `TtCatGroup::MakeProcessKey(_sampleName, _expandedTtbarId)` 를 쓴다 — **expandedTtbarId**.
+  이제 유도부와 같은 입력이다.
+  > ⚠ 2026-07-29 이전에는 **적용은 expandedTtbarId, 유도는 genTtbarId** 로 어긋나 있었다.
+  > 적용이 `"tt+nb"` 키를 요청하면 JSON 에 그 키가 **있긴 있어서**(전 bin 1.0) 크래시 없이
+  > 1.0 이 곱해졌다. 이번에 유도를 expandedTtbarId 로 맞춰 해소했다.
+- 2D(nJets×HT) 여부는 JSON 의 input 개수로 자동 판정된다
+  (`btagReweightIs2D_ = inputs.size() >= 4`). 유도 쪽 `Config::useHTForReweight` 와 자동 정합.
+  단 **`exe_BTagSF` 와 `exe_MakeJSON` 은 같은 플래그로 빌드**해야 한다.
+- 실패가 조용하지 않다: 빈 key → exit 45 · JSON 에 key 없음 → main 에서 exit
+  (`requireDerived_`) · non-finite → exit 46.
+
 **확인 포인트**
 
 - `[SampleRegistry]` 블록의 xsec_db / prescan 경로가 의도한 파일인지.
-- Pass 1 요약에서 **`tt+nb` 그룹의 ratio 가 전부 1.000 이 아닌지.** 전부 1.0 이면
-  expandedTtbarId 가 안 붙은 것이다 (§2-1 의 coverage 검사부터 볼 것).
-- `exe_MakeJSON` 이 만든 JSON 의 key 가 8개이고, 8번째(`tt+nb`)에 1.0 아닌 값이 있는지.
+- `exe_MakeJSON` 의 `>>> Process group composition:` 에서 8개 group 이 각각 어떤 샘플을
+  받았는지. `(no samples — group will be all-1.0!)` 이 뜨면 그 group 은 무효다.
+- `>>> Central ratios per group` 에서 **`tt+nb` 가 정확히 `1.00000` 이 아닌지.**
+  1.0 이면 `[WARN] ... Σ_withSF 가 모든 bin 에서 0` 이 함께 떴을 것이다
+  (2026-07-29 추가). §2-1 의 coverage 검사부터 볼 것.
+- analyzer(main) job 로그 끝의 `(expandedSub → processKey)` 진단에서 61/62/71/72 가
+  53 과 **다른** key(`tt+nb`)를 받았는지.
 
 ---
 

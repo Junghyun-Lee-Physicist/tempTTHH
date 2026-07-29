@@ -61,6 +61,18 @@ void EventLooper::Init()
     }
 
     reader = new NtupleReader(fChain);
+
+    // [2026-07-29] metCut 을 켰는데 skim 에 MET_pt 가 없으면 조용히 컷이
+    //   무시되는 것을 막는다. 그 경우 "MET cut 을 걸고 유도했다"고 믿으면서
+    //   실제로는 안 건 SF 가 나온다.
+    if (Config::metCut > 0.0 && !reader->HasMET()) {
+        std::cerr << "\n[EventLooper][FATAL] Config::metCut = " << Config::metCut
+                  << " 인데 skim 에 'MET_pt' branch 가 없다: " << ntuplePath << "\n"
+                     "  이 branch 는 2026-07-29 이후 analyzer 가 쓰기 시작했다.\n"
+                     "  구 skim 을 쓰려면 Config::metCut 을 0 으로 되돌릴 것\n"
+                     "  (nominal 은 원래 0 이다 — Config.hh 의 metCut 주석 참조).\n";
+        std::exit(1);
+    }
 }
 
 // ============================================================================
@@ -421,24 +433,33 @@ void EventLooper::Loop()
 
         // ====================================================================
         // Skimming Invariant Checks
+        // --------------------------------------------------------------------
+        // [2026-07-29] 하드코딩 6 / 40.0 / 500.0 / 2.4 를 `Cuts::*` 로 교체.
+        //
+        //   왜: 이 값들은 analyzer 의 `include/SelectionCuts.h` 에 이미 정의돼
+        //   있고, 여기 있던 것은 그 **손으로 옮긴 사본**이었다. trigger SF 는
+        //   offline selection 을 건 뒤 유도하므로, analyzer 의 baseline 이 바뀌면
+        //   측정 영역과 적용 영역의 위상공간이 갈라진다. 사본을 두는 한 그 동기화는
+        //   사람이 기억해야 하는 일이 된다.
+        //   이제 두 파일이 **같은 헤더**를 본다 (Makefile 의 SHARED_INC=../include).
         // ====================================================================
-        if (reader->GetNJets() < 6) {
-            FATAL_INVARIANT("NJets < 6", jentry);
+        if (reader->GetNJets() < Cuts::nJets) {
+            FATAL_INVARIANT("NJets < Cuts::nJets", jentry);
         }
 
-        double Jet6PT = reader->GetJetPt().at(5);
-        if (Jet6PT <= 40.0) {
-            FATAL_INVARIANT("6th jet pT <= 40 GeV", jentry);
+        double Jet6PT = reader->GetJetPt().at(Cuts::nJets - 1);
+        if (Jet6PT <= Cuts::sixthJetPt) {
+            FATAL_INVARIANT("Nth jet pT <= Cuts::sixthJetPt", jentry);
         }
 
         double currentHT = reader->GetHT();
-        if (currentHT < 500.0) {
-            FATAL_INVARIANT("HT < 500 GeV", jentry);
+        if (currentHT < Cuts::HT) {
+            FATAL_INVARIANT("HT < Cuts::HT", jentry);
         }
 
-        double Jet6Eta = reader->GetJetEta().at(5);
-        if (Jet6Eta < -2.4 || Jet6Eta > 2.4) {
-            FATAL_INVARIANT("|eta| > 2.4 for 6th jet", jentry);
+        double Jet6Eta = reader->GetJetEta().at(Cuts::nJets - 1);
+        if (Jet6Eta < -Cuts::jetEta || Jet6Eta > Cuts::jetEta) {
+            FATAL_INVARIANT("|eta| > Cuts::jetEta for the Nth jet", jentry);
         }
 
         if (isData && reader->GetFailGoldenJson()) {
@@ -446,9 +467,32 @@ void EventLooper::Loop()
         }
 
         // ====================================================================
-        // Analysis Selection
+        // Analysis Selection — muon control region
+        // --------------------------------------------------------------------
+        // 이것이 **측정 영역**이다. 적용 영역(FH, lepton veto)과 다른 것은
+        // 방법론상 불가피하다: hadronic trigger 효율을 재려면 그 trigger 와
+        // 무관한(orthogonal) 표본이 필요하고, 그 역할을 muon trigger 가 한다.
         // ====================================================================
         if (!(reader->GetNMuons() == 1 && reader->GetNElecs() == 0)) continue;
+
+        // ── [선택] MET cut — 기본 OFF ──────────────────────────────────────
+        //
+        //   analyzer 의 `--region muon` 은 lepton veto 를 "muon 1 + electron 0
+        //   + MET_pt > 20" 으로 바꾼다. "그럼 trigger SF 도 그 MET cut 을 걸고
+        //   유도해야 하나?" 에 대한 답은 **기본적으로 아니오** 다.
+        //
+        //   trigger SF 는 ε_data/ε_MC 를 (nb, HT, 6th-jet pT) 로 매개변수화한다.
+        //   hadronic trigger 의 응답은 그 세 변수로 결정되고 MET 과는 무관하다.
+        //   그 factorization 이 성립하는 한 SF 는 어느 영역에도 그대로 옮겨진다
+        //   (애초에 측정=muon CR, 적용=FH 로 다른 영역에 쓰는 방법이다).
+        //   측정 영역에 MET cut 을 더하면 통계만 깎여 low-stat bin 이 늘어난다
+        //   (kMinPassData=10 에 이미 걸리는 bin 이 있다).
+        //
+        //   다만 factorization 은 **약속이 아니라 검사 대상**이다. 검사하려면
+        //   여기서 MET cut 을 켜고 Step 2(applySF) → PlotTriggerEfficiency 로
+        //   closure 를 보면 된다. 그 용도의 스위치다.
+        //   값 20.0 은 analyzer 의 `metCutCR` 과 같게 유지할 것.
+        if (Config::metCut > 0.0 && reader->GetMET() <= Config::metCut) continue;
 
         // ====================================================================
         // Event Weight

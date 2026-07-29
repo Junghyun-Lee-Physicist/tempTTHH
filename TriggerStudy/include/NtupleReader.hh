@@ -33,6 +33,12 @@ public:
 
     // 3. Kinematics
     Float_t GetHT() const { return HT; }
+
+    // [2026-07-29] MET_pt — analyzer 의 lepton-CR(`--region muon`, MET_pt>20) 을
+    //   downstream 에서 재현하기 위한 값. 구 skim 에는 없으므로 branch 부재 시
+    //   -1 로 남는다. Config::metCut > 0 일 때만 쓰이며, 그 경우 부재는 FATAL.
+    Float_t GetMET() const { return MET_pt; }
+    bool    HasMET() const { return b_MET_pt != nullptr; }
     const std::vector<float>& GetJetPt() const { return *jetPt; }
     const std::vector<float>& GetJetEta() const { return *jetEta; }
 
@@ -65,6 +71,7 @@ private:
     Int_t           nbJets;
 
     Float_t         HT;
+    Float_t         MET_pt = -1.f;   // -1 = branch 부재
     std::vector<float> *jetPt = nullptr;
     std::vector<float> *jetEta = nullptr;
 
@@ -102,6 +109,7 @@ private:
     TBranch        *b_nbJets = nullptr;   //!
 
     TBranch        *b_HT = nullptr;       //!
+    TBranch        *b_MET_pt = nullptr;   //!
     TBranch        *b_jetPt = nullptr;    //!
     TBranch        *b_jetEta = nullptr;   //!
 

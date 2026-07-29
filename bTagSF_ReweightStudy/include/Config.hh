@@ -35,6 +35,11 @@
 //   TriggerStudy 와 **같은 헤더**를 본다 (Makefile 의 SHARED_INC = ../include).
 #include "SampleRegistry.hh"
 
+// [2026-07-29] offline selection 상수도 analyzer 와 같은 헤더를 본다.
+//   reweight 는 main 에 곱해질 보정이므로 측정 영역이 main 의 baseline 과
+//   같아야 한다. 사본을 두면 그 동기화가 사람의 기억에 의존하게 된다.
+#include "SelectionCuts.h"
+
 
 // ============================================================================
 // Config: Central configuration manager
@@ -210,7 +215,8 @@ public:
     // ========================================================================
 
     // Minimum number of jets required after skimming (invariant check)
-    static inline const int minNJets = 6;
+    //   [2026-07-29] 값을 여기 적지 않고 analyzer 의 SelectionCuts.h 를 그대로 쓴다.
+    static inline const int minNJets = Cuts::nJets;
 
     // ── [2026-07-29] 측정 영역의 lepton 조건 ──────────────────────────────
     //

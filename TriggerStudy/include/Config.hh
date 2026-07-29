@@ -33,6 +33,11 @@
 //   (xsec_db + prescan_summary 런타임 조회). 아래 SampleRegistry 참조.
 #include "SampleRegistry.hh"
 
+// [2026-07-29] offline selection 상수도 analyzer 와 같은 헤더를 본다.
+//   trigger SF 는 offline selection 을 건 뒤 유도하므로, analyzer 의 baseline 이
+//   바뀌면 측정 영역과 적용 영역이 갈라진다. 사본을 두지 않는 것이 유일한 방어다.
+#include "SelectionCuts.h"
+
 // ============================================================================
 // NBBin: Flexible nb-jet bin definition
 // ============================================================================
@@ -180,6 +185,19 @@ public:
 
     // Enable verbose output during event loop
     static inline const bool verbose = false;
+
+    // ── [2026-07-29] 측정 영역 MET cut [GeV] — 0 이면 비활성 (기본) ─────────
+    //
+    //   nominal 은 **0(끔)** 이다. trigger SF 는 (nb, HT, 6th-jet pT) 로
+    //   매개변수화한 ε_data/ε_MC 이고 hadronic trigger 응답은 MET 과 무관하므로,
+    //   적용 영역이 MET cut 을 갖는다고 해서 측정 영역에도 걸 이유가 없다.
+    //   오히려 통계만 깎여 low-stat bin(kMinPassData)이 늘어난다.
+    //
+    //   켜는 경우는 하나다: analyzer 의 `--region muon`(MET_pt > 20) 처럼 MET cut 이
+    //   있는 영역에서 SF 가 여전히 맞는지 **closure 로 확인**하고 싶을 때.
+    //   그때는 20.0 으로 두고 Step 2(applySF) → PlotTriggerEfficiency 를 본다.
+    //   ⚠ analyzer 의 `metCutCR`(ttHHanalyzer_unified.h) 과 같은 값을 쓸 것.
+    static inline const double metCut = 0.0;
 
     // Progress report interval (number of events)
     static inline const Long64_t progressInterval = 10000000;

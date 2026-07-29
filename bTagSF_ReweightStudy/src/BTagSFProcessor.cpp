@@ -436,11 +436,11 @@ void BTagSFProcessor::Loop()
 
             // Skim invariants (NO b-tag selection — BTV requirement)
             if (reader->GetNJets() < Config::minNJets)
-                FATAL_INVARIANT("NJets < 6", j);
-            if (reader->GetJetPt().at(5) <= 40.0)
-                FATAL_INVARIANT("6th jet pT <= 40", j);
-            if (reader->GetHT() < 500.0)
-                FATAL_INVARIANT("HT < 500", j);
+                FATAL_INVARIANT("NJets < Cuts::nJets", j);
+            if (reader->GetJetPt().at(Cuts::nJets - 1) <= Cuts::sixthJetPt)
+                FATAL_INVARIANT("Nth jet pT <= Cuts::sixthJetPt", j);
+            if (reader->GetHT() < Cuts::HT)
+                FATAL_INVARIANT("HT < Cuts::HT", j);
             if (!reader->GetPassMETFilters())
                 FATAL_INVARIANT("MET filters", j);
 
@@ -685,11 +685,11 @@ void BTagSFProcessor::Loop()
         ++nProcessed;
 
         if (reader->GetNJets() < Config::minNJets)
-            FATAL_INVARIANT("NJets < 6", j);
-        if (reader->GetJetPt().at(5) <= 40.0)
-            FATAL_INVARIANT("6th jet pT <= 40", j);
-        if (reader->GetHT() < 500.0)
-            FATAL_INVARIANT("HT < 500", j);
+            FATAL_INVARIANT("NJets < Cuts::nJets", j);
+        if (reader->GetJetPt().at(Cuts::nJets - 1) <= Cuts::sixthJetPt)
+            FATAL_INVARIANT("Nth jet pT <= Cuts::sixthJetPt", j);
+        if (reader->GetHT() < Cuts::HT)
+            FATAL_INVARIANT("HT < Cuts::HT", j);
         if (!reader->GetPassMETFilters())
             FATAL_INVARIANT("MET filters", j);
         if (isData && reader->GetFailGoldenJson())

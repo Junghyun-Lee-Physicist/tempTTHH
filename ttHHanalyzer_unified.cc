@@ -1893,6 +1893,9 @@ void ttHHanalyzer_unified::fillTree(event * thisEvent){
     nJets = thisEvent->getnSelJet();
     nbJets = thisEvent->getnSelbJet();
     HT = thisEvent->getSumSelJetScalarpT();
+    // [2026-07-29] lepton-CR 재현용. _lepCRmode 가 쓰는 것과 **같은 값**이어야
+    //   하므로 동일하게 _ev->MET_pt 를 그대로 싣는다 (가공하지 않는다).
+    MET_pt = _ev->MET_pt;
 
 
     // Fill the jet information [ It will fill the nJets && maximum 30th jets ]

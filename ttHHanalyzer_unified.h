@@ -2729,6 +2729,14 @@ private:
     int nJets;
     int nbJets;
     float HT;
+    // [2026-07-29] MET_pt 를 skim 에 싣는다.
+    //   지금까지 skim 에는 `passMETFilters`(bool) 뿐이었고 MET 값 자체가 없었다.
+    //   그래서 `--region muon` 의 1ℓ+MET 제어영역(MET_pt > 20)을 downstream 에서
+    //   **재현할 수 없었다** — trigger SF 를 그 영역에서 closure 검사하려 해도
+    //   변수가 없어서 불가능했다.
+    //   branch 하나(4 byte/event)로 그 선택지를 열어 둔다. nominal SF 유도에는
+    //   쓰지 않는다 (아래 TriggerStudy Config::metCut 주석 참조).
+    float MET_pt;
 
     std::vector<float> jetPt;
     std::vector<float> jetEta;
@@ -2795,6 +2803,8 @@ private:
         _inputTree->Branch("nJets", &nJets, "nJets/I");
         _inputTree->Branch("nbJets", &nbJets, "nbJets/I");
         _inputTree->Branch("HT", &HT, "HT/F");
+        // [2026-07-29] lepton-CR(MET_pt>20) 을 downstream 에서 재현하기 위한 값
+        _inputTree->Branch("MET_pt", &MET_pt, "MET_pt/F");
         _inputTree->Branch("jetPt", &jetPt);
         _inputTree->Branch("jetEta", &jetEta);
         _inputTree->Branch("bTagScore", &bTagScore);
