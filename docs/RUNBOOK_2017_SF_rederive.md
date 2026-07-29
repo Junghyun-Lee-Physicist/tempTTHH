@@ -214,30 +214,43 @@ trigger SF 는 offline selection 을 건 뒤 유도하므로, **analyzer 의 bas
 `Cuts::nJets` / `Cuts::sixthJetPt` / `Cuts::HT` / `Cuts::jetEta` 를 쓴다. baseline 을
 고치면 세 곳이 자동으로 따라온다.
 
-### "muon + MET selection 도 trigger SF 에 반영해야 하나"
+### "muon + MET selection 도 trigger SF 에 반영해야 하나" — 아니오
 
-**nominal 은 아니오.** trigger SF 는 ε_data/ε_MC 를 **(nb, HT, 6th-jet pT)** 로
-매개변수화한 값이다. hadronic trigger 의 응답은 그 세 변수로 결정되고 MET 과는 무관하다.
-그 factorization 이 성립하는 한 SF 는 어느 영역에도 그대로 옮겨진다 — 애초에
-측정(muon CR) 과 적용(FH) 이 다른 영역인 것이 이 방법의 전제다.
-측정 영역에 MET cut 을 더하면 통계만 깎여 low-stat bin(`kMinPassData=10`)이 늘어난다.
+기준은 **"analyzer 의 selection 을 따라간다"가 아니라 "SF 를 *적용할* 영역과 맞춘다"** 다.
+그리고 적용 영역은 **FH 신호영역**이다.
 
-**다만 factorization 은 약속이 아니라 검사 대상이다.** 그래서 검사할 수단을 열어 뒀다:
+| cut | FH (적용 영역) | TriggerStudy (측정 영역) | 맞나 |
+|---|---|---|---|
+| `nJets >= 6` | 있음 | 있음 | ✓ |
+| `6th jet pT > 40` | 있음 | 있음 | ✓ |
+| `HT > 500` | 있음 | 있음 | ✓ |
+| **`MET > 20`** | **없음** | 없음 | ✓ **이미 맞아 있다** |
+| hadronic trigger | 요구 | 요구 **불가** | 불가능 — 이게 측정 대상이다 |
+| lepton | 0 lepton | **1 muon** | 불가능 — orthogonal reference 가 필요하다 |
 
-- analyzer skim 에 **`MET_pt` branch 추가** (2026-07-29). 이전에는 skim 에 `passMETFilters`
-  (bool) 뿐이라 `--region muon`(MET_pt>20) 을 downstream 에서 **재현할 수조차 없었다.**
-- `TriggerStudy/include/Config.hh` 의 **`metCut`** (기본 `0.0` = 끔). `20.0` 으로 두면
-  측정 영역에 MET cut 이 걸린다. analyzer 의 `metCutCR` 과 **같은 값**을 쓸 것.
+**jet 수를 맞추는 것과 MET 을 안 넣는 것은 같은 규칙이다.** FH 의 `kCutSequence` 에는
+MET 컷이 없다 (`MET_pt` 는 오직 `_lepCRmode` 에서만 쓰인다 — `ttHHanalyzer_unified.cc:1196`).
+그러니 측정 영역에 `MET>20` 을 추가하면 오히려 FH 와 **어긋난다**.
+
+`--region muon`(1μ + MET>20) 은 QCD 억제용 **제어영역**이지 SF 의 적용 대상이 아니다.
+
+불가피한 차이는 **lepton 하나뿐**이다. hadronic trigger 효율을 재려면 그 trigger 와 무관한
+표본이 필요하고, 그 역할을 muon trigger 가 한다. 측정 영역이 ttbar semileptonic 지배이고
+적용 영역(FH)이 QCD-rich 라는 조성 차이가 이 방법의 **주된 systematic** 이며, `nb` 로
+binning 해서 상당 부분 흡수한다. MET cut 을 추가해도 이건 개선되지 않는다.
+
+#### 그래도 제어영역 closure 를 보고 싶다면
+
+- analyzer skim 에 **`MET_pt` branch 추가** (2026-07-29). 이전에는 `passMETFilters`(bool)
+  뿐이라 `--region muon` 을 downstream 에서 **재현할 수조차 없었다.**
+- `TriggerStudy/include/Config.hh` 의 **`metCut`** — 기본 `0.0`(끔). `20.0` 으로 두면
+  측정 영역에 MET cut 이 걸린다 (analyzer 의 `metCutCR` 과 같은 값을 쓸 것).
 - 켰는데 skim 에 branch 가 없으면 FATAL — "MET cut 을 걸고 유도했다"고 믿으면서 실제로는
   안 건 SF 가 나오는 것을 막는다.
 
-closure 보는 법: `metCut=20.0` 으로 빌드 → Step 2(`applySF`) → `PlotTriggerEfficiency.cpp`
-에서 SF 적용 후 data/MC 가 맞는지. **이건 systematic 확인용이고, 배포하는 SF 는 `metCut=0`
-으로 유도한 것이다.**
-
-> 참고: 진짜 남는 systematic 은 MET 이 아니라 **측정 영역이 ttbar semileptonic 지배,
-> 적용 영역(FH)이 QCD-rich** 라는 조성 차이다. nb 로 binning 해서 상당 부분 흡수하지만
-> 잔차는 남는다. MET cut 을 추가해도 이건 개선되지 않는다.
+**⚠ `metCut > 0` 으로 만든 SF 는 배포용이 아니다.** 배포용은 항상 `metCut = 0` 이다.
+제어영역 전용 SF 가 정말 필요하다는 결론이 나면 **별도 파일**로 유도해 별도 경로로
+넘길 것 (FH 용을 덮어쓰지 말 것).
 
 측정 영역: `IsoMu27` reference + `nMuons==1 && nElecs==0`.
 
@@ -279,7 +292,52 @@ python3 run_all.py -j 8
 # 산출물: btagNormReweight.json
 ```
 
-이번에 바뀐 것 (전부 조용히 틀리던 것들):
+### 4-0. region — trigger SF 와 정반대 원칙
+
+|  | 측정 영역을 고를 수 있나 | 그래서 |
+|---|---|---|
+| trigger SF | **아니오** — orthogonal trigger 가 필요해 신호영역에서 측정 불가 | 하나 만들고 각 적용 영역에서 closure 검증 |
+| **b-tag RW** | **예** — 제약은 "b-tag 컷 금지"(BTV) 하나뿐 | **쓸 영역에서 재라** |
+
+그래서 region 을 **런타임 env** 로 고른다 (재컴파일 불필요):
+
+```bash
+export TTHH_BTAGRW_REGION=FH        # 기본 — nVetoLeptons == 0 (main 신호영역)
+# export TTHH_BTAGRW_REGION=muonCR  # nMuons==1 && nElecs==0 && MET_pt > 20
+#                                   #   = analyzer 의 --region muon
+# export TTHH_BTAGRW_REGION=none    # 컷 없음 (2026-07-29 이전 동작 재현 전용)
+```
+
+산출물 이름에 **region 꼬리표**가 자동으로 붙는다. 이게 없으면 muonCR 유도가
+FH 산출물을 말없이 덮어쓴다:
+
+| region | per-sample ROOT | 최종 JSON |
+|---|---|---|
+| `FH` (기본) | `bTagReweight_<sample>.root` | `btagNormReweight.json` |
+| `muonCR` | `bTagReweight_muonCR_<sample>.root` | `btagNormReweight_muonCR.json` |
+| `none` | `bTagReweight_noLepCut_<sample>.root` | `btagNormReweight_noLepCut.json` |
+
+`exe_BTagSF` 와 `exe_MakeJSON` 이 **같은 env 를 읽으므로** 이름이 자동으로 맞는다.
+오타(`FH2` 등)는 FATAL — 조용히 기본값으로 흘려서 "어느 영역에서 뽑은 건지 모르는
+JSON" 이 생기는 것을 막는다.
+
+CR 용을 뽑는 법 (skim 재생산 불필요 — 두 영역이 이미 같은 파일 안에 있다):
+
+```bash
+export TTHH_BTAGRW_REGION=muonCR
+python3 run_all.py -j 8
+./exe_MakeJSON <succeeded samples...>
+# -> btagNormReweight_muonCR.json
+```
+
+main 에 넘길 때는 yml 의 `path_btag_reweight_json` 또는 제출기 env
+`TTHH_BTAGRW_JSON` 으로 가리킨다. `--region muon` 실행은 output 디렉토리가
+`AnalyzerOutput_main_muon...` 으로 분리되므로 FH 결과와 섞이지 않는다.
+
+> **순서 제안:** FH 로 먼저 뽑아 control plot 을 보고, muon CR 이 실제로 필요해지면
+> 그때 위 3줄로 추가. 지금 미리 뽑아 둘 필요는 없다.
+
+### 4-1. 이번에 바뀐 것 (전부 조용히 틀리던 것들)
 
 - process group dispatch 가 `expandedTtbarId` 기준. 원본 `genTtbarId` 는 `%100 ≤ 55` 라
   **tt+nb 그룹에 이벤트가 한 건도 안 들어왔다** (그래도 히스토그램은 만들어져서
@@ -292,7 +350,7 @@ python3 run_all.py -j 8
   `nMuons==0` 으로 대체하면 안 된다 — lead-muon gate 를 못 넘은 soft lepton 이벤트가
   살아남아 main 과 위상공간이 어긋난다.
 
-### 4-1. process group 은 8개 — 무엇이 어떻게 묶이나
+### 4-2. process group 은 8개 — 무엇이 어떻게 묶이나
 
 `Config_TtCatGroup.hh` `AllProcessGroupKeys()` 가 정본이다.
 
@@ -318,7 +376,7 @@ sub-category 별 MC 통계가 부족해 4개 그룹(ttH / tt+bb / tt+cc / tt+LF)
 > 양쪽이 자동으로 따라온다. 다만 group 당 통계가 줄어 ratio 가 불안정해지므로 AN 근거가
 > 필요하다.
 
-### 4-2. 적용(main) 쪽 정합성 — 확인됨
+### 4-3. 적용(main) 쪽 정합성 — 확인됨
 
 - `Config_TtCatGroup.hh` 는 **파일이 하나**다. analyzer 의 `Makefile` 이
   `bTagSF_ReweightStudy/include` 를 직접 include 한다(`BTAGSF_INCDIR`). 유도와 적용이

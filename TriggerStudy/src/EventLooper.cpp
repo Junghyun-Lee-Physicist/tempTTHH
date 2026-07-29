@@ -475,23 +475,21 @@ void EventLooper::Loop()
         // ====================================================================
         if (!(reader->GetNMuons() == 1 && reader->GetNElecs() == 0)) continue;
 
-        // ── [선택] MET cut — 기본 OFF ──────────────────────────────────────
+        // ── [선택] MET cut — 기본 OFF (배포용 SF 는 항상 OFF) ─────────────
         //
-        //   analyzer 의 `--region muon` 은 lepton veto 를 "muon 1 + electron 0
-        //   + MET_pt > 20" 으로 바꾼다. "그럼 trigger SF 도 그 MET cut 을 걸고
-        //   유도해야 하나?" 에 대한 답은 **기본적으로 아니오** 다.
+        //   "analyzer 의 `--region muon` 이 MET_pt>20 을 거는데 여기도 걸어야
+        //   하지 않나?" — 아니다. 그리고 이유는 "trigger 가 MET 과 무관해서"가
+        //   아니라, **FH 신호영역에 MET 컷이 없기 때문**이다.
         //
-        //   trigger SF 는 ε_data/ε_MC 를 (nb, HT, 6th-jet pT) 로 매개변수화한다.
-        //   hadronic trigger 의 응답은 그 세 변수로 결정되고 MET 과는 무관하다.
-        //   그 factorization 이 성립하는 한 SF 는 어느 영역에도 그대로 옮겨진다
-        //   (애초에 측정=muon CR, 적용=FH 로 다른 영역에 쓰는 방법이다).
-        //   측정 영역에 MET cut 을 더하면 통계만 깎여 low-stat bin 이 늘어난다
-        //   (kMinPassData=10 에 이미 걸리는 bin 이 있다).
+        //   측정 영역은 analyzer 의 selection 이 아니라 **SF 를 적용할 영역**과
+        //   맞춘다. nJets>=6 / 6th jet pT>40 / HT>500 을 여기서도 거는 것이 바로
+        //   그 규칙이고(위 invariant 블록), MET 을 걸지 않는 것도 **같은 규칙**이다
+        //   — FH 의 `kCutSequence` 에 MET 컷이 없으므로 "둘 다 없음"으로 이미 맞다.
+        //   여기에 MET>20 을 추가하면 오히려 FH 와 어긋난다.
         //
-        //   다만 factorization 은 **약속이 아니라 검사 대상**이다. 검사하려면
-        //   여기서 MET cut 을 켜고 Step 2(applySF) → PlotTriggerEfficiency 로
-        //   closure 를 보면 된다. 그 용도의 스위치다.
-        //   값 20.0 은 analyzer 의 `metCutCR` 과 같게 유지할 것.
+        //   `--region muon` 은 QCD 억제용 제어영역이지 SF 의 적용 대상이 아니다.
+        //   그 영역에서 SF closure 를 보고 싶을 때만 Config::metCut 을 켠다.
+        //   자세한 근거는 Config.hh 의 metCut 주석 표 참조.
         if (Config::metCut > 0.0 && reader->GetMET() <= Config::metCut) continue;
 
         // ====================================================================

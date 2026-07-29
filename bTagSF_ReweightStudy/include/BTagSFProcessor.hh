@@ -47,6 +47,10 @@ private:
 
     bool passHadronicTrigger(const TString& dataSet, const TString& era) const;
 
+    /// [2026-07-29] 측정 영역의 lepton/MET 조건 (env TTHH_BTAGRW_REGION).
+    ///   FH / muonCR / none — 구현부 주석 참조.
+    bool passRegion() const;
+
     // [NEW] ttbar category dispatch helper.
     // Returns the process key for the *current* event being processed.
     //   - inclusive ttbar (TTbar_Hadronic / TTbar_SemiLep / TTbar_DiLep):

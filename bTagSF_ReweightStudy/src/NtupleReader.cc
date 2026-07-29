@@ -95,6 +95,10 @@ NtupleReader::NtupleReader(TTree *tree) : fChain(tree) {
 
     // 3. Kinematics
     fChain->SetBranchAddress("HT", &HT, &b_HT);
+    // [2026-07-29] MET_pt — muonCR region 용. 구 skim 에는 없으므로 조건부.
+    if (fChain->GetBranch("MET_pt")) {
+        fChain->SetBranchAddress("MET_pt", &MET_pt, &b_MET_pt);
+    }
     fChain->SetBranchAddress("jetPt", &jetPt, &b_jetPt);
     fChain->SetBranchAddress("jetEta", &jetEta, &b_jetEta);
 

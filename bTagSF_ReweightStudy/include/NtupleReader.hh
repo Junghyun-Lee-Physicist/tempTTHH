@@ -40,6 +40,12 @@ public:
 
     // 3. Kinematics
     Float_t GetHT() const { return HT; }
+
+    // [2026-07-29] MET_pt — muonCR region(`nMuons==1 && nElecs==0 && MET>20`) 용.
+    //   구 skim 에는 없으므로 branch 부재 시 -1. muonCR 을 고른 경우에만 쓰이며,
+    //   그때 부재는 FATAL (컷이 조용히 무시되면 안 된다).
+    Float_t GetMET() const { return MET_pt; }
+    bool    HasMET() const { return b_MET_pt != nullptr; }
     const std::vector<float>& GetJetPt() const { return *jetPt; }
     const std::vector<float>& GetJetEta() const { return *jetEta; }
 
@@ -103,6 +109,7 @@ private:
     Int_t           nbJets;
 
     Float_t         HT;
+    Float_t         MET_pt = -1.f;   // -1 = branch 부재
     std::vector<float> *jetPt = nullptr;
     std::vector<float> *jetEta = nullptr;
 
@@ -139,6 +146,7 @@ private:
     TBranch        *b_nbJets = nullptr;   //!
 
     TBranch        *b_HT = nullptr;       //!
+    TBranch        *b_MET_pt = nullptr;   //!
     TBranch        *b_jetPt = nullptr;    //!
     TBranch        *b_jetEta = nullptr;   //!
 

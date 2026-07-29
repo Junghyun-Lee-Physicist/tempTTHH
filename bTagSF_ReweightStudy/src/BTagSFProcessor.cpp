@@ -40,7 +40,7 @@ BTagSFProcessor::~BTagSFProcessor()
 void    BTagSFProcessor::setNtupleName(TString name) { ntupleName = name; }
 TString BTagSFProcessor::getInputName()  const { return ntupleName + ".root"; }
 TString BTagSFProcessor::getOutputName() const {
-    return TString(Config::btagOutPrefix) + ntupleName + ".root";
+    return TString(Config::BTagOutPrefix()) + ntupleName + ".root";
 }
 
 // ============================================================================
@@ -144,6 +144,38 @@ double BTagSFProcessor::computeBTagEventWeight(
         w *= sf;
     }
     return w;
+}
+
+// ============================================================================
+// passRegion — 측정 영역의 lepton/MET 조건
+// ----------------------------------------------------------------------------
+// [2026-07-29] region 은 런타임 env `TTHH_BTAGRW_REGION` 으로 고른다.
+//
+//   왜 고를 수 있게 했나: b-tag norm reweight 는 trigger SF 와 성격이 다르다.
+//   trigger SF 는 orthogonal trigger 가 필요해서 신호영역에서 측정 자체가
+//   불가능하지만, b-tag RW 의 제약은 "b-tag 컷 금지"(BTV) 하나뿐이라
+//   **적용할 영역 그대로에서 잴 수 있다.** 그러니 "쓸 영역에서 재라" 가 원칙이다.
+//
+//   FH     : nVetoLeptons == 0                             (main 신호영역)
+//   muonCR : nMuons==1 && nElecs==0 && MET_pt > metCutCR    (--region muon)
+//   none   : 컷 없음 (구 동작 재현 전용 — FH 와 muon control 이 섞인다)
+//
+//   ⚠ 산출물 파일명에 region 꼬리표가 붙는다(Config::RegionTag()). 그게 없으면
+//     muonCR 유도가 FH 산출물을 말없이 덮어쓴다.
+// ============================================================================
+bool BTagSFProcessor::passRegion() const
+{
+    switch (Config::CurrentRegion()) {
+        case Config::Region::kFH:
+            return reader->GetNVetoLeptons() == 0;
+        case Config::Region::kMuonCR:
+            return reader->GetNMuons() == 1
+                && reader->GetNElecs() == 0
+                && reader->GetMET()    > Config::metCutCR;
+        case Config::Region::kNone:
+            return true;
+    }
+    return true;
 }
 
 // ============================================================================
@@ -332,21 +364,41 @@ void BTagSFProcessor::Loop()
         std::cout << "  DataSet: " << dataSet << ", Era: " << era << "\n";
     }
 
-    // ── skim preflight ───────────────────────────────────────────────────
-    //   lepton veto 는 Data/MC 공통이므로 먼저 확인한다.
-    if (Config::requireLeptonVeto && !reader->HasNVetoLeptons()) {
+    // ── skim preflight : region 이 요구하는 branch ────────────────────────
+    //   Data/MC 공통. 컷이 조용히 무시되면 "그 영역에서 유도했다"고 믿으면서
+    //   실제로는 다른 영역의 숫자가 나온다. 그래서 부재는 전부 FATAL 이다.
+    std::cout << "  Region : " << Config::RegionName()
+              << "   (env TTHH_BTAGRW_REGION; 산출물 꼬리표 '"
+              << Config::RegionTag() << "')\n";
+
+    if (Config::CurrentRegion() == Config::Region::kFH && !reader->HasNVetoLeptons()) {
         std::cerr <<
-          "\n[BTagSFProcessor][FATAL] skim has no 'nVetoLeptons' branch: "
+          "\n[BTagSFProcessor][FATAL] region=FH 인데 skim 에 'nVetoLeptons' branch 가 없다: "
           << getInputName() << "\n"
-          "  Config::requireLeptonVeto = true 인데 main 의 lepton veto 값을 읽을 수\n"
-          "  없다. nMuons==0 으로 대체하는 fallback 은 두지 않는다 -- 그건 lead-muon\n"
-          "  gate 를 통과하지 못한 soft-lepton 이벤트를 살려 두어, main 과 다른\n"
-          "  위상공간에서 reweight 를 유도하게 만든다 (경고 없이).\n"
+          "  main 의 lepton veto 값을 읽을 수 없다. nMuons==0 으로 대체하는 fallback 은\n"
+          "  두지 않는다 -- 그건 lead-muon gate 를 통과하지 못한 soft-lepton 이벤트를\n"
+          "  살려 두어, main 과 다른 위상공간에서 reweight 를 유도하게 만든다 (경고 없이).\n"
           "  Fix: 이 branch 를 쓰는 analyzer 로 btagtrig skim 을 다시 만들 것\n"
-          "       (ttHHanalyzer_unified.h 의 nVetoLeptons branch, 2026-07-29).\n"
-          "  임시로 구 skim 을 쓰려면 Config::requireLeptonVeto=false 로 바꾸되,\n"
-          "  그 경우 muon control 이벤트가 섞인다는 점을 인지할 것.\n";
+          "       (ttHHanalyzer_unified.h 의 nVetoLeptons branch, 2026-07-29).\n";
         std::exit(1);
+    }
+    if (Config::CurrentRegion() == Config::Region::kMuonCR && !reader->HasMET()) {
+        std::cerr <<
+          "\n[BTagSFProcessor][FATAL] region=muonCR 인데 skim 에 'MET_pt' branch 가 없다: "
+          << getInputName() << "\n"
+          "  MET cut(>" << Config::metCutCR << " GeV)을 걸 수 없다. 그냥 넘어가면\n"
+          "  '제어영역에서 유도했다'고 믿으면서 실제로는 MET cut 없는 1-muon 영역의\n"
+          "  숫자가 나온다.\n"
+          "  Fix: MET_pt branch 를 쓰는 analyzer 로 btagtrig skim 을 다시 만들 것\n"
+          "       (ttHHanalyzer_unified.h, 2026-07-29).\n";
+        std::exit(1);
+    }
+    if (Config::CurrentRegion() == Config::Region::kNone) {
+        std::cerr <<
+          "\n[BTagSFProcessor][WARN] region=none — lepton/MET 컷 없이 유도한다.\n"
+          "  btagtrig skim 은 FH 이벤트와 muon control 이벤트를 **함께** 담으므로\n"
+          "  둘이 섞인 위상공간에서 reweight 가 나온다. 이건 어느 분석 영역에도\n"
+          "  대응하지 않는다. 2026-07-29 이전 동작 재현 목적이 아니면 쓰지 말 것.\n";
     }
 
     // ── skim preflight (MC) ──────────────────────────────────────────────
@@ -446,8 +498,10 @@ void BTagSFProcessor::Loop()
 
             if (!passHadronicTrigger(dataSet, era)) continue;
 
-            // [2026-07-29] main 과 같은 위상공간에서 유도한다 (Config 주석 참조).
-            if (Config::requireLeptonVeto && reader->GetNVetoLeptons() != 0) continue;
+            // [2026-07-29] region selection (Config::CurrentRegion(), env
+            //   TTHH_BTAGRW_REGION). b-tag RW 는 trigger SF 와 달리 적용 영역
+            //   그대로에서 잴 수 있으므로, 쓸 영역을 골라 유도한다.
+            if (!passRegion()) continue;
 
             // Per-event process key dispatch
             const std::string pkey = CurrentEventProcessKey(sampleName.Data());
@@ -699,7 +753,7 @@ void BTagSFProcessor::Loop()
 
         // [2026-07-29] Pass 1 과 **같은 선택**이어야 한다 (검증 히스토그램이
         //   유도에 쓴 위상공간과 달라지면 closure 가 의미를 잃는다).
-        if (Config::requireLeptonVeto && reader->GetNVetoLeptons() != 0) continue;
+        if (!passRegion()) continue;
         ++nPassed;
 
         const int    nJets     = reader->GetNJets();

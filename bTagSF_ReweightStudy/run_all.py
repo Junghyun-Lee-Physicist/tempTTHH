@@ -289,6 +289,11 @@ def main() -> int:
     else:
         SAMPLES, skipped = discover_samples()
 
+    # [2026-07-29] region 은 exe_BTagSF / exe_MakeJSON 이 같은 env 를 읽어
+    #   산출물 이름을 스스로 맞춘다. 여기서는 로그에 남기기만 한다 —
+    #   "어느 영역에서 뽑은 reweight 인지" 를 나중에 로그로 확인할 수 있게.
+    region = os.environ.get("TTHH_BTAGRW_REGION", "FH")
+    log(f"  region   : {region}   (TTHH_BTAGRW_REGION; FH | muonCR | none)")
     log(f"  xsec_db  : {XSEC_DB}")
     log(f"  prescan  : {PRESCAN}")
     log(f"  skim dir : {SKIM_DIR}")

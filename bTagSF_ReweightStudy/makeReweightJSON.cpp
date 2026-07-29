@@ -18,7 +18,7 @@
 //         NormSums/h_sumWithSF_nJets[_HT]_<pkey>_<syst>
 //
 // Output JSON:
-//   <Config::btagReweightJSON>   (path defined in Config.hh)
+//   <Config::BTagReweightJSON()>   (path defined in Config.hh)
 //   correctionlib schema v2.
 //   correction name = "btagNormReweight"
 //   inputs: systematic (string), process (string), nJets (int), [HT (real)]
@@ -134,7 +134,7 @@ int main(int argc, char** argv)
     std::map<std::string, std::vector<std::string>> groupSources;  // for reporting
 
     for (const auto& sample : mcSamples) {
-        TString fname = TString(Config::btagOutPrefix) + sample.c_str() + ".root";
+        TString fname = TString(Config::BTagOutPrefix()) + sample.c_str() + ".root";
         TFile* f = TFile::Open(fname, "READ");
         if (!f || f->IsZombie()) {
             std::cerr << "  [WARN] Cannot open " << fname << ", skipping\n";
@@ -447,7 +447,7 @@ int main(int argc, char** argv)
     // ────────────────────────────────────────────────────────────────────
     // Write output
     // ────────────────────────────────────────────────────────────────────
-    std::string outPath = Config::btagReweightJSON;
+    std::string outPath = Config::BTagReweightJSON();
     std::ofstream out(outPath);
     if (!out.is_open()) {
         std::cerr << "[FATAL] Cannot write to " << outPath << "\n";

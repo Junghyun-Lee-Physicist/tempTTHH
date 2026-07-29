@@ -164,10 +164,22 @@ public:
     // Output JSON for normalization reweight factors (correctionlib schema v2)
     // Written by exe_MakeJSON after all samples have been processed.
     // Loaded by downstream analysis code via correctionlib.
-    static inline const std::string btagReweightJSON = "btagNormReweight.json";
+    //   [2026-07-29] region 꼬리표를 붙인다 (FH 는 빈 꼬리표 = 기존 이름).
+    //   muonCR 유도가 FH 산출물을 말없이 덮어쓰는 것을 막는 유일한 장치다.
+    static const std::string& BTagReweightJSON() {
+        static const std::string p =
+            std::string("btagNormReweight") + RegionTag() + ".json";
+        return p;
+    }
 
     // Output file prefix for b-tag reweight ROOT files
-    static inline const std::string btagOutPrefix = "bTagReweight_";
+    //   FH     -> "bTagReweight_"          (기존과 동일)
+    //   muonCR -> "bTagReweight_muonCR_"
+    static const std::string& BTagOutPrefix() {
+        static const std::string p =
+            std::string("bTagReweight") + RegionTag() + "_";
+        return p;
+    }
 
     // Maximum nJets bin index for normalization ratio histogram
     // (nJets above this value are clamped to this bin)
@@ -218,26 +230,80 @@ public:
     //   [2026-07-29] 값을 여기 적지 않고 analyzer 의 SelectionCuts.h 를 그대로 쓴다.
     static inline const int minNJets = Cuts::nJets;
 
-    // ── [2026-07-29] 측정 영역의 lepton 조건 ──────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════
+    // [2026-07-29] 측정 영역 (region) — 런타임 env `TTHH_BTAGRW_REGION`
+    // ----------------------------------------------------------------------
+    //   b-tag norm reweight 는 trigger SF 와 성격이 다르다.
     //
-    //   btagtrig skim 은 **두 종류**의 이벤트를 함께 담는다:
-    //     - FH 이벤트 (lead muon 없음)            → main 분석의 위상공간
-    //     - muon control 이벤트 (lead muon 있음)  → trigger SF 측정용
-    //   analyzer 가 btagtrig 에서 lepton veto 를 강제하지 않기 때문이다
-    //   (ttHHanalyzer_unified.cc kCutSequence 6번: kSelBitMainLike).
+    //     trigger SF   : hadronic trigger 효율의 분모를 얻으려면 그 trigger 와
+    //                    무관한 표본이 필요 → **신호영역에서는 측정 불가**.
+    //                    그래서 muon CR 에서 재고 매개변수화 + closure 로 버틴다.
+    //     b-tag RW     : 제약은 "b-tag 컷을 걸지 말 것"(BTV) 하나뿐. orthogonal
+    //                    trigger 가 필요 없다 → **적용할 영역 그대로에서 잴 수 있다.**
     //
-    //   b-tag norm reweight 는 **main 에 곱해질 보정**이므로 main 과 같은
-    //   위상공간(FH, lepton veto)에서 유도해야 한다. 이전 코드에는 lepton
-    //   조건이 아예 없어서 두 종류를 섞어 유도하고 있었고, 그건 어떤 경고도
-    //   내지 않는다.
+    //   그러니 원칙은 "쓸 영역에서 재라" 다. 그래서 region 을 고를 수 있게 한다.
     //
-    //   requireLeptonVeto = true  : nVetoLeptons == 0  (FH — main 과 동일) ← 기본
-    //   requireLeptonVeto = false : 컷 없음 (구 동작 재현용; 권장하지 않음)
+    //     "FH"      (기본) : nVetoLeptons == 0            ← main 신호영역
+    //     "muonCR"         : nMuons==1 && nElecs==0 && MET_pt > metCutCR
+    //                        ← analyzer 의 `--region muon` (QCD 억제 제어영역)
+    //     "none"           : lepton/MET 컷 없음 (2026-07-29 이전 동작 재현 전용)
     //
-    //   ⚠ nMuons==0 로 대신하면 안 된다. nMuons 는 lead-muon gate 를 통과한
-    //     이벤트에서만 채워지므로, soft(pT 15~29) lepton 이 있는 이벤트가
-    //     nMuons==0 으로 살아남는다. main 은 그런 이벤트를 veto 한다.
-    static inline const bool requireLeptonVeto = true;
+    //   ⚠ "none" 은 FH 이벤트와 muon control 이벤트를 **섞어서** 유도한다.
+    //     btagtrig skim 이 둘을 함께 담기 때문이다 (analyzer 가 btagtrig 에서
+    //     lepton veto 를 강제하지 않는다 — kCutSequence 6번은 kSelBitMainLike).
+    //     결과는 어떤 경고도 없이 틀린다. 재현 목적 외에는 쓰지 말 것.
+    //
+    //   ⚠ FH 에서 nMuons==0 을 lepton veto 대신 쓰면 안 된다. nMuons 는
+    //     lead-muon gate 를 통과한 이벤트에서만 채워지므로 soft(pT 15~29)
+    //     lepton 이 있는 이벤트가 nMuons==0 으로 살아남는다. main 은 veto 한다.
+    //
+    //   env 로 둔 이유: 이걸 바꾸려고 1000+ 파일을 재컴파일하지 않게. 그리고
+    //   exe_BTagSF 와 exe_MakeJSON 이 **같은 env 를 읽으므로** 산출물 이름이
+    //   자동으로 일치한다 (아래 RegionTag 참조).
+    // ══════════════════════════════════════════════════════════════════════
+    enum class Region { kFH, kMuonCR, kNone };
+
+    static Region CurrentRegion() {
+        static const Region r = [] {
+            const char* e = std::getenv("TTHH_BTAGRW_REGION");
+            const std::string v = (e && *e) ? std::string(e) : std::string("FH");
+            if (v == "FH")     return Region::kFH;
+            if (v == "muonCR") return Region::kMuonCR;
+            if (v == "none")   return Region::kNone;
+            std::cerr << "\n[Config][FATAL] TTHH_BTAGRW_REGION='" << v
+                      << "' 는 허용되지 않는다.\n"
+                         "  허용: FH (기본) | muonCR | none\n"
+                         "  오타를 조용히 기본값으로 흘리면 어느 영역에서 유도한\n"
+                         "  reweight 인지 알 수 없게 된다.\n";
+            std::exit(1);
+        }();
+        return r;
+    }
+
+    static const char* RegionName() {
+        switch (CurrentRegion()) {
+            case Region::kFH:     return "FH";
+            case Region::kMuonCR: return "muonCR";
+            case Region::kNone:   return "none";
+        }
+        return "FH";
+    }
+
+    /// 산출물 파일명에 붙는 꼬리표. FH 는 빈 문자열 (기존 이름 유지).
+    ///   ★ 이게 없으면 muonCR 유도가 FH 산출물을 **말없이 덮어쓴다.**
+    ///     둘은 파일 이름만 보고는 구별할 수 없으므로 반드시 분리한다.
+    static const char* RegionTag() {
+        switch (CurrentRegion()) {
+            case Region::kFH:     return "";
+            case Region::kMuonCR: return "_muonCR";
+            case Region::kNone:   return "_noLepCut";
+        }
+        return "";
+    }
+
+    /// muon CR 의 MET 하한 [GeV]. analyzer 의 `metCutCR`
+    /// (ttHHanalyzer_unified.h) 과 **같은 값**이어야 한다.
+    static inline const float metCutCR = 20.0f;
 
     // Enable verbose output during event loop
     static inline const bool verbose = false;
@@ -349,8 +415,10 @@ public:
         os << "║ [Section 1-C] B-Tag Reweight                                 ║\n";
         os << "╟──────────────────────────────────────────────────────────────╢\n";
         os << "  btagCorrectionName    : " << btagCorrectionName << "\n";
-        os << "  btagReweightJSON      : " << btagReweightJSON << "\n";
-        os << "  btagOutPrefix         : " << btagOutPrefix << "\n";
+        os << "  region                : " << RegionName()
+           << "   [TTHH_BTAGRW_REGION]\n";
+        os << "  btagReweightJSON      : " << BTagReweightJSON() << "\n";
+        os << "  btagOutPrefix         : " << BTagOutPrefix() << "\n";
         os << "  btagMaxNJetsBin       : " << btagMaxNJetsBin << "\n";
         os << "  btagMaxJetsForPerJet  : " << btagMaxJetsForPerJetHist << "\n";
         os << "  btagSystematics       : " << btagSystematics.size() << " variations\n";

@@ -188,15 +188,31 @@ public:
 
     // ── [2026-07-29] 측정 영역 MET cut [GeV] — 0 이면 비활성 (기본) ─────────
     //
-    //   nominal 은 **0(끔)** 이다. trigger SF 는 (nb, HT, 6th-jet pT) 로
-    //   매개변수화한 ε_data/ε_MC 이고 hadronic trigger 응답은 MET 과 무관하므로,
-    //   적용 영역이 MET cut 을 갖는다고 해서 측정 영역에도 걸 이유가 없다.
-    //   오히려 통계만 깎여 low-stat bin(kMinPassData)이 늘어난다.
+    //   ★ 기준: 측정 영역은 analyzer 의 selection 이 아니라 **SF 를 적용할 영역**
+    //     과 맞춘다. 그리고 적용 영역은 **FH 신호영역**이다.
     //
-    //   켜는 경우는 하나다: analyzer 의 `--region muon`(MET_pt > 20) 처럼 MET cut 이
-    //   있는 영역에서 SF 가 여전히 맞는지 **closure 로 확인**하고 싶을 때.
-    //   그때는 20.0 으로 두고 Step 2(applySF) → PlotTriggerEfficiency 를 본다.
-    //   ⚠ analyzer 의 `metCutCR`(ttHHanalyzer_unified.h) 과 같은 값을 쓸 것.
+    //       cut                FH(적용)   여기(측정)   맞나
+    //       nJets >= 6         있음       있음         ✓
+    //       6th jet pT > 40    있음       있음         ✓
+    //       HT > 500           있음       있음         ✓
+    //       MET > 20           **없음**   없음         ✓  ← 이미 맞아 있다
+    //       hadronic trigger   요구       요구 불가    (측정 대상이라 불가능)
+    //       lepton             0 lepton   1 muon       (orthogonal reference, 불가피)
+    //
+    //     nJets 를 맞추는 것과 MET 을 넣지 않는 것은 **같은 규칙**이다. FH 의
+    //     cut sequence(`kCutSequence`)에는 MET 컷이 없다 — `MET_pt` 는 오직
+    //     `_lepCRmode`(--region muon)에서만 쓰인다. 그러니 여기에 MET>20 을
+    //     추가하면 FH 와의 정합이 **깨진다**.
+    //
+    //   ⚠ 그래서 이 값을 켜고 만든 SF 는 **배포용이 아니다.** 배포용 SF 는 항상
+    //     metCut = 0 으로 유도한다.
+    //
+    //   켜는 경우는 하나뿐이다: `--region muon`(1μ + MET_pt>20) 제어영역에서
+    //   control plot 을 그릴 때, FH 용으로 만든 SF 가 그 영역에서도 통하는지
+    //   **closure 로 확인**하고 싶을 때. 20.0 으로 두고(analyzer 의 `metCutCR` 과
+    //   같은 값) Step 2(applySF) → PlotTriggerEfficiency 를 본다.
+    //   그 영역 전용 SF 가 정말 필요하다는 결론이 나면 그때는 **별도 파일**로
+    //   유도해서 별도 경로로 넘겨야 한다 (FH 용을 덮어쓰지 말 것).
     static inline const double metCut = 0.0;
 
     // Progress report interval (number of events)
