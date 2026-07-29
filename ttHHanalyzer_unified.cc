@@ -306,8 +306,27 @@ void ttHHanalyzer_unified::loop(sysName sysType, bool up){
 //  이벤트가 0 이 된다.** 히스토그램이 비어 있는 걸 사람이 눈으로 발견할
 //  때까지 아무도 모른다.
 //
-//  그래서 "요청했고(choose) 실제로 붙었는가(successBranches)"를 명시적으로
+//  그래서 "요청했고(choose) 실제로 붙었는가(present)"를 명시적으로
 //  확인하고, 하나라도 없으면 즉시 FATAL 로 끊는다.
+//
+//  [2026-07-29 수정] 처음에는 `_ev->successBranches` 를 봤는데 컴파일이 안 된다.
+//    그 벡터는 eventBuffer 의 **멤버가 아니라** `select()` 안의 지역 변수다
+//    (include/eventBuffer.h:6537 선언 → :10110 에서 리포트 출력 후 소멸).
+//    그래서 select() 가 끝난 뒤에는 존재하지 않는다.
+//
+//    대신 그 벡터에 원소가 들어가는 **조건 자체**를 재현한다. eventBuffer.h 의
+//    생성 코드는 모든 branch 에 대해 정확히 이 모양이다:
+//        if ( choose["<b>"] )
+//          if (input->present("<b>")) { input->select(...); successBranches.push_back("<b>"); }
+//          else                       { missingBranches.push_back("<b>"); }
+//    즉 `choose[b] && input->present(b)` 가 successBranches 멤버십과 동치다.
+//    두 조건을 모두 봐야 한다 — 하나만 보면 다음이 새어 나간다:
+//      · choose=false, present=true  → select() 미호출 → 값이 계속 0
+//      · choose=true,  present=false → branch 부재     → 값이 계속 0
+//    둘 다 "안 터졌다"와 구별이 안 되는 무음 실패다.
+//
+//    ⚠ `choose` 는 std::map 이므로 operator[] 를 쓰면 없는 키를 **삽입**한다.
+//      조회는 반드시 find() 로 한다.
 // ═══════════════════════════════════════════════════════════════════════════
 void ttHHanalyzer_unified::requireTriggerBranches2018_() {
     static bool checked = false;
@@ -321,18 +340,27 @@ void ttHHanalyzer_unified::requireTriggerBranches2018_() {
         "Events/HLT_PFHT450_SixPFJet36_PFBTagDeepCSV_1p59",
     };
 
-    std::vector<std::string> absent;
+    std::vector<std::string> absentInFile;   // choose 했는데 파일에 없음
+    std::vector<std::string> notChosen;      // 파일엔 있는데 eventBuffer 가 안 읽음
     for (const auto& r : required) {
-        const bool ok = std::find(_ev->successBranches.begin(),
-                                  _ev->successBranches.end(), r)
-                        != _ev->successBranches.end();
-        if (!ok) absent.push_back(r);
+        auto itc = _ev->choose.find(r);
+        const bool chosen  = (itc != _ev->choose.end() && itc->second);
+        const bool present = (_ev->input != nullptr) && _ev->input->present(r);
+        if (!chosen)       notChosen.push_back(r);
+        else if (!present) absentInFile.push_back(r);
     }
+
+    std::vector<std::string> absent = absentInFile;
+    absent.insert(absent.end(), notChosen.begin(), notChosen.end());
 
     if (!absent.empty()) {
         std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO
-                  << "] 2018 hadronic HLT branches missing from the input NanoAOD:\n";
-        for (const auto& a : absent) std::cerr << "    - " << a << "\n";
+                  << "] 2018 hadronic HLT branches unusable:\n";
+        for (const auto& a : absentInFile)
+            std::cerr << "    - " << a << "   (chosen, but NOT in the input file)\n";
+        for (const auto& a : notChosen)
+            std::cerr << "    - " << a << "   (in eventBuffer 'choose'? NO -- "
+                                            "add it to include/eventBuffer.h)\n";
         std::cerr
             << "  These are REQUIRED for runYear=2018. A missing HLT branch reads\n"
             << "  back as 0 (= 'did not fire'), so continuing would silently select\n"
