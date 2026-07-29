@@ -49,7 +49,12 @@ CORR_LIB_PATH := $(shell python3 -c "import correctionlib, os; print(os.path.joi
 # 4) Compiler & Linker Flags
 # -----------------------------------------------------------------------------
 # CPPFLAGS: preprocessor flags (include paths, defines)
-CPPFLAGS := -I. -I$(INC_DIR) -I$(SRC_DIR) $(ROOT_CFLAGS) $(CORR_CFLAGS)
+# SHARED_INC: analyzer 프로젝트의 include/ (SampleAlias.h / SampleRegistry.hh).
+#   두 SF 패키지가 같은 sample 이름·weight 정의를 쓰게 하는 단일 소스이므로
+#   복사본을 두지 않고 상위 디렉토리를 직접 include 한다.
+SHARED_INC := ../include
+
+CPPFLAGS := -I. -I$(INC_DIR) -I$(SRC_DIR) -I$(SHARED_INC) $(ROOT_CFLAGS) $(CORR_CFLAGS)
 
 # CXXFLAGS: compilation flags
 CXXFLAGS := -g -O2 -std=c++17 -Wall -fPIC -MMD -MP

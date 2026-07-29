@@ -10,7 +10,14 @@
 common:
   year: "2017"
   analysis_mode: btagtrig
-  lumi_fb_inv: 41.48
+  # [2026-07-29] 41.48 -> 42.07. xsec_db `_meta.lumi_fb_inv` 와 맞춘 값이며
+  #   출처는 LUM POG UL2017 Golden Legacy full dataset (42.07 fb^-1, 0.82%).
+  #   불일치 시 제출기가 "lumi consistency" 검사에서 경고/실패한다.
+  #   ※ 여기서 유도하는 trigger SF·b-tag norm reweight 는 둘 다 **비율**이라
+  #     lumi 는 분자·분모에서 상쇄된다. 즉 이 값은 SF 숫자에 영향을 주지 않고,
+  #     main 모드의 절대 yield 에만 영향을 준다. 그래도 두 파일이 어긋난 채로
+  #     두면 나중에 어느 쪽이 정본인지 알 수 없어지므로 지금 맞춘다.
+  lumi_fb_inv: 42.07
   xsec_db: "data/samples_2017UL.json"            # ★ cross section 단일 소스 (The Barn)
   prescan: "prescan_summary/prescan_summary.json" # ★ Σgenw 소스 (runs.genEventSumw)
   files_per_job: 1
@@ -24,10 +31,26 @@ common:
   # 해당 경로가 필수가 되어 null 이 E13 -> 재유도 전에는 그 SF 토글을 off 로 둘 것.
   path_jsonpog: "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration"
   path_goldenjson: "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/GoldenJson"   # OPEN: 환경별 절대경로 확인
-  path_trigsf_dir: null               # DISABLED (신규 dataset trigger SF 미유도)
-  path_btag_reweight_json: null       # DISABLED (_skipBtagReweight; tt+nb key JSON 미재생성)
-  path_stitch_json: null              # DISABLED (신규 dataset stitch factors 미유도)
-  path_expanded_ttbarid_dir: null     # DISABLED (신규 dataset ttnb_<sample>.root 미생성)
+  # ── [2026-07-29] 2017 SF 재유도용 설정 ────────────────────────────────────
+  # trigsf / btagrw 는 **이 실행이 만들어 내는 것**이므로 여전히 null 이다
+  # (부트스트랩 모드; btagtrig 은 requireDerived=false 라 정상).
+  path_trigsf_dir: null               # DISABLED — 이 실행의 산출물 (TriggerStudy)
+  path_btag_reweight_json: null       # DISABLED — 이 실행의 산출물 (bTagSF_ReweightStudy)
+
+  # stitch / expttid 는 **입력**이다. 2017 은 기존 산출물을 그대로 쓴다.
+  #   두 파일 다 STEP18 이전 이름(TTToHadronic / ttbb_2L2Nu / tt4b)으로 되어
+  #   있는데, include/SampleAlias.h 의 대응표가 신·구 이름을 모두 시도하므로
+  #   파일을 개명하지 않아도 된다. 그리고 stitching 집합 샘플인데 조회에
+  #   실패하면 이제 **FATAL** 이다 (예전엔 조용히 multiplier 1.0 / lookup
+  #   INACTIVE 로 넘어가서 tt+B 이중계수와 빈 tt+nb 그룹을 만들었다).
+  #
+  #   ⚠ 이 두 개를 null 로 되돌리지 말 것. null 이면
+  #     - expandedTtbarId 가 원본 genTtbarId 와 같아져 tt+nb(61/62/71/72)가
+  #       한 건도 안 생기고 → b-tag reweight 의 tt+nb 그룹이 전 bin 1.0
+  #     - stitch 미적용 → inclusive tt 와 dedicated ttbb/tt4b 이중계수
+  #     둘 다 경고 없이 "그럴듯한" 결과를 낸다.
+  path_stitch_json: "DerivedCorr/stitchFactors/stitch_factors_2017.json"
+  path_expanded_ttbarid_dir: "DerivedCorr/expandedTtbarId/2017"
 # [STEP17] 신규 dataset(ttHH2017UL_fullNano_v20) 반영. 주의:
 #   - main/btagtrig 는 각 샘플이 (a) xsec_db(samples_2017UL.json) 등록 +
 #     (b) prescan_summary(runs.genEventSumw) 존재해야 동작 (없으면 FATAL).

@@ -45,7 +45,7 @@ EventLooper::~EventLooper()
 // ============================================================================
 void EventLooper::Init()
 {
-    TString ntuplePath = Config::inputBaseDir + getInputName();
+    TString ntuplePath = Config::InputBaseDir() + getInputName();
 
     inputFile = TFile::Open(ntuplePath);
     if (!inputFile || inputFile->IsZombie()) {
@@ -377,30 +377,28 @@ void EventLooper::Loop()
     sampleName.ReplaceAll(".root", "");
     std::cout << "Sample Name: " << sampleName << std::endl;
     
+    // [2026-07-29] sample 조회 + era 파싱을 SampleRegistry 로 위임.
+    //
+    //   이전 코드는 era 를 "첫 '_' 뒤 전부" 로 잘랐다. 샘플명이 짧은 규칙
+    //   (`SingleMuon_B`)이던 시절엔 맞았지만, STEP18 campaign 이름은
+    //   `SingleMuon_Run2017B` 라서 era 가 "Run2017B" 가 된다. 그러면 아래
+    //   `isEraB = (era == "B")` 가 **Run B 에서도 거짓**이 되어 Run B 이벤트를
+    //   CDEF trigger bit 로 평가하고, 그 결과 passHadTrig 이 skim 의 값과 어긋나
+    //   바로 아래 mismatch 검사에서 exit(1) 한다. (터지기라도 하니 다행인 편.)
+    //
+    //   SampleRegistry 는 제출기와 같은 정규식 `Run\d{4}([A-Z])$` 를 쓰고,
+    //   해석 불가한 Data 이름은 FATAL 로 끊는다.
     const auto* sampleInfo = Config::GetSampleInfo(sampleName.Data());
-    if (!sampleInfo) {
-        std::cerr << "[EventLooper][FATAL] Unknown sample: " << sampleName << "\n"
-                  << "  Register it in Config::SampleRegistry()\n";
-        std::exit(1);
-    }
-    
+
     isData = sampleInfo->isData;
     double MC_weight = sampleInfo->weight;
-    
+
     TString dataSet = "default";
     TString era     = "default";
-    
+
     if (isData) {
-        Ssiz_t underscorePos = sampleName.Index("_");
-        if (underscorePos == kNPOS) {
-            std::cerr << "[EventLooper][ERROR] Data sample name must contain '_' : "
-                      << sampleName << "\n"
-                      << "  Expected pattern: <DataSet>_<Era> (e.g. SingleMuon_B)\n";
-            std::exit(1);
-        }
-        dataSet = sampleName(0, underscorePos);
-        era     = sampleName(underscorePos + 1, sampleName.Length() - underscorePos - 1);
-    
+        dataSet = sampleInfo->dataset.c_str();   // "SingleMuon" / "JetHT" / "BTagCSV"
+        era     = sampleInfo->era.c_str();       // "B" .. "F"  (한 글자)
         std::cout << "  [EventLooper] DataSet=" << dataSet << ", Era=" << era << std::endl;
     } else {
         std::cout << "  [EventLooper] MC, weight=" << MC_weight << std::endl;

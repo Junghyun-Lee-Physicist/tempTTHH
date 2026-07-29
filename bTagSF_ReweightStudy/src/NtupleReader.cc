@@ -86,6 +86,10 @@ NtupleReader::NtupleReader(TTree *tree) : fChain(tree) {
     // 2. Objects (Counts)
     fChain->SetBranchAddress("nMuons", &nMuons, &b_nMuons);
     fChain->SetBranchAddress("nElecs", &nElecs, &b_nElecs);
+    // [2026-07-29] main 의 lepton veto 정의. 구 skim 에는 없으므로 조건부.
+    if (fChain->GetBranch("nVetoLeptons")) {
+        fChain->SetBranchAddress("nVetoLeptons", &nVetoLeptons, &b_nVetoLeptons);
+    }
     fChain->SetBranchAddress("nJets", &nJets, &b_nJets);
     fChain->SetBranchAddress("nbJets", &nbJets, &b_nbJets);
 
@@ -116,6 +120,20 @@ NtupleReader::NtupleReader(TTree *tree) : fChain(tree) {
         fChain->SetBranchAddress("genTtbarId", &genTtbarId, &b_genTtbarId);
     }
 
+    // [2026-07-29] tt+nb 확장 id. MC 에만 존재.
+    //   존재 여부를 Has...() 로 노출해, 부재 시 호출부가 조용히 genTtbarId 로
+    //   되돌아가는 대신 명시적으로 판단하게 한다. (되돌아가면 tt+nb 그룹이
+    //   전 bin 1.0 이 되고, 그건 정상적인 8-group JSON 처럼 보인다.)
+    if (fChain->GetBranch("expandedTtbarId")) {
+        fChain->SetBranchAddress("expandedTtbarId", &expandedTtbarId, &b_expandedTtbarId);
+    }
+
+    // [2026-07-29] stitching 배수. MC 에만 존재.
+    //   부재 시 1.0 을 유지 = "stitching 미적용 skim". 호출부에서 ttbar family
+    //   샘플이면 FATAL 로 끊는다 (그 조합은 tt+B 이중계수를 뜻하므로).
+    if (fChain->GetBranch("stitchWeight")) {
+        fChain->SetBranchAddress("stitchWeight", &stitchWeight, &b_stitchWeight);
+    }
 }
 
 NtupleReader::~NtupleReader() {

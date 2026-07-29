@@ -381,3 +381,33 @@
 [2026-05-04 22:16:48]   Failed samples:
 [2026-05-04 22:16:48]     - ttZZto4b  (rc=1)
 [2026-05-04 22:16:48] ╚══════════════════════════════════════════════════════════════╝
+[2026-07-29 17:26:03]   xsec_db  : ../data/samples_2017UL.json
+[2026-07-29 17:26:03]   prescan  : ../prescan_summary/prescan_summary.json
+[2026-07-29 17:26:03]   skim dir : /tmp/noskim
+[2026-07-29 17:26:03]   ── 제외된 샘플 71개 (조용히 빠지지 않도록 전부 나열) ──
+[2026-07-29 17:26:03]      - TTHHto4b                            no skim file
+[2026-07-29 17:26:03]      - TTbar_SemiLep                       no skim file
+[2026-07-29 17:26:03]      - TTbar_Hadronic                      no skim file
+[2026-07-29 17:26:03]      - TTbar_DiLep                         no skim file
+[2026-07-29 17:26:03]      - TTbb_SemiLep                        no skim file
+[2026-07-29 17:26:03]      - TTbb_Hadronic                       no skim file
+[2026-07-29 17:26:03]      - TTbb_DiLep                          no skim file
+[2026-07-29 17:26:03]      - QCD_HT200to300                      no skim file
+[2026-07-29 17:26:03]      - QCD_HT300to500                      no skim file
+[2026-07-29 17:26:03]      - QCD_HT500to700                      no skim file
+[2026-07-29 17:26:03]      - QCD_HT700to1000                     no skim file
+[2026-07-29 17:26:03]      - QCD_HT1000to1500                    no skim file
+[2026-07-29 17:26:03]      - QCD_HT1500to2000                    no skim file
+[2026-07-29 17:26:03]      - QCD_HT2000toInf                     no skim file
+[2026-07-29 17:26:03]      - ttHTobb                             no skim file
+[2026-07-29 17:26:03]      - ttHToNonbb                          no prescan (Σgenw unknown)
+[2026-07-29 17:26:03]      - tHq                                 no prescan (Σgenw unknown)
+[2026-07-29 17:26:03]      - tHW                                 no prescan (Σgenw unknown)
+[2026-07-29 17:26:03]      - TTZToBB                             no skim file
+[2026-07-29 17:26:03]      - TTWJetsToQQ                         no prescan (Σgenw unknown)
+[2026-07-29 17:26:03]      - TTWJetsToLNu                        no prescan (Σgenw unknown)
+[2026-07-29 17:26:03]      - TTZToLLNuNu                         no prescan (Σgenw unknown)
+[2026-07-29 17:26:03]      - TTZHTo4b                            no skim file
+[2026-07-29 17:26:03]      - TTZZTo4b                            no skim file
+[2026-07-29 17:26:03]      - TTWW                                no skim file
+[2026-07-29 17:26:03]      - TTWH                                no skim file

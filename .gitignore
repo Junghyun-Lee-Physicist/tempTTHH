@@ -46,3 +46,12 @@ prescan_summary_20*/
 # (merged histograms, plots). Add those with `git add -f` deliberately, or move
 # them outside the repo -- do NOT relax the rules, since analyzer output files
 # are large and easy to commit by accident.
+
+# ── 새 소스 백업 사본은 커밋하지 않는다 (2026-07-29) ────────────────────────
+# 리포지토리에 이미 include/*.bk* 몇 개가 추적되고 있지만, 그건 git 도입 전
+# 습관이 남은 것이다. eventBuffer.h 는 1.1 MB 이고 git 이 이미 모든 이전
+# 버전을 갖고 있으므로(`git show HEAD:include/eventBuffer.h`) 사본을 또
+# 커밋하면 순수 중복이다. 작업 편의를 위한 로컬 사본은 허용하되 추적은 안 한다.
+#   2017-only 버전을 보려면:
+#     git show <commit>:include/eventBuffer.h > /tmp/eventBuffer_2017.h
+include/*.h.bk_*

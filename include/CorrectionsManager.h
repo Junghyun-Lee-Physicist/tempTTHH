@@ -40,8 +40,14 @@ public:
     // 생성자 / 소멸자 (Constructor / Destructor)
     // ═══════════════════════════════════════════════════════════════════════
     //
-    // runYear: "2016PreVFP_UL", "2016PostVFP_UL", "2017_UL", "2018_UL"
-    // dataEra: "B", "C", ..., "F" (only meaningful if isData==true)
+    // runYear: 표준형은 "2016preVFP_UL" / "2016postVFP_UL" / "2017_UL" / "2018_UL"
+    //          (소문자 p — jsonpog-integration 및 GoldenJson/ 디렉토리 이름과 일치.
+    //           runYear_ 는 경로 성분으로 그대로 쓰인다.)
+    //          생성자가 EraConfig::normalizeYear() 로 정규화하므로 "2018",
+    //          "2016PreVFP_UL"(구 대문자 표기) 도 받아들인다. 모르는 값은 exit 11.
+    // dataEra: "A"..."F" (only meaningful if isData==true).
+    //          2018 은 A/B/C/D 를 **각각** 구분한다 (Summer19UL18_RunA..RunD).
+
     // isData: true->Data, false->MC
     // sampleName: MC 프로세스 이름 (e.g. "TTbar_Hadronic"), b-tag reweight lookup에 사용
     //             Data일 경우 빈 문자열 허용

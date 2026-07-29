@@ -13,6 +13,7 @@
 // ============================================================================
 #include "CorrectionsManager.h"
 #include "ExitCodes.h"     // [STEP18] canonical exit codes
+#include "EraConfig.h"     // [2018] year-keyed constants (single source of truth)
 #include "ConfigPath.h"    // [STEP18] cfgpath::resolve (no code-default)
 #include <cstdlib>   // [STEP4] std::getenv, std::exit
 #include <fstream>
@@ -40,7 +41,11 @@ CorrectionsManager::CorrectionsManager(const std::string& runYear,
                                        bool isData,
                                        const std::string& sampleName,
                                        bool requireDerivedCorr)
-  : runYear_(runYear)
+  // [2018] runYear_ 는 아래에서 jsonpog **디렉토리 이름**으로 그대로 쓰인다
+  //   (POG/JME/<runYear_>/ 등). 그래서 표기가 하나라도 어긋나면 파일을 못 찾는다.
+  //   여기서 정규화해 표준형(`2016preVFP_UL`/`2016postVFP_UL`/`2017_UL`/`2018_UL`)
+  //   으로 고정한다. 모르는 연도는 EraConfig 가 FATAL.
+  : runYear_(EraConfig::yearForCorr(EraConfig::normalizeYear(runYear)))
   , dataEra_(dataEra)
   , isData_(isData)
   , sampleName_(sampleName)
@@ -113,7 +118,7 @@ void CorrectionsManager::loadJME_() {
 
     // 1) MC key
     std::string key_mc, key_res, key_sf;
-    if (runYear_ == "2016PreVFP_UL" || runYear_ == "2016PostVFP_UL") {
+    if (runYear_ == "2016preVFP_UL" || runYear_ == "2016postVFP_UL") {
         key_mc  = "Summer19UL16_V7_MC_L1L2L3Res_AK4PFchs";
         key_res = "Summer19UL16_JRV2_MC_PtResolution_AK4PFchs";
         key_sf  = "Summer19UL16_JRV2_MC_ScaleFactor_AK4PFchs";
@@ -148,7 +153,7 @@ void CorrectionsManager::loadJME_() {
     // 3) 데이터면 Data용 JEC도 로드
     if (isData_) {
         std::string key_data;
-        if (runYear_ == "2016PreVFP_UL" || runYear_ == "2016PostVFP_UL") {
+        if (runYear_ == "2016preVFP_UL" || runYear_ == "2016postVFP_UL") {
             std::string eraTag;
             if      (dataEra_ == "B" || dataEra_ == "C" || dataEra_ == "D")
                 eraTag = "BCD";
@@ -164,8 +169,19 @@ void CorrectionsManager::loadJME_() {
             key_data = "Summer19UL17_Run" + dataEra_ + "_V5_DATA_L1L2L3Res_AK4PFchs";
         }
         else if (runYear_ == "2018_UL") {
-            std::string tag = (dataEra_ == "A") ? "A" : "D";
-            key_data = "Summer19UL18_Run" + tag + "_V5_DATA_L1L2L3Res_AK4PFchs";
+            // [2018] Summer19UL18 은 RunA/RunB/RunC/RunD 를 각각 제공한다.
+            //   이전 코드는 `(dataEra_=="A") ? "A" : "D"` 로 축약해서 **B, C 에
+            //   RunD JEC 를 적용**하고 있었다. era 문자를 그대로 쓴다.
+            key_data = "Summer19UL18_Run" + EraConfig::jecDataEraTag("2018", dataEra_)
+                     + "_V5_DATA_L1L2L3Res_AK4PFchs";
+        }
+
+        // [2018] Data 인데 키를 못 정했다면 (미지원 연도) 그냥 두면 아래 catch 가
+        //   MC JEC 로 조용히 대체해버린다. 명시적으로 끊는다.
+        if (key_data.empty()) {
+            std::cerr << "\n[FATAL][CorrectionsManager] No Data JEC key for runYear_='"
+                      << runYear_ << "'.\n";
+            std::exit(tthh::CONFIG_BAD_RUNINFO);
         }
 
         try {
@@ -173,9 +189,15 @@ void CorrectionsManager::loadJME_() {
             if (kVerbose)
                 std::cout << "  -> JEC_Data key: " << key_data << "\n";
         } catch (const std::exception& e) {
-            std::cerr << "[loadJME] WARNING: Data JEC key " << key_data
-                      << " not found (" << e.what() << "). Falling back to MC JEC.\n";
-            jec_Data_ = jec_MC_;
+            // [2018] 예전에는 여기서 MC JEC 로 fallback 하고 WARNING 만 찍었다.
+            //   Data 에 MC JEC 를 쓰면 jet energy scale 이 통째로 틀리는데
+            //   로그 한 줄 말고는 아무 증상이 없다. Data 는 FATAL 로 바꾼다.
+            std::cerr << "\n[FATAL][CorrectionsManager] Data JEC key not found: "
+                      << key_data << " (" << e.what() << ")\n"
+                      << "  Refusing to fall back to MC JEC for Data — that would\n"
+                      << "  apply the wrong jet energy scale with no other symptom.\n"
+                      << "  Check runYear/eraName and the jet_jerc.json.gz content.\n";
+            std::exit(tthh::CONFIG_BAD_RUNINFO);
         }
     }
 }
@@ -189,7 +211,7 @@ void CorrectionsManager::loadPU_() {
     auto cset = correction::CorrectionSet::from_file(file);
 
     std::string key_pu;
-    if      (runYear_ == "2016PreVFP_UL" || runYear_ == "2016PostVFP_UL")
+    if      (runYear_ == "2016preVFP_UL" || runYear_ == "2016postVFP_UL")
         key_pu = "Collisions16_UltraLegacy_goldenJSON";
     else if (runYear_ == "2017_UL")
         key_pu = "Collisions17_UltraLegacy_goldenJSON";
@@ -232,22 +254,16 @@ void CorrectionsManager::loadBTag_() {
 void CorrectionsManager::loadGoldenJSON_() {
     if (!isData_) return;
 
-    // build path
-    std::map<std::string, std::string> suffixMap = {
-        {"2017_UL",        "UL2017_Collisions17"},
-        {"2018_UL",        "UL2018_Collisions18"},
-        {"2016PreVFP_UL",  "UL2016preVFP_Collisions16"},
-        {"2016PostVFP_UL", "UL2016postVFP_Collisions16"}
-    };
-    auto it = suffixMap.find(runYear_);
-    if (it == suffixMap.end()) {
-        std::cerr << "[loadGoldenJSON] Unknown runYear_: " << runYear_ << std::endl;
-        return;
-    }
-    std::string suffix = it->second;
-    std::string txt = goldenJsonPath + "/"
-                    + runYear_ + "/Cert_294927-306462_13TeV_"
-                    + suffix + "_GoldenJSON.txt";
+    // [2018] 파일명은 EraConfig 에서 가져온다.
+    //   이전에는 run range `Cert_294927-306462_` 가 **문자열에 하드코딩**되어
+    //   있고 뒤쪽 suffix 만 연도별로 갈아끼웠다. run range 는 연도마다 다르므로
+    //   2017 을 뺀 나머지는 존재하지 않는 파일명을 만들었다. 게다가 unknown
+    //   runYear_ 일 때 `return` 만 하고 넘어가서 Data 가 golden 필터 없이
+    //   돌 수 있었다 (아래 파일 열기 실패 FATAL 도 우회됨).
+    //   EraConfig::normalizeYear() 는 모르는 연도에 FATAL 이다.
+    const std::string yearPlain = EraConfig::normalizeYear(runYear_);
+    std::string txt = goldenJsonPath + "/" + runYear_ + "/"
+                    + EraConfig::goldenJsonFile(yearPlain);
 
     if (kVerbose) std::cout << "[loadGoldenJSON] Loading from " << txt << "\n";
     std::ifstream in(txt);
@@ -386,7 +402,7 @@ void CorrectionsManager::loadJECUncertainty_() {
 
     std::string key_unc;
     // Run Year에 따른 Key 설정 (예시 패턴, 실제 JSON 키 확인 필요)
-    if (runYear_ == "2016PreVFP_UL" || runYear_ == "2016PostVFP_UL") {
+    if (runYear_ == "2016preVFP_UL" || runYear_ == "2016postVFP_UL") {
         key_unc = "Summer19UL16_V7_MC_Total_AK4PFchs"; 
     } else if (runYear_ == "2017_UL") {
         key_unc = "Summer19UL17_V5_MC_Total_AK4PFchs";

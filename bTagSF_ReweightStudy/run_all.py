@@ -28,23 +28,79 @@ from pathlib import Path
 from typing import List, Dict, Tuple
 
 # ============================================================================
-# [1] Sample List  (SingleMuon excluded)
+# [1] Sample List  (SingleMuon excluded — trigger SF 유도 전용)
+# ----------------------------------------------------------------------------
+# [2026-07-29] 손으로 관리하던 목록(마지막 한 줄만 남고 전부 주석 처리돼 있었다)
+#   을 **자동 유도**로 바꿨다. 목록을 손으로 유지하면 두 가지가 생긴다:
+#     - 주석 처리된 채로 잊혀서 1개 샘플만 도는 사고 (실제로 그 상태였다)
+#     - xsec_db 에 샘플이 추가돼도 여기 반영이 안 되는 표류
+#
+#   이제 xsec_db 를 진실로 삼고, 실제로 돌릴 수 있는 것만 남긴다:
+#     (a) prescan_summary 에 Σgenw 가 있어야 한다  — 없으면 weight 합성 불가
+#     (b) $TTHH_SKIM_DIR/<sample>.root 가 있어야 한다 — 없으면 열 수 없음
+#   빠지는 샘플은 이유와 함께 출력한다 (조용히 줄어들지 않게).
+#
+#   --samples 로 명시하면 이 자동 유도를 건너뛴다.
 # ============================================================================
-SAMPLES: List[str] = [
-    # Data: BTagCSV
-##    "BTagCSV_B",  "BTagCSV_C",  "BTagCSV_D",  "BTagCSV_E",  "BTagCSV_F",
-    # Data: JetHT
-##    "JetHT_B",    "JetHT_C",    "JetHT_D",    "JetHT_E",    "JetHT_F",
-    # MC: ttbar inclusive
-##    "TTbar_Hadronic",  "TTbar_DiLep",  "TTbar_SemiLep",
-    # MC: signal & rare
-##    "TTHHto4b",  "TT4b",  "ttHTobb",  "TTTT",  "TTTW",
-##    "TTWH",  "TTWW",  "TTWZ",  "TTZHTo4b",  "TTZToBB",  "TTZZTo4b",  "ttbb",
-    # MC: QCD
-##    "QCD_HT200to300",  "QCD_HT300to500",  "QCD_HT500to700",
-##    "QCD_HT700to1000",  "QCD_HT1000to1500",  "QCD_HT1500to2000",  "QCD_HT2000toInf",
-    "TTZZTo4b"
-]
+HERE      = Path(__file__).resolve().parent
+BASE_DIR  = Path(os.environ.get("TTHH_BASE", HERE.parent))
+XSEC_DB   = Path(os.environ.get("TTHH_XSEC_DB", BASE_DIR / "data/samples_2017UL.json"))
+PRESCAN   = Path(os.environ.get("TTHH_PRESCAN",
+                                BASE_DIR / "prescan_summary/prescan_summary.json"))
+SKIM_DIR  = os.environ.get("TTHH_SKIM_DIR", "/Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/")
+
+# include/SampleAlias.h 의 표와 **같은 내용**이어야 한다 (canonical -> legacy).
+# 2017 prescan_summary 가 STEP18 이전 이름으로 남아 있어서 필요하다.
+SAMPLE_ALIAS: Dict[str, str] = {
+    "TTbar_Hadronic": "TTToHadronic",   "TTbar_SemiLep": "TTToSemiLeptonic",
+    "TTbar_DiLep":    "TTTo2L2Nu",      "TTbb_Hadronic": "ttbb_Hadronic",
+    "TTbb_SemiLep":   "ttbb_SemiLeptonic", "TTbb_DiLep":  "ttbb_2L2Nu",
+    "TT4b":           "tt4b",           "TTHHto4b":      "ttHH",
+    "ttHTobb":        "ttHtobb",        "TTZHTo4b":      "ttZHto4b",
+    "TTZZTo4b":       "ttZZto4b",       "TTZToBB":       "ttZtobb",
+    "TTWH":           "ttWH",           "TTWW":          "ttWW",
+    "TTWZ":           "ttWZ",           "TTTW":          "tttW",
+    "TTTT":           "tttt",
+}
+
+
+def _load_json(path: Path, what: str) -> dict:
+    if not path.is_file():
+        print(f"[FATAL] {what} not found: {path}", file=sys.stderr)
+        sys.exit(2)
+    import json
+    with path.open(encoding="utf-8") as f:
+        return json.load(f)
+
+
+def discover_samples() -> Tuple[List[str], List[Tuple[str, str]]]:
+    """Return (runnable, skipped[(sample, reason)])."""
+    xsec = _load_json(XSEC_DB, "xsec_db")
+    pre  = _load_json(PRESCAN, "prescan summary").get("samples", {})
+
+    runnable: List[str] = []
+    skipped:  List[Tuple[str, str]] = []
+
+    for name, rec in xsec.items():
+        if name == "_meta" or "_ext" in name:
+            continue
+        is_data = rec.get("is_data", False) or rec.get("cross_section_fb") is None
+        if is_data and name.startswith("SingleMuon"):
+            continue                                  # trigger SF 전용
+        if not is_data:
+            keys = [name, SAMPLE_ALIAS.get(name, "")]
+            if not any(k and k in pre for k in keys):
+                skipped.append((name, "no prescan (Σgenw unknown)"))
+                continue
+        if not Path(SKIM_DIR, f"{name}.root").is_file():
+            skipped.append((name, "no skim file"))
+            continue
+        runnable.append(name)
+
+    return runnable, skipped
+
+
+SAMPLES: List[str] = []   # main() 에서 채운다
 
 # ============================================================================
 # [2] Default Settings
@@ -211,11 +267,47 @@ def main() -> int:
         "--retries", type=int, default=RETRIES,
         help=f"number of retries per sample (default: {RETRIES})",
     )
+    parser.add_argument(
+        "--samples", nargs="+", default=None,
+        help="샘플을 명시 (지정 시 자동 유도를 건너뛴다)",
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true",
+        help="어떤 샘플이 돌고 어떤 게 왜 빠지는지만 출력하고 종료",
+    )
     args = parser.parse_args()
 
     max_concurrent  = args.jobs
     min_free_mem_mb = args.mem
     max_retries     = args.retries
+
+    # ── 샘플 결정 ────────────────────────────────────────────────────────
+    global SAMPLES
+    if args.samples:
+        SAMPLES = list(args.samples)
+        skipped: List[Tuple[str, str]] = []
+    else:
+        SAMPLES, skipped = discover_samples()
+
+    log(f"  xsec_db  : {XSEC_DB}")
+    log(f"  prescan  : {PRESCAN}")
+    log(f"  skim dir : {SKIM_DIR}")
+    if skipped:
+        log(f"  ── 제외된 샘플 {len(skipped)}개 (조용히 빠지지 않도록 전부 나열) ──")
+        for s, why in skipped:
+            log(f"     - {s:35s} {why}")
+    if not SAMPLES:
+        log("[FATAL] 돌릴 샘플이 하나도 없다. 위 제외 사유를 확인할 것.")
+        return 2
+    log(f"  ── 실행 대상 {len(SAMPLES)}개 ──")
+    for s in SAMPLES:
+        log(f"     + {s}")
+    log("")
+
+    if args.dry_run:
+        log("[dry-run] 여기서 종료.")
+        log("다음 단계: ./exe_MakeJSON " + " ".join(SAMPLES))
+        return 0
 
     # ── Preflight checks ──
     if not Path(EXECUTABLE).is_file():
@@ -311,6 +403,14 @@ def main() -> int:
         for s, rc in failed:
             log(f"    - {s}  (rc={rc})")
     log("╚══════════════════════════════════════════════════════════════╝")
+
+    # 다음 단계를 **성공한 샘플만으로** 만들어 준다. 실패한 샘플을 그대로
+    # 넘기면 makeReweightJSON 이 "[WARN] Cannot open ..., skipping" 만 찍고
+    # 그 group 을 조용히 작은 통계로 유도한다.
+    if succeeded:
+        log("")
+        log("다음 단계 (성공한 샘플만):")
+        log("  ./exe_MakeJSON " + " ".join(succeeded))
 
     return 0 if not failed else 1
 

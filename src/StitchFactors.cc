@@ -2,7 +2,8 @@
 //  StitchFactors implementation
 // ============================================================================
 #include "StitchFactors.h"
-#include "ExitCodes.h"   // [STEP18] canonical exit codes
+#include "ExitCodes.h"    // [STEP18] canonical exit codes
+#include "SampleAlias.h"  // [alias] 구/신 샘플명 대응 (2017 stitch json 은 구 이름)
 
 #include <nlohmann/json.hpp>
 
@@ -69,8 +70,27 @@ void StitchFactors::load(const std::string& jsonPath, const std::string& sampleN
     fatal("sub_to_category is empty.", tthh::STITCH_JSON_SCHEMA_FAIL);
 
   // this sample's multiplier row (absent -> not in plan, multiplier 1)
-  if (a.contains("samples") && a.at("samples").contains(_sample)) {
-    const json& s = a.at("samples").at(_sample);
+  //
+  // [alias] stitch_factors_2017.json 은 STEP18 이전 이름(TTToHadronic /
+  //   ttbb_2L2Nu / tt4b)으로 되어 있다. 신 이름으로 조회하면 못 찾고,
+  //   그러면 _inPlan=false -> multiplier 1.0 으로 **조용히 stitching 미적용**
+  //   이 된다. 그 결과 inclusive ttbar 와 dedicated ttbb/tt4b 가 같은 위상공간을
+  //   두 번 채운다(tt+B 이중계수). 크래시도 경고도 없다.
+  //   그래서 신·구 이름을 모두 시도하고, stitching 집합에 속하는데도 못 찾으면
+  //   아래에서 FATAL 로 끊는다.
+  std::string keyUsed;
+  if (a.contains("samples")) {
+    for (const std::string& cand : SampleAlias::candidates(_sample)) {
+      if (a.at("samples").contains(cand)) { keyUsed = cand; break; }
+    }
+  }
+  if (!keyUsed.empty() && keyUsed != _sample) {
+    std::cout << "[StitchFactors] sample '" << _sample
+              << "' resolved via legacy alias '" << keyUsed << "'" << std::endl;
+  }
+
+  if (!keyUsed.empty()) {
+    const json& s = a.at("samples").at(keyUsed);
     _inPlan = true;
     if (s.contains("role")) _role = s.at("role").get<std::string>();
     if (!s.contains("by_category"))
@@ -85,6 +105,24 @@ void StitchFactors::load(const std::string& jsonPath, const std::string& sampleN
         fatal("sample '" + _sample + "' (role " + _role + ") is missing a "
               "multiplier for category '" + kv.second + "'.", tthh::STITCH_JSON_SCHEMA_FAIL);
     }
+  }
+  else if (SampleAlias::mustBeInStitchPlan(_sample)) {
+    // [중요] 이 샘플은 ttbar stitching 집합(inclusive tt / ttbb / tt4b)에 속한다.
+    // 그런데 json 의 'samples' 에 신·구 어느 이름으로도 없다. 이건 "이 샘플은
+    // 계획에 없음" 이 아니라 **설정 오류**다. 조용히 넘어가면 multiplier=1.0 이
+    // 되어 inclusive ttbar 와 dedicated ttbb/tt4b 가 같은 위상공간을 두 번 채운다
+    // (tt+B 이중계수). 크래시도 경고도 없고 yield 만 부풀어 오른다.
+    std::string tried;
+    for (const std::string& cand : SampleAlias::candidates(_sample))
+      tried += (tried.empty() ? "" : ", ") + cand;
+    fatal("sample '" + _sample + "' IS part of the ttbar stitching set but has no "
+          "row in 'analyzer_perEvent_factor.samples' of " + _path + ".\n"
+          "  tried keys: " + tried + "\n"
+          "  Continuing would silently use multiplier 1.0 -> inclusive ttbar and the\n"
+          "  dedicated ttbb/tt4b samples would BOTH fill the same phase space\n"
+          "  (tt+B double counting). Regenerate the stitch json with\n"
+          "  compute_stitch_factors.py, or add the missing sample row.",
+          tthh::STITCH_JSON_SCHEMA_FAIL);
   }
 
   _loaded = true;

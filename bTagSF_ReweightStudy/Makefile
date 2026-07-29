@@ -56,7 +56,11 @@ CORR_LIB_PATH := $(shell python3 -c "import correctionlib, os; print(os.path.joi
 # -----------------------------------------------------------------------------
 # 4) Compiler & Linker Flags
 # -----------------------------------------------------------------------------
-CPPFLAGS := -I. -I$(INC_DIR) -I$(SRC_DIR) $(ROOT_CFLAGS) $(CORR_CFLAGS)
+# SHARED_INC: analyzer 프로젝트의 include/ (SampleAlias.h / SampleRegistry.hh).
+#   TriggerStudy 와 **같은 헤더**를 보게 해서 두 도구의 정규화가 갈라지지 않게 한다.
+SHARED_INC := ../include
+
+CPPFLAGS := -I. -I$(INC_DIR) -I$(SRC_DIR) -I$(SHARED_INC) $(ROOT_CFLAGS) $(CORR_CFLAGS)
 CXXFLAGS := -g -O2 -std=c++17 -Wall -fPIC -MMD -MP
 LDFLAGS  := $(ROOT_LIBS) $(CORR_LDFLAGS)
 

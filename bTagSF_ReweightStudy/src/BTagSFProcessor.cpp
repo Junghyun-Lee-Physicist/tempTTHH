@@ -48,11 +48,11 @@ TString BTagSFProcessor::getOutputName() const {
 // ============================================================================
 std::string BTagSFProcessor::resolveBTagJSONPath()
 {
-    for (const auto& path : Config::btagJSONPaths) {
+    for (const auto& path : Config::BTagJSONPaths()) {
         if (fs::exists(path)) return path;
     }
     std::cerr << "[BTagSFProcessor][FATAL] No valid b-tag JSON found. Tried:\n";
-    for (const auto& p : Config::btagJSONPaths)
+    for (const auto& p : Config::BTagJSONPaths())
         std::cerr << "    " << p << "\n";
     std::exit(1);
     return "";
@@ -62,12 +62,24 @@ std::string BTagSFProcessor::resolveBTagJSONPath()
 // CurrentEventProcessKey
 // ----------------------------------------------------------------------------
 // Returns the process *group* key for the current event (ttH AN App. A.2.1).
-//   - inclusive ttbar: dispatched by genTtbarId (tt+LF / tt+cc / tt+B)
+//   - inclusive ttbar: dispatched by the ttbar id (tt+LF / tt+cc / tt+B / tt+nb)
 //   - other samples: fixed mapping by sample name (Config_TtCatGroup.hh)
+//
+// [2026-07-29] dispatch 입력을 genTtbarId → **expandedTtbarId** 로 교체.
+//
+//   왜: NanoAOD `genTtbarId % 100` 은 55 를 넘지 않는다. tt+nb 그룹의 정의역인
+//       61/62(tt+bbb) · 71/72(tt+4b) 는 analyzer 가 ttnb lookup 을 붙여
+//       `expandedTtbarId` 에 쓴 값에만 존재한다. 원본으로 dispatch 하면
+//       tt+nb 그룹에 이벤트가 **한 건도** 들어오지 않는다.
+//
+//   왜 조용했나: makeReweightJSON 의 "빈 그룹" 경고는 히스토그램의 존재 여부만
+//       본다. 히스토그램은 만들어지므로 경고가 안 뜨고, ratio = (sW>0) ?
+//       sN/sW : 1.0 규칙에 따라 tt+nb 가 390 bin 전부 1.0 이 된다. 결과 JSON 은
+//       8-key 로 멀쩡해 보이고 8번째만 무효다.
 // ============================================================================
 std::string BTagSFProcessor::CurrentEventProcessKey(const std::string& sampleName) const
 {
-    return TtCatGroup::MakeProcessKey(sampleName, reader->GetGenTtbarId());
+    return TtCatGroup::MakeProcessKey(sampleName, reader->GetExpandedTtbarId());
 }
 
 // ============================================================================
@@ -207,7 +219,7 @@ double BTagSFProcessor::evaluateTriggerSF(
 void BTagSFProcessor::Init()
 {
     // ── Open input file & tree ──
-    TString ntuplePath = Config::inputBaseDir + getInputName();
+    TString ntuplePath = Config::InputBaseDir() + getInputName();
 
     inputFile = TFile::Open(ntuplePath);
     if (!inputFile || inputFile->IsZombie()) {
@@ -258,15 +270,15 @@ void BTagSFProcessor::Init()
     }
 
     // ── Load correctionlib: trigger SF ──
-    std::cout << "  [BTagSFProcessor] trigger SF JSON: " << Config::sfOutputJSON << "\n";
+    std::cout << "  [BTagSFProcessor] trigger SF JSON: " << Config::TriggerSFJSON() << "\n";
 
-    if (!fs::exists(Config::sfOutputJSON)) {
+    if (!fs::exists(Config::TriggerSFJSON())) {
         std::cerr << "[BTagSFProcessor][FATAL] Trigger SF JSON not found: "
-                  << Config::sfOutputJSON << "\n";
+                  << Config::TriggerSFJSON() << "\n";
         std::exit(1);
     }
 
-    trigCorrectionSet = correction::CorrectionSet::from_file(Config::sfOutputJSON);
+    trigCorrectionSet = correction::CorrectionSet::from_file(Config::TriggerSFJSON());
     trigSFProvider    = trigCorrectionSet->at("triggerSF");
 
     std::cout << "  [BTagSFProcessor] Init complete.\n\n";
@@ -297,30 +309,75 @@ void BTagSFProcessor::Loop()
     TString sampleName = ntupleName;
     std::cout << "Sample Name: " << sampleName << "\n";
 
+    // [2026-07-29] weight/era 조회를 SampleRegistry 로 위임 (analyzer 제출기와
+    //   동일한 xsec_db + prescan_summary, 동일한 공식). 모르는 샘플은 그 안에서
+    //   FATAL 이므로 여기 null 검사는 형식적으로만 남긴다.
     const auto* sampleInfo = Config::GetSampleInfo(sampleName.Data());
-    if (!sampleInfo) {
-        std::cerr << "[BTagSFProcessor][FATAL] Unknown sample: " << sampleName
-                  << "\n  Register it in Config::SampleRegistry()\n";
-        std::exit(1);
-    }
 
     isData = sampleInfo->isData;
     const double xsecWeight = sampleInfo->weight;
     std::cout << "  Type   : " << (isData ? "Data" : "MC") << "\n";
     std::cout << "  Weight : " << xsecWeight << "\n";
 
-    // Parse DataSet / Era for Data
+    // ── DataSet / Era ────────────────────────────────────────────────────
+    //   이전 코드는 "첫 '_' 뒤 전부" 였다. campaign 이름(`JetHT_Run2017B`)에서는
+    //   era 가 "Run2017B" 가 되어 passHadronicTrigger() 의 `era=="B"` 가 항상
+    //   거짓 → Run B 를 CDEF trigger bit 로 평가한다. SampleRegistry 가
+    //   `Run\d{4}([A-Z])$` 로 한 글자 era 를 뽑아 준다.
     TString dataSet = "default";
     TString era     = "default";
     if (isData) {
-        Ssiz_t pos = sampleName.Index("_");
-        if (pos == kNPOS) {
-            std::cerr << "[BTagSFProcessor][FATAL] Data name must be <DataSet>_<Era>\n";
+        dataSet = sampleInfo->dataset.c_str();
+        era     = sampleInfo->era.c_str();
+        std::cout << "  DataSet: " << dataSet << ", Era: " << era << "\n";
+    }
+
+    // ── skim preflight ───────────────────────────────────────────────────
+    //   lepton veto 는 Data/MC 공통이므로 먼저 확인한다.
+    if (Config::requireLeptonVeto && !reader->HasNVetoLeptons()) {
+        std::cerr <<
+          "\n[BTagSFProcessor][FATAL] skim has no 'nVetoLeptons' branch: "
+          << getInputName() << "\n"
+          "  Config::requireLeptonVeto = true 인데 main 의 lepton veto 값을 읽을 수\n"
+          "  없다. nMuons==0 으로 대체하는 fallback 은 두지 않는다 -- 그건 lead-muon\n"
+          "  gate 를 통과하지 못한 soft-lepton 이벤트를 살려 두어, main 과 다른\n"
+          "  위상공간에서 reweight 를 유도하게 만든다 (경고 없이).\n"
+          "  Fix: 이 branch 를 쓰는 analyzer 로 btagtrig skim 을 다시 만들 것\n"
+          "       (ttHHanalyzer_unified.h 의 nVetoLeptons branch, 2026-07-29).\n"
+          "  임시로 구 skim 을 쓰려면 Config::requireLeptonVeto=false 로 바꾸되,\n"
+          "  그 경우 muon control 이벤트가 섞인다는 점을 인지할 것.\n";
+        std::exit(1);
+    }
+
+    // ── skim preflight (MC) ──────────────────────────────────────────────
+    //   여기서 막지 않으면 두 가지가 **조용히** 틀린다:
+    //     (1) expandedTtbarId 부재 → tt+nb 그룹 전 bin 1.0
+    //     (2) stitchWeight 부재    → inclusive tt 와 dedicated ttbb/tt4b 이중계수
+    //   둘 다 크래시 없이 "그럴듯한" JSON 을 만든다. 그래서 FATAL 이다.
+    if (!isData) {
+        if (!reader->HasExpandedTtbarId()) {
+            std::cerr <<
+              "\n[BTagSFProcessor][FATAL] skim has no 'expandedTtbarId' branch: "
+              << getInputName() << "\n"
+              "  Process groups would be dispatched by the raw NanoAOD genTtbarId,\n"
+              "  whose %100 never exceeds 55 -> the tt+nb group (61/62/71/72) would be\n"
+              "  EMPTY and the derived JSON would carry an all-1.0 tt+nb group that\n"
+              "  looks like a valid 8th key.\n"
+              "  Fix: re-run the analyzer in btagtrig mode with\n"
+              "       path_expanded_ttbarid_dir pointing at the ttnb lookup dir.\n";
             std::exit(1);
         }
-        dataSet = sampleName(0, pos);
-        era     = sampleName(pos + 1, sampleName.Length() - pos - 1);
-        std::cout << "  DataSet: " << dataSet << ", Era: " << era << "\n";
+        if (!reader->HasStitchWeight() && TtCatGroup::IsTtbarFamily(sampleName.Data())) {
+            std::cerr <<
+              "\n[BTagSFProcessor][FATAL] skim has no 'stitchWeight' branch: "
+              << getInputName() << "\n"
+              "  This sample is part of the ttbar stitching set, so without the\n"
+              "  multiplier the inclusive ttbar and the dedicated ttbb/tt4b samples\n"
+              "  both fill the same phase space (tt+B double counting) and the\n"
+              "  per-group ratio comes out wrong -- silently.\n"
+              "  Fix: re-run the analyzer in btagtrig mode with path_stitch_json set.\n";
+            std::exit(1);
+        }
     }
 
     const Long64_t nEntries = fChain->GetEntries();
@@ -389,6 +446,9 @@ void BTagSFProcessor::Loop()
 
             if (!passHadronicTrigger(dataSet, era)) continue;
 
+            // [2026-07-29] main 과 같은 위상공간에서 유도한다 (Config 주석 참조).
+            if (Config::requireLeptonVeto && reader->GetNVetoLeptons() != 0) continue;
+
             // Per-event process key dispatch
             const std::string pkey = CurrentEventProcessKey(sampleName.Data());
 
@@ -400,10 +460,16 @@ void BTagSFProcessor::Loop()
                 }
             }
 
+            // [2026-07-29] stitchWeight 를 곱한다. analyzer 가 이벤트별로 이미
+            //   결정해 skim 에 실어 둔 값이므로, 여기서 재계산하지 않고 그대로
+            //   따라간다 (analyzer 와 Pass-1 이 서로 다른 MC 조성을 보면 안 된다).
+            //   inclusive 는 owned category 밖에서 0, dedicated 는 owned 안에서 r.
+            //   0 인 이벤트는 자연히 양쪽 합에서 빠진다.
             const double baseWeight =
                 reader->GetGenWeight()
                 * reader->GetPUWeight()
                 * reader->GetPrefireWeight()
+                * reader->GetStitchWeight()
                 * xsecWeight;
 
             const double currentHT = reader->GetHT();
@@ -630,6 +696,10 @@ void BTagSFProcessor::Loop()
             FATAL_INVARIANT("Golden JSON failed", j);
 
         if (!passHadronicTrigger(dataSet, era)) continue;
+
+        // [2026-07-29] Pass 1 과 **같은 선택**이어야 한다 (검증 히스토그램이
+        //   유도에 쓴 위상공간과 달라지면 closure 가 의미를 잃는다).
+        if (Config::requireLeptonVeto && reader->GetNVetoLeptons() != 0) continue;
         ++nPassed;
 
         const int    nJets     = reader->GetNJets();
@@ -641,9 +711,12 @@ void BTagSFProcessor::Loop()
         // ── Base weight ──
         double baseWeight = 1.0;
         if (!isData) {
+            // [2026-07-29] Pass 1 과 **같은 정의** 여야 한다. 한쪽만 stitch 를
+            //   곱하면 검증 히스토그램이 유도에 쓴 조성과 달라진다.
             baseWeight = reader->GetGenWeight()
                        * reader->GetPUWeight()
                        * reader->GetPrefireWeight()
+                       * reader->GetStitchWeight()
                        * xsecWeight;
         }
 

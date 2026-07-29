@@ -1035,6 +1035,9 @@ struct eventBuffer
   bool	HLT_PFHT430_SixJet40_BTagCSV_p080;
   bool	HLT_PFHT430_SixPFJet40;
   bool	HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5;
+  bool	HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5;
+  bool	HLT_PFHT400_SixPFJet32_DoublePFBTagDeepCSV_2p94;
+  bool	HLT_PFHT450_SixPFJet36_PFBTagDeepCSV_1p59;
   bool	HLT_PFHT500_PFMET100_PFMHT100_IDTight;
   bool	HLT_PFHT500_PFMET110_PFMHT110_IDTight;
   bool	HLT_PFHT510;
@@ -5378,6 +5381,9 @@ struct eventBuffer
     choose["Events/HLT_PFHT430_SixJet40_BTagCSV_p080"]	= DEFAULT;
     choose["Events/HLT_PFHT430_SixPFJet40"]	= DEFAULT;
     choose["Events/HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5"]	= DEFAULT;
+    choose["Events/HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5"]	= DEFAULT;
+    choose["Events/HLT_PFHT400_SixPFJet32_DoublePFBTagDeepCSV_2p94"]	= DEFAULT;
+    choose["Events/HLT_PFHT450_SixPFJet36_PFBTagDeepCSV_1p59"]	= DEFAULT;
     choose["Events/HLT_PFHT500_PFMET100_PFMHT100_IDTight"]	= DEFAULT;
     choose["Events/HLT_PFHT500_PFMET110_PFMHT110_IDTight"]	= DEFAULT;
     choose["Events/HLT_PFHT510"]	= DEFAULT;
@@ -7852,6 +7858,12 @@ struct eventBuffer
       if (input->present("Events/HLT_PFHT430_SixPFJet40")) { input->select("Events/HLT_PFHT430_SixPFJet40", HLT_PFHT430_SixPFJet40); successBranches.push_back("Events/HLT_PFHT430_SixPFJet40"); } else { missingBranches.push_back("Events/HLT_PFHT430_SixPFJet40"); }
     if ( choose["Events/HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5"] )
       if (input->present("Events/HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5")) { input->select("Events/HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5", HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5); successBranches.push_back("Events/HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5"); } else { missingBranches.push_back("Events/HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5"); }
+    if ( choose["Events/HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5"] )
+      if (input->present("Events/HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5")) { input->select("Events/HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5", HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5); successBranches.push_back("Events/HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5"); } else { missingBranches.push_back("Events/HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5"); }
+    if ( choose["Events/HLT_PFHT400_SixPFJet32_DoublePFBTagDeepCSV_2p94"] )
+      if (input->present("Events/HLT_PFHT400_SixPFJet32_DoublePFBTagDeepCSV_2p94")) { input->select("Events/HLT_PFHT400_SixPFJet32_DoublePFBTagDeepCSV_2p94", HLT_PFHT400_SixPFJet32_DoublePFBTagDeepCSV_2p94); successBranches.push_back("Events/HLT_PFHT400_SixPFJet32_DoublePFBTagDeepCSV_2p94"); } else { missingBranches.push_back("Events/HLT_PFHT400_SixPFJet32_DoublePFBTagDeepCSV_2p94"); }
+    if ( choose["Events/HLT_PFHT450_SixPFJet36_PFBTagDeepCSV_1p59"] )
+      if (input->present("Events/HLT_PFHT450_SixPFJet36_PFBTagDeepCSV_1p59")) { input->select("Events/HLT_PFHT450_SixPFJet36_PFBTagDeepCSV_1p59", HLT_PFHT450_SixPFJet36_PFBTagDeepCSV_1p59); successBranches.push_back("Events/HLT_PFHT450_SixPFJet36_PFBTagDeepCSV_1p59"); } else { missingBranches.push_back("Events/HLT_PFHT450_SixPFJet36_PFBTagDeepCSV_1p59"); }
     if ( choose["Events/HLT_PFHT500_PFMET100_PFMHT100_IDTight"] )
       if (input->present("Events/HLT_PFHT500_PFMET100_PFMHT100_IDTight")) { input->select("Events/HLT_PFHT500_PFMET100_PFMHT100_IDTight", HLT_PFHT500_PFMET100_PFMHT100_IDTight); successBranches.push_back("Events/HLT_PFHT500_PFMET100_PFMHT100_IDTight"); } else { missingBranches.push_back("Events/HLT_PFHT500_PFMET100_PFMHT100_IDTight"); }
     if ( choose["Events/HLT_PFHT500_PFMET110_PFMHT110_IDTight"] )
@@ -11234,6 +11246,12 @@ struct eventBuffer
     output->add("Events/HLT_PFHT430_SixPFJet40", 	HLT_PFHT430_SixPFJet40);
     output->add("Events/HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5",
                  HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5);
+    output->add("Events/HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5",
+                 HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5);
+    output->add("Events/HLT_PFHT400_SixPFJet32_DoublePFBTagDeepCSV_2p94",
+                 HLT_PFHT400_SixPFJet32_DoublePFBTagDeepCSV_2p94);
+    output->add("Events/HLT_PFHT450_SixPFJet36_PFBTagDeepCSV_1p59",
+                 HLT_PFHT450_SixPFJet36_PFBTagDeepCSV_1p59);
     output->add("Events/HLT_PFHT500_PFMET100_PFMHT100_IDTight",
                  HLT_PFHT500_PFMET100_PFMHT100_IDTight);
     output->add("Events/HLT_PFHT500_PFMET110_PFMHT110_IDTight",
@@ -13261,6 +13279,9 @@ struct eventBuffer
     HLT_PFHT430_SixJet40_BTagCSV_p080	= 0;
     HLT_PFHT430_SixPFJet40	= 0;
     HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5	= 0;
+    HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5	= 0;
+    HLT_PFHT400_SixPFJet32_DoublePFBTagDeepCSV_2p94	= 0;
+    HLT_PFHT450_SixPFJet36_PFBTagDeepCSV_1p59	= 0;
     HLT_PFHT500_PFMET100_PFMHT100_IDTight	= 0;
     HLT_PFHT500_PFMET110_PFMHT110_IDTight	= 0;
     HLT_PFHT510	= 0;

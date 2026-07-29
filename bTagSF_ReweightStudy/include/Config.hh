@@ -20,6 +20,7 @@
 // Author: Junghyun Lee
 // ============================================================================
 
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -29,6 +30,10 @@
 #include <sstream>
 
 #include "Config_TtCatGroup.hh"
+
+// [2026-07-29] sample weight / Data era 는 analyzer 와 같은 단일 소스에서 온다.
+//   TriggerStudy 와 **같은 헤더**를 본다 (Makefile 의 SHARED_INC = ../include).
+#include "SampleRegistry.hh"
 
 
 // ============================================================================
@@ -40,9 +45,27 @@ public:
     // [Section 1] Path & I/O Settings
     // ========================================================================
 
-    // Base directory containing input ntuple files
-    static inline const std::string inputBaseDir =
-        "/Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/";
+    // ── Base directory containing input (btagtrig skim) ntuple files ────────
+    //   [2026-07-29] 하드코딩 절대경로 → `TTHH_SKIM_DIR` override.
+    //   TriggerStudy/include/Config.hh 의 같은 함수와 **같은 env 이름**을 쓴다.
+    //   두 도구가 서로 다른 skim 을 읽으면 trigger SF 와 b-tag reweight 가
+    //   다른 위상공간에서 유도되는데, 그건 어디서도 검출되지 않는다.
+    static const std::string& InputBaseDir() {
+        static const std::string dir = [] {
+            const char* env = std::getenv("TTHH_SKIM_DIR");
+            std::string d = (env && *env)
+                ? std::string(env)
+                : std::string("/Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/");
+            if (!d.empty() && d.back() != '/') d += '/';
+            return d;
+        }();
+        return dir;
+    }
+
+    static bool SkimDirFromEnv() {
+        const char* env = std::getenv("TTHH_SKIM_DIR");
+        return env && *env;
+    }
 
     // TTree path inside ROOT file
     static inline const std::string treePath = "Tree/Tree";
@@ -56,106 +79,50 @@ public:
     // to have a valid SF value.  If evaluate() fails, it is a FATAL error.
     // ========================================================================
 
-    static inline const std::string sfOutputJSON =
-        "TriggerSF/trigger_sf.json.gz";
-
-    // ========================================================================
-    // [Section 1-B] Sample Registry
-    //
-    // Central definition of all known samples.
-    //   - isData: true for Data, false for MC
-    //   - weight: (Xsec * Lumi) / Sum(genEventSumw) for MC, 1.0 for Data
-    //
-    // Usage:
-    //   auto info = Config::GetSampleInfo("TTbar_DiLep");
-    //   if (!info) { /* unknown sample → error */ }
-    //   bool isData = info->isData;
-    //   double w    = info->weight;
-    // ========================================================================
-
-    struct SampleInfo {
-        bool   isData;
-        double weight;
-    };
-
-private:
-    static const std::map<std::string, SampleInfo>& SampleRegistry() {
-        static const std::map<std::string, SampleInfo> registry = {
-            // Data: SingleMuon (for trigger SF derivation; NOT used here)
-            {"SingleMuon_B",       {true,  1.0}},
-            {"SingleMuon_C",       {true,  1.0}},
-            {"SingleMuon_D",       {true,  1.0}},
-            {"SingleMuon_E",       {true,  1.0}},
-            {"SingleMuon_F",       {true,  1.0}},
-            // Data: BTagCSV
-            {"BTagCSV_B",          {true,  1.0}},
-            {"BTagCSV_C",          {true,  1.0}},
-            {"BTagCSV_D",          {true,  1.0}},
-            {"BTagCSV_E",          {true,  1.0}},
-            {"BTagCSV_F",          {true,  1.0}},
-            // Data: JetHT
-            {"JetHT_B",            {true,  1.0}},
-            {"JetHT_C",            {true,  1.0}},
-            {"JetHT_D",            {true,  1.0}},
-            {"JetHT_E",            {true,  1.0}},
-            {"JetHT_F",            {true,  1.0}},
-            // MC: ttbar inclusive
-            {"TTbar_Hadronic",       {false, 0.000214351205}},
-            {"TTbar_DiLep",          {false, 0.0004761561474}},
-            {"TTbar_SemiLep",   {false, 0.0001455793461}},
-            // MC: ttHH signal & rare
-            {"TTHHto4b",               {false, 0.00000109763773}},
-            {"TT4b",               {false, 0.001292157441}},
-            {"ttHTobb",            {false, 0.003125301546}},
-            {"TTTT",               {false, 0.00399317683}},
-            {"TTTW",               {false, 0.00008453854444}},
-            {"TTWH",               {false, 0.000131699}},
-            {"TTWW",               {false, 0.0004155131232}},
-            {"TTWZ",               {false, 0.0002901229714}},
-            {"TTZHTo4b",           {false, 0.00000111247369}},
-            {"TTZToBB",            {false, 0.006587820794}},
-            {"TTZZTo4b",           {false, 0.0000003824366722}},
-            {"ttbb",               {false, 0.0005295497645}},
-            // MC: QCD
-            {"QCD_HT200to300",     {false, 1071.943332}},
-            {"QCD_HT300to500",     {false, 243.1813795}},
-            {"QCD_HT500to700",     {false, 20.77575731}},
-            {"QCD_HT700to1000",    {false, 5.58692197}},
-            {"QCD_HT1000to1500",   {false, 3.285809224}},
-            {"QCD_HT1500to2000",   {false, 0.3658958167}},
-            {"QCD_HT2000toInf",    {false, 0.1606282808}},
-        };
-        return registry;
+    //   [2026-07-29] `TTHH_TRIGSF_JSON` 로 override 가능.
+    //   trigger SF 는 이 도구의 **입력**이므로, 방금 재유도한 파일을 가리키게
+    //   하는 일이 잦다 (기본값은 예전에 복사해 둔 파일일 수 있다).
+    static const std::string& TriggerSFJSON() {
+        static const std::string p = [] {
+            const char* env = std::getenv("TTHH_TRIGSF_JSON");
+            return (env && *env) ? std::string(env)
+                                 : std::string("TriggerSF/trigger_sf.json.gz");
+        }();
+        return p;
     }
+
+    // ========================================================================
+    // [Section 1-B] Sample Registry  →  ../include/SampleRegistry.hh 로 이관
+    //
+    // [2026-07-29] 여기 있던 하드코딩 표를 제거했다. TriggerStudy/include/Config.hh
+    //   에 있던 것과 **글자 그대로 같은 복사본**이었고, 둘 다 STEP18 이전
+    //   dataset 의 Σgenw 로 계산된 값이었다.
+    //
+    //   b-tag norm reweight 는 process group 별 Σω_noSF / Σω_withSF 다.
+    //   한 group 에 여러 샘플이 합쳐지므로 샘플별 weight 의 **상대 비중**이
+    //   그대로 비율에 들어간다. 즉 틀린 Σgenw 는 lumi 처럼 상쇄되지 않는다.
+    //
+    //   이제 `SampleRegistry::get()` 이 analyzer 제출기와 같은 두 파일에서 같은
+    //   공식으로 런타임 합성한다. 모르는 샘플·prescan 없는 샘플은 FATAL.
+    // ========================================================================
+
+    using SampleInfo = ::SampleRegistry::Info;
 
 public:
-    // Returns pointer to SampleInfo if found, nullptr if unknown sample
+    /// 샘플 정보. 모르는 샘플이면 SampleRegistry 안에서 FATAL 이므로 nullptr 없음.
     static const SampleInfo* GetSampleInfo(const std::string& name) {
-        const auto& reg = SampleRegistry();
-        auto it = reg.find(name);
-        return (it != reg.end()) ? &it->second : nullptr;
+        return &::SampleRegistry::get(name);
     }
 
-    /// Return a list of all MC sample names in the registry
+    /// xsec_db 에 등록된 MC 샘플 전체 (campaign 이름).
     static std::vector<std::string> GetMCSampleNames() {
-        std::vector<std::string> names;
-        for (const auto& [name, info] : SampleRegistry()) {
-            if (!info.isData) names.push_back(name);
-        }
-        return names;
+        return ::SampleRegistry::mcSampleNames();
     }
 
-    /// Return a list of Data sample names for hadronic analysis
-    /// (BTagCSV + JetHT only; SingleMuon is used for trigger SF derivation)
+    /// Hadronic 분석용 Data 샘플 (BTagCSV + JetHT).
+    /// SingleMuon 은 trigger SF 유도 전용이라 제외한다.
     static std::vector<std::string> GetHadronicDataSampleNames() {
-        std::vector<std::string> names;
-        for (const auto& [name, info] : SampleRegistry()) {
-            if (info.isData &&
-                name.find("SingleMuon") == std::string::npos) {
-                names.push_back(name);
-            }
-        }
-        return names;
+        return ::SampleRegistry::dataSampleNames({"SingleMuon"});
     }
 
     // ========================================================================
@@ -166,12 +133,25 @@ public:
     // ========================================================================
 
     // ── B-tag JSON paths (tried in order; first existing file wins) ──
-    static inline const std::vector<std::string> btagJSONPaths = {
-        "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/"
-        "Run2-2017-UL-NanoAODv9/latest/btagging.json.gz",
-        "/Users/jhlee/correctionLib/corrections/"
-        "jsonpog-integration/POG/BTV/2017_UL/btagging.json.gz"
-    };
+    //   [2026-07-29] `TTHH_BTAG_JSON` 가 설정돼 있으면 **그것만** 쓴다.
+    //   fallback 체인은 편하지만, 의도한 파일이 없을 때 조용히 다른 파일로
+    //   넘어가므로 연도/campaign 이 어긋난 SF 를 쓰게 될 수 있다. env 를 준
+    //   경우엔 그 파일이 없으면 그냥 실패하는 편이 낫다.
+    static const std::vector<std::string>& BTagJSONPaths() {
+        static const std::vector<std::string> paths = [] {
+            const char* env = std::getenv("TTHH_BTAG_JSON");
+            if (env && *env) return std::vector<std::string>{ std::string(env) };
+            return std::vector<std::string>{
+                "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/"
+                "Run2-2017-UL-NanoAODv9/latest/btagging.json.gz",
+                "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/"
+                "POG/BTV/2017_UL/btagging.json.gz",
+                "/Users/jhlee/correctionLib/corrections/"
+                "jsonpog-integration/POG/BTV/2017_UL/btagging.json.gz"
+            };
+        }();
+        return paths;
+    }
 
     // Correction name inside the b-tag JSON
     static inline const std::string btagCorrectionName = "deepJet_shape";
@@ -231,6 +211,27 @@ public:
 
     // Minimum number of jets required after skimming (invariant check)
     static inline const int minNJets = 6;
+
+    // ── [2026-07-29] 측정 영역의 lepton 조건 ──────────────────────────────
+    //
+    //   btagtrig skim 은 **두 종류**의 이벤트를 함께 담는다:
+    //     - FH 이벤트 (lead muon 없음)            → main 분석의 위상공간
+    //     - muon control 이벤트 (lead muon 있음)  → trigger SF 측정용
+    //   analyzer 가 btagtrig 에서 lepton veto 를 강제하지 않기 때문이다
+    //   (ttHHanalyzer_unified.cc kCutSequence 6번: kSelBitMainLike).
+    //
+    //   b-tag norm reweight 는 **main 에 곱해질 보정**이므로 main 과 같은
+    //   위상공간(FH, lepton veto)에서 유도해야 한다. 이전 코드에는 lepton
+    //   조건이 아예 없어서 두 종류를 섞어 유도하고 있었고, 그건 어떤 경고도
+    //   내지 않는다.
+    //
+    //   requireLeptonVeto = true  : nVetoLeptons == 0  (FH — main 과 동일) ← 기본
+    //   requireLeptonVeto = false : 컷 없음 (구 동작 재현용; 권장하지 않음)
+    //
+    //   ⚠ nMuons==0 로 대신하면 안 된다. nMuons 는 lead-muon gate 를 통과한
+    //     이벤트에서만 채워지므로, soft(pT 15~29) lepton 이 있는 이벤트가
+    //     nMuons==0 으로 살아남는다. main 은 그런 이벤트를 veto 한다.
+    static inline const bool requireLeptonVeto = true;
 
     // Enable verbose output during event loop
     static inline const bool verbose = false;
@@ -332,9 +333,10 @@ public:
         // Section 1: Paths
         os << "║ [Section 1] Path & I/O                                       ║\n";
         os << "╟──────────────────────────────────────────────────────────────╢\n";
-        os << "  Input base dir : " << inputBaseDir << "\n";
+        os << "  Input base dir : " << InputBaseDir()
+           << (SkimDirFromEnv() ? "   [TTHH_SKIM_DIR]" : "   [built-in default]") << "\n";
         os << "  Tree path      : " << treePath << "\n";
-        os << "  Trigger SF JSON: " << sfOutputJSON << "\n";
+        os << "  Trigger SF JSON: " << TriggerSFJSON() << "\n";
 
         // Section 1-C: B-Tag
         os << "╟──────────────────────────────────────────────────────────────╢\n";
@@ -347,7 +349,7 @@ public:
         os << "  btagMaxJetsForPerJet  : " << btagMaxJetsForPerJetHist << "\n";
         os << "  btagSystematics       : " << btagSystematics.size() << " variations\n";
         os << "  btagJSONPaths         :\n";
-        for (const auto& p : btagJSONPaths)
+        for (const auto& p : BTagJSONPaths())
             os << "    " << p << "\n";
 
         // HT reweight

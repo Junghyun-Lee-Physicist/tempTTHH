@@ -15,7 +15,20 @@
 
 #include "Logger.h"
 using namespace Logger;
- 
+
+// ───────────────────────────────────────────────────────────────────────────
+// [2018] objectJet 의 DeepJet WP static 정의.
+//   값은 EraConfig::btagWP() 에서 objectJet::configureBtagWP() 로 주입한다.
+//   여기서는 **의도적으로 NaN** 으로 시작한다. 0 으로 두면 주입을 빠뜨렸을 때
+//   모든 jet 이 b-tag 로 분류되면서도 프로그램이 멀쩡히 도는(=무증상) 상태가
+//   된다. NaN 이면 비교가 전부 false 가 되어 즉시 눈에 띄고,
+//   assertBtagWPConfigured() 가 그보다 먼저 잡는다.
+// ───────────────────────────────────────────────────────────────────────────
+float objectJet::valbTagTight  = std::numeric_limits<float>::quiet_NaN();
+float objectJet::valbTagMedium = std::numeric_limits<float>::quiet_NaN();
+float objectJet::valbTagLoose  = std::numeric_limits<float>::quiet_NaN();
+bool  objectJet::bTagWPConfigured = false;
+
 // ───────────────────────────────────────────────────────────────────────────
 // B-tag Event Weight 계산 (Shape Correction 방식)
 // ───────────────────────────────────────────────────────────────────────────
@@ -284,6 +297,54 @@ void ttHHanalyzer_unified::loop(sysName sysType, bool up){
 //         (내부에서 DeepJet M=valbTagMedium으로 b-jet 분류)
 //   leptons: veto 정의(Cuts::subLead*)로 수집; btagtrig은 lead-muon gate 추가
 // ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+// [2018] 2018 hadronic HLT branch 존재 확인 (첫 이벤트 1회)
+//
+//  eventBuffer 는 입력에 없는 branch 를 initBuffers() 에서 0 으로 두고 그냥
+//  넘어간다. trigger 에서 0 은 "안 터졌다"와 형태가 같으므로, 경로 이름이
+//  하나라도 틀리거나 NanoAOD 버전이 다르면 **크래시도 경고도 없이 통과
+//  이벤트가 0 이 된다.** 히스토그램이 비어 있는 걸 사람이 눈으로 발견할
+//  때까지 아무도 모른다.
+//
+//  그래서 "요청했고(choose) 실제로 붙었는가(successBranches)"를 명시적으로
+//  확인하고, 하나라도 없으면 즉시 FATAL 로 끊는다.
+// ═══════════════════════════════════════════════════════════════════════════
+void ttHHanalyzer_unified::requireTriggerBranches2018_() {
+    static bool checked = false;
+    if (checked) return;
+    checked = true;
+
+    const std::vector<std::string> required = {
+        "Events/HLT_PFHT1050",
+        "Events/HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5",
+        "Events/HLT_PFHT400_SixPFJet32_DoublePFBTagDeepCSV_2p94",
+        "Events/HLT_PFHT450_SixPFJet36_PFBTagDeepCSV_1p59",
+    };
+
+    std::vector<std::string> absent;
+    for (const auto& r : required) {
+        const bool ok = std::find(_ev->successBranches.begin(),
+                                  _ev->successBranches.end(), r)
+                        != _ev->successBranches.end();
+        if (!ok) absent.push_back(r);
+    }
+
+    if (!absent.empty()) {
+        std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO
+                  << "] 2018 hadronic HLT branches missing from the input NanoAOD:\n";
+        for (const auto& a : absent) std::cerr << "    - " << a << "\n";
+        std::cerr
+            << "  These are REQUIRED for runYear=2018. A missing HLT branch reads\n"
+            << "  back as 0 (= 'did not fire'), so continuing would silently select\n"
+            << "  zero events instead of failing. Check the NanoAOD version and the\n"
+            << "  branch list in include/eventBuffer.h.\n";
+        std::exit(tthh::CONFIG_BAD_RUNINFO);
+    }
+
+    std::cout << "[trigger] 2018 hadronic HLT branches: all "
+              << required.size() << " present." << std::endl;
+}
+
 void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, bool up){
 
     _ev->fillObjects();
@@ -292,60 +353,102 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
     // 1. [Definition] 복잡한 HLT 경로를 의미 있는 변수로 변환
     // =================================================================
 
-    // 1-1. Era 확인 (설정된 eraName을 사용)
-    bool isEraB = (_era == "B");
-    // TODO: 현재는 2017년도 기준 B run과 나머지(C,D,E,F)만 구분하고 있음.
-    // 추후 2016, 2018 Data 분석 시 각 연도별/Era별 정확한 HLT Path 존재 여부 및 Prescale 로직 확인 후
-    // 코드를 확장해야 함. (CorrectionsManager 등에서 Map 형태로 관리 권장)
+    // ─────────────────────────────────────────────────────────────────
+    // [2018] Hadronic trigger — 연도/Era 분기
+    //
+    //  왜 분기가 필요한가
+    //  ------------------
+    //  2017 의 주력 경로(...TriplePFBTagCSV_3p0, ...PFBTagCSV_1p5,
+    //  ...DoublePFBTagCSV_2p2)는 **2018 메뉴에 존재하지 않는다**. 2018 은
+    //  DeepCSV 기반 경로로 교체되었다. eventBuffer 는 없는 branch 를 0 으로
+    //  두므로 (initBuffers), 분기 없이 2018 을 돌리면 세 경로가 모두 false 가
+    //  되어 HT1050 만 남고 **경고 하나 없이 통계가 급감**한다.
+    //  그래서 아래 requireTriggerBranches() 로 "이 연도가 요구하는 경로가
+    //  입력 파일에 실제로 있는지"를 첫 이벤트에서 한 번 검사하고, 없으면
+    //  FATAL 로 끊는다. 조용히 0 event 를 내는 경로를 남기지 않는다.
+    //
+    //  PD 구성
+    //  -------
+    //   2017 : BTagCSV(4J3T) + JetHT(6J/HT)  -> orthogonality veto 필요
+    //   2018 : **JetHT 단독** (BTagCSV PD 는 2018 에 없음)
+    //          -> 모든 경로가 한 PD 안에 있으므로 veto 하면 안 된다.
+    //             (veto 를 남겨두면 4J3T 가 터진 이벤트를 아무도 안 가져가
+    //              통째로 사라진다.)
+    // ─────────────────────────────────────────────────────────────────
+    bool fired_4J3T = false, fired_6J1T = false, fired_6J2T = false;
+    bool fired_HT   = _ev->HLT_PFHT1050;   // 2017/2018 공통
 
-    // 1-2. Trigger Mapping (Era에 따른 HLT 경로 선택)
-    // (1) 4J3T (QuadJet + TripleBTag) -> BTagCSV 데이터셋의 주력
-    bool fired_4J3T = isEraB ? _ev->HLT_HT300PT30_QuadJet_75_60_45_40_TripeCSV_p07 
-                             : _ev->HLT_PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0;
+    if (_runYear == "2018") {
+        requireTriggerBranches2018_();
 
-    // (2) 6J (MultiJet + BTag) -> JetHT 데이터셋의 주력 1
-    bool fired_6J1T = isEraB ? _ev->HLT_PFHT430_SixJet40_BTagCSV_p080 
-                             : _ev->HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5;
-                             
-    bool fired_6J2T = isEraB ? _ev->HLT_PFHT380_SixJet32_DoubleBTagCSV_p075 
-                             : _ev->HLT_PFHT380_SixPFJet32_DoublePFBTagCSV_2p2;
+        fired_4J3T = _ev->HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5;
+        fired_6J2T = _ev->HLT_PFHT400_SixPFJet32_DoublePFBTagDeepCSV_2p94;
+        fired_6J1T = _ev->HLT_PFHT450_SixPFJet36_PFBTagDeepCSV_1p59;
+    }
+    else if (_runYear == "2017") {
+        // 2017 Era B 는 CSV(=pre-"PF") 이름의 옛 경로를 쓴다. 기존 동작 그대로.
+        const bool isEraB = (_era == "B");
+        fired_4J3T = isEraB ? _ev->HLT_HT300PT30_QuadJet_75_60_45_40_TripeCSV_p07
+                            : _ev->HLT_PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0;
+        fired_6J1T = isEraB ? _ev->HLT_PFHT430_SixJet40_BTagCSV_p080
+                            : _ev->HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5;
+        fired_6J2T = isEraB ? _ev->HLT_PFHT380_SixJet32_DoubleBTagCSV_p075
+                            : _ev->HLT_PFHT380_SixPFJet32_DoublePFBTagCSV_2p2;
+    }
+    else {
+        // 2016 은 경로 세트가 아직 확정되지 않았다. 조용히 2017 경로로
+        // 돌아가면 위와 같은 무증상 통계 손실이 나므로 명시적으로 막는다.
+        std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO
+                  << "] Hadronic HLT path set is not defined for runYear='"
+                  << _runYear << "'.\n"
+                  << "  Only 2017 and 2018 are implemented. Add the path set here\n"
+                  << "  (and the branches to eventBuffer.h) before running this year.\n";
+        std::exit(tthh::CONFIG_BAD_RUNINFO);
+    }
 
-    // (3) HT (Pure HT) -> JetHT 데이터셋의 주력 2
-    bool fired_HT   = _ev->HLT_PFHT1050; // Era 공통
-
-
-    // 1-3. Logical Grouping (논리 그룹 정의)
-    // BTagCSV가 가져가야 할 트리거 그룹
-    bool group_BTagCSV = fired_4J3T;
-
-    // JetHT가 가져가야 할 트리거 그룹 (6J OR HT)
-    bool group_JetHT   = (fired_6J1T || fired_6J2T || fired_HT);
-
+    // 논리 그룹
+    const bool group_4J3T  = fired_4J3T;                              // (2017) BTagCSV PD 담당
+    const bool group_JetHT = (fired_6J1T || fired_6J2T || fired_HT);  // JetHT PD 담당
 
     // =================================================================
     // 2. [Application] 데이터셋별 역할 분담 (Orthogonality Enforcement)
     // =================================================================
-    
+
     bool passHadTrig = false;
 
     if (_DataOrMC == "MC") {
-        // [MC]: 그냥 뭐라도 터지면 다 가져감 (OR)
-        passHadTrig = (group_BTagCSV || group_JetHT);
+        // [MC]: 해당 연도의 경로 중 뭐라도 터지면 가져감 (OR)
+        passHadTrig = (group_4J3T || group_JetHT);
     }
-    else { // [Data]
+    else if (_runYear == "2018") {
+        // [2018 Data] JetHT 단독 PD — 중복 계수 위험이 없으므로 단순 OR.
+        if (_sampleName.find("JetHT") != std::string::npos) {
+            passHadTrig = (group_4J3T || group_JetHT);
+        }
+        else if (_sampleName.find("SingleMuon") != std::string::npos) {
+            passHadTrig = (group_4J3T || group_JetHT);   // trigger SF 측정용
+        }
+        else {
+            std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO
+                      << "] 2018 Data PD not recognised (expected JetHT or SingleMuon): "
+                      << _sampleName << std::endl;
+            std::exit(tthh::CONFIG_BAD_RUNINFO);
+        }
+    }
+    else { // [2017 Data] — 기존 로직 그대로
         if (_sampleName.find("BTagCSV") != std::string::npos) {
             // [Rule 1] BTagCSV 데이터셋은 4J3T 그룹만 챙긴다.
-            passHadTrig = group_BTagCSV;
+            passHadTrig = group_4J3T;
         }
         else if (_sampleName.find("JetHT") != std::string::npos) {
             // [Rule 2] JetHT 데이터셋은 자기 그룹(6J or HT)을 챙기되,
             //          만약 4J3T가 같이 터졌으면 BTagCSV에 양보한다. (Veto)
-            passHadTrig = (group_JetHT && !group_BTagCSV);
+            passHadTrig = (group_JetHT && !group_4J3T);
         }
         else if (_sampleName.find("SingleMuon") != std::string::npos) {
 	    // [Rule 3] Single muon for Trigger Study
 	    // Handle the logic same as MC trigger path
-            passHadTrig = (group_BTagCSV || group_JetHT);
+            passHadTrig = (group_4J3T || group_JetHT);
         }
         else {
             // 안전장치 — 미인식 Data PD 는 trigger 경로가 정의되지 않음
@@ -620,6 +723,8 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
         }
 
         // 이벤트에 등록 + b-tag WP에 따른 분류 (selectJet 내부에서 b-jet 판정)
+        // [2018] WP 는 연도별 주입값이다. 주입 없이 여기 도달하면 FATAL.
+        objectJet::assertBtagWPConfigured("createObjects/jet classification");
         thisEvent->selectJet(newJet);
         if (newJet->bTagCSV >= objectJet::valbTagMedium) {
             thisEvent->selectbJet(newJet);
@@ -1193,9 +1298,27 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
     }
 
     // 3) L1 pre-firing weight
+    // [2018] 2018 에는 L1 ECAL prefiring 이 없다 (AN p.118: "this effect does not
+    //   affect 2018 data-taking era") — 그래서 2018 NanoAODv9 에는
+    //   `L1PreFiringWeight_Nom` branch 자체가 없다. eventBuffer 는 없는 branch 를
+    //   0 으로 남기므로, 연도 게이트 없이 곱하면 **모든 MC 이벤트 weight 가 0**
+    //   이 된다. 크래시도 경고도 없이 히스토그램만 전부 비는 무증상 실패라
+    //   반드시 EraConfig 로 분기한다.
     _L1PrefiringWeight = 1.0;
-    if (_DataOrMC != "Data") {
+    if (_DataOrMC != "Data" && EraConfig::usesL1Prefiring(_runYear)) {
 	_L1PrefiringWeight = _ev->L1PreFiringWeight_Nom;
+
+	// 게이트를 통과한 연도(2016/2017)에서 0 이 나오면 그건 branch 누락이지
+	// 물리가 아니다. 조용히 통과시키지 않는다.
+	if (!(_L1PrefiringWeight > 0.f)) {
+	    std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO
+		      << "] L1PreFiringWeight_Nom = " << _L1PrefiringWeight
+		      << " for runYear=" << _runYear << ".\n"
+		      << "  This year is expected to HAVE the prefiring branch; a\n"
+		      << "  non-positive value means the branch is missing or unread,\n"
+		      << "  which would zero out every MC event weight.\n";
+	    std::exit(tthh::CONFIG_BAD_RUNINFO);
+	}
 
         if (debugCorrections) {
 	    std::cout << "[L1PreFiring] weight=" << _L1PrefiringWeight <<std::endl;
@@ -1735,6 +1858,10 @@ void ttHHanalyzer_unified::fillTree(event * thisEvent){
 
     nMuons = thisEvent->getnSelMuon();
     nElecs = thisEvent->getnSelElectron();
+    // [2026-07-29] main 의 lepton veto 와 동일한 값 (kLeptonVeto 단계가 쓰는 것).
+    //   nMuons/nElecs 와 달리 lead-muon gate 와 무관하게 항상 채워진다
+    //   (setnVetoLepton() 은 collectLeptons 분기 **밖**에서 호출된다).
+    nVetoLeptons = thisEvent->getnVetoLepton();
     nJets = thisEvent->getnSelJet();
     nbJets = thisEvent->getnSelbJet();
     HT = thisEvent->getSumSelJetScalarpT();

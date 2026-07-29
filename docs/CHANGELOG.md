@@ -7,6 +7,32 @@
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
 
+## 2026-07-29 (2) — [2017 SF 재유도] 다운스트림 두 패키지 정합화 + 무음 오류 6건 차단
+
+목표: **2017 trigger SF / b-tag norm reweight 를 지금 재유도**할 수 있는 상태로 만들기.
+운영 절차는 [`RUNBOOK_2017_SF_rederive.md`](RUNBOOK_2017_SF_rederive.md).
+
+고친 것은 전부 "크래시 없이 틀린 숫자가 나오던" 종류다:
+
+| # | 위치 | 증상 (고치기 전) | 조치 |
+|---|---|---|---|
+| 1 | `src/StitchFactors.cc` | 2017 stitch json 이 구 이름이라 조회 실패 → `multiplier=1.0` → inclusive tt 와 dedicated ttbb/tt4b **이중계수** | `SampleAlias` 로 신·구 모두 시도, stitch 집합인데 못 찾으면 **FATAL** |
+| 2 | `src/ExpandedTtbarId.cc` | 같은 이유로 lookup INACTIVE → tt+nb(61/62/71/72) **0건** | 동일 (alias + FATAL) |
+| 3 | 두 SF 패키지 `Config.hh` | 구 dataset Σgenw 기준 magic number 표가 **두 벌 복사본**으로 존재 | `include/SampleRegistry.hh` 신설 — xsec_db + prescan_summary 런타임 조회, 제출기와 동일 공식 |
+| 4 | `EventLooper.cpp` / `BTagSFProcessor.cpp` | era 를 첫 `_` 로 잘라 `Run2017B` → `era=="B"` 가 항상 거짓 → Run B 를 CDEF bit 로 평가 | 제출기와 같은 `Run\d{4}([A-Z])$` 로 통일 |
+| 5 | `BTagSFProcessor.cpp` | group dispatch 를 원본 `genTtbarId` 로 → tt+nb 그룹 전 bin 1.0 (8-key JSON 처럼 보임). `stitchWeight` 미적용 | `expandedTtbarId` 로 교체 + `stitchWeight` 곱함, branch 부재 시 FATAL |
+| 6 | `BTagSFProcessor.cpp` | lepton 조건이 **없어서** FH 이벤트와 muon-control 이벤트를 섞어 유도 | `nVetoLeptons==0` (main 과 동일 정의). 그 값을 skim 에 싣도록 analyzer 에 branch 추가 |
+
+부수 변경:
+- 하드코딩 절대경로(`/Users/jhlee/...`) → `TTHH_SKIM_DIR` / `TTHH_BTAG_JSON` / `TTHH_TRIGSF_JSON` env override. 재빌드 불필요.
+- `TriggerStudy/include/nlohmann/json.hpp` 가 **split-header 3.12.0 의 json.hpp 한 장**뿐이라 include 가 깨져 있었다 (DeriveSF.cpp 는 interpreter 로 이 경로를 직접 include 한다). 나머지 두 곳과 같은 amalgamated 3.11.3 으로 교체.
+- `run_analysis.sh` 샘플명을 campaign 이름으로, `run_all.py` 목록을 **자동 유도**로 (전에는 마지막 한 줄 빼고 전부 주석 처리돼 1개 샘플만 돌고 있었다). 제외되는 샘플은 이유와 함께 전부 출력.
+- `Tier3_2017_FH_unified_btagtrig.yml`: `lumi 41.48 → 42.07`(xsec_db `_meta` 와 일치, 제출기 lumi 검사 통과), `path_stitch_json` / `path_expanded_ttbarid_dir` 활성화. 2017 lookup 7개를 `DerivedCorr/expandedTtbarId/2017/` 로 복사(byte-identical, 구 이름 유지 — 파일 안에 tree 이름 `TtNb` 가 박혀 있어 개명 불가).
+- `test/test_SampleRegistry.cc` (ROOT 불필요, 47 assertion). 특히 **`mustBeInStitchPlan()` 이 ttbar 7종을 넘지 않는지**를 고정한다 — alias 표를 넓히면서 이 분리가 깨지면 비-ttbar 샘플이 전부 FATAL 로 죽는다.
+
+**검증 상태:** `SampleRegistry` / `SampleAlias` / 두 `Config.hh` 는 이 환경에서 컴파일·실행·테스트 통과. ROOT 의존 파일(`EventLooper.cpp`, `BTagSFProcessor.cpp`, analyzer)은 **미빌드** — CMSSW 환경에서 `make` 필요.
+**남은 blocker:** repo 의 `prescan_summary/prescan_summary.json` 이 구 이름 24개짜리다. 신규 campaign 61개 MC 중 47개가 없다 (`--preflight` 가 "prescan coverage 54 problem(s)" 로 보고). KNU 에서 `consolidate_prescan.py` 재실행 후 갱신 필요.
+
 ## 2026-07-27 (3) — [값 확정] 2018 lumi **59.83 → 59.56** (LUM POG 원문 대조)
 
 사용자가 LUM POG TWiki 원문(PDF 2편)을 제공 → 표를 직접 대조해 값을 확정했다.
@@ -236,3 +262,115 @@ See the per-step records in [`changes/`](changes/) (indexed by [`changes/README.
 - **Fix 1**: `extractEraFromSampleName()` now recognizes `Run20YY<E>` (era-agnostic: 2016/2017/2018; tolerant of `_ext1` suffixes) with the legacy single-letter form kept as fallback. Unit-tested against 13 old/new/edge sample names.
 - **Fix 2**: the two runinfo exits (`MC must not define era`, `era mismatch`) now emit `[FATAL][E11]` (tthh::CONFIG_BAD_RUNINFO) and use `std::_Exit` — `std::exit` triggered a ROOT-teardown segfault that polluted the exit status (139 instead of a canonical code). `ExitCodes.h` is now included by the header directly.
 - Files: `ttHHanalyzer_unified.h` only. Rebuild required (`make`).
+
+---
+
+## 2026-07-28 — OPEN item registered: `ExpandedTtbarId` should accept both patch tree names
+
+Registered from `TTHHGenCategoryTools` (its `docs/07_analyzer_integration.md` §4 and
+`docs/01_status.md` O2). **No code change here yet — nothing is broken.**
+
+Context: the producer side renamed its patch convention to `ttbarIdPatch_<KEY>.root` / tree
+`TtbarIdPatch` (TTHHGenCategoryTools D12), but this analyzer's loader hard-defaults to the legacy
+`ttnb_<sampleKey>.root` / `TtNb`. On 2026-07-28 it was **decided to keep the legacy convention for
+now**: the 2018 patches are being extracted with `--out ttnb_<KEY>.root --out-tree TtNb` on
+purpose, so 2017 and 2018 share one convention and this analyzer needs no change to run the UL18
+control plots.
+
+The cleanup, when it happens: make `loadFromDir()` try `TtbarIdPatch` first and fall back to
+`TtNb`. **Do not just flip the default** — the 2017 patches carry the tree name `TtNb` *inside the
+file*, so a flip makes them unreadable and forces re-extraction from KNU Tier3.
+
+Why this is worth writing down rather than remembering: getting it wrong fails **silently**. The
+loader goes INACTIVE (by design, not fatal, because patch-less samples and Data must fall through
+to the raw NanoAOD value), so the analyzer would quietly produce plots with the tt+nb extension
+not applied. Any change here must be verified by asserting `active()` is true and `size()` equals
+the patch row count.
+
+See `STATUS.md` "Pending / next steps (OPEN)" item 2.
+
+
+---
+
+## 2026-07-29 — 2018UL 대응 P0 7건 완료: 연도 의존 상수를 `EraConfig.h` 로 일원화
+
+`STATUS.md` OPEN #6 (2018UL 대응) 의 **P0 7건**을 구현했다. 목표는 "코드가 2017 과 2018
+양쪽에서 동작한다" 이지만, 실제 위험은 그게 아니었다. **7건 전부가 "2018 을 주면 크래시
+없이 조용히 틀린 결과가 나온다"** 였다. 그래서 각 수정마다 분기뿐 아니라 **틀린 상태를
+FATAL 로 만드는 장치**를 같이 넣었다.
+
+### 새 파일 — `include/EraConfig.h` (연도 상수 단일 소스)
+
+연도 의존 값이 5개 파일에 흩어져 있던 걸 한 헤더로 모았다. 이 파일 밖에서
+`if (year == "2017")` 를 쓰지 않는다는 것이 규약이다. 제공 항목:
+
+| 함수 | 대체한 하드코딩 | 2018 값 근거 |
+|---|---|---|
+| `yearForCorr()` | `ttHHanalyzer_unified.h:1133` | jsonpog 디렉토리명 |
+| `btagWP()` | `ttHHanalyzer_unified.h:243-245` | **AN Table 32** (p.41) |
+| `usesL1Prefiring()` | `ttHHanalyzer_unified.cc:1198` | **AN p.118** |
+| `goldenJsonFile()` | `src/CorrectionsManager.cc:248-250` | `GoldenJson/` 실제 파일 |
+| `jecDataEraTag()` | `src/CorrectionsManager.cc:167-168` | Summer19UL18 Run A–D |
+| `hemJes()` / `inHemRegion()` | (신규) | **AN p.118** HEM JES 변주 |
+| `normalizeYear()` | (신규) | 표기 정규화 |
+
+**조회 함수는 모르는 연도에 대해 예외 없이 `exit(11)` 이다.** 기본값으로 넘어가지 않는다 —
+그게 이 버그들의 공통 원인이었다.
+
+### P0 항목별
+
+1. **#1 연도 게이트** — `if(_runYear=="2017") yearForCorr="2017_UL";` 에 `else` 가 없어서
+   2018 은 `yearForCorr` 가 **빈 문자열**로 남았다. → `EraConfig::yearForCorr()`.
+2. **#7 DeepJet WP** — 2017 값이 `static constexpr` 로 박혀 있었다. 2018 을 돌려도
+   경고 없이 2017 WP(M=0.3040)로 b-jet 을 세어 **신호영역 정의가 달라진다**.
+   → 연도별 주입(`objectJet::configureBtagWP()`), 2018 = 0.0490/0.2783/0.7100.
+   미주입 상태로 jet 을 분류하면 `assertBtagWPConfigured()` 가 FATAL. static 초기값은
+   **의도적으로 NaN** 이다 (0 이면 모든 jet 이 b-tag 인데도 멀쩡히 돈다).
+3. **#4 L1 prefiring** — 2018 NanoAODv9 에는 `L1PreFiringWeight_Nom` branch 가 없고
+   eventBuffer 는 없는 branch 를 0 으로 둔다. 게이트 없이 곱하면 **모든 MC weight 가 0**
+   → 히스토그램 전부 빔. 크래시도 경고도 없음. 이번 P0 중 가장 위험했다.
+   → `EraConfig::usesL1Prefiring()` 로 2018 비활성 + 적용 연도에서 값이 0 이면 FATAL.
+4. **#2 eventBuffer 2018 HLT branch 3개 추가** — 5개 지점(선언/`choose`/`select`/
+   `output->add`/`initBuffers`) 모두. 기존 branch 를 템플릿으로 스크립트 생성해 누락 방지.
+5. **#3 trigger path + PD 라우팅** — 2017 주력 경로(CSV 계열)는 **2018 메뉴에 없다**.
+   2018 은 DeepCSV 계열로 교체. 또한 2018 은 **JetHT 단독 PD** (BTagCSV PD 없음) 이므로
+   orthogonality veto (`&& !group_4J3T`) 를 **제거**했다 — 남겨두면 4J3T 가 터진 이벤트를
+   아무 PD 도 안 가져가 통째로 사라진다. 2017 로직은 그대로 보존.
+   → `requireTriggerBranches2018_()` 가 첫 이벤트에서 4개 경로의 **실제 존재**를
+     (`successBranches`) 확인하고 없으면 FATAL. 없는 HLT branch 는 0 = "안 터졌다" 와
+     구분이 안 되므로, 검사하지 않으면 조용히 0 event 가 된다.
+6. **#5 golden JSON 파일명** — run range `Cert_294927-306462_` 가 문자열에 하드코딩되어
+   2017 외 연도는 존재하지 않는 파일명을 만들었다. 게다가 unknown year 일 때 `return` 만
+   해서 **Data 가 golden 필터 없이 돌 수 있었다**. → `EraConfig::goldenJsonFile()`.
+7. **#6 Data JEC era 태그** — 2018 이 `(era=="A") ? "A" : "D"` 로 축약되어 **B, C 에
+   RunD JEC** 를 적용했다. 게다가 키가 없으면 `catch` 가 **MC JEC 로 조용히 fallback** 하고
+   WARNING 한 줄만 찍었다(Data 에 MC JEC = jet energy scale 전면 오류, 다른 증상 없음).
+   → era 문자 그대로 사용 + Data 는 fallback 폐지, FATAL.
+
+### 곁가지로 발견해 고친 것
+
+- **`2016PreVFP_UL` vs `2016preVFP_UL` 표기 불일치.** `CorrectionsManager` 의 비교 키는
+  대문자 `P`, 디스크의 `GoldenJson/` 및 jsonpog 디렉토리는 소문자 `p` 였다. `runYear_` 는
+  경로 성분으로 **그대로** 쓰이므로 2016 은 어느 쪽이든 깨져 있었다(그리고 golden JSON 은
+  조용히 `return`). 생성자에서 `EraConfig::normalizeYear()` 로 정규화하고 키를 소문자로
+  통일했다. **2016 은 여전히 미검증** — trigger path set 도 미정이라 명시적 FATAL 이다.
+
+### 테스트 (ROOT/CMSSW 불필요, 즉시 실행 가능)
+
+    g++ -std=c++17 -I include -o /tmp/t test/test_EraConfig.cc && /tmp/t
+    ./test/test_EraConfig_fatal.sh
+
+- `test/test_EraConfig.cc` — AN Table 32 값 정확 일치, L<M<T 단조성, `normalizeYear` 왕복,
+  **2018 B/C 가 D 로 축약되지 않음**, HEM 영역 경계 6종, 2017 은 HEM 비활성. 전부 PASS.
+- `test/test_EraConfig_fatal.sh` — 모르는 연도가 **exit 11** 로 죽는지 확인. PASS.
+  (계약을 주석이 아니라 테스트로 고정하려는 것이다.)
+
+### 남은 작업
+
+- **빌드 미수행.** 이 환경에 ROOT 가 없어 `EraConfig.h` 단위 테스트까지만 검증했다.
+  `make` 는 lxplus/KNU(CMSSW_14_2_1)에서 필요하다. **2017 재현성 확인이 필수** —
+  2017 결과가 이전과 동일해야 한다(WP·prefiring·trigger 로직 모두 보존했으므로 동일해야 함).
+- P0′ (#8–12), jet η-φ 2D map (HEM 검토용), P1 (trigger SF `IsoMu27`→`IsoMu24`, plateau 재확인).
+- **HEM 결정 = AN 추종**: veto map 미사용, 2018 MC 에 JES 변주. `EraConfig::hemJes()` 에
+  값과 근거를 넣어 뒀으나 **적용 코드는 아직 없다**(P0′ 이후). JME veto map
+  (`Summer19UL18_V1` / `h2hot_ul18_plus_hem1516_plus_hbp2m1`) 은 최종 결과 전 재검토 항목.

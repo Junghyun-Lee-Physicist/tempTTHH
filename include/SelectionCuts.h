@@ -14,8 +14,13 @@
 //      한눈에 보인다.
 //
 // ⚠ 값 변경 시 반드시 AN 근거를 주석에 갱신할 것 (프로젝트 규약).
-// ⚠ era 의존 값이 생기면 (Run3 확장 등) 이 namespace를 era-keyed 구조로
-//   승격한다 — 현재는 2017 UL 단일 era.
+// ⚠ era 의존 값이 생기면 (Run3 확장 등) 이 namespace를 era-keyed 구조로 승격한다.
+//   현재 여기 있는 값들은 2017/2018 공통이라고 **가정**하고 쓰는 중이다.
+//   연도별로 갈라야 하는 값은 `include/EraConfig.h` 로 보낸다 (b-tag WP 가 그 예).
+//   미해결 (P1): `sixthJetPt=40` / `HT=500` 은 2017 HLT(`SixPFJet40`/`PFHT380`) 의
+//   plateau 기준이다. 2018 은 `SixPFJet36`/`PFHT400`/`PFHT330PT30` 이므로 plateau
+//   재확인이 필요하다. `leadMuonPt=29` 도 `IsoMu27` 기준 → 2018 `IsoMu24` 에 맞춰
+//   26 으로 내려야 한다. 둘 다 아직 안 했다.
 // =============================================================================
 
 namespace Cuts {
@@ -35,8 +40,10 @@ constexpr float hadWMassHi = 250.f;  // m_qq 상한                  [AN Tab.55]
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Jet 정의 — AN §4.5 (2017 UL)
-// b-tag WP는 objectJet::valbTagMedium (DeepJet M, 2017UL = 0.3040)을 사용 —
-// 여기 중복 정의하지 않는다 (single source: ttHHanalyzer_unified.h objectJet).
+// b-tag WP는 objectJet::valbTagMedium (DeepJet M)을 사용 — 여기 중복 정의하지 않는다.
+// ⚠ WP 는 **연도 의존**이므로 값을 여기 적지 않는다 (2017 = 0.3040, 2018 = 0.2783,
+//   AN Table 32). 유일한 출처는 `include/EraConfig.h` 의 `EraConfig::btagWP()` 이고,
+//   objectJet::configureBtagWP() 가 분석 시작 시 주입한다.
 // ─────────────────────────────────────────────────────────────────────────────
 constexpr float jetPt   = 30.f;      // jet pT 하한 (JES/JER 적용 후) [AN Tab.55]
 constexpr float jetEta  = 2.4f;      // |η| 상한                      [AN Tab.55]

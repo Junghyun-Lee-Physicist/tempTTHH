@@ -20,12 +20,18 @@
 //
 // Author: Junghyun Lee ============================================================================
 
+#include <cstdlib>
 #include <iostream>
+#include <map>
 #include <string>
 #include <vector>
 #include <algorithm>
 #include <iomanip>
 #include <sstream>
+
+// [2026-07-29] sample weight / Data era 는 analyzer 와 같은 단일 소스에서 온다.
+//   (xsec_db + prescan_summary 런타임 조회). 아래 SampleRegistry 참조.
+#include "SampleRegistry.hh"
 
 // ============================================================================
 // NBBin: Flexible nb-jet bin definition
@@ -66,9 +72,33 @@ public:
     // [Section 1] Path & I/O Settings
     // ========================================================================
 
-    // Base directory containing input ntuple files
-    static inline const std::string inputBaseDir = 
-        "/Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/";
+    // ── Base directory containing input (btagtrig skim) ntuple files ────────
+    //
+    // [2026-07-29] `static inline const std::string = "/Users/jhlee/..."` 였다.
+    //   문제 1: 경로를 바꾸려면 **재빌드**가 필요했다.
+    //   문제 2: 그 경로는 이 머신에만 있는 절대경로라 Tier3/lxplus 에서 즉사.
+    //   문제 3 (더 나쁨): 실수로 **옛 campaign 의 skim** 을 가리켜도 아무 신호가
+    //           없다. 파일은 열리고, branch 도 다 있고, 숫자만 틀린다.
+    //
+    // 이제 `TTHH_SKIM_DIR` 로 override 한다. 기본값은 로컬 macOS 작업 경로를
+    // 유지하되, 디렉토리가 없으면 조용히 진행하지 않고 FATAL 이다.
+    static const std::string& InputBaseDir() {
+        static const std::string dir = [] {
+            const char* env = std::getenv("TTHH_SKIM_DIR");
+            std::string d = (env && *env)
+                ? std::string(env)
+                : std::string("/Users/jhlee/ttHH/ntuple/skimmed/gen_tier3/");
+            if (!d.empty() && d.back() != '/') d += '/';
+            return d;
+        }();
+        return dir;
+    }
+
+    /// InputBaseDir() 가 env 에서 왔는지 (로그/Dump 용)
+    static bool SkimDirFromEnv() {
+        const char* env = std::getenv("TTHH_SKIM_DIR");
+        return env && *env;
+    }
 
     // TTree path inside ROOT file
     static inline const std::string treePath = "Tree/Tree";
@@ -102,78 +132,37 @@ public:
     static inline const std::string validatedMC   = "validated_TTbarInc.root";    
 
     // ========================================================================
-    // [Section 1-D] Sample Registry
+    // [Section 1-D] Sample Registry  →  ../include/SampleRegistry.hh 로 이관
     //
-    // Central definition of all known samples.
-    //   - isData: true for Data, false for MC
-    //   - weight: (Xsec * Lumi) / Sum(genEventSumw) for MC, 1.0 for Data
+    // [2026-07-29] 여기 있던 하드코딩 표(약 40행의 magic number)를 제거했다.
+    //
+    //   왜: 그 값들은 STEP18 이전 dataset 의 Σgenw 로 계산된 것이고, campaign
+    //       이 `ttHH2017UL_fullNano_v20` 으로 바뀌면서 전부 무효가 됐다. 게다가
+    //       같은 표가 bTagSF_ReweightStudy 에도 **복사본**으로 있어서 한쪽만
+    //       고치면 두 도구가 서로 다른 정규화를 쓰게 되는 구조였다.
+    //
+    //   왜 위험했나: trigger SF 는 eff(Data)/eff(MC) 비율이라 lumi 같은 공통
+    //       인수는 상쇄되지만, Σgenw 는 샘플마다 다르므로 상쇄되지 않는다.
+    //       MC 분모(TTbarInc = 3개 ttbar 샘플의 합)에서 세 샘플의 **상대 비중**
+    //       이 틀어지고, 결과는 크래시 없이 그럴듯한 SF 로 나온다.
+    //
+    //   지금: `SampleRegistry::get()` 이 analyzer 제출기와 **같은 두 파일**
+    //       (data/samples_2017UL.json + prescan_summary/prescan_summary.json)에서
+    //       **같은 공식**으로 런타임 합성한다. 재빌드 불필요, 모르는 샘플은 FATAL.
     //
     // Usage:
-    //   auto info = Config::GetSampleInfo("TTbar_DiLep");
-    //   if (!info) { /* unknown sample → error */ }
-    //   bool isData = info->isData;
-    //   double w    = info->weight;
+    //   const auto* info = Config::GetSampleInfo("TTbar_DiLep");   // nullptr 없음
+    //   bool isData = info->isData;  double w = info->weight;
+    //   info->dataset / info->era    // Data 만 ("SingleMuon" / "B")
     // ========================================================================
 
-    struct SampleInfo {
-        bool   isData;
-        double weight;
-    };
-
-private:
-    static const std::map<std::string, SampleInfo>& SampleRegistry() {
-        static const std::map<std::string, SampleInfo> registry = {
-            // Data
-            {"SingleMuon_B",       {true,  1.0}},
-            {"SingleMuon_C",       {true,  1.0}},
-            {"SingleMuon_D",       {true,  1.0}},
-            {"SingleMuon_E",       {true,  1.0}},
-            {"SingleMuon_F",       {true,  1.0}},
-            {"BTagCSV_B",          {true,  1.0}},
-            {"BTagCSV_C",          {true,  1.0}},
-            {"BTagCSV_D",          {true,  1.0}},
-            {"BTagCSV_E",          {true,  1.0}},
-            {"BTagCSV_F",          {true,  1.0}},
-            {"JetHT_B",            {true,  1.0}},
-            {"JetHT_C",            {true,  1.0}},
-            {"JetHT_D",            {true,  1.0}},
-            {"JetHT_E",            {true,  1.0}},
-            {"JetHT_F",            {true,  1.0}},
-            // MC: ttbar inclusive
-            {"TTbar_Hadronic",       {false, 0.000214351205}},
-            {"TTbar_DiLep",          {false, 0.0004761561474}},
-            {"TTbar_SemiLep",   {false, 0.0001455793461}},
-            // MC: ttHH signal & rare
-            {"TTHHto4b",               {false, 0.00000109763773}},
-            {"TT4b",               {false, 0.001292157441}},
-            {"ttHTobb",            {false, 0.003125301546}},
-            {"TTTT",               {false, 0.00399317683}},
-            {"TTTW",               {false, 0.00008453854444}},
-            {"TTWH",               {false, 0.000131699}},
-            {"TTWW",               {false, 0.0004155131232}},
-            {"TTWZ",               {false, 0.0002901229714}},
-            {"TTZHTo4b",           {false, 0.00000111247369}},
-            {"TTZToBB",            {false, 0.006587820794}},
-            {"TTZZTo4b",           {false, 0.0000003824366722}},
-            {"ttbb",               {false, 0.0005295497645}},
-            // MC: QCD
-            {"QCD_HT200to300",     {false, 1071.943332}},
-            {"QCD_HT300to500",     {false, 243.1813795}},
-            {"QCD_HT500to700",     {false, 20.77575731}},
-            {"QCD_HT700to1000",    {false, 5.58692197}},
-            {"QCD_HT1000to1500",   {false, 3.285809224}},
-            {"QCD_HT1500to2000",   {false, 0.3658958167}},
-            {"QCD_HT2000toInf",    {false, 0.1606282808}},
-        };
-        return registry;
-    }
+    using SampleInfo = ::SampleRegistry::Info;
 
 public:
-    // Returns pointer to SampleInfo if found, nullptr if unknown sample
+    /// 샘플 정보. 모르는 샘플이면 SampleRegistry 안에서 FATAL 이므로
+    /// 반환값은 절대 nullptr 이 아니다 (호출부의 기존 null 검사는 남겨 둬도 무해).
     static const SampleInfo* GetSampleInfo(const std::string& name) {
-        const auto& reg = SampleRegistry();
-        auto it = reg.find(name);
-        return (it != reg.end()) ? &it->second : nullptr;
+        return &::SampleRegistry::get(name);
     }
 
     // ========================================================================
@@ -485,7 +474,8 @@ public:
         // Section 1: Paths
         os << "║ [Section 1] Path & I/O Settings                              ║\n";
         os << "╟──────────────────────────────────────────────────────────────╢\n";
-        os << "  Input base dir : " << inputBaseDir << "\n";
+        os << "  Input base dir : " << InputBaseDir()
+           << (SkimDirFromEnv() ? "   [TTHH_SKIM_DIR]" : "   [built-in default]") << "\n";
         os << "  Tree path      : " << treePath << "\n";
         os << "  EventLooper out: Step1=\"" << outPrefix_Step1 
            << "\", Step2=\"" << outPrefix_Step2 << "\"\n";

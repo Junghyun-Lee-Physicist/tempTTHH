@@ -26,6 +26,7 @@
 #include <array>
 #include <set>
 #include "ExitCodes.h"   // [STEP18] canonical exit codes (E11 for runinfo checks below)
+#include "EraConfig.h"   // [2018] 연도 의존 상수 단일 소스 (WP/prefiring/goldenJSON/HLT/HEM)
 
 //#include "fifo_map.hpp" // No need now, I'll update cutflow logic
 
@@ -239,10 +240,42 @@ class objectJet:public objectPhysics {
 	int partonFlav = -99;
     float  genMatchedPt = -1.f;  // matched gen-jet pT, or -1
 
-    // Working Point
-    static constexpr float valbTagTight  = 0.7476; //This is not used
-    static constexpr float valbTagMedium = 0.3040;
-    static constexpr float valbTagLoose  = 0.0532;
+    // --- Working Point (DeepJet) --------------------------------------------
+    // [2018] 값이 연도마다 다르다 (AN-2022/122 Table 32). 예전에는 2017 값이
+    //   `static constexpr` 로 박혀 있어서, 2018 을 돌려도 **경고 하나 없이**
+    //   2017 WP(0.3040)로 b-tag 다중도를 세고 신호영역을 정의했다.
+    //   -> 실제 값은 EraConfig::btagWP() 가 유일한 출처이고, 여기에는
+    //      configureBtagWP() 로 주입한다.
+    //
+    //   ⚠ 미주입 상태로 읽으면 FATAL 이다. "0 으로 초기화되어 모든 jet 이
+    //     b-tag" 같은 무증상 실패를 막기 위한 것이므로 기본값을 넣지 말 것.
+    static float valbTagTight;    // 현재 selection 에서 미사용
+    static float valbTagMedium;   // b-jet 정의
+    static float valbTagLoose;    // light-jet 정의
+
+    static bool  bTagWPConfigured;
+
+    // 분석 시작 시 딱 한 번 호출한다 (ttHHanalyzer 생성자).
+    static void configureBtagWP(const std::string& runYear) {
+        const EraConfig::BTagWP wp = EraConfig::btagWP(runYear);   // 모르는 연도면 FATAL
+        valbTagLoose  = wp.loose;
+        valbTagMedium = wp.medium;
+        valbTagTight  = wp.tight;
+        bTagWPConfigured = true;
+        std::cout << "[objectJet] DeepJet WP for " << runYear << " : "
+                  << "L=" << valbTagLoose << " M=" << valbTagMedium
+                  << " T=" << valbTagTight << std::endl;
+    }
+
+    // WP 를 실제로 쓰기 직전에 호출 — 주입을 건너뛴 코드경로를 잡는다.
+    static void assertBtagWPConfigured(const char* where) {
+        if (bTagWPConfigured) return;
+        std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO
+                  << "] objectJet b-tag WP used before configureBtagWP() (at "
+                  << where << ").\n"
+                  << "  Refusing to classify jets with unset working points.\n";
+        std::exit(tthh::CONFIG_BAD_RUNINFO);
+    }
 
 	bool matchedtoHiggs = false;
     bool matchedtoTop   = false;
@@ -1130,10 +1163,19 @@ class ttHHanalyzer_unified {
         }
     }
 
-    std::string yearForCorr = "";
-    bool isData = false;
-    if(_runYear == "2017") yearForCorr = "2017_UL";
-	if(_DataOrMC == "Data") isData = true;
+    // [2018] 연도 게이트는 EraConfig 로 일원화한다.
+    //   이전 코드는 `if(_runYear=="2017") yearForCorr="2017_UL";` 뿐이었고 else 가
+    //   없어서, 2018 을 주면 yearForCorr 가 **빈 문자열**로 남았다. 그러면
+    //   CorrectionsManager 가 "POG/JME//jet_jerc.json.gz" 같은 경로를 열려다
+    //   실패하거나, 더 나쁘게는 golden JSON 을 조용히 건너뛰었다.
+    //   EraConfig::yearForCorr() 는 모르는 연도에 대해 FATAL 이다.
+    const std::string yearForCorr = EraConfig::yearForCorr(_runYear);
+    bool isData = (_DataOrMC == "Data");
+
+    // [2018] b-tag WP 는 연도마다 다르다 (AN Table 32). objectJet 의 static 값을
+    //   여기서 주입한다. 주입 전에 jet 을 분류하면 FATAL 이므로, WP 가 조용히
+    //   2017 값으로 남는 사고는 발생하지 않는다.
+    objectJet::configureBtagWP(_runYear);
 
     // [변경] sampleName을 4번째 인자로 전달 → process별 b-tag reweight 조회용
     // [STEP4] main/debug는 파생 보정(trigger SF, b-tag norm RW) 필수 —
@@ -1183,6 +1225,12 @@ class ttHHanalyzer_unified {
     }
 
     void createObjects(event*,sysName,bool);
+
+    // [2018] 2018 hadronic HLT branch 가 입력 파일에 실제로 존재하는지 첫 이벤트에
+    //   한 번 확인한다. 없으면 FATAL. (없는 branch 는 0 으로 남아 "안 터졌다"와
+    //   구분이 안 되므로, 검사하지 않으면 조용히 0 event 가 된다.)
+    void requireTriggerBranches2018_();
+
     bool selectObjects(event*);
     void analyze(event*);
     void process(event*, sysName, bool);
@@ -2668,11 +2716,19 @@ private:
     bool passTrigger_4J3T_B;
     bool passTrigger_4J3T_CDEF;
 
-    int nMuons;                                                                          
+    int nMuons;
     int nElecs;
-    int nJets;                                                                          
-    int nbJets;                                                                         
-    float HT;                                                                           
+    // [2026-07-29] main 의 lepton veto 와 **같은 정의**를 skim 에 싣는다.
+    //   nMuons/nElecs 는 "수집된" lepton 수인데, btagtrig 은 lead-muon gate 를
+    //   통과한 이벤트에서만 수집한다. 따라서 nMuons==0 은 "lead muon 이 없다"
+    //   일 뿐, soft(pT 15~29) lepton 이 있는 이벤트를 배제하지 못한다.
+    //   main 의 veto 는 `getnVetoLepton()==0` 이므로, downstream 이 main 과
+    //   동일한 위상공간에서 b-tag norm reweight 를 유도하려면 이 값이 필요하다.
+    //   (없으면 두 위상공간이 미묘하게 달라지는데, 이건 경고 없이 지나간다.)
+    int nVetoLeptons;
+    int nJets;
+    int nbJets;
+    float HT;
 
     std::vector<float> jetPt;
     std::vector<float> jetEta;
@@ -2734,6 +2790,8 @@ private:
 
         _inputTree->Branch("nMuons", &nMuons, "nMuons/I");
         _inputTree->Branch("nElecs", &nElecs, "nElecs/I");
+        // [2026-07-29] main 의 lepton veto 정의 (nMuons/nElecs 와 다르다 — 위 주석 참조)
+        _inputTree->Branch("nVetoLeptons", &nVetoLeptons, "nVetoLeptons/I");
         _inputTree->Branch("nJets", &nJets, "nJets/I");
         _inputTree->Branch("nbJets", &nbJets, "nbJets/I");
         _inputTree->Branch("HT", &HT, "HT/F");

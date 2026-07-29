@@ -40,37 +40,87 @@ Because `--trigsf` defaults to `on`, running `main` as-is hits **E13** (required
    - stitch factors (`compute_stitch_factors.py`) — consistency required between analyzer and `BTagSFProcessor` Pass-1.
    - trigger SF (re-derive at ≥6-jet baseline, nbjet axis ≥0 post-stitching).
    - b-tag norm reweight 8-group JSON with tt+nb keys.
-2. **Verify provisional cross sections:** every `verify_xsec:true` entry in `xsec_db` (e.g. `ST_s_had`, `ST_tW_*`, `WW/WZ/ZZ`) against XSDB / GenXSecAnalyzer before unblinding.
-3. **Compile/run validation** of the analyzer and auxiliary tools (BTagSF / TriggerStudy / plotter / outputMerger) in CMSSW_14_2_1 — they have been syntax/brace-checked here, not built. See [`DECISIONS.md`](DECISIONS.md) on the validation method available in this environment.
-4. **Verify** `make_filelists.py` merges base + ext datasets (`os.walk`).
-5. **2018UL 대응 (OPEN, 2026-07-26 등록 · 2026-07-27 전수 감사로 확장).**
+2. **`ExpandedTtbarId` loader: accept BOTH patch tree names** (registered 2026-07-28, from
+   `TTHHGenCategoryTools`). Today the loader hard-defaults to `ttnb_<sampleKey>.root` / tree
+   `TtNb`, and the 2018 patches are being produced with exactly that convention on purpose, so
+   **nothing is broken right now**. The cleanup is to make `loadFromDir()` try `TtbarIdPatch`
+   first and fall back to `TtNb`, so the newer producer-side convention
+   (`ttbarIdPatch_<KEY>.root` / `TtbarIdPatch`, TTHHGenCategoryTools D12) can be adopted without
+   a flag day.
+   - **Do NOT simply flip the default.** The 2017 patches in
+     `TTHHGenCategoryTools/Validation/lookup/` carry the tree name **`TtNb` inside the file**, so
+     renaming files does not help — flipping the default would make 2017 unreadable and force a
+     re-extraction from KNU Tier3.
+   - Failure mode if this is ever gotten wrong is **silent**: the loader goes INACTIVE (not
+     fatal) and the analyzer uses the raw NanoAOD `genTtbarId`, i.e. plots come out with the
+     tt+nb extension **not applied**. Any change here must be verified by checking that
+     `ExpandedTtbarId::active()` is true and `size()` matches the patch row count.
+   - Counterpart record: `TTHHGenCategoryTools/docs/07_analyzer_integration.md` §4 and
+     `docs/01_status.md` O2.
+
+3. **Verify provisional cross sections:** every `verify_xsec:true` entry in `xsec_db` (e.g. `ST_s_had`, `ST_tW_*`, `WW/WZ/ZZ`) against XSDB / GenXSecAnalyzer before unblinding.
+4. **Compile/run validation** of the analyzer and auxiliary tools (BTagSF / TriggerStudy / plotter / outputMerger) in CMSSW_14_2_1 — they have been syntax/brace-checked here, not built. See [`DECISIONS.md`](DECISIONS.md) on the validation method available in this environment.
+5. **Verify** `make_filelists.py` merges base + ext datasets (`os.walk`).
+6. **2018UL 대응 (OPEN, 2026-07-26 등록 · 2026-07-27 전수 감사로 확장).**
    **실행 계획은 워크스페이스 `RUNBOOK_UL18_to_controlplots.md` §4** (Phase 3 = 이 항목).
    목표가 "UL18 control plot 최단 경로"로 정해졌고, 아래 P0 를 고치지 않으면 **조용히 틀린
    결과**가 나온다. 감사 전문(**17항목** = P0 7 + P0′ 5 + P1 5, file:line)은 runbook §4 표.
 
-   **P0 — 이것 없이 2018 을 돌리면 안 된다:**
-   | # | 위치 | 조치 | 안 하면 |
-   |---|---|---|---|
-   | 1 | `ttHHanalyzer_unified.h:1133-1135` | `2018 → "2018_UL"` + unknown year FATAL | `yearForCorr=""` → E40 |
-   | 2 | `include/eventBuffer.h` | 2018 DeepCSV HLT 3개 추가(4곳: 선언/choose/select/initBuffers) | 컴파일 불가 |
-   | 3 | `ttHHanalyzer_unified.cc:296-360` | `(year,era)→path` map, 2018 은 JetHT 단독 OR (`:344` veto 제거) | 4J3T event **조용히 폐기** |
-   | 4 | `ttHHanalyzer_unified.cc:1198,1227` | L1 prefiring 을 2016/2017 로 gate | 2018 branch 부재 → 기본값 0 → **전 MC weight 0 (무증상)** |
-   | 5 | `src/CorrectionsManager.cc:248-250` | golden JSON 파일명 연도별 map (2018 실제 파일 = `Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt`) | 2018 Data 전부 E41 |
-   | 6 | `src/CorrectionsManager.cc:167-168` | `"Summer19UL18_Run"+dataEra_+"_V5_DATA_..."` | Run2018B/C 에 RunD JEC (try/catch 가 MC JEC 로 조용히 fallback) |
-   | 7 | `ttHHanalyzer_unified.h:243-245` | DeepJet WP 2018UL ≈ 0.0490/0.2783/0.7100 로 연도 키화 | **신호영역 정의가 틀어짐** |
+   **P0 — 코드 수정 7건 완료 (2026-07-29). 단, 아직 빌드/실행 검증 전이다.**
+   연도 의존 값은 전부 새 파일 **`include/EraConfig.h`** 로 모았다 (이 파일 밖에서
+   `if (year=="2017")` 를 쓰지 않는 것이 규약). 조회 함수는 **모르는 연도에 exit 11**.
+   상세 근거·AN 인용은 `CHANGELOG.md` 2026-07-29 항목.
+   | # | 위치 | 조치 | 안 하면 | 상태 |
+   |---|---|---|---|---|
+   | 1 | `ttHHanalyzer_unified.h:1133` | `EraConfig::yearForCorr()` + unknown year FATAL | `yearForCorr=""` → E40 | ✅ |
+   | 2 | `include/eventBuffer.h` | 2018 DeepCSV HLT 3개 추가 (**5곳**: 선언/`choose`/`select`/`output->add`/`initBuffers`) | 컴파일 불가 | ✅ |
+   | 3 | `ttHHanalyzer_unified.cc:~305` | 연도별 path set, 2018 은 JetHT 단독 OR (veto 제거) + `requireTriggerBranches2018_()` | 4J3T event **조용히 폐기** | ✅ |
+   | 4 | `ttHHanalyzer_unified.cc:~1217` | `EraConfig::usesL1Prefiring()` 로 gate + 적용 연도에서 0 이면 FATAL | 2018 branch 부재 → 0 → **전 MC weight 0 (무증상)** | ✅ |
+   | 5 | `src/CorrectionsManager.cc:~256` | `EraConfig::goldenJsonFile()` (하드코딩 run range 제거) | 2018 Data 전부 E41 / unknown year 는 golden 없이 통과 | ✅ |
+   | 6 | `src/CorrectionsManager.cc:~171` | era 문자 그대로 + **Data 의 MC-JEC fallback 폐지 → FATAL** | Run2018B/C 에 RunD JEC (조용한 fallback) | ✅ |
+   | 7 | `ttHHanalyzer_unified.h:243` | `objectJet::configureBtagWP()` 주입, 2018 = 0.0490/0.2783/0.7100 (AN Table 32); static 초기값 **NaN** + 미주입 시 FATAL | **신호영역 정의가 틀어짐** | ✅ |
+
+   **7건 전부의 공통 성질**: 고치지 않았을 때 크래시가 아니라 **무증상 오답**이었다. 그래서
+   각 항목에 분기만 넣지 않고 "틀린 상태를 FATAL 로 만드는 장치"를 같이 넣었다.
+
+   **곁가지 수정**: `2016PreVFP_UL`(코드 키) vs `2016preVFP_UL`(디스크 디렉토리) 표기 불일치.
+   `runYear_` 는 경로 성분으로 그대로 쓰이므로 2016 은 어느 쪽이든 깨져 있었고, golden JSON 은
+   조용히 `return` 했다. 생성자에서 `EraConfig::normalizeYear()` 로 정규화. **2016 은 여전히
+   미검증이고 trigger path set 도 미정이라 명시적 FATAL** 이다.
+
+   **검증 상태 (중요):**
+   - ✅ `EraConfig.h` 단위 테스트 통과 — ROOT 불필요, 즉시 재실행 가능:
+     `g++ -std=c++17 -I include -o /tmp/t test/test_EraConfig.cc && /tmp/t`
+     그리고 `./test/test_EraConfig_fatal.sh` (unknown year → exit 11).
+   - ❌ **`make` 미수행** (이 환경에 ROOT 없음). lxplus/KNU CMSSW_14_2_1 에서 필요.
+   - ❌ **2017 재현성 미확인.** 2017 경로·WP·prefiring 로직은 전부 보존했으므로 결과가
+     이전과 **동일해야 한다**. 2018 을 믿기 전에 이걸 먼저 확인할 것.
 
    **P0' — 배관(코드 아님, 필수):** `--year` allow-list 부재(`src/tnm.cc:273`) · **output 디렉토리에
    연도가 없어 2018 산출물이 2017 과 섞인다**(`submit_job_FH_Tier3_unified.py:158-162`) ·
    `prescan_summary.json` 연도 미분리 · **`make_filelists.py` Data 분기가 2017 하드코딩이라 2018
    Data filelist 가 생성되지 않는다**(`:250,261,263`) · `Tier3_2018_FH_unified_*.yml` 부재.
 
-   **P1 (첫 plot 직후):** HEM15/16 veto **코드 자체가 없음** · trigger SF 기준 `IsoMu27`→`IsoMu24`
+   **HEM15/16 — 방법론 결정 (2026-07-28): AN 추종, veto map 미사용.**
+   AN-2022/122 v26 p.118 은 HEM 을 **veto 가 아니라 2018 MC 의 JES 변주**로 다룬다
+   (`-1.57<φ<-0.87` & `-2.5<η<-1.3` → 20%, `-3.0<η<-2.5` → 35%) 그리고 그 영향이
+   "negligible" 이라고 적는다. AN 214쪽 전문에 **jet veto map 언급은 0건**이고 코드에도
+   loader 가 없다. 2018 에만 veto map 을 도입하면 2017 과 위상공간이 달라지고, JME TWiki
+   자체가 다중 jet 분석의 통계 손실을 경고한다(이 분석은 ≥6 jet).
+   → 값과 근거는 `EraConfig::hemJes()` / `inHemRegion()` 에 넣어 뒀다. **적용 코드는 아직
+   없다** (P0′ 이후). 재검토 항목: JME `Summer19UL18_V1` /
+   `h2hot_ul18_plus_hem1516_plus_hbp2m1` — 최종 결과 전 확인.
+   요청된 **jet η-φ 2D map** 은 경험적 확인용으로 output histogram 에 넣을 예정(미구현).
+
+   **P1 (첫 plot 직후):** HEM JES 변주 **적용 코드 미구현**(위 결정 참조) · trigger SF 기준 `IsoMu27`→`IsoMu24`
    및 `SelectionCuts.h:54` leadMuonPt 29→26 · 6th-jet/HT plateau 재확인 · JEC-unc loader 미호출
    (`CorrectionsManager.cc:65-80` vs `:381-404`, null deref) · lumi 정본(OPEN #6).
 
    **완료(2026-07-26~27, submitter):** Data era 정규식 `Run\d{4}([A-Z])$` 일반화,
    `--filelist-dir`, `--preflight`. **prescan(2018) 은 `loop()`/`createObjects()` 를 타지 않아
-   P0 #1 만 고치면 바로 실행 가능**하다.
+   P0 #1 만 고치면 바로 실행 가능**하다 → **P0 #1 완료됨 (2026-07-29)**. 남은 blocker 는
+   코드가 아니라 배관(P0′): 특히 `make_filelists.py` 의 2018 Data 분기와 **output 디렉토리
+   연도 분리** (없으면 2018 산출물이 2017 과 섞인다).
 
    (이하 원래 기록)
    `data/samples_2018UL.json` 준비 완료
@@ -101,10 +151,12 @@ Because `--trigsf` defaults to `on`, running `main` as-is hits **E13** (required
      `Run\d{4}([A-Z])$` 로 일반화 (기존 정규식은 `JetHT_Run2018A` 를 못 잡아 FATAL 이었다).
      `--filelist-dir` 옵션 추가(연도별 filelist 디렉토리; `make_filelists.py 2018` →
      `filelistTier3_2018/`). `--preflight` 읽기 전용 사전 점검 추가.
-   - HEM15/16 veto (2018 전용) 적용 + veto map 검증. L1 prefiring 은 2016/2017 전용 → 2018 비활성.
+   - ~~HEM15/16 veto (2018 전용) 적용 + veto map 검증.~~ → **방법론 결정됨 (위 "HEM15/16" 참조):
+     veto 가 아니라 JES 변주. veto map 미사용.** L1 prefiring 은 2016/2017 전용 → 2018 비활성
+     (**P0 #4 로 구현 완료**).
    - 2018 lumi **확정 = 59.56 /fb** (0.84%), `samples_2018UL.json._meta` 반영 완료 (OPEN #6 참조).
    - Data PD 는 non-GT36 선택됨 — ttHH AN 사용 샘플 기준으로 재확인 필요(GT36 대안은 config 주석).
-6. **lumi — 값은 확정됐고(2026-07-27) 코드 반영이 일부 남았다 (OPEN).**
+7. **lumi — 값은 확정됐고(2026-07-27) 코드 반영이 일부 남았다 (OPEN).**
    **정본 = LUM POG "Recorded Golden Legacy": 2017 = 42.07 fb⁻¹ (0.82%), 2018 = 59.56 fb⁻¹ (0.84%).**
    출처: [LumiRecommendationsRun2](https://twiki.cern.ch/twiki/bin/view/CMS/LumiRecommendationsRun2)
    (index: [TWikiLUM](https://twiki.cern.ch/twiki/bin/viewauth/CMS/TWikiLUM)), 인용 CMS-PAS-LUM-20-001.
