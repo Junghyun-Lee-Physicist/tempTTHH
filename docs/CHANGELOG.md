@@ -7,6 +7,14 @@
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
 
+## 2026-10-01: [문서] v15 ntuple(2018UL·2024) 계획 PROPOSED (코드 변경 없음)
+
+[`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md): NtupleForge v15 ntuple 로 전체 사슬을 돌리기 위한 작업 목록(A0~A6, W0, S1p~S5),
+순서(2018UL 먼저: 생산 끝, Data KNU 집계 PASS), 연도별 드라이버 `tools/run_year.py` 설계(dataset 단위 완료 판정, 샘플마다 고정된 파일 목록,
+단계마다 입력 hash), 사용자 결정 D1~D9. §2 는 이 저장소를 읽어 확인한 막는 것 20 가지(무증상 오답 8: `Jet_jetId`·`Jet_puId` 부재, rho·MET·
+electron ID rename, 2017 이름의 trigger bit, `failed/` 를 넣는 파일 목록, 제출 때 상수인 정규화, `TT4b` 를 가정한 stitch, skim 된 2024 의 prescan).
+[`STATUS.md`](STATUS.md) 와 [`README.md`](README.md) 에 가리키는 줄.
+
 ## 2026-07-29 (2) — [2017 SF 재유도] 다운스트림 두 패키지 정합화 + 무음 오류 6건 차단
 
 목표: **2017 trigger SF / b-tag norm reweight 를 지금 재유도**할 수 있는 상태로 만들기.

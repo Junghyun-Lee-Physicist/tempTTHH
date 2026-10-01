@@ -2,12 +2,17 @@
 
 > **Purpose:** the single place that answers "where are we right now?" — current state, what is ready, what is pending, and what is OPEN.
 > **Audience:** anyone starting a session.
-> **Status:** living · last meaningful update **2026-07-26** (2018UL 준비: samples_2018UL.json, --preflight, OPEN #5).
+> **Status:** living · last meaningful update **2026-10-01** (v15 계획 PROPOSED: [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md)) · 그 전 2026-07-26 (2018UL 준비: samples_2018UL.json, --preflight, OPEN #5).
 > **Links:** decisions [`DECISIONS.md`](DECISIONS.md) · history [`CHANGELOG.md`](CHANGELOG.md) · exit codes [`reference/ERROR_CODES.md`](reference/ERROR_CODES.md) · path policy [`reference/CONFIG_PATHS.md`](reference/CONFIG_PATHS.md).
 
 ## Bottom line
 
 The analyzer + submitter are migrated to the `ttHH2017UL_fullNano_v20` ntuple campaign and use NtupleForge sample names throughout. As of 2026-06-30 the code has a **collision-free numbered exit-code system** (fail-fast, Condor-detectable) and an **explicit correction-path policy** (no silent defaults; `null` = disable; required ≠ null). **Immediate runnable step: `prescan` (MC and Data).** `main`/`btagtrig` need the per-sample prerequisites below before they will run.
+
+**2026-10-01 (PROPOSED):** NtupleForge 의 v15 ntuple(2018UL 생산 끝, 2024 는 95 % 쯤)로 가는 작업 목록·순서·연도별 드라이버 설계는
+[`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md). 그 §2 의 조사: 지금 코드는 v15 에서 `Jet_jetId` 부재로 0 event 이고 rho·MET·electron ID 가
+0 으로 읽히며(무증상), `make_filelists.py` 는 CRAB `failed/` 사본을 넣고, 출력 디렉터리에 연도가 없어 2017 출력을 덮어쓴다. 그 계획의 A0~A2
+전에는 2018/2024 job 을 내지 않는다. 아래 OPEN 6 의 P0 7 건은 여전히 빌드 전이다.
 
 ## What is ready (DECIDED)
 

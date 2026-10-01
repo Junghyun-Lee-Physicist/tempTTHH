@@ -2,7 +2,7 @@
 
 > **Purpose:** the map. Tells any reader (human or AI, with no prior context) which document answers which question, and where to start.
 > **Audience:** everyone — read this first.
-> **Status:** living index · last meaningful update **2026-06-30**.
+> **Status:** living index · last meaningful update **2026-10-01** (v15 계획 문서 추가).
 > **Links:** every document below.
 
 ## Bottom line — where to start
@@ -26,6 +26,7 @@ This repository is worked on **asynchronously by several people and AI threads t
 | [`reference/CONFIG_PATHS.md`](reference/CONFIG_PATHS.md) | How `common.path_*` is interpreted (null/empty/required) | editing yml or seeing E12/E13 |
 | [`ttbarCategorization.md`](ttbarCategorization.md) / [`_KR`](ttbarCategorization_KR.md) | tt+B / tt+nb categorization physics | working on ttbar categorization |
 | [`stitch_logs_2017/`](stitch_logs_2017/) | Stitch-factor derivation logs + JSON | working on ttbar stitching |
+| [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) | v15 ntuple(2018UL, 2024)로 가는 작업 목록, 순서, 연도별 한 명령 드라이버 설계, 필요한 결정 (PROPOSED 2026-10-01) | 2018/2024 작업을 시작할 때 |
 | [`../README.md`](../README.md) | Repo-level build/run entry | first checkout |
 
 ## Workflow (the run order)
