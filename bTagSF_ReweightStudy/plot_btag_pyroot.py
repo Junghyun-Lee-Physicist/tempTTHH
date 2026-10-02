@@ -103,7 +103,7 @@ def draw_lumi_label():
     latex.SetNDC()
     latex.SetTextSize(0.050)
     latex.SetTextAlign(31)
-    latex.DrawLatex(0.92, 0.925, "#bf{41.5 fb^{-1} (13 TeV, 2017)}")
+    latex.DrawLatex(0.92, 0.925, "#bf{42.1 fb^{-1} (13 TeV, 2017)}")
     _keepalive.append(latex)
 
 

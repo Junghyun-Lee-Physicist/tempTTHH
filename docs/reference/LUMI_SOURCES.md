@@ -2,7 +2,7 @@
 
 > **목적**: lumi 정본 값과, 값을 바꿀 때 **어디를 다 고쳐야 하는지**의 단일 목록. 2017/2018 모두.
 > **대상 독자**: lumi 를 확정·변경하려는 사람(사람·AI).
-> **상태**: ACTIVE · 작성 2026-07-26 · **값 확정 2026-07-27**(LUM POG TWiki 원문 대조). 코드 반영은 부분 완료 — 아래 §3 표의 "상태" 열 참조.
+> **상태**: ACTIVE · 작성 2026-07-26 · **값 확정 2026-07-27**(LUM POG TWiki 원문 대조) · **2017 반영 2026-10-02**(사용자 결정 N1, [`../DECISIONS.md`](../DECISIONS.md) D-2026-10-02-D): §3 의 #1–#3·#6·#7 을 42.07 로. 남은 것은 #8(다른 저장소) — §3 표의 "상태" 열 참조.
 > **관련**: 가중치 공식은 `data/samples_<era>UL.json._meta.weight_formula`.
 
 ## 결론 먼저 (BLUF)
@@ -13,8 +13,12 @@
   **아예 등장하지 않는다**. 2026-07-27 에 원문 표를 대조해 **59.56 으로 정정**했다.
 - **2017 = 42.07 은 확정.** 우리가 직접 돌린 brilcalc 결과 **42.0688** 과 소수 둘째자리까지 일치한다.
 - 따라서 `AnalyzerConfig/Tier3_2017_FH_unified_{main,btagtrig}.yml` 의 **41.48 은 확정적으로 틀렸다**
-  (42.07/41.48 = **1.0142** → 전 MC weight 가 1.42% 어긋남). 고치면 **main·btagtrig 재생산이 필요**하므로
-  아직 바꾸지 않았다 — §4 체크리스트대로 한 번에 처리할 것. **이것이 유일하게 남은 물리 영향 항목이다.**
+  (42.07/41.48 = **1.0142** → 전 MC weight 가 1.42% 어긋남). btagtrig 는 07-29 에, main·prescan 과 plot 표기
+  (#6·#7)는 **2026-10-02 에 42.07 로 고쳤다**(사용자 결정 N1). 41.48 로 만든 2017 산출물은 없다(이 코드로 2017
+  사슬을 돌린 적 없음, 사용자 답 N0) → 재생산할 것도 없다. 남은 것은 beamer(#8, 다른 저장소)다.
+- **2024 (Run 3)**: golden JSON 은 2024B 도 덮지만 우리 Data 는 C–I 뿐이다. 그래서 정규화 lumi 는 C–I 의 brilcalc 값이고
+  PdmV 표의 109.95(B 포함)가 아니다(그 표로는 C–I 합 109.82, 예비). 확정은 NtupleForge `script/lumi_hlt_check.sh`
+  (workspace RUNBOOK §20) — [`../PLAN_v15_2018UL_2024.md`](../PLAN_v15_2018UL_2024.md) §9 Stage 0.
 
 ## 1. 출처 (references)
 
@@ -75,15 +79,15 @@ nuisance 를 모두** 쓴다:
 
 | # | 파일:위치 | 현재 값 | 정본이면 | 상태 |
 |---|---|---|---|---|
-| 1 | `AnalyzerConfig/Tier3_2017_FH_unified_main.yml:13` | **41.48** | 42.07 | ❌ **미반영 (물리 영향, 재생산 필요)** |
-| 2 | `AnalyzerConfig/Tier3_2017_FH_unified_btagtrig.yml:13` | **41.48** | 42.07 | ❌ **미반영 (물리 영향, 재생산 필요)** |
-| 3 | `AnalyzerConfig/Tier3_2017_FH_unified_prescan.yml:15` | 41.48 | 42.07 | ❌ 미반영 (prescan 은 weight 미사용 → 영향 없음, 일관성용) |
+| 1 | `AnalyzerConfig/Tier3_2017_FH_unified_main.yml:16` | 42.07 | 42.07 | ✅ **2026-10-02** (was 41.48; 그 값으로 만든 산출물 없음) |
+| 2 | `AnalyzerConfig/Tier3_2017_FH_unified_btagtrig.yml:20` | 42.07 | 42.07 | ✅ 2026-07-29 |
+| 3 | `AnalyzerConfig/Tier3_2017_FH_unified_prescan.yml:18` | 42.07 | 42.07 | ✅ 2026-10-02 (prescan 은 weight 미사용 → 영향 없음, 일관성용) |
 | 4 | `data/samples_2017UL.json._meta.lumi_fb_inv` | 42.07 | 42.07 | ✅ |
 | 4b | 같은 파일 `lumi_full_golden_legacy_fb_inv` / `lumi_brilcalc_result_fb_inv` / `lumi_uncertainty_percent` | 42.07 / 42.0688 / 0.82 | 동일 | ✅ (+`lumi_golden_prelegacy_fb_inv` 42.12, index URL 추가) |
 | 5 | `data/samples_2018UL.json._meta.lumi_fb_inv` | **59.56** | 59.56 | ✅ **2026-07-27 정정 (was 59.83)** |
 | 5b | 같은 파일 lumi_* 블록 | 0.84% / PreLegacy 59.47 / citation / golden JSON / nuisance | — | ✅ 신설 (2017 과 같은 스키마) |
-| 6 | `plotter/stack_plotter.C:639` `double LUMI = 41.48;` | 41.48 | 42.07 (+2018 분기) | ❌ 하드코딩, 연도 일반화 필요 |
-| 7 | `bTagSF_ReweightStudy/plot_btag_pyroot.py:106` `"41.5 fb^{-1}"` | **41.5** | 42.07 | ❌ 하드코딩(세 번째 값) |
+| 6 | `plotter/stack_plotter.C:639` `double LUMI = 42.07;` | 42.07 | 42.07 (+연도 분기) | ✅ 2026-10-02 값; 여전히 하드코딩이라 연도 일반화는 PLAN §9 Stage 8 |
+| 7 | `bTagSF_ReweightStudy/plot_btag_pyroot.py:106`, `plot_btag.py:96` `"42.1 fb^{-1}"` | 42.1 | 42.07 | ✅ 2026-10-02 (was 41.5; 표기만) |
 | 8 | `ttHH_beamer_v7.2_overleaf/config.tex:31` `\LumiText{41.48~fb^{-1}}` | 41.48 | 42.07 | ❌ 하드코딩 |
 | 9 | `ttHH_beamer_v7.2_overleaf/slides/12_backup_samples.tex` 각주 | 42.07 / **59.56** | 동일 | ✅ #4·#5 에서 **자동 생성** — 직접 수정 금지 |
 
@@ -91,18 +95,18 @@ nuisance 를 모두** 쓴다:
 `_meta` 리터럴. 이걸 안 고치면 다음 재생성에서 값이 되돌아간다 — 2026-07-27 에 함께 반영하고
 **재생성 후 byte-identical 확인**했다.
 
-### 남아 있는 모순 (2026-07-27 현재)
+### 남아 있는 모순 (2026-10-02 갱신)
 
-1. **weight(41.48) ≠ 표기(42.07)** — 2017 수율을 발표할 때 설명이 안 된다. **#1–#3 이 유일한 원인.**
-2. 같은 PDF 안에서 본문 41.48(#8) vs backup 42.07(#9).
-3. 세 번째 값 41.5(#7)가 b-tag study plot 에만 존재.
+1. ~~weight(41.48) ≠ 표기(42.07)~~ — 2026-10-02 에 #1–#3 을 고쳐 해소(그 전 값으로 만든 2017 산출물 없음).
+2. 같은 PDF 안에서 본문 41.48(#8) vs backup 42.07(#9). **남음** (beamer 저장소).
+3. ~~세 번째 값 41.5(#7)~~ — 2026-10-02 해소.
 
 ### 2018 에 아직 없는 것
 
 | 대상 | 상태 |
 |---|---|
 | `AnalyzerConfig/Tier3_2018_FH_unified_*.yml` (#1–3 의 2018판) | **미생성**. 생성 스니펫은 `RUNBOOK_UL18_to_controlplots.md` §5·§6·§7 — 그 스니펫이 **59.56** 을 쓴다 |
-| `compute_stitch_factors.py:104` `LUMI_PB_INV` | 2017 값 41480.0 하드코딩. 2018 은 **59560.0** (RUNBOOK §5 스니펫) |
+| `compute_stitch_factors.py:106` `LUMI_PB_INV` | 2017 값 42070.0 하드코딩(2026-10-02, was 41480.0; 진단용 `peF_full` 에만 쓰이고 stitch 배수 r 에서는 상쇄). 2018 은 **59560.0** (RUNBOOK §5 스니펫) |
 | 2018 brilcalc 실측 | **미실행** → `_meta.lumi_brilcalc_result_fb_inv: null` |
 | `plotter`/`bTagSF` /beamer 의 2018 분기 | 미생성 (#6·#7·#8 이 2017 문자열 1개씩만 가짐) |
 

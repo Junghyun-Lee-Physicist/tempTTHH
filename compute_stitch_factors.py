@@ -100,8 +100,10 @@ OUTPUT_JSON_PATH = Path("DerivedCorr/stitchFactors/stitch_factors_2017.json")
 #   C = ttHH Option2:           현재 gen-level partition 기준으로 B와 동일
 PARTITION_OPTION = "EXP"
 
-# 2017 UL — 41.48 fb⁻¹ = 41480 pb⁻¹
-LUMI_PB_INV = 41480.0
+# 2017 UL — 42.07 fb⁻¹ = 42070 pb⁻¹ (2026-10-02, tempTTHH docs/DECISIONS.md D-2026-10-02-D; was 41.48).
+#   Only the diagnostic per-event weight peF_full uses it; the multipliers r = σ_inc·f/σ_ded do not
+#   (lumi cancels), so the stitch factors themselves do not change.
+LUMI_PB_INV = 42070.0
 
 # Cross sections, all converted to pb.
 #

@@ -12,7 +12,10 @@
 common:
   year: "2017"
   analysis_mode: prescan
-  lumi_fb_inv: 41.48
+  # [2026-10-02] 41.48 -> 42.07 (사용자 결정 N1, docs/DECISIONS.md D-2026-10-02-D). btagtrig.yml 은 07-29 에
+  #   이미 42.07. 출처는 LUM POG UL2017 Golden Legacy (42.07 fb^-1, 0.82 %), 우리 brilcalc 42.0688
+  #   (docs/reference/LUMI_SOURCES.md). prescan 은 lumi 를 쓰지 않는다(일관성용).
+  lumi_fb_inv: 42.07
   xsec_db: "data/samples_2017UL.json"            # prescan 에서는 미사용(STEP17)
   prescan: "prescan_summary/prescan_summary.json" # prescan 에서는 미사용(STEP17)
   files_per_job: 1

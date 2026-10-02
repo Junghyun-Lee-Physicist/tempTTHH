@@ -93,7 +93,7 @@ def plot_one_variable(sample: str, varname: str, vardata: dict, outdir: str):
     ax_top.set_ylabel("Events")
     ax_top.legend(loc="upper right", frameon=False)
     ax_top.set_title(f"{sample}", fontsize=13, loc="left", fontstyle="italic")
-    ax_top.text(1.0, 1.02, r"41.5 fb$^{-1}$ (13 TeV, 2017)",
+    ax_top.text(1.0, 1.02, r"42.1 fb$^{-1}$ (13 TeV, 2017)",
                 transform=ax_top.transAxes, ha="right", fontsize=10)
 
     # ── Lower: ratio ──

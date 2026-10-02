@@ -2,7 +2,7 @@
 
 > **Purpose:** the single place that answers "where are we right now?" — current state, what is ready, what is pending, and what is OPEN.
 > **Audience:** anyone starting a session.
-> **Status:** living · last meaningful update **2026-10-01** (v15 계획 PROPOSED: [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md)) · 그 전 2026-07-26 (2018UL 준비: samples_2018UL.json, --preflight, OPEN #5).
+> **Status:** living · last meaningful update **2026-10-02** (2024 먼저 결정, 단계별 계획 [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) §9, 2017 lumi 42.07 반영) · 그 전 2026-10-01 (v15 계획 PROPOSED) · 2026-07-26 (2018UL 준비: samples_2018UL.json, --preflight, OPEN #5).
 > **Links:** decisions [`DECISIONS.md`](DECISIONS.md) · history [`CHANGELOG.md`](CHANGELOG.md) · exit codes [`reference/ERROR_CODES.md`](reference/ERROR_CODES.md) · path policy [`reference/CONFIG_PATHS.md`](reference/CONFIG_PATHS.md).
 
 ## Bottom line
@@ -13,6 +13,13 @@ The analyzer + submitter are migrated to the `ttHH2017UL_fullNano_v20` ntuple ca
 [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md). 그 §2 의 조사: 지금 코드는 v15 에서 `Jet_jetId` 부재로 0 event 이고 rho·MET·electron ID 가
 0 으로 읽히며(무증상), `make_filelists.py` 는 CRAB `failed/` 사본을 넣고, 출력 디렉터리에 연도가 없어 2017 출력을 덮어쓴다. 그 계획의 A0~A2
 전에는 2018/2024 job 을 내지 않는다. 아래 OPEN 6 의 P0 7 건은 여전히 빌드 전이다.
+
+**2026-10-02 (DECIDED, 사용자):** v15 의 첫 대상은 **2024** 다([`DECISIONS.md`](DECISIONS.md) D-2026-10-02-A; 2017 은 v15 재생산 뒤, 2018 v15 와
+v9 는 필요할 때). 단계(Stage 0~9)와 통과 기준, 연도별 event cleaning 표, eventBuffer 정책, ttbar ID 검증, QCD 비교의 정의는
+[`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) §9. **지금은 Stage 0**(확인만: 2024 payload·lumi·HLT prescale 은 lxplus, eventBuffer
+생성기 찾기와 지금 HEAD 의 빌드는 KNU; 워크스페이스 RUNBOOK §20). 같은 날 2017 lumi 를 main·prescan yml 과 plot 표기에서 42.07 로 고쳤다
+(D-2026-10-02-D N1; 41.48 로 만든 2017 산출물은 없다). 2024 의 tt+nb 분할과 `TT4B` 는 2024 patch(NtupleForge V6 = TTHHGenCategoryTools O5,
+미착수) 뒤다.
 
 ## What is ready (DECIDED)
 
@@ -161,7 +168,7 @@ Because `--trigsf` defaults to `on`, running `main` as-is hits **E13** (required
      (**P0 #4 로 구현 완료**).
    - 2018 lumi **확정 = 59.56 /fb** (0.84%), `samples_2018UL.json._meta` 반영 완료 (OPEN #6 참조).
    - Data PD 는 non-GT36 선택됨 — ttHH AN 사용 샘플 기준으로 재확인 필요(GT36 대안은 config 주석).
-7. **lumi — 값은 확정됐고(2026-07-27) 코드 반영이 일부 남았다 (OPEN).**
+7. **lumi — 값은 확정됐고(2026-07-27) 2017 코드 반영은 2026-10-02 에 끝났다. 남은 것은 beamer 표기와 2018 brilcalc (OPEN).**
    **정본 = LUM POG "Recorded Golden Legacy": 2017 = 42.07 fb⁻¹ (0.82%), 2018 = 59.56 fb⁻¹ (0.84%).**
    출처: [LumiRecommendationsRun2](https://twiki.cern.ch/twiki/bin/view/CMS/LumiRecommendationsRun2)
    (index: [TWikiLUM](https://twiki.cern.ch/twiki/bin/viewauth/CMS/TWikiLUM)), 인용 CMS-PAS-LUM-20-001.
@@ -171,12 +178,11 @@ Because `--trigsf` defaults to `on`, running `main` as-is hits **E13** (required
      따라서 `AnalyzerConfig/Tier3_2017_FH_unified_{main,btagtrig}.yml` 의
      `common.lumi_fb_inv = 41.48`(**weight 에 실제 사용**, `submit_job_FH_Tier3_unified.py:614`)은
      **확정적으로 틀렸다**. 42.07/41.48 = **1.42%** 만큼 전 MC weight 가 어긋난다.
-   - ⏳ **남은 일 (물리 영향, 사용자 승인 대기)**: yml 3개를 42.07 로 고치면
-     **main·btagtrig 재생산 + b-tag reweight JSON·stitch factor 재유도**가 필요하다.
-     그래서 아직 바꾸지 않았다.
-   - 표기 하드코딩 3곳(`stack_plotter.C:639` 41.48, `plot_btag_pyroot.py:106` 41.5,
-     beamer `config.tex:31` 41.48)도 미반영 — 그래서 **같은 PDF 안에서 본문 41.48 vs backup 42.07**
-     이 여전히 인쇄된다.
+   - ✅ **2026-10-02 반영 (사용자 결정 N1, [`DECISIONS.md`](DECISIONS.md) D-2026-10-02-D)**: main·prescan yml 을 42.07 로
+     (btagtrig 는 07-29), 표기 `stack_plotter.C:639` 42.07, `plot_btag{,_pyroot}.py` "42.1 fb^{-1}", `compute_stitch_factors.py`
+     의 `LUMI_PB_INV` 42070(진단용, stitch 배수에서는 상쇄). 이 코드로 만든 2017 산출물이 없어(N0) 재생산할 것도 없다.
+   - ❌ 남음: beamer `config.tex:31` 41.48(다른 저장소) — 그래서 **같은 PDF 안에서 본문 41.48 vs backup 42.07** 이 여전히
+     인쇄된다. 2018 brilcalc 실측(X14).
    - **전수 목록·절차·재생산 판단 = [`reference/LUMI_SOURCES.md`](reference/LUMI_SOURCES.md)**
      (9개 지점, 반영 여부를 ✅/❌ 로 표시).
    - `--preflight` 가 yml↔`_meta` 불일치를 WARN 으로 보고한다.

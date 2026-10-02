@@ -636,7 +636,8 @@ void stack_plotter() {
     std::cout << "   CMS Stack Plotter Initialized" << std::endl;
     std::cout << "===========================================\n" << std::endl;
 
-    double LUMI = 41.48;  // Lumi for 2017 UL
+    double LUMI = 42.07;  // Lumi for 2017 UL (label only; 2026-10-02 41.48 -> 42.07, docs/DECISIONS.md D-2026-10-02-D;
+                          //   per-year lumi/sqrt(s) labels: docs/PLAN_v15_2018UL_2024.md section 9, Stage 8)
 
     // ── [STEP21] grouping 모드 선택 ────────────────────────────────────────
     // env TTHH_PLOT_GROUPING = "compact"(기본) | "detailed"

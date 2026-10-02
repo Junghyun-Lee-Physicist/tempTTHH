@@ -26,7 +26,7 @@ This repository is worked on **asynchronously by several people and AI threads t
 | [`reference/CONFIG_PATHS.md`](reference/CONFIG_PATHS.md) | How `common.path_*` is interpreted (null/empty/required) | editing yml or seeing E12/E13 |
 | [`ttbarCategorization.md`](ttbarCategorization.md) / [`_KR`](ttbarCategorization_KR.md) | tt+B / tt+nb categorization physics | working on ttbar categorization |
 | [`stitch_logs_2017/`](stitch_logs_2017/) | Stitch-factor derivation logs + JSON | working on ttbar stitching |
-| [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) | v15 ntuple(2018UL, 2024)로 가는 작업 목록, 순서, 연도별 한 명령 드라이버 설계, 필요한 결정 (PROPOSED 2026-10-01) | 2018/2024 작업을 시작할 때 |
+| [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) | v15 ntuple 로 가는 작업 목록과 연도별 한 명령 드라이버 설계(PROPOSED 2026-10-01); **§9: 2024 먼저의 단계별 계획(Stage 0~9, 통과 기준), 연도별 event cleaning 표, eventBuffer 정책, ttbar ID 검증, QCD 비교 정의 (2026-10-02)** | 2024/2018/2017 v15 작업을 시작할 때 |
 | [`../README.md`](../README.md) | Repo-level build/run entry | first checkout |
 
 ## Workflow (the run order)

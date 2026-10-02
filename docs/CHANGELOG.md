@@ -2,10 +2,22 @@
 
 > **Purpose:** one chronological line per change, newest first, linking to the full record. The detail lives in [`changes/STEP_*.md`](changes/); this file is the index, not a copy.
 > **Audience:** anyone tracing when and why something changed.
-> **Status:** append-only · last meaningful update **2026-07-27**.
+> **Status:** append-only · last meaningful update **2026-10-02**.
 > **Links:** decisions [`DECISIONS.md`](DECISIONS.md) · state [`STATUS.md`](STATUS.md).
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
+
+## 2026-10-02: [결정·문서] 2024 먼저, 단계별 계획(Stage 0~9); [설정] 2017 lumi 42.07
+
+사용자 결정(10-02)을 [`DECISIONS.md`](DECISIONS.md) D-2026-10-02-A~E 에: v15 의 첫 대상은 2024(A), eventBuffer 는 branch 가 바뀌면 생성기로
+다시 만들고 분석이 읽는 branch 의 필수 목록을 입력 파일마다 검사(B, PLAN §7 D7 의 "손으로 넣기"를 대체), 연도별 event cleaning 표(C),
+N0~N8 의 답(D), blinding — preselection·CR 에서는 data 를 숨기지 않음(E, PROPOSED). [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md)
+§9(새): 단계와 통과 기준, 연도별 event cleaning 표(2017·2018·2024), eventBuffer 와 무음 0, 2024 ttbar ID 검증(`ForgeAudit` 코드 분율,
+`ForgeTTbbKeys` 완결성, analyzer 경로, 별도 트랙 V6), QCD 비교의 정의, 새 결정 D10~D13(D4 갱신). §5 의 순서는 §9 가 대체한다.
+설정(N1): `AnalyzerConfig/Tier3_2017_FH_unified_{main,prescan}.yml` 의 `lumi_fb_inv` 41.48 → 42.07(btagtrig 는 07-29), 표기
+`plotter/stack_plotter.C` 42.07, `bTagSF_ReweightStudy/plot_btag{,_pyroot}.py` "42.1 fb^{-1}", `compute_stitch_factors.py` 의 `LUMI_PB_INV`
+42070(진단용 `peF_full` 에만; stitch 배수는 그대로). 41.48 로 만든 2017 산출물은 없다(N0). [`reference/LUMI_SOURCES.md`](reference/LUMI_SOURCES.md)
+§3 갱신. 다음은 Stage 0(워크스페이스 RUNBOOK §20; 확인용 도구 NtupleForge `script/jsonpog_inventory.py`, `script/lumi_hlt_check.sh`).
 
 ## 2026-10-01: [문서] v15 ntuple(2018UL·2024) 계획 PROPOSED (코드 변경 없음)
 
