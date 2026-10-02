@@ -14,15 +14,37 @@
 # -----------------------------------------------------------------------------
 UNAME_S := $(shell uname -s)
 
+# [2026-07-29] 컴파일러를 PATH 의 `clang++` 로 무조건 고정하지 않는다.
+#
+#   문제: macOS 에서 PATH 에 Homebrew llvm / conda / venv 의 clang 이 있으면
+#   그게 잡힌다. 그런데 include 되는 libc++ 헤더는 CommandLineTools SDK 의 것
+#   (최신)이라, 헤더가 요구하는 `__builtin_ctzg` / `__builtin_clzg`(Clang 19+)
+#   를 구버전 컴파일러가 몰라서 **libc++ 헤더 안에서** 에러가 쏟아진다:
+#       error: use of undeclared identifier '__builtin_ctzg'
+#       error: static assertion failed: Cannot rebind pointer; ...
+#   우리 코드와 무관한데 우리 코드 탓처럼 보이는 종류의 실패다.
+#
+#   그래서 macOS 기본값은 **SDK 와 짝이 맞는 Apple clang** 절대경로로 둔다.
+#   `$(origin CXX)` 가 default 일 때만 덮어쓰므로, 환경변수나
+#   `make CXX=... LD=...` 로 준 값은 그대로 존중된다.
 ifeq ($(UNAME_S),Darwin)
-  CXX := clang++
-  LD  := clang++
-  $(info >>> [System] macOS detected. Using clang++.)
+  ifeq ($(origin CXX),default)
+    CXX := /usr/bin/clang++
+  endif
+  ifeq ($(origin LD),default)
+    LD  := $(CXX)
+  endif
+  $(info >>> [System] macOS detected. CXX = $(CXX))
 else
-  CXX := g++
-  LD  := g++
-  $(info >>> [System] Linux detected. Using g++.)
+  ifeq ($(origin CXX),default)
+    CXX := g++
+  endif
+  ifeq ($(origin LD),default)
+    LD  := $(CXX)
+  endif
+  $(info >>> [System] Linux detected. CXX = $(CXX))
 endif
+$(info >>> [System] $(shell $(CXX) --version 2>/dev/null | head -1))
 
 # -----------------------------------------------------------------------------
 # 2) Configuration
