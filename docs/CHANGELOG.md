@@ -2,10 +2,28 @@
 
 > **Purpose:** one chronological line per change, newest first, linking to the full record. The detail lives in [`changes/STEP_*.md`](changes/); this file is the index, not a copy.
 > **Audience:** anyone tracing when and why something changed.
-> **Status:** append-only · last meaningful update **2026-10-02**.
+> **Status:** append-only · last meaningful update **2026-10-03**.
 > **Links:** decisions [`DECISIONS.md`](DECISIONS.md) · state [`STATUS.md`](STATUS.md).
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
+
+## 2026-10-03: [기록] Stage 0 정리 — 2024 payload 실측, PHYSICS 유효 lumi, eventBuffer 생성기 점검 (코드 변경 없음)
+
+lxplus 의 jsonpog payload 목록(10-02, 로그는 사용자가 scp)을 [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) §9.2 의 2024 열에: UParTAK4 WP 값,
+b-tag SF 는 `preliminary` 의 fixed-WP kinfit(b jet 만)뿐이고 shape SF 가 없음, jet veto map `Summer24Prompt24_RunBCDEFGHI_V1` 의 type `jetvetomap`
+(10-02 에 잘린 출력만 보고 "없다"고 했던 것을 전체 로그로 바로잡음), jet ID `AK4PUPPI_Tight`(2022 기준 파일), JEC `Summer24Prompt24_V1`·JER
+`Summer23BPixPrompt23_RunD_JRV1`, LUM 의 2024 없음, EGM·MUO 이름. normtag_PHYSICS 유효 lumi(`HLT_IsoMu24` 109.157, `HLT_PFHT1050` 109.144)와 HLT 표가
+없는 run 380126–380128 을 [`reference/LUMI_SOURCES.md`](reference/LUMI_SOURCES.md) §6.4 에. eventBuffer 의 생성기는 사용자 fork treestream `forTTHH_v1`
+이며, 2024 v15 스키마로 점검한 결과와 패치 제안을 PLAN §9.3 에(자료: 워크스페이스 `treestream_review_2026-10-03/`). §9.6: D10·D11·D14 갱신, D15(2024
+PU weight)·D16(2024 eventBuffer 의 입력과 HLT 범위) 새로.
+
+## 2026-10-02 (2): [기록] Stage 0b — 2024 lumi·golden JSON·HLT prescale 실측 (코드 변경 없음)
+
+lxplus955 에서 NtupleForge `script/lumi_hlt_check.sh`(brilcalc 3.9.4, `EXIT : 0`)의 결과를 [`reference/LUMI_SOURCES.md`](reference/LUMI_SOURCES.md) §6 에:
+C–I 109.816 fb⁻¹(normtag_PHYSICS; era 값이 PdmV 표와 같음; normtag_BRIL 은 104.504), golden JSON 2026-08-04 판(md5 `3f8543e8…`, run 475, LS 287,601;
+생산은 lumimask 없이 했으므로 재생산 불필요), 2024 hadronic·`HLT_IsoMu24` 후보는 모두 prescale 없음(유효 lumi 비 0.9936 으로 같음; 1 이 아닌 것은
+HLT 기록이 없는 LS 1,907 개 때문), 4J3T 짝은 초기 `..._TriplePFBTagDeepJet_4p5` 와 그 뒤 `..._PNet3BTag_4p3` 의 OR. [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md)
+§9.2 의 2024 golden JSON·lumi·trigger 칸, §9.6 D4 갱신, D14(정규화 lumi) 새로. 로그는 사용자 결정으로 public 인 NtupleForge 에 커밋하지 않는다.
 
 ## 2026-10-02: [결정·문서] 2024 먼저, 단계별 계획(Stage 0~9); [설정] 2017 lumi 42.07
 

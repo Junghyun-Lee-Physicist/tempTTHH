@@ -2,7 +2,7 @@
 
 > **Purpose:** the single place that answers "where are we right now?" — current state, what is ready, what is pending, and what is OPEN.
 > **Audience:** anyone starting a session.
-> **Status:** living · last meaningful update **2026-10-02** (2024 먼저 결정, 단계별 계획 [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) §9, 2017 lumi 42.07 반영) · 그 전 2026-10-01 (v15 계획 PROPOSED) · 2026-07-26 (2018UL 준비: samples_2018UL.json, --preflight, OPEN #5).
+> **Status:** living · last meaningful update **2026-10-03** (Stage 0 의 payload·lumi 실측 반영, eventBuffer 생성기 = 사용자 fork treestream 점검) · 2026-10-02 (2024 먼저 결정, 단계별 계획 [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) §9, 2017 lumi 42.07 반영) · 그 전 2026-10-01 (v15 계획 PROPOSED) · 2026-07-26 (2018UL 준비: samples_2018UL.json, --preflight, OPEN #5).
 > **Links:** decisions [`DECISIONS.md`](DECISIONS.md) · history [`CHANGELOG.md`](CHANGELOG.md) · exit codes [`reference/ERROR_CODES.md`](reference/ERROR_CODES.md) · path policy [`reference/CONFIG_PATHS.md`](reference/CONFIG_PATHS.md).
 
 ## Bottom line
@@ -20,6 +20,15 @@ v9 는 필요할 때). 단계(Stage 0~9)와 통과 기준, 연도별 event clean
 생성기 찾기와 지금 HEAD 의 빌드는 KNU; 워크스페이스 RUNBOOK §20). 같은 날 2017 lumi 를 main·prescan yml 과 plot 표기에서 42.07 로 고쳤다
 (D-2026-10-02-D N1; 41.48 로 만든 2017 산출물은 없다). 2024 의 tt+nb 분할과 `TT4B` 는 2024 patch(NtupleForge V6 = TTHHGenCategoryTools O5,
 미착수) 뒤다.
+**10-02 Stage 0b (lxplus brilcalc) 끝:** 2024 C–I lumi 109.816 fb⁻¹(normtag_PHYSICS; PdmV 표와 같음), golden JSON 은 2026-08-04 판
+(md5 `3f8543e8…`), 2024 hadronic·muon 후보 trigger 는 모두 prescale 없음(4J3T 는 초기 DeepJet 판과 PNet 판의 OR). 숫자와 해석:
+[`reference/LUMI_SOURCES.md`](reference/LUMI_SOURCES.md) §6, 남은 결정 PLAN §9.6 D4·D14. 남은 Stage 0: payload 목록(a), KNU 의 생성기 찾기와 빌드(c).
+**10-03 Stage 0 정리:** (a) payload 실측을 PLAN §9.2 의 2024 열에 — UParTAK4 WP, **b-tag shape SF 없음**(fixed-WP kinfit b SF 뿐, D10), veto map
+`Summer24Prompt24_RunBCDEFGHI_V1` 의 `jetvetomap`(D11), jet ID `AK4PUPPI_Tight`, JEC `Summer24Prompt24_V1`, JER `Summer23BPixPrompt23_RunD_JRV1`,
+**LUM 2024 없음 → PU weight 직접**(D15). (b) 4b: PHYSICS 유효 lumi 109.157(IsoMu24), HLT 기록 없는 run 380126–380128(LUMI_SOURCES §6.4, D14).
+(c) 생성기는 사용자 fork treestream `forTTHH_v1` — 10-03 점검에서 조용히 틀리는 경우 일곱을 재현하고 패치와 시험을 워크스페이스
+`treestream_review_2026-10-03/` 에 둠(적용은 사용자; PLAN §9.3), 2024 HLT branch 가 era 마다 달라 chain 이 죽을 수 있음(D16). 남은 것:
+KNU 의 빌드·시험·확인 셋(RUNBOOK §20 8~12).
 
 ## What is ready (DECIDED)
 
