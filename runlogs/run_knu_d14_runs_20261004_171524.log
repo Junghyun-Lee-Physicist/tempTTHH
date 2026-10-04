@@ -1,0 +1,33 @@
+=== RUNLOG ================================================================
+step        : knu_d14_runs
+start_utc   : 2026-10-04T17:15:26Z
+host        : cluster298   user: jhlee
+cwd         : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+repo        : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+git_head    : 90feebc0   modified_tracked_files: 4
+cmd         : python3 tools/stage0/runs_in_lumiblocks.py --base /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1 --glob JetMET\*/\*Run2024C\*/\*/\*/forgedNtuple_\*.root --runs 380126 380127 380128 
+CMSSW_BASE  : /u/user/jhlee/ttHH/CMSSW_14_2_1
+root        : 6.30.09
+python3     : Python 3.9.14
+condor_job  : 2180524.0  slot slot1_15   jobdir: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/runlog/knu_d14_runs_20261004_171459
+===========================================================================
+[condor_run] worker cluster298  scratch /home/condor/dir_1627708
+[condor_run] cmsenv ok: CMSSW_BASE=/u/user/jhlee/ttHH/CMSSW_14_2_1  root 6.30.09  Python 3.9.14  TMPDIR=/home/condor/dir_1627708
+[condor_run] running in /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH: python3 tools/stage0/runs_in_lumiblocks.py --base /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1 --glob JetMET\*/\*Run2024C\*/\*/\*/forgedNtuple_\*.root --runs 380126 380127 380128 
+----------------------------------------------------------------------------
+BASE /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1
+GLOB JetMET*/*Run2024C*/*/*/forgedNtuple_*.root
+RUNS 380126 380127 380128
+progress 200/269
+FILES 269 unreadable 0
+RUN 380126 LS_in_LuminosityBlocks=991 events_after_skim=708132 files_with_run=93
+RUN 380127 LS_in_LuminosityBlocks=533 events_after_skim=307634 files_with_run=44
+RUN 380128 LS_in_LuminosityBlocks=393 events_after_skim=179727 files_with_run=30
+===========================================================================
+end_utc     : 2026-10-04T17:25:39Z
+wall_s      : 613
+EXIT        : 0
+outputs     : (no file of this repo changed, apart from tmp/ condor/ runlogs/)
+log         : runlogs/run_knu_d14_runs_20261004_171524.log
+log_kb      : 2
+=== END ===================================================================

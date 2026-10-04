@@ -27,7 +27,7 @@ common:
   # 해당 경로가 필수가 되어 null 이 E13 -> 재유도 전에는 그 SF 토글을 off 로 둘 것.
   path_jsonpog: "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration"
   path_goldenjson: "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/GoldenJson"   # OPEN: 환경별 절대경로 확인
-  path_trigsf_dir: null               # DISABLED (신규 dataset trigger SF 미유도)
+  path_trigsf_dir: "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/DerivedCorr/TriggerSF"               # DISABLED (신규 dataset trigger SF 미유도)
   path_btag_reweight_json: null       # DISABLED (_skipBtagReweight; tt+nb key JSON 미재생성)
   path_stitch_json: null              # DISABLED (신규 dataset stitch factors 미유도)
   path_expanded_ttbarid_dir: null     # DISABLED (신규 dataset ttnb_<sample>.root 미생성)

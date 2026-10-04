@@ -1,0 +1,1 @@
+/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2017UL_fullNano_v20/TTbb_4f_TTTo2L2Nu_TuneCP5-Powheg-Openloops-Pythia8/TTbb_DiLep/260622_074656/0000/slimmedNtuple_1.root

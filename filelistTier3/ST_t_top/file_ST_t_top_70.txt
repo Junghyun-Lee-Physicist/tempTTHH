@@ -1,0 +1,1 @@
+/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2017UL_fullNano_v20/ST_t-channel_top_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8/ST_t_top/260622_074753/0000/slimmedNtuple_140.root

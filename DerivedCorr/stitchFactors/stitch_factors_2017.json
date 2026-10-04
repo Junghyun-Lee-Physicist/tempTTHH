@@ -14,48 +14,48 @@
   },
   "plan": {
     "inclusive": [
-      "TTToHadronic",
-      "TTToSemiLeptonic",
-      "TTTo2L2Nu"
+      "TTbar_Hadronic",
+      "TTbar_SemiLep",
+      "TTbar_DiLep"
     ],
     "dedicated": {
-      "ttbb_Hadronic": {
+      "TTbb_Hadronic": {
         "owns": [
           "tt2b"
         ],
         "anchor": [
-          "TTToHadronic"
+          "TTbar_Hadronic"
         ],
         "sigma_inc": 377960.7353256,
         "sigma_dedicated": 659.80449612,
         "reject_from": [
-          "TTToHadronic"
+          "TTbar_Hadronic"
         ]
       },
-      "ttbb_SemiLeptonic": {
+      "TTbb_SemiLep": {
         "owns": [
           "tt2b"
         ],
         "anchor": [
-          "TTToSemiLeptonic"
+          "TTbar_SemiLep"
         ],
         "sigma_inc": 365457.36134879995,
         "sigma_dedicated": 637.97740776,
         "reject_from": [
-          "TTToSemiLeptonic"
+          "TTbar_SemiLep"
         ]
       },
-      "ttbb_2L2Nu": {
+      "TTbb_DiLep": {
         "owns": [
           "tt2b"
         ],
         "anchor": [
-          "TTTo2L2Nu"
+          "TTbar_DiLep"
         ],
         "sigma_inc": 88341.90332559998,
         "sigma_dedicated": 154.21809612,
         "reject_from": [
-          "TTTo2L2Nu"
+          "TTbar_DiLep"
         ]
       },
       "tt4b": {
@@ -64,16 +64,16 @@
           "tt4b"
         ],
         "anchor": [
-          "TTToHadronic",
-          "TTToSemiLeptonic",
-          "TTTo2L2Nu"
+          "TTbar_Hadronic",
+          "TTbar_SemiLep",
+          "TTbar_DiLep"
         ],
         "sigma_inc": 831760.0,
         "sigma_dedicated": 296.0,
         "reject_from": [
-          "TTToHadronic",
-          "TTToSemiLeptonic",
-          "TTTo2L2Nu"
+          "TTbar_Hadronic",
+          "TTbar_SemiLep",
+          "TTbar_DiLep"
         ]
       }
     }
@@ -84,13 +84,13 @@
     "sigma_inc_total": 831760.0,
     "br_had": 0.45441081000000005,
     "inclusive": [
-      "TTToHadronic",
-      "TTToSemiLeptonic",
-      "TTTo2L2Nu"
+      "TTbar_Hadronic",
+      "TTbar_SemiLep",
+      "TTbar_DiLep"
     ],
     "dedicated": [
       {
-        "sample": "ttbb_Hadronic",
+        "sample": "TTbb_Hadronic",
         "owns": [
           "tt2b"
         ],
@@ -100,19 +100,19 @@
           55
         ],
         "anchor": [
-          "TTToHadronic"
+          "TTbar_Hadronic"
         ],
         "sigma_inc": 377960.7353256,
         "sigma_dedicated": 659.80449612,
         "sumGW_anchor_all": 73140766669.42169,
-        "sumGW_anchor_owned": 306272316.98187256,
+        "sumGW_anchor_owned": 314140611.2248535,
         "sumGW_dedicated_all": 113736165.6780777,
-        "f": 0.00418743651356771,
-        "r": 2.398720519645371,
-        "peF_full": 0.5772116468365047
+        "f": 0.004295013923557733,
+        "r": 2.4603448905360747,
+        "peF_full": 0.5920405126071387
       },
       {
-        "sample": "ttbb_SemiLeptonic",
+        "sample": "TTbb_SemiLep",
         "owns": [
           "tt2b"
         ],
@@ -122,19 +122,19 @@
           55
         ],
         "anchor": [
-          "TTToSemiLeptonic"
+          "TTbar_SemiLep"
         ],
         "sigma_inc": 365457.36134879995,
         "sigma_dedicated": 637.97740776,
         "sumGW_anchor_all": 104129959629.04999,
-        "sumGW_anchor_owned": 398727083.57025146,
+        "sumGW_anchor_owned": 408403597.10876465,
         "sumGW_dedicated_all": 153797755.7116127,
-        "f": 0.003829129339823688,
-        "r": 2.1934687463441804,
-        "peF_full": 0.3774205124797122
+        "f": 0.0039220566162097015,
+        "r": 2.2467009718309785,
+        "peF_full": 0.3865799472139194
       },
       {
-        "sample": "ttbb_2L2Nu",
+        "sample": "TTbb_DiLep",
         "owns": [
           "tt2b"
         ],
@@ -144,16 +144,16 @@
           55
         ],
         "anchor": [
-          "TTTo2L2Nu"
+          "TTbar_DiLep"
         ],
         "sigma_inc": 88341.90332559998,
         "sigma_dedicated": 154.21809612,
         "sumGW_anchor_all": 7695841652.167358,
-        "sumGW_anchor_owned": 26966853.994018555,
+        "sumGW_anchor_owned": 27584135.28668213,
         "sumGW_dedicated_all": 15930890.41240549,
-        "f": 0.00350408119252609,
-        "r": 2.007268989459711,
-        "peF_full": 0.8060084781640625
+        "f": 0.0035842909110420282,
+        "r": 2.0532161213280418,
+        "peF_full": 0.8244583112595089
       },
       {
         "sample": "tt4b",
@@ -168,32 +168,32 @@
           72
         ],
         "anchor": [
-          "TTToHadronic",
-          "TTToSemiLeptonic",
-          "TTTo2L2Nu"
+          "TTbar_Hadronic",
+          "TTbar_SemiLep",
+          "TTbar_DiLep"
         ],
         "sigma_inc": 831760.0,
         "sigma_dedicated": 296.0,
         "sumGW_anchor_all": 184966567950.63904,
-        "sumGW_anchor_owned": 18162089.074157715,
-        "sumGW_dedicated_all": 9502000.0,
-        "f": 9.81911989576653e-05,
-        "r": 0.2759172690710395,
-        "peF_full": 0.3565285522032991
+        "sumGW_anchor_owned": 0.0,
+        "sumGW_dedicated_all": 0.0,
+        "f": 0.0,
+        "r": 0.0,
+        "peF_full": 0.0
       }
     ],
     "reject_map": {
-      "TTToHadronic": [
+      "TTbar_Hadronic": [
         "tt2b",
         "ttbbb",
         "tt4b"
       ],
-      "TTToSemiLeptonic": [
+      "TTbar_SemiLep": [
         "tt2b",
         "ttbbb",
         "tt4b"
       ],
-      "TTTo2L2Nu": [
+      "TTbar_DiLep": [
         "tt2b",
         "ttbbb",
         "tt4b"
@@ -229,7 +229,7 @@
       "tt4b"
     ],
     "samples": {
-      "TTToHadronic": {
+      "TTbar_Hadronic": {
         "role": "inclusive",
         "by_category": {
           "LF": 1.0,
@@ -240,7 +240,7 @@
           "tt4b": 0.0
         }
       },
-      "TTToSemiLeptonic": {
+      "TTbar_SemiLep": {
         "role": "inclusive",
         "by_category": {
           "LF": 1.0,
@@ -251,7 +251,7 @@
           "tt4b": 0.0
         }
       },
-      "TTTo2L2Nu": {
+      "TTbar_DiLep": {
         "role": "inclusive",
         "by_category": {
           "LF": 1.0,
@@ -262,52 +262,52 @@
           "tt4b": 0.0
         }
       },
-      "ttbb_Hadronic": {
+      "TTbb_Hadronic": {
         "role": "dedicated",
-        "r": 2.398720519645371,
+        "r": 2.4603448905360747,
         "by_category": {
           "LF": 0.0,
           "cc": 0.0,
           "ttb": 0.0,
-          "tt2b": 2.398720519645371,
+          "tt2b": 2.4603448905360747,
           "ttbbb": 0.0,
           "tt4b": 0.0
         }
       },
-      "ttbb_SemiLeptonic": {
+      "TTbb_SemiLep": {
         "role": "dedicated",
-        "r": 2.1934687463441804,
+        "r": 2.2467009718309785,
         "by_category": {
           "LF": 0.0,
           "cc": 0.0,
           "ttb": 0.0,
-          "tt2b": 2.1934687463441804,
+          "tt2b": 2.2467009718309785,
           "ttbbb": 0.0,
           "tt4b": 0.0
         }
       },
-      "ttbb_2L2Nu": {
+      "TTbb_DiLep": {
         "role": "dedicated",
-        "r": 2.007268989459711,
+        "r": 2.0532161213280418,
         "by_category": {
           "LF": 0.0,
           "cc": 0.0,
           "ttb": 0.0,
-          "tt2b": 2.007268989459711,
+          "tt2b": 2.0532161213280418,
           "ttbbb": 0.0,
           "tt4b": 0.0
         }
       },
       "tt4b": {
         "role": "dedicated",
-        "r": 0.2759172690710395,
+        "r": 0.0,
         "by_category": {
           "LF": 0.0,
           "cc": 0.0,
           "ttb": 0.0,
           "tt2b": 0.0,
-          "ttbbb": 0.2759172690710395,
-          "tt4b": 0.2759172690710395
+          "ttbbb": 0.0,
+          "tt4b": 0.0
         }
       }
     }

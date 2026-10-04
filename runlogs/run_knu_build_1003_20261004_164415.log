@@ -1,0 +1,31 @@
+=== RUNLOG ================================================================
+step        : knu_build_1003
+start_utc   : 2026-10-04T16:44:16Z
+host        : cms01   user: jhlee
+cwd         : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+repo        : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+git_head    : 90feebc0   modified_tracked_files: 4
+cmd         : /bin/bash tools/stage0/build_check.sh --from-log /tmp/jhlee/tthh_build.log 
+CMSSW_BASE  : /u/user/jhlee/ttHH/CMSSW_14_2_1
+root        : 6.30.09
+python3     : Python 3.9.14
+===========================================================================
+mode        : report on an earlier build log (no build)
+make_log    : /tmp/jhlee/tthh_build.log (21560 lines)
+warnings    : 7162 lines with 'warning:'
+errors      : 0 lines with 'error:' or 'Error <n>'
+--- products ---
+ls: cannot access 'ttHHanalyzer_unified': No such file or directory
+-rw-r--r-- 1 jhlee knu   216780 2026-10-04 05:07:51.726780929 +0900 libEventShape.a
+-rwxr-xr-x 1 jhlee knu 15118512 2026-10-04 05:08:14.548973320 +0900 libToolsForAnalysis.so
+--- headers (md5) ---
+b08a58b47de9dfba3f3e53c1763ac49c  include/eventBuffer.h
+de3c3cfb3994a874115537b26d215f74  src/treestream.cc
+===========================================================================
+end_utc     : 2026-10-04T16:44:20Z
+wall_s      : 0
+EXIT        : 0
+outputs     : (no file of this repo changed, apart from tmp/ condor/ runlogs/)
+log         : runlogs/run_knu_build_1003_20261004_164415.log
+log_kb      : 1
+=== END ===================================================================

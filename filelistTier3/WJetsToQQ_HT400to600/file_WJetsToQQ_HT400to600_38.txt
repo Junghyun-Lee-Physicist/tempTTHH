@@ -1,0 +1,1 @@
+/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2017UL_fullNano_v20/WJetsToQQ_HT-400to600_TuneCP5_13TeV-madgraphMLM-pythia8/WJetsToQQ_HT400to600/260622_074812/0000/slimmedNtuple_68.root

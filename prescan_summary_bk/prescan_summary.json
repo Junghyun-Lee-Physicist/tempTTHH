@@ -1,0 +1,6173 @@
+{
+  "meta": {
+    "generated": "2026-07-06 19:03:53",
+    "input_base": "/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan",
+    "tree": "prescan",
+    "rel_tol": 0.000001,
+    "n_samples": 61,
+    "n_samples_with_anomaly": 0
+  },
+  "samples": {
+    "DYJetsToLL_M50_HT100to200": {
+      "sample": "DYJetsToLL_M50_HT100to200",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 22,
+        "files_valid": 22,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 22,
+        "nEvents_total": 18648544,
+        "sumGenW_total": 18648544.0,
+        "sumGenW_pos": 18648544.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 18648544.0,
+        "genEventSumw2": 18648544.0,
+        "genEventCount": 18648544
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 14929443,
+          "41": 1735373,
+          "42": 301761,
+          "43": 314146,
+          "44": 35305,
+          "45": 2277,
+          "51": 1001682,
+          "52": 65218,
+          "53": 259518,
+          "54": 3745,
+          "55": 76,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 14929443.0,
+          "41": 1735373.0,
+          "42": 301761.0,
+          "43": 314146.0,
+          "44": 35305.0,
+          "45": 2277.0,
+          "51": 1001682.0,
+          "52": 65218.0,
+          "53": 259518.0,
+          "54": 3745.0,
+          "55": 76.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 14929443,
+          "AddCjet": 2388862,
+          "Add1Bjet_1Had": 1001682,
+          "Add1Bjet_2Had": 65218,
+          "Add2Bjet": 263339,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 14929443.0,
+          "AddCjet": 2388862.0,
+          "Add1Bjet_1Had": 1001682.0,
+          "Add1Bjet_2Had": 65218.0,
+          "Add2Bjet": 263339.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 18648544.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "DYJetsToLL_M50_HT1200to2500": {
+      "sample": "DYJetsToLL_M50_HT1200to2500",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 14,
+        "files_valid": 14,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 14,
+        "nEvents_total": 4725936,
+        "sumGenW_total": 4725936.0,
+        "sumGenW_pos": 4725936.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 4725936.0,
+        "genEventSumw2": 4725936.0,
+        "genEventCount": 4725936
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 2983615,
+          "41": 399528,
+          "42": 447266,
+          "43": 201237,
+          "44": 84050,
+          "45": 30436,
+          "51": 184198,
+          "52": 197354,
+          "53": 179601,
+          "54": 15315,
+          "55": 3336,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 2983615.0,
+          "41": 399528.0,
+          "42": 447266.0,
+          "43": 201237.0,
+          "44": 84050.0,
+          "45": 30436.0,
+          "51": 184198.0,
+          "52": 197354.0,
+          "53": 179601.0,
+          "54": 15315.0,
+          "55": 3336.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 2983615,
+          "AddCjet": 1162517,
+          "Add1Bjet_1Had": 184198,
+          "Add1Bjet_2Had": 197354,
+          "Add2Bjet": 198252,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 2983615.0,
+          "AddCjet": 1162517.0,
+          "Add1Bjet_1Had": 184198.0,
+          "Add1Bjet_2Had": 197354.0,
+          "Add2Bjet": 198252.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 4725936.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "DYJetsToLL_M50_HT200to400": {
+      "sample": "DYJetsToLL_M50_HT200to400",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 37,
+        "files_valid": 37,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 37,
+        "nEvents_total": 12451701,
+        "sumGenW_total": 12451701.0,
+        "sumGenW_pos": 12451701.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 12451701.0,
+        "genEventSumw2": 12451701.0,
+        "genEventCount": 12451701
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 9311354,
+          "41": 1228469,
+          "42": 391381,
+          "43": 353955,
+          "44": 58273,
+          "45": 6665,
+          "51": 677463,
+          "52": 110380,
+          "53": 305653,
+          "54": 7740,
+          "55": 368,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 9311354.0,
+          "41": 1228469.0,
+          "42": 391381.0,
+          "43": 353955.0,
+          "44": 58273.0,
+          "45": 6665.0,
+          "51": 677463.0,
+          "52": 110380.0,
+          "53": 305653.0,
+          "54": 7740.0,
+          "55": 368.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 9311354,
+          "AddCjet": 2038743,
+          "Add1Bjet_1Had": 677463,
+          "Add1Bjet_2Had": 110380,
+          "Add2Bjet": 313761,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 9311354.0,
+          "AddCjet": 2038743.0,
+          "Add1Bjet_1Had": 677463.0,
+          "Add1Bjet_2Had": 110380.0,
+          "Add2Bjet": 313761.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 12451701.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "DYJetsToLL_M50_HT2500toInf": {
+      "sample": "DYJetsToLL_M50_HT2500toInf",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 12,
+        "files_valid": 12,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 12,
+        "nEvents_total": 1480047,
+        "sumGenW_total": 1480047.0,
+        "sumGenW_pos": 1480047.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 1480047.0,
+        "genEventSumw2": 1480047.0,
+        "genEventCount": 1480047
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 898813,
+          "41": 111208,
+          "42": 174019,
+          "43": 59259,
+          "44": 31564,
+          "45": 15657,
+          "51": 45055,
+          "52": 84117,
+          "53": 52209,
+          "54": 6127,
+          "55": 2019,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 898813.0,
+          "41": 111208.0,
+          "42": 174019.0,
+          "43": 59259.0,
+          "44": 31564.0,
+          "45": 15657.0,
+          "51": 45055.0,
+          "52": 84117.0,
+          "53": 52209.0,
+          "54": 6127.0,
+          "55": 2019.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 898813,
+          "AddCjet": 391707,
+          "Add1Bjet_1Had": 45055,
+          "Add1Bjet_2Had": 84117,
+          "Add2Bjet": 60355,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 898813.0,
+          "AddCjet": 391707.0,
+          "Add1Bjet_1Had": 45055.0,
+          "Add1Bjet_2Had": 84117.0,
+          "Add2Bjet": 60355.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 1480047.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "DYJetsToLL_M50_HT400to600": {
+      "sample": "DYJetsToLL_M50_HT400to600",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 17,
+        "files_valid": 17,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 17,
+        "nEvents_total": 5384252,
+        "sumGenW_total": 5384252.0,
+        "sumGenW_pos": 5384252.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 5384252.0,
+        "genEventSumw2": 5384252.0,
+        "genEventCount": 5384252
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 3776054,
+          "41": 523605,
+          "42": 276557,
+          "43": 199420,
+          "44": 47250,
+          "45": 8576,
+          "51": 274550,
+          "52": 94955,
+          "53": 175254,
+          "54": 7412,
+          "55": 619,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 3776054.0,
+          "41": 523605.0,
+          "42": 276557.0,
+          "43": 199420.0,
+          "44": 47250.0,
+          "45": 8576.0,
+          "51": 274550.0,
+          "52": 94955.0,
+          "53": 175254.0,
+          "54": 7412.0,
+          "55": 619.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 3776054,
+          "AddCjet": 1055408,
+          "Add1Bjet_1Had": 274550,
+          "Add1Bjet_2Had": 94955,
+          "Add2Bjet": 183285,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 3776054.0,
+          "AddCjet": 1055408.0,
+          "Add1Bjet_1Had": 274550.0,
+          "Add1Bjet_2Had": 94955.0,
+          "Add2Bjet": 183285.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 5384252.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "DYJetsToLL_M50_HT600to800": {
+      "sample": "DYJetsToLL_M50_HT600to800",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 14,
+        "files_valid": 14,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 14,
+        "nEvents_total": 5118706,
+        "sumGenW_total": 5118706.0,
+        "sumGenW_pos": 5118706.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 5118706.0,
+        "genEventSumw2": 5118706.0,
+        "genEventCount": 5118706
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 3457582,
+          "41": 481233,
+          "42": 333977,
+          "43": 206797,
+          "44": 59986,
+          "45": 13892,
+          "51": 245242,
+          "52": 125970,
+          "53": 182829,
+          "54": 10101,
+          "55": 1097,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 3457582.0,
+          "41": 481233.0,
+          "42": 333977.0,
+          "43": 206797.0,
+          "44": 59986.0,
+          "45": 13892.0,
+          "51": 245242.0,
+          "52": 125970.0,
+          "53": 182829.0,
+          "54": 10101.0,
+          "55": 1097.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 3457582,
+          "AddCjet": 1095885,
+          "Add1Bjet_1Had": 245242,
+          "Add1Bjet_2Had": 125970,
+          "Add2Bjet": 194027,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 3457582.0,
+          "AddCjet": 1095885.0,
+          "Add1Bjet_1Had": 245242.0,
+          "Add1Bjet_2Had": 125970.0,
+          "Add2Bjet": 194027.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 5118706.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "DYJetsToLL_M50_HT70to100": {
+      "sample": "DYJetsToLL_M50_HT70to100",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 18,
+        "files_valid": 18,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 18,
+        "nEvents_total": 12205958,
+        "sumGenW_total": 12205958.0,
+        "sumGenW_pos": 12205958.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 12205958.0,
+        "genEventSumw2": 12205958.0,
+        "genEventCount": 12205958
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 10216646,
+          "41": 1029942,
+          "42": 119991,
+          "43": 116793,
+          "44": 10087,
+          "45": 434,
+          "51": 601077,
+          "52": 22475,
+          "53": 87644,
+          "54": 852,
+          "55": 17,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 10216646.0,
+          "41": 1029942.0,
+          "42": 119991.0,
+          "43": 116793.0,
+          "44": 10087.0,
+          "45": 434.0,
+          "51": 601077.0,
+          "52": 22475.0,
+          "53": 87644.0,
+          "54": 852.0,
+          "55": 17.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 10216646,
+          "AddCjet": 1277247,
+          "Add1Bjet_1Had": 601077,
+          "Add1Bjet_2Had": 22475,
+          "Add2Bjet": 88513,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 10216646.0,
+          "AddCjet": 1277247.0,
+          "Add1Bjet_1Had": 601077.0,
+          "Add1Bjet_2Had": 22475.0,
+          "Add2Bjet": 88513.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 12205958.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "DYJetsToLL_M50_HT800to1200": {
+      "sample": "DYJetsToLL_M50_HT800to1200",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 16,
+        "files_valid": 16,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 16,
+        "nEvents_total": 4347168,
+        "sumGenW_total": 4347168.0,
+        "sumGenW_pos": 4347168.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 4347168.0,
+        "genEventSumw2": 4347168.0,
+        "genEventCount": 4347168
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 2847015,
+          "41": 392174,
+          "42": 338499,
+          "43": 183862,
+          "44": 62450,
+          "45": 17691,
+          "51": 192733,
+          "52": 137483,
+          "53": 162698,
+          "54": 10872,
+          "55": 1691,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 2847015.0,
+          "41": 392174.0,
+          "42": 338499.0,
+          "43": 183862.0,
+          "44": 62450.0,
+          "45": 17691.0,
+          "51": 192733.0,
+          "52": 137483.0,
+          "53": 162698.0,
+          "54": 10872.0,
+          "55": 1691.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 2847015,
+          "AddCjet": 994676,
+          "Add1Bjet_1Had": 192733,
+          "Add1Bjet_2Had": 137483,
+          "Add2Bjet": 175261,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 2847015.0,
+          "AddCjet": 994676.0,
+          "Add1Bjet_1Had": 192733.0,
+          "Add1Bjet_2Had": 137483.0,
+          "Add2Bjet": 175261.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 4347168.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "QCD_HT1000to1500": {
+      "sample": "QCD_HT1000to1500",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 43,
+        "files_valid": 43,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 43,
+        "nEvents_total": 14164109,
+        "sumGenW_total": 14164109.0,
+        "sumGenW_pos": 14164109.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 14164109.0,
+        "genEventSumw2": 14164109.0,
+        "genEventCount": 14164109
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 8778352,
+          "41": 1150733,
+          "42": 1437590,
+          "43": 611508,
+          "44": 257139,
+          "45": 106402,
+          "51": 556071,
+          "52": 659653,
+          "53": 543674,
+          "54": 49898,
+          "55": 13089,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 8778352.0,
+          "41": 1150733.0,
+          "42": 1437590.0,
+          "43": 611508.0,
+          "44": 257139.0,
+          "45": 106402.0,
+          "51": 556071.0,
+          "52": 659653.0,
+          "53": 543674.0,
+          "54": 49898.0,
+          "55": 13089.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 8778352,
+          "AddCjet": 3563372,
+          "Add1Bjet_1Had": 556071,
+          "Add1Bjet_2Had": 659653,
+          "Add2Bjet": 606661,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 8778352.0,
+          "AddCjet": 3563372.0,
+          "Add1Bjet_1Had": 556071.0,
+          "Add1Bjet_2Had": 659653.0,
+          "Add2Bjet": 606661.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 14164109.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "QCD_HT1500to2000": {
+      "sample": "QCD_HT1500to2000",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 46,
+        "files_valid": 46,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 46,
+        "nEvents_total": 12402197,
+        "sumGenW_total": 12402197.0,
+        "sumGenW_pos": 12402197.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 12402197.0,
+        "genEventSumw2": 12402197.0,
+        "genEventCount": 12402197
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 7422232,
+          "41": 954091,
+          "42": 1418324,
+          "43": 533239,
+          "44": 259549,
+          "45": 123626,
+          "51": 449160,
+          "52": 689620,
+          "53": 482472,
+          "54": 53168,
+          "55": 16716,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 7422232.0,
+          "41": 954091.0,
+          "42": 1418324.0,
+          "43": 533239.0,
+          "44": 259549.0,
+          "45": 123626.0,
+          "51": 449160.0,
+          "52": 689620.0,
+          "53": 482472.0,
+          "54": 53168.0,
+          "55": 16716.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 7422232,
+          "AddCjet": 3288829,
+          "Add1Bjet_1Had": 449160,
+          "Add1Bjet_2Had": 689620,
+          "Add2Bjet": 552356,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 7422232.0,
+          "AddCjet": 3288829.0,
+          "Add1Bjet_1Had": 449160.0,
+          "Add1Bjet_2Had": 689620.0,
+          "Add2Bjet": 552356.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 12402197.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "QCD_HT2000toInf": {
+      "sample": "QCD_HT2000toInf",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 31,
+        "files_valid": 31,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 31,
+        "nEvents_total": 5614050,
+        "sumGenW_total": 5614050.0,
+        "sumGenW_pos": 5614050.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 5614050.0,
+        "genEventSumw2": 5614050.0,
+        "genEventCount": 5614050
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 3292434,
+          "41": 410245,
+          "42": 695959,
+          "43": 233940,
+          "44": 126028,
+          "45": 68091,
+          "51": 183868,
+          "52": 352878,
+          "53": 213941,
+          "54": 26797,
+          "55": 9869,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 3292434.0,
+          "41": 410245.0,
+          "42": 695959.0,
+          "43": 233940.0,
+          "44": 126028.0,
+          "45": 68091.0,
+          "51": 183868.0,
+          "52": 352878.0,
+          "53": 213941.0,
+          "54": 26797.0,
+          "55": 9869.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 3292434,
+          "AddCjet": 1534263,
+          "Add1Bjet_1Had": 183868,
+          "Add1Bjet_2Had": 352878,
+          "Add2Bjet": 250607,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 3292434.0,
+          "AddCjet": 1534263.0,
+          "Add1Bjet_1Had": 183868.0,
+          "Add1Bjet_2Had": 352878.0,
+          "Add2Bjet": 250607.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 5614050.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "QCD_HT200to300": {
+      "sample": "QCD_HT200to300",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 77,
+        "files_valid": 77,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 77,
+        "nEvents_total": 60056309,
+        "sumGenW_total": 60056309.0,
+        "sumGenW_pos": 60056309.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 60056309.0,
+        "genEventSumw2": 60056309.0,
+        "genEventCount": 60056309
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 45974991,
+          "41": 5252315,
+          "42": 2426421,
+          "43": 1529069,
+          "44": 287686,
+          "45": 51573,
+          "51": 2608223,
+          "52": 694480,
+          "53": 1194635,
+          "54": 33862,
+          "55": 3054,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 45974991.0,
+          "41": 5252315.0,
+          "42": 2426421.0,
+          "43": 1529069.0,
+          "44": 287686.0,
+          "45": 51573.0,
+          "51": 2608223.0,
+          "52": 694480.0,
+          "53": 1194635.0,
+          "54": 33862.0,
+          "55": 3054.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 45974991,
+          "AddCjet": 9547064,
+          "Add1Bjet_1Had": 2608223,
+          "Add1Bjet_2Had": 694480,
+          "Add2Bjet": 1231551,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 45974991.0,
+          "AddCjet": 9547064.0,
+          "Add1Bjet_1Had": 2608223.0,
+          "Add1Bjet_2Had": 694480.0,
+          "Add2Bjet": 1231551.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 60056309.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "QCD_HT300to500": {
+      "sample": "QCD_HT300to500",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 66,
+        "files_valid": 66,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 66,
+        "nEvents_total": 54770756,
+        "sumGenW_total": 54770756.0,
+        "sumGenW_pos": 54770756.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 54770756.0,
+        "genEventSumw2": 54770756.0,
+        "genEventCount": 54770756
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 39483934,
+          "41": 4861434,
+          "42": 3060396,
+          "43": 1815992,
+          "44": 431821,
+          "45": 100475,
+          "51": 2424670,
+          "52": 1041737,
+          "53": 1481035,
+          "54": 61581,
+          "55": 7681,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 39483934.0,
+          "41": 4861434.0,
+          "42": 3060396.0,
+          "43": 1815992.0,
+          "44": 431821.0,
+          "45": 100475.0,
+          "51": 2424670.0,
+          "52": 1041737.0,
+          "53": 1481035.0,
+          "54": 61581.0,
+          "55": 7681.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 39483934,
+          "AddCjet": 10270118,
+          "Add1Bjet_1Had": 2424670,
+          "Add1Bjet_2Had": 1041737,
+          "Add2Bjet": 1550297,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 39483934.0,
+          "AddCjet": 10270118.0,
+          "Add1Bjet_1Had": 2424670.0,
+          "Add1Bjet_2Had": 1041737.0,
+          "Add2Bjet": 1550297.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 54770756.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "QCD_HT500to700": {
+      "sample": "QCD_HT500to700",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 74,
+        "files_valid": 74,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 74,
+        "nEvents_total": 60395873,
+        "sumGenW_total": 60395873.0,
+        "sumGenW_pos": 60395873.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 60395873.0,
+        "genEventSumw2": 60395873.0,
+        "genEventCount": 60395873
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 40797642,
+          "41": 5272678,
+          "42": 4488588,
+          "43": 2373528,
+          "44": 718178,
+          "45": 214766,
+          "51": 2616082,
+          "52": 1764616,
+          "53": 2010136,
+          "54": 118832,
+          "55": 20827,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 40797642.0,
+          "41": 5272678.0,
+          "42": 4488588.0,
+          "43": 2373528.0,
+          "44": 718178.0,
+          "45": 214766.0,
+          "51": 2616082.0,
+          "52": 1764616.0,
+          "53": 2010136.0,
+          "54": 118832.0,
+          "55": 20827.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 40797642,
+          "AddCjet": 13067738,
+          "Add1Bjet_1Had": 2616082,
+          "Add1Bjet_2Had": 1764616,
+          "Add2Bjet": 2149795,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 40797642.0,
+          "AddCjet": 13067738.0,
+          "Add1Bjet_1Had": 2616082.0,
+          "Add1Bjet_2Had": 1764616.0,
+          "Add2Bjet": 2149795.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 60395873.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "QCD_HT700to1000": {
+      "sample": "QCD_HT700to1000",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 85,
+        "files_valid": 85,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 85,
+        "nEvents_total": 47501834,
+        "sumGenW_total": 47501834.0,
+        "sumGenW_pos": 47501834.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 47501834.0,
+        "genEventSumw2": 47501834.0,
+        "genEventCount": 47501834
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 30695729,
+          "41": 4026669,
+          "42": 4170553,
+          "43": 1992401,
+          "44": 712400,
+          "45": 251078,
+          "51": 1982880,
+          "52": 1781693,
+          "53": 1731352,
+          "54": 129155,
+          "55": 27924,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 30695729.0,
+          "41": 4026669.0,
+          "42": 4170553.0,
+          "43": 1992401.0,
+          "44": 712400.0,
+          "45": 251078.0,
+          "51": 1982880.0,
+          "52": 1781693.0,
+          "53": 1731352.0,
+          "54": 129155.0,
+          "55": 27924.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 30695729,
+          "AddCjet": 11153101,
+          "Add1Bjet_1Had": 1982880,
+          "Add1Bjet_2Had": 1781693,
+          "Add2Bjet": 1888431,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 30695729.0,
+          "AddCjet": 11153101.0,
+          "Add1Bjet_1Had": 1982880.0,
+          "Add1Bjet_2Had": 1781693.0,
+          "Add2Bjet": 1888431.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 47501834.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "ST_s_had": {
+      "sample": "ST_s_had",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 34,
+        "files_valid": 34,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 34,
+        "nEvents_total": 11696999,
+        "sumGenW_total": 83147973.5094328,
+        "sumGenW_pos": 105431854.50485516,
+        "sumGenW_neg": -22283880.995422363
+      },
+      "runs": {
+        "genEventSumw": 83147970.29072505,
+        "genEventSumw2": 1394486554.3320823,
+        "genEventCount": 11696999
+      },
+      "skim_attrition_rel": 0.000000038710599056750436,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 3601786,
+          "41": 141581,
+          "42": 27050,
+          "43": 7697,
+          "44": 1569,
+          "45": 184,
+          "51": 7801259,
+          "52": 20653,
+          "53": 79211,
+          "54": 15935,
+          "55": 74,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 24388280.984334946,
+          "41": 1008132.2204504013,
+          "42": 194854.68159294128,
+          "43": 57596.01285457611,
+          "44": 12305.347201347351,
+          "45": 1441.2651557922363,
+          "51": 56630266.93211651,
+          "52": 145251.13914775848,
+          "53": 587632.1925725937,
+          "54": 121644.96288394928,
+          "55": 567.7711219787598,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 3601786,
+          "AddCjet": 178081,
+          "Add1Bjet_1Had": 7801259,
+          "Add1Bjet_2Had": 20653,
+          "Add2Bjet": 95220,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 24388280.984334946,
+          "AddCjet": 1274329.5272550583,
+          "Add1Bjet_1Had": 56630266.93211651,
+          "Add1Bjet_2Had": 145251.13914775848,
+          "Add2Bjet": 709844.9265785217,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 83147970.29072505
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "ST_s_lep": {
+      "sample": "ST_s_lep",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 16,
+        "files_valid": 16,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 16,
+        "nEvents_total": 13620000,
+        "sumGenW_total": 48361410.42054272,
+        "sumGenW_pos": 61324855.08567381,
+        "sumGenW_neg": -12963444.665131092
+      },
+      "runs": {
+        "genEventSumw": 48361411.361051396,
+        "genEventSumw2": 405194691.2380259,
+        "genEventCount": 13620000
+      },
+      "skim_attrition_rel": -0.000000019447502711075583,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 4279676,
+          "41": 141878,
+          "42": 22629,
+          "43": 6365,
+          "44": 1280,
+          "45": 135,
+          "51": 9051285,
+          "52": 23306,
+          "53": 78173,
+          "54": 15196,
+          "55": 77,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 14451823.296339035,
+          "41": 512894.712184906,
+          "42": 83347.98152971268,
+          "43": 24026.428790569305,
+          "44": 5465.262586593628,
+          "45": 507.25490856170654,
+          "51": 32850651.591439724,
+          "52": 82753.45695734024,
+          "53": 291180.6815481186,
+          "54": 58459.76479625702,
+          "55": 299.9894618988037,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 4279676,
+          "AddCjet": 172287,
+          "Add1Bjet_1Had": 9051285,
+          "Add1Bjet_2Had": 23306,
+          "Add2Bjet": 93446,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 14451823.296339035,
+          "AddCjet": 626241.6400003433,
+          "Add1Bjet_1Had": 32850651.591439724,
+          "Add1Bjet_2Had": 82753.45695734024,
+          "Add2Bjet": 349940.4358062744,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 48361411.361051396
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "ST_tW_antitop": {
+      "sample": "ST_tW_antitop",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 48,
+        "files_valid": 48,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 48,
+        "nEvents_total": 5674000,
+        "sumGenW_total": 184446306.89353943,
+        "sumGenW_pos": 184451183.24337006,
+        "sumGenW_neg": -4876.349830627441
+      },
+      "runs": {
+        "genEventSumw": 184446313.29999998,
+        "genEventSumw2": 5996482249.594,
+        "genEventCount": 5674000
+      },
+      "skim_attrition_rel": -0.00000003473347034585413,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 3814336,
+          "41": 160858,
+          "42": 61902,
+          "43": 18912,
+          "44": 3637,
+          "45": 629,
+          "51": 1561680,
+          "52": 14100,
+          "53": 31171,
+          "54": 6725,
+          "55": 50,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 123993417.82727814,
+          "41": 5229332.540367126,
+          "42": 2012372.0481033325,
+          "43": 614810.1866455078,
+          "44": 118235.22889328003,
+          "45": 20448.160289764404,
+          "51": 50765987.61872101,
+          "52": 458246.8480834961,
+          "53": 1013207.9678077698,
+          "54": 218623.01740646362,
+          "55": 1625.4499435424805,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 3814336,
+          "AddCjet": 245938,
+          "Add1Bjet_1Had": 1561680,
+          "Add1Bjet_2Had": 14100,
+          "Add2Bjet": 37946,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 123993417.82727814,
+          "AddCjet": 7995198.164299011,
+          "Add1Bjet_1Had": 50765987.61872101,
+          "Add1Bjet_2Had": 458246.8480834961,
+          "Add2Bjet": 1233456.4351577759,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 184446313.29999998
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "ST_tW_top": {
+      "sample": "ST_tW_top",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 43,
+        "files_valid": 43,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 43,
+        "nEvents_total": 5649000,
+        "sumGenW_total": 183284892.38497925,
+        "sumGenW_pos": 183289564.78189087,
+        "sumGenW_neg": -4672.396911621094
+      },
+      "runs": {
+        "genEventSumw": 183284888.00640005,
+        "genEventSumw2": 5947384630.508161,
+        "genEventCount": 5649000
+      },
+      "skim_attrition_rel": 0.00000002388947199597396,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 3805812,
+          "41": 160211,
+          "42": 61418,
+          "43": 18977,
+          "44": 3650,
+          "45": 694,
+          "51": 1546335,
+          "52": 13811,
+          "53": 31508,
+          "54": 6527,
+          "55": 57,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 123481002.37549591,
+          "41": 5198009.116977692,
+          "42": 1992777.2828063965,
+          "43": 615750.5291099548,
+          "44": 118432.28282928467,
+          "45": 22518.35733795166,
+          "51": 50172425.16739273,
+          "52": 448128.2899055481,
+          "53": 1022216.6132202148,
+          "54": 211782.8794593811,
+          "55": 1849.4904441833496,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 3805812,
+          "AddCjet": 244950,
+          "Add1Bjet_1Had": 1546335,
+          "Add1Bjet_2Had": 13811,
+          "Add2Bjet": 38092,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 123481002.37549591,
+          "AddCjet": 7947487.569061279,
+          "Add1Bjet_1Had": 50172425.16739273,
+          "Add1Bjet_2Had": 448128.2899055481,
+          "Add2Bjet": 1235848.9831237793,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 183284888.00640005
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "ST_t_antitop": {
+      "sample": "ST_t_antitop",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 60,
+        "files_valid": 60,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 60,
+        "nEvents_total": 69793000,
+        "sumGenW_total": 4462868882.059891,
+        "sumGenW_pos": 4601841876.229683,
+        "sumGenW_neg": -138972994.16979218
+      },
+      "runs": {
+        "genEventSumw": 4462869081.826047,
+        "genEventSumw2": 322028393212.4141,
+        "genEventCount": 69793000
+      },
+      "skim_attrition_rel": -0.000000044761823063574396,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 41590245,
+          "41": 4799297,
+          "42": 384855,
+          "43": 154060,
+          "44": 44542,
+          "45": 2825,
+          "51": 22441458,
+          "52": 90486,
+          "53": 228299,
+          "54": 56582,
+          "55": 351,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 2742812765.6345444,
+          "41": 318064301.22800446,
+          "42": 25271009.68119049,
+          "43": 10136308.200256348,
+          "44": 2927644.9058532715,
+          "45": 183198.56870269775,
+          "51": 1340780262.2864227,
+          "52": 5633169.188919067,
+          "53": 13687317.3126297,
+          "54": 3350557.1374969482,
+          "55": 22347.915870666504,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 41590245,
+          "AddCjet": 5385579,
+          "Add1Bjet_1Had": 22441458,
+          "Add1Bjet_2Had": 90486,
+          "Add2Bjet": 285232,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 2742812765.6345444,
+          "AddCjet": 356582462.58400726,
+          "Add1Bjet_1Had": 1340780262.2864227,
+          "Add1Bjet_2Had": 5633169.188919067,
+          "Add2Bjet": 17060222.365997314,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 4462869081.826047
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "ST_t_top": {
+      "sample": "ST_t_top",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 197,
+        "files_valid": 197,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 197,
+        "nEvents_total": 129903000,
+        "sumGenW_total": 13808000645.662537,
+        "sumGenW_pos": 14271643735.11612,
+        "sumGenW_neg": -463643089.45358276
+      },
+      "runs": {
+        "genEventSumw": 13808000809.116001,
+        "genEventSumw2": 1671467810157.566,
+        "genEventCount": 129903000
+      },
+      "skim_attrition_rel": -0.000000011837590884275235,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 78954614,
+          "41": 5897115,
+          "42": 705725,
+          "43": 231846,
+          "44": 59737,
+          "45": 5240,
+          "51": 43278247,
+          "52": 176624,
+          "53": 474379,
+          "54": 118702,
+          "55": 771,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 8645219992.551422,
+          "41": 651691293.730545,
+          "42": 77004331.43745422,
+          "43": 25378591.655578613,
+          "44": 6537257.145614624,
+          "45": 569433.6532592773,
+          "51": 4323801496.493607,
+          "52": 18301733.735351562,
+          "53": 47622916.1252594,
+          "54": 11795216.932373047,
+          "55": 78382.20207214355,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 78954614,
+          "AddCjet": 6899663,
+          "Add1Bjet_1Had": 43278247,
+          "Add1Bjet_2Had": 176624,
+          "Add2Bjet": 593852,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 8645219992.551422,
+          "AddCjet": 761180907.6224518,
+          "Add1Bjet_1Had": 4323801496.493607,
+          "Add1Bjet_2Had": 18301733.735351562,
+          "Add2Bjet": 59496515.25970459,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 13808000809.116001
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "TT4b": {
+      "sample": "TT4b",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 14,
+        "files_valid": 14,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 14,
+        "nEvents_total": 9502000,
+        "sumGenW_total": 9502000.0,
+        "sumGenW_pos": 9502000.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 9502000.0,
+        "genEventSumw2": 9502000.0,
+        "genEventCount": 9502000
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 902285,
+          "41": 50666,
+          "42": 22606,
+          "43": 7190,
+          "44": 1635,
+          "45": 294,
+          "51": 2461302,
+          "52": 690983,
+          "53": 3944597,
+          "54": 1311174,
+          "55": 109268,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 902285.0,
+          "41": 50666.0,
+          "42": 22606.0,
+          "43": 7190.0,
+          "44": 1635.0,
+          "45": 294.0,
+          "51": 2461302.0,
+          "52": 690983.0,
+          "53": 3944597.0,
+          "54": 1311174.0,
+          "55": 109268.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 902285,
+          "AddCjet": 82391,
+          "Add1Bjet_1Had": 2461302,
+          "Add1Bjet_2Had": 690983,
+          "Add2Bjet": 5365039,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 902285.0,
+          "AddCjet": 82391.0,
+          "Add1Bjet_1Had": 2461302.0,
+          "Add1Bjet_2Had": 690983.0,
+          "Add2Bjet": 5365039.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 9502000.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "TTHHto4b": {
+      "sample": "TTHHto4b",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 32,
+        "files_valid": 32,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 32,
+        "nEvents_total": 9934000,
+        "sumGenW_total": 9934000.0,
+        "sumGenW_pos": 9934000.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 9934000.0,
+        "genEventSumw2": 9934000.0,
+        "genEventCount": 9934000
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 16911,
+          "41": 943,
+          "42": 503,
+          "43": 150,
+          "44": 29,
+          "45": 9,
+          "51": 241267,
+          "52": 44799,
+          "53": 8532151,
+          "54": 1066737,
+          "55": 30501,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 16911.0,
+          "41": 943.0,
+          "42": 503.0,
+          "43": 150.0,
+          "44": 29.0,
+          "45": 9.0,
+          "51": 241267.0,
+          "52": 44799.0,
+          "53": 8532151.0,
+          "54": 1066737.0,
+          "55": 30501.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 16911,
+          "AddCjet": 1634,
+          "Add1Bjet_1Had": 241267,
+          "Add1Bjet_2Had": 44799,
+          "Add2Bjet": 9629389,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 16911.0,
+          "AddCjet": 1634.0,
+          "Add1Bjet_1Had": 241267.0,
+          "Add1Bjet_2Had": 44799.0,
+          "Add2Bjet": 9629389.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 9934000.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "TTTT": {
+      "sample": "TTTT",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 30,
+        "files_valid": 30,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 30,
+        "nEvents_total": 10351000,
+        "sumGenW_total": 84047.03376162797,
+        "sumGenW_pos": 138119.84778521582,
+        "sumGenW_neg": -54072.81402358785
+      },
+      "runs": {
+        "genEventSumw": 84047.03675157604,
+        "genEventSumw2": 3568.546215947363,
+        "genEventCount": 10351000
+      },
+      "skim_attrition_rel": -0.000000035574699453020774,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 618544,
+          "41": 61723,
+          "42": 31307,
+          "43": 15342,
+          "44": 4348,
+          "45": 988,
+          "51": 3872342,
+          "52": 187588,
+          "53": 5420070,
+          "54": 135482,
+          "55": 3266,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 5321.904115378857,
+          "41": 474.6421615127474,
+          "42": 232.5585053768009,
+          "43": 107.43181733414531,
+          "44": 28.668290004134178,
+          "45": 6.795721594244242,
+          "51": 31967.074379324913,
+          "52": 1510.9897046349943,
+          "53": 43487.56783083081,
+          "54": 888.2713690400124,
+          "55": 21.12986659631133,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 618544,
+          "AddCjet": 113708,
+          "Add1Bjet_1Had": 3872342,
+          "Add1Bjet_2Had": 187588,
+          "Add2Bjet": 5558818,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 5321.904115378857,
+          "AddCjet": 850.096495822072,
+          "Add1Bjet_1Had": 31967.074379324913,
+          "Add1Bjet_2Had": 1510.9897046349943,
+          "Add2Bjet": 44396.969066467136,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 84047.03675157604
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "TTTW": {
+      "sample": "TTTW",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 5,
+        "files_valid": 5,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 5,
+        "nEvents_total": 360000,
+        "sumGenW_total": 360000.0,
+        "sumGenW_pos": 360000.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 360000.0,
+        "genEventSumw2": 360000.0,
+        "genEventCount": 360000
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 60841,
+          "41": 4213,
+          "42": 2101,
+          "43": 839,
+          "44": 200,
+          "45": 43,
+          "51": 217180,
+          "52": 2395,
+          "53": 69847,
+          "54": 2316,
+          "55": 25,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 60841.0,
+          "41": 4213.0,
+          "42": 2101.0,
+          "43": 839.0,
+          "44": 200.0,
+          "45": 43.0,
+          "51": 217180.0,
+          "52": 2395.0,
+          "53": 69847.0,
+          "54": 2316.0,
+          "55": 25.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 60841,
+          "AddCjet": 7396,
+          "Add1Bjet_1Had": 217180,
+          "Add1Bjet_2Had": 2395,
+          "Add2Bjet": 72188,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 60841.0,
+          "AddCjet": 7396.0,
+          "Add1Bjet_1Had": 217180.0,
+          "Add1Bjet_2Had": 2395.0,
+          "Add2Bjet": 72188.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 360000.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "TTWH": {
+      "sample": "TTWH",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 11,
+        "files_valid": 11,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 11,
+        "nEvents_total": 360000,
+        "sumGenW_total": 360000.0,
+        "sumGenW_pos": 360000.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 360000.0,
+        "genEventSumw2": 360000.0,
+        "genEventCount": 360000
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 126262,
+          "41": 13567,
+          "42": 4700,
+          "43": 8334,
+          "44": 1025,
+          "45": 138,
+          "51": 70922,
+          "52": 3067,
+          "53": 130248,
+          "54": 1699,
+          "55": 38,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 126262.0,
+          "41": 13567.0,
+          "42": 4700.0,
+          "43": 8334.0,
+          "44": 1025.0,
+          "45": 138.0,
+          "51": 70922.0,
+          "52": 3067.0,
+          "53": 130248.0,
+          "54": 1699.0,
+          "55": 38.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 126262,
+          "AddCjet": 27764,
+          "Add1Bjet_1Had": 70922,
+          "Add1Bjet_2Had": 3067,
+          "Add2Bjet": 131985,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 126262.0,
+          "AddCjet": 27764.0,
+          "Add1Bjet_1Had": 70922.0,
+          "Add1Bjet_2Had": 3067.0,
+          "Add2Bjet": 131985.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 360000.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "TTWJetsToLNu": {
+      "sample": "TTWJetsToLNu",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 9,
+        "files_valid": 9,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 9,
+        "nEvents_total": 7140411,
+        "sumGenW_total": 2392831.718531847,
+        "sumGenW_pos": 3403282.194690466,
+        "sumGenW_neg": -1010450.4761586189
+      },
+      "runs": {
+        "genEventSumw": 2392831.795265399,
+        "genEventSumw2": 2728279.554098501,
+        "genEventCount": 7140411
+      },
+      "skim_attrition_rel": -0.000000032068092739025754,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 6196069,
+          "41": 537643,
+          "42": 156069,
+          "43": 72716,
+          "44": 18316,
+          "45": 2758,
+          "51": 94932,
+          "52": 31148,
+          "53": 29635,
+          "54": 1032,
+          "55": 93,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 2127665.719869375,
+          "41": 154734.4586789608,
+          "42": 44476.61442255974,
+          "43": 18949.523880004883,
+          "44": 4529.687858581543,
+          "45": 745.4699177742004,
+          "51": 25538.83509349823,
+          "52": 8425.169966220856,
+          "53": 7471.3888027668,
+          "54": 268.27026891708374,
+          "55": 26.57977318763733,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 6196069,
+          "AddCjet": 787502,
+          "Add1Bjet_1Had": 94932,
+          "Add1Bjet_2Had": 31148,
+          "Add2Bjet": 30760,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 2127665.719869375,
+          "AddCjet": 223435.75475788116,
+          "Add1Bjet_1Had": 25538.83509349823,
+          "Add1Bjet_2Had": 8425.169966220856,
+          "Add2Bjet": 7766.238844871521,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 2392831.795265399
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "TTWJetsToQQ": {
+      "sample": "TTWJetsToQQ",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 10,
+        "files_valid": 10,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 10,
+        "nEvents_total": 655018,
+        "sumGenW_total": 444333.974766016,
+        "sumGenW_pos": 627517.8053126335,
+        "sumGenW_neg": -183183.8305466175
+      },
+      "runs": {
+        "genEventSumw": 444333.9716704,
+        "genEventSumw2": 1003387.8965571895,
+        "genEventCount": 655018
+      },
+      "skim_attrition_rel": 0.000000006966867720674838,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 560678,
+          "41": 52301,
+          "42": 16492,
+          "43": 7500,
+          "44": 2042,
+          "45": 297,
+          "51": 9478,
+          "52": 3225,
+          "53": 2878,
+          "54": 116,
+          "55": 11,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 388881.0313460827,
+          "41": 31299.649275660515,
+          "42": 10044.997964382172,
+          "43": 3977.898405313492,
+          "44": 1148.5655632019043,
+          "45": 169.5619419813156,
+          "51": 5460.637138843536,
+          "52": 1877.5581458806992,
+          "53": 1418.379456281662,
+          "54": 44.5564227104187,
+          "55": 11.139105677604675,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 560678,
+          "AddCjet": 78632,
+          "Add1Bjet_1Had": 9478,
+          "Add1Bjet_2Had": 3225,
+          "Add2Bjet": 3005,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 388881.0313460827,
+          "AddCjet": 46640.6731505394,
+          "Add1Bjet_1Had": 5460.637138843536,
+          "Add1Bjet_2Had": 1877.5581458806992,
+          "Add2Bjet": 1474.0749846696854,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 444333.9716704
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "TTWW": {
+      "sample": "TTWW",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 9,
+        "files_valid": 9,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 9,
+        "nEvents_total": 698000,
+        "sumGenW_total": 698000.0,
+        "sumGenW_pos": 698000.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 698000.0,
+        "genEventSumw2": 698000.0,
+        "genEventCount": 698000
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 606317,
+          "41": 42376,
+          "42": 19699,
+          "43": 7705,
+          "44": 1904,
+          "45": 390,
+          "51": 11743,
+          "52": 4137,
+          "53": 3551,
+          "54": 155,
+          "55": 23,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 606317.0,
+          "41": 42376.0,
+          "42": 19699.0,
+          "43": 7705.0,
+          "44": 1904.0,
+          "45": 390.0,
+          "51": 11743.0,
+          "52": 4137.0,
+          "53": 3551.0,
+          "54": 155.0,
+          "55": 23.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 606317,
+          "AddCjet": 72074,
+          "Add1Bjet_1Had": 11743,
+          "Add1Bjet_2Had": 4137,
+          "Add2Bjet": 3729,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 606317.0,
+          "AddCjet": 72074.0,
+          "Add1Bjet_1Had": 11743.0,
+          "Add1Bjet_2Had": 4137.0,
+          "Add2Bjet": 3729.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 698000.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "TTWZ": {
+      "sample": "TTWZ",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 2,
+        "files_valid": 2,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 2,
+        "nEvents_total": 350000,
+        "sumGenW_total": 350000.0,
+        "sumGenW_pos": 350000.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 350000.0,
+        "genEventSumw2": 350000.0,
+        "genEventCount": 350000
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 231494,
+          "41": 29204,
+          "42": 7807,
+          "43": 23545,
+          "44": 2166,
+          "45": 202,
+          "51": 23284,
+          "52": 2913,
+          "53": 28977,
+          "54": 383,
+          "55": 25,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 231494.0,
+          "41": 29204.0,
+          "42": 7807.0,
+          "43": 23545.0,
+          "44": 2166.0,
+          "45": 202.0,
+          "51": 23284.0,
+          "52": 2913.0,
+          "53": 28977.0,
+          "54": 383.0,
+          "55": 25.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 231494,
+          "AddCjet": 62924,
+          "Add1Bjet_1Had": 23284,
+          "Add1Bjet_2Had": 2913,
+          "Add2Bjet": 29385,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 231494.0,
+          "AddCjet": 62924.0,
+          "Add1Bjet_1Had": 23284.0,
+          "Add1Bjet_2Had": 2913.0,
+          "Add2Bjet": 29385.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 350000.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "TTZHTo4b": {
+      "sample": "TTZHTo4b",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 13,
+        "files_valid": 13,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 13,
+        "nEvents_total": 9998000,
+        "sumGenW_total": 9998000.0,
+        "sumGenW_pos": 9998000.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 9998000.0,
+        "genEventSumw2": 9998000.0,
+        "genEventCount": 9998000
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 23619,
+          "41": 1151,
+          "42": 608,
+          "43": 177,
+          "44": 47,
+          "45": 7,
+          "51": 307044,
+          "52": 56895,
+          "53": 8380236,
+          "54": 1191828,
+          "55": 36388,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 23619.0,
+          "41": 1151.0,
+          "42": 608.0,
+          "43": 177.0,
+          "44": 47.0,
+          "45": 7.0,
+          "51": 307044.0,
+          "52": 56895.0,
+          "53": 8380236.0,
+          "54": 1191828.0,
+          "55": 36388.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 23619,
+          "AddCjet": 1990,
+          "Add1Bjet_1Had": 307044,
+          "Add1Bjet_2Had": 56895,
+          "Add2Bjet": 9608452,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 23619.0,
+          "AddCjet": 1990.0,
+          "Add1Bjet_1Had": 307044.0,
+          "Add1Bjet_2Had": 56895.0,
+          "Add2Bjet": 9608452.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 9998000.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "TTZToBB": {
+      "sample": "TTZToBB",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 26,
+        "files_valid": 26,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 26,
+        "nEvents_total": 7074000,
+        "sumGenW_total": 794582.7077516913,
+        "sumGenW_pos": 1185900.9625558555,
+        "sumGenW_neg": -391318.2548041642
+      },
+      "runs": {
+        "genEventSumw": 794582.7253137,
+        "genEventSumw2": 351656.85179154883,
+        "genEventCount": 7074000
+      },
+      "skim_attrition_rel": -0.00000002210217783018561,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 377572,
+          "41": 22866,
+          "42": 9710,
+          "43": 3711,
+          "44": 847,
+          "45": 162,
+          "51": 2451815,
+          "52": 145125,
+          "53": 4004088,
+          "54": 55830,
+          "55": 2274,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 47645.21959775686,
+          "41": 2550.2167667746544,
+          "42": 1098.3010835051537,
+          "43": 370.3366016447544,
+          "44": 76.92120864987373,
+          "45": 15.161281704902649,
+          "51": 281831.0589722097,
+          "52": 15323.373643130064,
+          "53": 440256.4195873141,
+          "54": 5217.264586687088,
+          "55": 198.43442231416702,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 377572,
+          "AddCjet": 37296,
+          "Add1Bjet_1Had": 2451815,
+          "Add1Bjet_2Had": 145125,
+          "Add2Bjet": 4062192,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 47645.21959775686,
+          "AddCjet": 4110.936942279339,
+          "Add1Bjet_1Had": 281831.0589722097,
+          "Add1Bjet_2Had": 15323.373643130064,
+          "Add2Bjet": 445672.1185963154,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 794582.7253137
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "TTZToLLNuNu": {
+      "sample": "TTZToLLNuNu",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 19,
+        "files_valid": 19,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 19,
+        "nEvents_total": 14036000,
+        "sumGenW_total": 3424974.344398856,
+        "sumGenW_pos": 5190254.3997299075,
+        "sumGenW_neg": -1765280.0553310513
+      },
+      "runs": {
+        "genEventSumw": 3424974.349942921,
+        "genEventSumw2": 3446812.46168178,
+        "genEventCount": 14036000
+      },
+      "skim_attrition_rel": -0.0000000016187172415602809,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 12376883,
+          "41": 790568,
+          "42": 321167,
+          "43": 136042,
+          "44": 29034,
+          "45": 5087,
+          "51": 239445,
+          "52": 65343,
+          "53": 69768,
+          "54": 2438,
+          "55": 225,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 3075360.619207442,
+          "41": 172001.30842661858,
+          "42": 67085.02969890833,
+          "43": 26675.43600142002,
+          "44": 5140.831749558449,
+          "45": 916.2712458968163,
+          "51": 50253.19133323431,
+          "52": 13074.085603296757,
+          "53": 13948.730681180954,
+          "54": 471.7632374763489,
+          "55": 47.07721382379532,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 12376883,
+          "AddCjet": 1281898,
+          "Add1Bjet_1Had": 239445,
+          "Add1Bjet_2Had": 65343,
+          "Add2Bjet": 72431,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 3075360.619207442,
+          "AddCjet": 271818.8771224022,
+          "Add1Bjet_1Had": 50253.19133323431,
+          "Add1Bjet_2Had": 13074.085603296757,
+          "Add2Bjet": 14467.571132481098,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 3424974.349942921
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "TTZZTo4b": {
+      "sample": "TTZZTo4b",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 40,
+        "files_valid": 40,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 40,
+        "nEvents_total": 9832000,
+        "sumGenW_total": 9832000.0,
+        "sumGenW_pos": 9832000.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 9832000.0,
+        "genEventSumw2": 9832000.0,
+        "genEventCount": 9832000
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 46785,
+          "41": 2123,
+          "42": 1085,
+          "43": 286,
+          "44": 73,
+          "45": 16,
+          "51": 466691,
+          "52": 77399,
+          "53": 8040220,
+          "54": 1156177,
+          "55": 41145,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 46785.0,
+          "41": 2123.0,
+          "42": 1085.0,
+          "43": 286.0,
+          "44": 73.0,
+          "45": 16.0,
+          "51": 466691.0,
+          "52": 77399.0,
+          "53": 8040220.0,
+          "54": 1156177.0,
+          "55": 41145.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 46785,
+          "AddCjet": 3583,
+          "Add1Bjet_1Had": 466691,
+          "Add1Bjet_2Had": 77399,
+          "Add2Bjet": 9237542,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 46785.0,
+          "AddCjet": 3583.0,
+          "Add1Bjet_1Had": 466691.0,
+          "Add1Bjet_2Had": 77399.0,
+          "Add2Bjet": 9237542.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 9832000.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "TTbar_DiLep": {
+      "sample": "TTbar_DiLep",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 99,
+        "files_valid": 99,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 99,
+        "nEvents_total": 106724000,
+        "sumGenW_total": 7695841652.167358,
+        "sumGenW_pos": 7727247682.651062,
+        "sumGenW_neg": -31406030.483703613
+      },
+      "runs": {
+        "genEventSumw": 7695841311.017001,
+        "genEventSumw2": 564040910230.1125,
+        "genEventCount": 106724000
+      },
+      "skim_attrition_rel": 0.00000004432918292611157,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 97661457,
+          "41": 4405169,
+          "42": 1703474,
+          "43": 621339,
+          "44": 124092,
+          "45": 23812,
+          "51": 1417426,
+          "52": 384588,
+          "53": 369834,
+          "54": 11464,
+          "55": 1345,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 7042294738.242859,
+          "41": 317730187.88201904,
+          "42": 122838759.1451416,
+          "43": 44809416.648864746,
+          "44": 8946398.591186523,
+          "45": 1716116.1458740234,
+          "51": 102186188.97583008,
+          "52": 27735711.248901367,
+          "53": 26661811.91369629,
+          "54": 826434.3110351562,
+          "55": 95889.0619506836,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 97661457,
+          "AddCjet": 6877886,
+          "Add1Bjet_1Had": 1417426,
+          "Add1Bjet_2Had": 384588,
+          "Add2Bjet": 382643,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 7042294738.242859,
+          "AddCjet": 496040878.41308594,
+          "Add1Bjet_1Had": 102186188.97583008,
+          "Add1Bjet_2Had": 27735711.248901367,
+          "Add2Bjet": 27584135.28668213,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 7695841311.017001
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "TTbar_Hadronic": {
+      "sample": "TTbar_Hadronic",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 199,
+        "files_valid": 199,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 199,
+        "nEvents_total": 232999999,
+        "sumGenW_total": 73140766669.42169,
+        "sumGenW_pos": 73438672574.6712,
+        "sumGenW_neg": -297905905.2495117
+      },
+      "runs": {
+        "genEventSumw": 73140765879.47005,
+        "genEventSumw2": 23335119793197.246,
+        "genEventCount": 232999999
+      },
+      "skim_attrition_rel": 0.000000010800428945456166,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 206860997,
+          "41": 12728721,
+          "42": 5251246,
+          "43": 1924308,
+          "44": 452201,
+          "45": 89209,
+          "51": 3634101,
+          "52": 1058032,
+          "53": 964490,
+          "54": 32795,
+          "55": 3899,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 64933982287.980896,
+          "41": 3997796979.3599243,
+          "42": 1647995446.9350586,
+          "43": 604068408.5281982,
+          "44": 141989118.21954346,
+          "45": 27996797.92437744,
+          "51": 1140777344.6948853,
+          "52": 332019674.5539551,
+          "53": 302642135.45666504,
+          "54": 10277866.393005371,
+          "55": 1220609.3751831055,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 206860997,
+          "AddCjet": 20445685,
+          "Add1Bjet_1Had": 3634101,
+          "Add1Bjet_2Had": 1058032,
+          "Add2Bjet": 1001184,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 64933982287.980896,
+          "AddCjet": 6419846750.967102,
+          "Add1Bjet_1Had": 1140777344.6948853,
+          "Add1Bjet_2Had": 332019674.5539551,
+          "Add2Bjet": 314140611.2248535,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 73140765879.47005
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "TTbar_SemiLep": {
+      "sample": "TTbar_SemiLep",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 297,
+        "files_valid": 297,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 297,
+        "nEvents_total": 346052000,
+        "sumGenW_total": 104129959629.04999,
+        "sumGenW_pos": 104553801418.22372,
+        "sumGenW_neg": -423841789.1737366
+      },
+      "runs": {
+        "genEventSumw": 104129959042.42809,
+        "genEventSumw2": 31845807708704.688,
+        "genEventCount": 346052000
+      },
+      "skim_attrition_rel": 0.0000000056335554902772926,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 311921759,
+          "41": 16635536,
+          "42": 6684334,
+          "43": 2419397,
+          "44": 526134,
+          "45": 102246,
+          "51": 4997343,
+          "52": 1407735,
+          "53": 1309986,
+          "54": 42566,
+          "55": 4964,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 93858253140.81375,
+          "41": 5007790208.659668,
+          "42": 2011063335.0494385,
+          "43": 728108044.7398376,
+          "44": 158408694.7644043,
+          "45": 30769602.113342285,
+          "51": 1503617294.0367126,
+          "52": 423545711.7640686,
+          "53": 394116041.9442749,
+          "54": 12793213.648071289,
+          "55": 1494341.516418457,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 311921759,
+          "AddCjet": 26367647,
+          "Add1Bjet_1Had": 4997343,
+          "Add1Bjet_2Had": 1407735,
+          "Add2Bjet": 1357516,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 93858253140.81375,
+          "AddCjet": 7936139885.326691,
+          "Add1Bjet_1Had": 1503617294.0367126,
+          "Add1Bjet_2Had": 423545711.7640686,
+          "Add2Bjet": 408403597.10876465,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 104129959042.42809
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "TTbb_DiLep": {
+      "sample": "TTbb_DiLep",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 7,
+        "files_valid": 7,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 7,
+        "nEvents_total": 3472503,
+        "sumGenW_total": 15930890.41240549,
+        "sumGenW_pos": 16998068.211827278,
+        "sumGenW_neg": -1067177.7994217873
+      },
+      "runs": {
+        "genEventSumw": 15930889.901690006,
+        "genEventSumw2": 93982090.87864617,
+        "genEventCount": 3472503
+      },
+      "skim_attrition_rel": 0.000000032058189327198986,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 1661972,
+          "41": 68637,
+          "42": 27738,
+          "43": 9022,
+          "44": 1950,
+          "45": 427,
+          "51": 1043690,
+          "52": 336067,
+          "53": 306805,
+          "54": 14311,
+          "55": 1884,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 7282475.449522972,
+          "41": 321615.72608041763,
+          "42": 136166.83674526215,
+          "43": 44459.45544528961,
+          "44": 9770.051173210144,
+          "45": 2158.9836192131042,
+          "51": 5016229.362211227,
+          "52": 1470829.700662136,
+          "53": 1567177.596150875,
+          "54": 70632.57975435257,
+          "55": 9374.671040534973,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 1661972,
+          "AddCjet": 107774,
+          "Add1Bjet_1Had": 1043690,
+          "Add1Bjet_2Had": 336067,
+          "Add2Bjet": 323000,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 7282475.449522972,
+          "AddCjet": 514171.05306339264,
+          "Add1Bjet_1Had": 5016229.362211227,
+          "Add1Bjet_2Had": 1470829.700662136,
+          "Add2Bjet": 1647184.8469457626,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 15930889.901690006
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "TTbb_Hadronic": {
+      "sample": "TTbb_Hadronic",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 9,
+        "files_valid": 9,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 9,
+        "nEvents_total": 5694656,
+        "sumGenW_total": 113736165.6780777,
+        "sumGenW_pos": 121350665.58726883,
+        "sumGenW_neg": -7614499.909191132
+      },
+      "runs": {
+        "genEventSumw": 113736166.15320005,
+        "genEventSumw2": 2920635425.649364,
+        "genEventCount": 5694656
+      },
+      "skim_attrition_rel": -0.000000004177407798625102,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 2545506,
+          "41": 146528,
+          "42": 63145,
+          "43": 21228,
+          "44": 5096,
+          "45": 1094,
+          "51": 1774721,
+          "52": 551435,
+          "53": 553427,
+          "54": 28837,
+          "55": 3639,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 48476574.6560936,
+          "41": 2930347.0875587463,
+          "42": 1282097.621744156,
+          "43": 441021.8339576721,
+          "44": 107164.18395233154,
+          "45": 23779.034900665283,
+          "51": 37037658.59377861,
+          "52": 10499893.297437668,
+          "53": 12245591.512945175,
+          "54": 615378.7765293121,
+          "55": 76659.0791797638,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 2545506,
+          "AddCjet": 237091,
+          "Add1Bjet_1Had": 1774721,
+          "Add1Bjet_2Had": 551435,
+          "Add2Bjet": 585903,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 48476574.6560936,
+          "AddCjet": 4784409.762113571,
+          "Add1Bjet_1Had": 37037658.59377861,
+          "Add1Bjet_2Had": 10499893.297437668,
+          "Add2Bjet": 12937629.368654251,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 113736166.15320005
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "TTbb_SemiLep": {
+      "sample": "TTbb_SemiLep",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 12,
+        "files_valid": 12,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 12,
+        "nEvents_total": 7318891,
+        "sumGenW_total": 153797755.7116127,
+        "sumGenW_pos": 164066817.44428062,
+        "sumGenW_neg": -10269061.732667923
+      },
+      "runs": {
+        "genEventSumw": 153797754.09350008,
+        "genEventSumw2": 4550384136.754365,
+        "genEventCount": 7318891
+      },
+      "skim_attrition_rel": 0.000000010521041956879557,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 3381121,
+          "41": 167631,
+          "42": 70093,
+          "43": 23062,
+          "44": 5419,
+          "45": 1131,
+          "51": 2245047,
+          "52": 709437,
+          "53": 678015,
+          "54": 33613,
+          "55": 4322,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 67812477.6763115,
+          "41": 3553123.095348358,
+          "42": 1522634.9245243073,
+          "43": 509724.98276138306,
+          "44": 121702.010389328,
+          "45": 26878.704790115356,
+          "51": 49363400.06217384,
+          "52": 14208053.610092163,
+          "53": 15826870.40318489,
+          "54": 756460.4926242828,
+          "55": 96429.74941253662,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 3381121,
+          "AddCjet": 267336,
+          "Add1Bjet_1Had": 2245047,
+          "Add1Bjet_2Had": 709437,
+          "Add2Bjet": 715950,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 67812477.6763115,
+          "AddCjet": 5734063.717813492,
+          "Add1Bjet_1Had": 49363400.06217384,
+          "Add1Bjet_2Had": 14208053.610092163,
+          "Add2Bjet": 16679760.64522171,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 153797754.09350008
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "WJetsToLNu_HT100To200": {
+      "sample": "WJetsToLNu_HT100To200",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 773,
+        "files_valid": 773,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 773,
+        "nEvents_total": 97127353,
+        "sumGenW_total": 97127353.0,
+        "sumGenW_pos": 97127353.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 97127353.0,
+        "genEventSumw2": 97127353.0,
+        "genEventCount": 97127353
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 76460597,
+          "41": 15298195,
+          "42": 1622860,
+          "43": 1109889,
+          "44": 247204,
+          "45": 12262,
+          "51": 1657800,
+          "52": 326986,
+          "53": 386898,
+          "54": 4401,
+          "55": 261,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 76460597.0,
+          "41": 15298195.0,
+          "42": 1622860.0,
+          "43": 1109889.0,
+          "44": 247204.0,
+          "45": 12262.0,
+          "51": 1657800.0,
+          "52": 326986.0,
+          "53": 386898.0,
+          "54": 4401.0,
+          "55": 261.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 76460597,
+          "AddCjet": 18290410,
+          "Add1Bjet_1Had": 1657800,
+          "Add1Bjet_2Had": 326986,
+          "Add2Bjet": 391560,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 76460597.0,
+          "AddCjet": 18290410.0,
+          "Add1Bjet_1Had": 1657800.0,
+          "Add1Bjet_2Had": 326986.0,
+          "Add2Bjet": 391560.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 97127353.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "WJetsToLNu_HT1200To2500": {
+      "sample": "WJetsToLNu_HT1200To2500",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 338,
+        "files_valid": 338,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 338,
+        "nEvents_total": 19195040,
+        "sumGenW_total": 19195040.0,
+        "sumGenW_pos": 19195040.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 19195040.0,
+        "genEventSumw2": 19195040.0,
+        "genEventCount": 19195040
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 11823883,
+          "41": 2260358,
+          "42": 1808544,
+          "43": 776305,
+          "44": 405962,
+          "45": 127488,
+          "51": 557818,
+          "52": 809491,
+          "53": 563982,
+          "54": 47410,
+          "55": 13799,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 11823883.0,
+          "41": 2260358.0,
+          "42": 1808544.0,
+          "43": 776305.0,
+          "44": 405962.0,
+          "45": 127488.0,
+          "51": 557818.0,
+          "52": 809491.0,
+          "53": 563982.0,
+          "54": 47410.0,
+          "55": 13799.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 11823883,
+          "AddCjet": 5378657,
+          "Add1Bjet_1Had": 557818,
+          "Add1Bjet_2Had": 809491,
+          "Add2Bjet": 625191,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 11823883.0,
+          "AddCjet": 5378657.0,
+          "Add1Bjet_1Had": 557818.0,
+          "Add1Bjet_2Had": 809491.0,
+          "Add2Bjet": 625191.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 19195040.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "WJetsToLNu_HT200To400": {
+      "sample": "WJetsToLNu_HT200To400",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 427,
+        "files_valid": 427,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 427,
+        "nEvents_total": 86662720,
+        "sumGenW_total": 86662720.0,
+        "sumGenW_pos": 86662720.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 86662720.0,
+        "genEventSumw2": 86662720.0,
+        "genEventCount": 86662720
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 63470949,
+          "41": 14030902,
+          "42": 2777002,
+          "43": 1933553,
+          "44": 553200,
+          "45": 50555,
+          "51": 2147825,
+          "52": 774537,
+          "53": 901346,
+          "54": 20722,
+          "55": 2129,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 63470949.0,
+          "41": 14030902.0,
+          "42": 2777002.0,
+          "43": 1933553.0,
+          "44": 553200.0,
+          "45": 50555.0,
+          "51": 2147825.0,
+          "52": 774537.0,
+          "53": 901346.0,
+          "54": 20722.0,
+          "55": 2129.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 63470949,
+          "AddCjet": 19345212,
+          "Add1Bjet_1Had": 2147825,
+          "Add1Bjet_2Had": 774537,
+          "Add2Bjet": 924197,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 63470949.0,
+          "AddCjet": 19345212.0,
+          "Add1Bjet_1Had": 2147825.0,
+          "Add1Bjet_2Had": 774537.0,
+          "Add2Bjet": 924197.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 86662720.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "WJetsToLNu_HT2500ToInf": {
+      "sample": "WJetsToLNu_HT2500ToInf",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 298,
+        "files_valid": 298,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 298,
+        "nEvents_total": 18537836,
+        "sumGenW_total": 18537836.0,
+        "sumGenW_pos": 18537836.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 18537836.0,
+        "genEventSumw2": 18537836.0,
+        "genEventCount": 18537836
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 10968749,
+          "41": 1836633,
+          "42": 2158002,
+          "43": 720713,
+          "44": 456707,
+          "45": 199007,
+          "51": 474578,
+          "52": 1055486,
+          "53": 576314,
+          "54": 65635,
+          "55": 26012,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 10968749.0,
+          "41": 1836633.0,
+          "42": 2158002.0,
+          "43": 720713.0,
+          "44": 456707.0,
+          "45": 199007.0,
+          "51": 474578.0,
+          "52": 1055486.0,
+          "53": 576314.0,
+          "54": 65635.0,
+          "55": 26012.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 10968749,
+          "AddCjet": 5371062,
+          "Add1Bjet_1Had": 474578,
+          "Add1Bjet_2Had": 1055486,
+          "Add2Bjet": 667961,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 10968749.0,
+          "AddCjet": 5371062.0,
+          "Add1Bjet_1Had": 474578.0,
+          "Add1Bjet_2Had": 1055486.0,
+          "Add2Bjet": 667961.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 18537836.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "WJetsToLNu_HT400To600": {
+      "sample": "WJetsToLNu_HT400To600",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 252,
+        "files_valid": 252,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 252,
+        "nEvents_total": 14110773,
+        "sumGenW_total": 14110773.0,
+        "sumGenW_pos": 14110773.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 14110773.0,
+        "genEventSumw2": 14110773.0,
+        "genEventCount": 14110773
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 9666802,
+          "41": 2146743,
+          "42": 729104,
+          "43": 451584,
+          "44": 161318,
+          "45": 23777,
+          "51": 410425,
+          "52": 252807,
+          "53": 256799,
+          "54": 9887,
+          "55": 1527,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 9666802.0,
+          "41": 2146743.0,
+          "42": 729104.0,
+          "43": 451584.0,
+          "44": 161318.0,
+          "45": 23777.0,
+          "51": 410425.0,
+          "52": 252807.0,
+          "53": 256799.0,
+          "54": 9887.0,
+          "55": 1527.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 9666802,
+          "AddCjet": 3512526,
+          "Add1Bjet_1Had": 410425,
+          "Add1Bjet_2Had": 252807,
+          "Add2Bjet": 268213,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 9666802.0,
+          "AddCjet": 3512526.0,
+          "Add1Bjet_1Had": 410425.0,
+          "Add1Bjet_2Had": 252807.0,
+          "Add2Bjet": 268213.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 14110773.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "WJetsToLNu_HT600To800": {
+      "sample": "WJetsToLNu_HT600To800",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 223,
+        "files_valid": 223,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 223,
+        "nEvents_total": 21386116,
+        "sumGenW_total": 21386116.0,
+        "sumGenW_pos": 21386116.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 21386116.0,
+        "genEventSumw2": 21386116.0,
+        "genEventCount": 21386116
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 14099360,
+          "41": 3037288,
+          "42": 1396811,
+          "43": 777924,
+          "44": 317735,
+          "45": 60879,
+          "51": 644875,
+          "52": 535281,
+          "53": 485910,
+          "54": 25355,
+          "55": 4698,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 14099360.0,
+          "41": 3037288.0,
+          "42": 1396811.0,
+          "43": 777924.0,
+          "44": 317735.0,
+          "45": 60879.0,
+          "51": 644875.0,
+          "52": 535281.0,
+          "53": 485910.0,
+          "54": 25355.0,
+          "55": 4698.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 14099360,
+          "AddCjet": 5590637,
+          "Add1Bjet_1Had": 644875,
+          "Add1Bjet_2Had": 535281,
+          "Add2Bjet": 515963,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 14099360.0,
+          "AddCjet": 5590637.0,
+          "Add1Bjet_1Had": 644875.0,
+          "Add1Bjet_2Had": 535281.0,
+          "Add2Bjet": 515963.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 21386116.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "WJetsToLNu_HT70To100": {
+      "sample": "WJetsToLNu_HT70To100",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 406,
+        "files_valid": 406,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 406,
+        "nEvents_total": 91895915,
+        "sumGenW_total": 91895915.0,
+        "sumGenW_pos": 91895915.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 91895915.0,
+        "genEventSumw2": 91895915.0,
+        "genEventCount": 91895915
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 75892814,
+          "41": 13115906,
+          "42": 929432,
+          "43": 546260,
+          "44": 98234,
+          "45": 3214,
+          "51": 1017130,
+          "52": 141359,
+          "53": 150493,
+          "54": 1030,
+          "55": 43,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 75892814.0,
+          "41": 13115906.0,
+          "42": 929432.0,
+          "43": 546260.0,
+          "44": 98234.0,
+          "45": 3214.0,
+          "51": 1017130.0,
+          "52": 141359.0,
+          "53": 150493.0,
+          "54": 1030.0,
+          "55": 43.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 75892814,
+          "AddCjet": 14693046,
+          "Add1Bjet_1Had": 1017130,
+          "Add1Bjet_2Had": 141359,
+          "Add2Bjet": 151566,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 75892814.0,
+          "AddCjet": 14693046.0,
+          "Add1Bjet_1Had": 1017130.0,
+          "Add1Bjet_2Had": 141359.0,
+          "Add2Bjet": 151566.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 91895915.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "WJetsToLNu_HT800To1200": {
+      "sample": "WJetsToLNu_HT800To1200",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 233,
+        "files_valid": 233,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 233,
+        "nEvents_total": 18260678,
+        "sumGenW_total": 18260678.0,
+        "sumGenW_pos": 18260678.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 18260678.0,
+        "genEventSumw2": 18260678.0,
+        "genEventCount": 18260678
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 11667433,
+          "41": 2411303,
+          "42": 1416793,
+          "43": 710679,
+          "44": 323651,
+          "45": 77499,
+          "51": 551790,
+          "52": 586445,
+          "53": 476842,
+          "54": 31070,
+          "55": 7173,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 11667433.0,
+          "41": 2411303.0,
+          "42": 1416793.0,
+          "43": 710679.0,
+          "44": 323651.0,
+          "45": 77499.0,
+          "51": 551790.0,
+          "52": 586445.0,
+          "53": 476842.0,
+          "54": 31070.0,
+          "55": 7173.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 11667433,
+          "AddCjet": 4939925,
+          "Add1Bjet_1Had": 551790,
+          "Add1Bjet_2Had": 586445,
+          "Add2Bjet": 515085,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 11667433.0,
+          "AddCjet": 4939925.0,
+          "Add1Bjet_1Had": 551790.0,
+          "Add1Bjet_2Had": 586445.0,
+          "Add2Bjet": 515085.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 18260678.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "WJetsToQQ_HT400to600": {
+      "sample": "WJetsToQQ_HT400to600",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 72,
+        "files_valid": 72,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 72,
+        "nEvents_total": 9927793,
+        "sumGenW_total": 9927793.0,
+        "sumGenW_pos": 9927793.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 9927793.0,
+        "genEventSumw2": 9927793.0,
+        "genEventCount": 9927793
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 7148377,
+          "41": 1538599,
+          "42": 400464,
+          "43": 246653,
+          "44": 84166,
+          "45": 10107,
+          "51": 253415,
+          "52": 118411,
+          "53": 123268,
+          "54": 3822,
+          "55": 511,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 7148377.0,
+          "41": 1538599.0,
+          "42": 400464.0,
+          "43": 246653.0,
+          "44": 84166.0,
+          "45": 10107.0,
+          "51": 253415.0,
+          "52": 118411.0,
+          "53": 123268.0,
+          "54": 3822.0,
+          "55": 511.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 7148377,
+          "AddCjet": 2279989,
+          "Add1Bjet_1Had": 253415,
+          "Add1Bjet_2Had": 118411,
+          "Add2Bjet": 127601,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 7148377.0,
+          "AddCjet": 2279989.0,
+          "Add1Bjet_1Had": 253415.0,
+          "Add1Bjet_2Had": 118411.0,
+          "Add2Bjet": 127601.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 9927793.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "WJetsToQQ_HT600to800": {
+      "sample": "WJetsToQQ_HT600to800",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 33,
+        "files_valid": 33,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 33,
+        "nEvents_total": 14510253,
+        "sumGenW_total": 14510253.0,
+        "sumGenW_pos": 14510253.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 14510253.0,
+        "genEventSumw2": 14510253.0,
+        "genEventCount": 14510253
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 10076990,
+          "41": 2106974,
+          "42": 779913,
+          "43": 431092,
+          "44": 167099,
+          "45": 27942,
+          "51": 398911,
+          "52": 263938,
+          "53": 245150,
+          "54": 10512,
+          "55": 1732,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 10076990.0,
+          "41": 2106974.0,
+          "42": 779913.0,
+          "43": 431092.0,
+          "44": 167099.0,
+          "45": 27942.0,
+          "51": 398911.0,
+          "52": 263938.0,
+          "53": 245150.0,
+          "54": 10512.0,
+          "55": 1732.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 10076990,
+          "AddCjet": 3513020,
+          "Add1Bjet_1Had": 398911,
+          "Add1Bjet_2Had": 263938,
+          "Add2Bjet": 257394,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 10076990.0,
+          "AddCjet": 3513020.0,
+          "Add1Bjet_1Had": 398911.0,
+          "Add1Bjet_2Had": 263938.0,
+          "Add2Bjet": 257394.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 14510253.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "WJetsToQQ_HT800toInf": {
+      "sample": "WJetsToQQ_HT800toInf",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 46,
+        "files_valid": 46,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 46,
+        "nEvents_total": 14722417,
+        "sumGenW_total": 14722417.0,
+        "sumGenW_pos": 14722417.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 14722417.0,
+        "genEventSumw2": 14722417.0,
+        "genEventCount": 14722417
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 9888200,
+          "41": 1936611,
+          "42": 1015964,
+          "43": 485839,
+          "44": 215064,
+          "45": 49301,
+          "51": 412840,
+          "52": 386136,
+          "53": 310312,
+          "54": 18213,
+          "55": 3937,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 9888200.0,
+          "41": 1936611.0,
+          "42": 1015964.0,
+          "43": 485839.0,
+          "44": 215064.0,
+          "45": 49301.0,
+          "51": 412840.0,
+          "52": 386136.0,
+          "53": 310312.0,
+          "54": 18213.0,
+          "55": 3937.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 9888200,
+          "AddCjet": 3702779,
+          "Add1Bjet_1Had": 412840,
+          "Add1Bjet_2Had": 386136,
+          "Add2Bjet": 332462,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 9888200.0,
+          "AddCjet": 3702779.0,
+          "Add1Bjet_1Had": 412840.0,
+          "Add1Bjet_2Had": 386136.0,
+          "Add2Bjet": 332462.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 14722417.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "WW": {
+      "sample": "WW",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 16,
+        "files_valid": 16,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 16,
+        "nEvents_total": 15634000,
+        "sumGenW_total": 15634116.199513435,
+        "sumGenW_pos": 15634116.199513435,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 15634116.199513808,
+        "genEventSumw2": 15634267.303822642,
+        "genEventCount": 15634000
+      },
+      "skim_attrition_rel": -0.000000000000023827955804612504,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 14737918,
+          "41": 523798,
+          "42": 121494,
+          "43": 45308,
+          "44": 6725,
+          "45": 835,
+          "51": 155048,
+          "52": 19641,
+          "53": 22840,
+          "54": 360,
+          "55": 33,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 14738030.479054928,
+          "41": 523799.09159982204,
+          "42": 121494.31271255016,
+          "43": 45308.101912260056,
+          "44": 6725.0,
+          "45": 835.0,
+          "51": 155049.73204529285,
+          "52": 19641.48218858242,
+          "53": 22840.0,
+          "54": 360.0,
+          "55": 33.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 14737918,
+          "AddCjet": 698160,
+          "Add1Bjet_1Had": 155048,
+          "Add1Bjet_2Had": 19641,
+          "Add2Bjet": 23233,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 14738030.479054928,
+          "AddCjet": 698161.5062246323,
+          "Add1Bjet_1Had": 155049.73204529285,
+          "Add1Bjet_2Had": 19641.48218858242,
+          "Add2Bjet": 23233.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 15634116.199513808
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "WZ": {
+      "sample": "WZ",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 20,
+        "files_valid": 20,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 20,
+        "nEvents_total": 7889000,
+        "sumGenW_total": 7889000.0,
+        "sumGenW_pos": 7889000.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 7889000.0,
+        "genEventSumw2": 7889000.0,
+        "genEventCount": 7889000
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 5797470,
+          "41": 608674,
+          "42": 61773,
+          "43": 403444,
+          "44": 21464,
+          "45": 1087,
+          "51": 508499,
+          "52": 13293,
+          "53": 470557,
+          "54": 2675,
+          "55": 64,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 5797470.0,
+          "41": 608674.0,
+          "42": 61773.0,
+          "43": 403444.0,
+          "44": 21464.0,
+          "45": 1087.0,
+          "51": 508499.0,
+          "52": 13293.0,
+          "53": 470557.0,
+          "54": 2675.0,
+          "55": 64.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 5797470,
+          "AddCjet": 1096442,
+          "Add1Bjet_1Had": 508499,
+          "Add1Bjet_2Had": 13293,
+          "Add2Bjet": 473296,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 5797470.0,
+          "AddCjet": 1096442.0,
+          "Add1Bjet_1Had": 508499.0,
+          "Add1Bjet_2Had": 13293.0,
+          "Add2Bjet": 473296.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 7889000.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "ZJetsToQQ_HT400to600": {
+      "sample": "ZJetsToQQ_HT400to600",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 54,
+        "files_valid": 54,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 54,
+        "nEvents_total": 14884962,
+        "sumGenW_total": 14884962.0,
+        "sumGenW_pos": 14884962.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 14884962.0,
+        "genEventSumw2": 14884962.0,
+        "genEventCount": 14884962
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 7215789,
+          "41": 1620814,
+          "42": 424349,
+          "43": 1471860,
+          "44": 197943,
+          "45": 17106,
+          "51": 1751630,
+          "52": 153490,
+          "53": 1972836,
+          "54": 57752,
+          "55": 1393,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 7215789.0,
+          "41": 1620814.0,
+          "42": 424349.0,
+          "43": 1471860.0,
+          "44": 197943.0,
+          "45": 17106.0,
+          "51": 1751630.0,
+          "52": 153490.0,
+          "53": 1972836.0,
+          "54": 57752.0,
+          "55": 1393.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 7215789,
+          "AddCjet": 3732072,
+          "Add1Bjet_1Had": 1751630,
+          "Add1Bjet_2Had": 153490,
+          "Add2Bjet": 2031981,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 7215789.0,
+          "AddCjet": 3732072.0,
+          "Add1Bjet_1Had": 1751630.0,
+          "Add1Bjet_2Had": 153490.0,
+          "Add2Bjet": 2031981.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 14884962.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "ZJetsToQQ_HT600to800": {
+      "sample": "ZJetsToQQ_HT600to800",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 35,
+        "files_valid": 35,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 35,
+        "nEvents_total": 11702567,
+        "sumGenW_total": 11702567.0,
+        "sumGenW_pos": 11702567.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 11702567.0,
+        "genEventSumw2": 11702567.0,
+        "genEventCount": 11702567
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 5329133,
+          "41": 1167254,
+          "42": 449833,
+          "43": 1269974,
+          "44": 213587,
+          "45": 25464,
+          "51": 1235537,
+          "52": 196111,
+          "53": 1743998,
+          "54": 69170,
+          "55": 2506,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 5329133.0,
+          "41": 1167254.0,
+          "42": 449833.0,
+          "43": 1269974.0,
+          "44": 213587.0,
+          "45": 25464.0,
+          "51": 1235537.0,
+          "52": 196111.0,
+          "53": 1743998.0,
+          "54": 69170.0,
+          "55": 2506.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 5329133,
+          "AddCjet": 3126112,
+          "Add1Bjet_1Had": 1235537,
+          "Add1Bjet_2Had": 196111,
+          "Add2Bjet": 1815674,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 5329133.0,
+          "AddCjet": 3126112.0,
+          "Add1Bjet_1Had": 1235537.0,
+          "Add1Bjet_2Had": 196111.0,
+          "Add2Bjet": 1815674.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 11702567.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "ZJetsToQQ_HT800toInf": {
+      "sample": "ZJetsToQQ_HT800toInf",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 39,
+        "files_valid": 39,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 39,
+        "nEvents_total": 9400574,
+        "sumGenW_total": 9400574.0,
+        "sumGenW_pos": 9400574.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 9400574.0,
+        "genEventSumw2": 9400574.0,
+        "genEventCount": 9400574
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 4033037,
+          "41": 830010,
+          "42": 548580,
+          "43": 998679,
+          "44": 226474,
+          "45": 42443,
+          "51": 858451,
+          "52": 372494,
+          "53": 1397076,
+          "54": 85148,
+          "55": 8182,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 4033037.0,
+          "41": 830010.0,
+          "42": 548580.0,
+          "43": 998679.0,
+          "44": 226474.0,
+          "45": 42443.0,
+          "51": 858451.0,
+          "52": 372494.0,
+          "53": 1397076.0,
+          "54": 85148.0,
+          "55": 8182.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 4033037,
+          "AddCjet": 2646186,
+          "Add1Bjet_1Had": 858451,
+          "Add1Bjet_2Had": 372494,
+          "Add2Bjet": 1490406,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 4033037.0,
+          "AddCjet": 2646186.0,
+          "Add1Bjet_1Had": 858451.0,
+          "Add1Bjet_2Had": 372494.0,
+          "Add2Bjet": 1490406.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 9400574.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "ZZ": {
+      "sample": "ZZ",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 2,
+        "files_valid": 2,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 2,
+        "nEvents_total": 2706000,
+        "sumGenW_total": 2706000.0,
+        "sumGenW_pos": 2706000.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 2706000.0,
+        "genEventSumw2": 2706000.0,
+        "genEventCount": 2706000
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 1576074,
+          "41": 235150,
+          "42": 19736,
+          "43": 232134,
+          "44": 13280,
+          "45": 617,
+          "51": 296097,
+          "52": 5527,
+          "53": 322106,
+          "54": 5160,
+          "55": 119,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 1576074.0,
+          "41": 235150.0,
+          "42": 19736.0,
+          "43": 232134.0,
+          "44": 13280.0,
+          "45": 617.0,
+          "51": 296097.0,
+          "52": 5527.0,
+          "53": 322106.0,
+          "54": 5160.0,
+          "55": 119.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 1576074,
+          "AddCjet": 500917,
+          "Add1Bjet_1Had": 296097,
+          "Add1Bjet_2Had": 5527,
+          "Add2Bjet": 327385,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 1576074.0,
+          "AddCjet": 500917.0,
+          "Add1Bjet_1Had": 296097.0,
+          "Add1Bjet_2Had": 5527.0,
+          "Add2Bjet": 327385.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 2706000.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "tHW": {
+      "sample": "tHW",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 36,
+        "files_valid": 36,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 36,
+        "nEvents_total": 14325000,
+        "sumGenW_total": 14325000.0,
+        "sumGenW_pos": 14325000.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 14325000.0,
+        "genEventSumw2": 14325000.0,
+        "genEventCount": 14325000
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 3491771,
+          "41": 309292,
+          "42": 159345,
+          "43": 255725,
+          "44": 30396,
+          "45": 5167,
+          "51": 3333450,
+          "52": 248694,
+          "53": 6208082,
+          "54": 276647,
+          "55": 6431,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 3491771.0,
+          "41": 309292.0,
+          "42": 159345.0,
+          "43": 255725.0,
+          "44": 30396.0,
+          "45": 5167.0,
+          "51": 3333450.0,
+          "52": 248694.0,
+          "53": 6208082.0,
+          "54": 276647.0,
+          "55": 6431.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 3491771,
+          "AddCjet": 759925,
+          "Add1Bjet_1Had": 3333450,
+          "Add1Bjet_2Had": 248694,
+          "Add2Bjet": 6491160,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 3491771.0,
+          "AddCjet": 759925.0,
+          "Add1Bjet_1Had": 3333450.0,
+          "Add1Bjet_2Had": 248694.0,
+          "Add2Bjet": 6491160.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 14325000.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "tHq": {
+      "sample": "tHq",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 21,
+        "files_valid": 21,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 21,
+        "nEvents_total": 7158996,
+        "sumGenW_total": 7158996.0,
+        "sumGenW_pos": 7158996.0,
+        "sumGenW_neg": 0.0
+      },
+      "runs": {
+        "genEventSumw": 7158996.0,
+        "genEventSumw2": 7158996.0,
+        "genEventCount": 7158996
+      },
+      "skim_attrition_rel": 0.0,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 1514993,
+          "41": 173809,
+          "42": 36838,
+          "43": 97370,
+          "44": 8976,
+          "45": 820,
+          "51": 2062827,
+          "52": 41408,
+          "53": 3111605,
+          "54": 108976,
+          "55": 1374,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 1514993.0,
+          "41": 173809.0,
+          "42": 36838.0,
+          "43": 97370.0,
+          "44": 8976.0,
+          "45": 820.0,
+          "51": 2062827.0,
+          "52": 41408.0,
+          "53": 3111605.0,
+          "54": 108976.0,
+          "55": 1374.0,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 1514993,
+          "AddCjet": 317813,
+          "Add1Bjet_1Had": 2062827,
+          "Add1Bjet_2Had": 41408,
+          "Add2Bjet": 3221955,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 1514993.0,
+          "AddCjet": 317813.0,
+          "Add1Bjet_1Had": 2062827.0,
+          "Add1Bjet_2Had": 41408.0,
+          "Add2Bjet": 3221955.0,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 7158996.0
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "ttHToNonbb": {
+      "sample": "ttHToNonbb",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 35,
+        "files_valid": 35,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 35,
+        "nEvents_total": 5070989,
+        "sumGenW_total": 2540302.866218865,
+        "sumGenW_pos": 2567315.4510005116,
+        "sumGenW_neg": -27012.58478164673
+      },
+      "runs": {
+        "genEventSumw": 2540302.9431779995,
+        "genEventSumw2": 1327263.451972013,
+        "genEventCount": 5070989
+      },
+      "skim_attrition_rel": -0.000000030295258583962,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 3897626,
+          "41": 435028,
+          "42": 156162,
+          "43": 287235,
+          "44": 37475,
+          "45": 5089,
+          "51": 137377,
+          "52": 43800,
+          "53": 67316,
+          "54": 3519,
+          "55": 362,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 1952891.1880526543,
+          "41": 217979.28074026108,
+          "42": 78010.09380066395,
+          "43": 144009.30781120062,
+          "44": 18757.88676172495,
+          "45": 2540.103853046894,
+          "51": 68677.9620013833,
+          "52": 21843.358330249786,
+          "53": 33654.20174443722,
+          "54": 1759.3992246985435,
+          "55": 180.08389854431152,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 3897626,
+          "AddCjet": 920989,
+          "Add1Bjet_1Had": 137377,
+          "Add1Bjet_2Had": 43800,
+          "Add2Bjet": 71197,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 1952891.1880526543,
+          "AddCjet": 461296.6729668975,
+          "Add1Bjet_1Had": 68677.9620013833,
+          "Add1Bjet_2Had": 21843.358330249786,
+          "Add2Bjet": 35593.68486768007,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 2540302.9431779995
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    },
+    "ttHTobb": {
+      "sample": "ttHTobb",
+      "isData": false,
+      "runYear": "",
+      "dataEra": "",
+      "xsec_used": 1.0,
+      "jobs": {
+        "files_found": 46,
+        "files_valid": 46,
+        "files_bad": 0,
+        "bad_files": [],
+        "missing_indices": []
+      },
+      "events": {
+        "n_input_files": 46,
+        "nEvents_total": 7825000,
+        "sumGenW_total": 3919780.8296052217,
+        "sumGenW_pos": 3961533.1791623235,
+        "sumGenW_neg": -41752.34955710173
+      },
+      "runs": {
+        "genEventSumw": 3919780.948356,
+        "genEventSumw2": 2048088.9451112992,
+        "genEventCount": 7825000
+      },
+      "skim_attrition_rel": -0.00000003029525873803847,
+      "genTtbarId": {
+        "n": {
+          "lt0": 0,
+          "0": 296416,
+          "41": 18638,
+          "42": 9059,
+          "43": 3161,
+          "44": 876,
+          "45": 195,
+          "51": 2573279,
+          "52": 43725,
+          "53": 4806866,
+          "54": 71377,
+          "55": 1408,
+          "61": 0,
+          "62": 0,
+          "71": 0,
+          "72": 0,
+          "other": 0
+        },
+        "sumGenW": {
+          "lt0": 0.0,
+          "0": 148379.92356479168,
+          "41": 9323.434565544128,
+          "42": 4539.444408476353,
+          "43": 1570.106490433216,
+          "44": 442.02411460876465,
+          "45": 99.76238697767258,
+          "51": 1289633.4924802184,
+          "52": 20683.55663138628,
+          "53": 2408742.881098509,
+          "54": 35672.47157329321,
+          "55": 693.7322909832001,
+          "61": 0.0,
+          "62": 0.0,
+          "71": 0.0,
+          "72": 0.0,
+          "other": 0.0
+        }
+      },
+      "ttCat": {
+        "n": {
+          "LightFlavour": 296416,
+          "AddCjet": 31929,
+          "Add1Bjet_1Had": 2573279,
+          "Add1Bjet_2Had": 43725,
+          "Add2Bjet": 4879651,
+          "NoTT": 0
+        },
+        "sumGenW": {
+          "LightFlavour": 148379.92356479168,
+          "AddCjet": 15974.771966040134,
+          "Add1Bjet_1Had": 1289633.4924802184,
+          "Add1Bjet_2Had": 20683.55663138628,
+          "Add2Bjet": 2445109.0849627852,
+          "NoTT": 0.0
+        }
+      },
+      "derived": {
+        "eff_yield": 3919780.948356
+      },
+      "crosschecks": {
+        "id_partition_count": true,
+        "id_partition_weight": true,
+        "ttcat_partition_count": true,
+        "ttcat_partition_weight": true,
+        "ttcat_vs_id_count[LightFlavour]": true,
+        "ttcat_vs_id_weight[LightFlavour]": true,
+        "ttcat_vs_id_count[AddCjet]": true,
+        "ttcat_vs_id_weight[AddCjet]": true,
+        "events_vs_runs_match": true
+      },
+      "crosschecks_all_ok": true,
+      "warnings": []
+    }
+  }
+}

@@ -1,0 +1,62 @@
+=== RUNLOG ================================================================
+step        : knu_d16_branchsig
+start_utc   : 2026-10-04T17:15:25Z
+host        : cluster313   user: jhlee
+cwd         : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+repo        : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+git_head    : 90feebc0   modified_tracked_files: 4
+cmd         : python3 tools/stage0/branch_signature.py --base /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1 
+CMSSW_BASE  : /u/user/jhlee/ttHH/CMSSW_14_2_1
+root        : 6.30.09
+python3     : Python 3.9.14
+condor_job  : 2180525.0  slot slot1_6   jobdir: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/runlog/knu_d16_branchsig_20261004_171502
+===========================================================================
+[condor_run] worker cluster313  scratch /home/condor/dir_3253055
+[condor_run] cmsenv ok: CMSSW_BASE=/u/user/jhlee/ttHH/CMSSW_14_2_1  root 6.30.09  Python 3.9.14  TMPDIR=/home/condor/dir_3253055
+[condor_run] running in /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH: python3 tools/stage0/branch_signature.py --base /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1 
+----------------------------------------------------------------------------
+BASE /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1
+GLOB */*/*/*/forgedNtuple_*.root
+TREE Events  group-level 3
+DS JetMET0/JetMET0_Run2024C-MINIv6NANOv15-v1     files=160 unreadable=0 branch_sets=2 differing=7
+   HLT_Ele14_eta2p5_IsoVVVL_Gsf_PFHT200_PNetBTag0p53       in 46 of 160 files
+   HLT_Mu12_IsoVVL_PFHT150_PNetBTag0p53                    in 46 of 160 files
+   HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8_AK8CaloJet30  in 46 of 160 files
+   HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8_AK8PFJet30    in 46 of 160 files
+   HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8_CaloJet30     in 46 of 160 files
+   HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_2p0     in 46 of 160 files
+   HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_4p3     in 46 of 160 files
+DS JetMET0/JetMET0_Run2024D-MINIv6NANOv15-v1     files=151 unreadable=0 branch_sets=1 differing=0
+DS JetMET0/JetMET0_Run2024E-MINIv6NANOv15-v1     files=231 unreadable=0 branch_sets=1 differing=0
+DS JetMET0/JetMET0_Run2024F-MINIv6NANOv15-v2     files=366 unreadable=0 branch_sets=1 differing=0
+DS JetMET0/JetMET0_Run2024G-MINIv6NANOv15-v2     files=438 unreadable=0 branch_sets=1 differing=0
+DS JetMET0/JetMET0_Run2024H-MINIv6NANOv15-v2     files=82 unreadable=0 branch_sets=1 differing=0
+DS JetMET0/JetMET0_Run2024I-MINIv6NANOv15-v2     files=149 unreadable=0 branch_sets=2 differing=2
+   HLT_PFJet40_ZeroBiasCopy                                in 141 of 149 files
+   HLT_PFJet80_L1SingleJet60                               in 141 of 149 files
+DS JetMET0/JetMET0_Run2024I-MINIv6NANOv15_v2-v1  files=179 unreadable=0 branch_sets=1 differing=0
+DS JetMET1/JetMET1_Run2024C-MINIv6NANOv15-v1     files=109 unreadable=0 branch_sets=2 differing=7
+   HLT_Ele14_eta2p5_IsoVVVL_Gsf_PFHT200_PNetBTag0p53       in 36 of 109 files
+   HLT_Mu12_IsoVVL_PFHT150_PNetBTag0p53                    in 36 of 109 files
+   HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8_AK8CaloJet30  in 36 of 109 files
+   HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8_AK8PFJet30    in 36 of 109 files
+   HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8_CaloJet30     in 36 of 109 files
+   HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_2p0     in 36 of 109 files
+   HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_4p3     in 36 of 109 files
+DS JetMET1/JetMET1_Run2024D-MINIv6NANOv15-v1     files=155 unreadable=0 branch_sets=1 differing=0
+DS JetMET1/JetMET1_Run2024E-MINIv6NANOv15-v1     files=226 unreadable=0 branch_sets=1 differing=0
+DS JetMET1/JetMET1_Run2024F-MINIv6NANOv15-v2     files=381 unreadable=0 branch_sets=1 differing=0
+DS JetMET1/JetMET1_Run2024G-MINIv6NANOv15-v2     files=451 unreadable=0 branch_sets=1 differing=0
+DS JetMET1/JetMET1_Run2024H-MINIv6NANOv15-v2     files=76 unreadable=0 branch_sets=1 differing=0
+DS JetMET1/JetMET1_Run2024I-MINIv6NANOv15-v1     files=82 unreadable=0 branch_sets=2 differing=2
+   HLT_PFJet40_ZeroBiasCopy                                in 79 of 82 files
+   HLT_PFJet80_L1SingleJet60                               in 79 of 82 files
+DS JetMET1/JetMET1_Run2024I-MINIv6NANOv15_v2-v2  files=116 unreadable=0 branch_sets=1 differing=0
+DS Muon0/Muon0_Run2024C-MINIv6NANOv15-v1         files=103 unreadable=0 branch_sets=2 differing=7
+   HLT_Ele14_eta2p5_IsoVVVL_Gsf_PFHT200_PNetBTag0p53       in 31 of 103 files
+   HLT_Mu12_IsoVVL_PFHT150_PNetBTag0p53                    in 31 of 103 files
+   HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8_AK8CaloJet30  in 31 of 103 files
+   HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8_AK8PFJet30    in 31 of 103 files
+   HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8_CaloJet30     in 31 of 103 files
+   HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_2p0     in 31 of 103 files
+   HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_4p3     in 31 of 103 files

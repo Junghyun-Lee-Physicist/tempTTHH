@@ -1,0 +1,44 @@
+=== RUNLOG ================================================================
+step        : knu_build
+start_utc   : 2026-10-04T17:32:29Z
+host        : cluster300   user: jhlee
+cwd         : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+repo        : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+git_head    : 90feebc0   modified_tracked_files: 4
+cmd         : /bin/bash tools/stage0/build_check.sh -j 4 
+CMSSW_BASE  : /u/user/jhlee/ttHH/CMSSW_14_2_1
+root        : 6.30.09
+python3     : Python 3.9.14
+condor_job  : 2180522.0  slot slot1_2   jobdir: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/runlog/knu_build_20261004_171451
+===========================================================================
+[condor_run] worker cluster300  scratch /home/condor/dir_2205665
+[condor_run] cmsenv ok: CMSSW_BASE=/u/user/jhlee/ttHH/CMSSW_14_2_1  root 6.30.09  Python 3.9.14  TMPDIR=/home/condor/dir_2205665
+[condor_run] running in /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH: /bin/bash tools/stage0/build_check.sh -j 4 
+----------------------------------------------------------------------------
+mode        : make clean && make -j4   (in /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH)
+start_utc   : 2026-10-04T17:32:32Z
+end_utc     : 2026-10-04T17:52:40Z
+make_rc     : 0
+make_log    : condor/build/build_20261004_173232.log (21568 lines)
+warnings    : 7158 lines with 'warning:'
+errors      : 0 lines with 'error:' or 'Error <n>'
+--- products ---
+-rwxr-xr-x 1 jhlee knu 11689864 2026-10-05 02:52:40.359137838 +0900 ttHHanalyzer_unified
+-rw-r--r-- 1 jhlee knu   216780 2026-10-05 02:33:13.310190802 +0900 libEventShape.a
+-rwxr-xr-x 1 jhlee knu 15118512 2026-10-05 02:33:39.591414736 +0900 libToolsForAnalysis.so
+--- headers (md5) ---
+b08a58b47de9dfba3f3e53c1763ac49c  include/eventBuffer.h
+de3c3cfb3994a874115537b26d215f74  src/treestream.cc
+===========================================================================
+end_utc     : 2026-10-04T17:52:41Z
+wall_s      : 1211
+EXIT        : 0
+outputs (files of this repo changed during the run; tmp/ condor/ runlogs/ left out): 5
+      216780  lib/libEventShape.a
+    15118512  lib/libToolsForAnalysis.so
+      213554  src/dictionaryForROOT.cc
+       51527  src/dictionaryForROOT_rdict.pcm
+    11689864  ttHHanalyzer_unified
+log         : runlogs/run_knu_build_20261004_173229.log
+log_kb      : 2
+=== END ===================================================================
