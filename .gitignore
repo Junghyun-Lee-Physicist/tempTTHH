@@ -55,3 +55,12 @@ prescan_summary_20*/
 #   2017-only 버전을 보려면:
 #     git show <commit>:include/eventBuffer.h > /tmp/eventBuffer_2017.h
 include/*.h.bk_*
+
+# ── tools/runlog (STEP 23, 2026-10-04) ──────────────────────────────────────
+# runlogs/ is committed (docs/DECISIONS.md D-2026-10-04-A); these are not:
+# the logs of commands that mention crab (pre-signed S3 URLs), the ledger lock,
+# and a run's start-mark file. condor/ (job files, condor's own .log with host
+# names and IPs) is already ignored above.
+runlogs/nocommit/
+runlogs/*.lock
+runlogs/.runlog_mark_*

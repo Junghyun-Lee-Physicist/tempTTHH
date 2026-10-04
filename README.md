@@ -69,6 +69,10 @@ make -C bTagSF_ReweightStudy   # b-tag SF 도구 (공유 헤더 Config_TtCatGrou
 EventShape는 **정적 라이브러리(`lib/libEventShape.a`)로 분리 컴파일**되어 링크된다.
 실행파일에는 `$ORIGIN/lib` RPATH가 박혀 `./lib`의 공유 라이브러리를 자동으로 찾는다.
 
+> **header 를 바꾼 뒤에는 `make clean && make -j4`** (2026-10-04, STEP 23). Makefile 의 목적 파일 규칙은 `.cc` 에만 의존해서
+> `include/eventBuffer.h`·`tnm.h`·`ttHHanalyzer_unified.h` 가 바뀐 것을 모른다 — 그냥 `make` 는 아무 말 없이 옛 header 로 만든
+> 목적 파일을 쓴다. `tools/stage0/build_check.sh` 가 같은 clean 빌드를 하고 짧은 보고(rc, warning/error 수, 첫 error, md5)를 남긴다.
+
 ### 빌드 레벨 (build levels)
 디버깅 강도를 Makefile 옵션으로 토글한다. **디버그 심볼(`-g`)은 평소에도 항상**
 포함되므로(성능 영향 거의 없음, 바이너리만 커짐) gdb로 segfault 줄 번호를 언제든
@@ -281,6 +285,20 @@ job 이 죽어도 entry>0 이면 complete 로 봄 — entry 수 미검사). 상�
   후 `export X509_USER_PROXY=proxy.cert`.
 
 ---
+
+### 7.6 오래 걸리는 점검·빌드를 condor job 으로, 기록은 커밋 (`tools/runlog`, 2026-10-04)
+
+```bash
+# KNU, cmsenv 한 셸에서. job 이 worker 에서 cmsenv 하고 지금 디렉터리에서 명령을 그대로 돌린다
+/bin/bash tools/runlog/condor_run.sh <step> -- <명령> [인자...]
+/bin/bash tools/runlog/status.sh                         # cluster, 상태, exit code, 기록 파일
+git pull --ff-only && git add runlogs && git commit -m "runlogs: ..." && git push   # 기록 올리기 (switch 뒤)
+```
+
+기록은 `runlogs/run_<step>_<UTC>.log`(머리: 시각·host·git HEAD·명령·CMSSW·ROOT, 본문: 출력, 꼬리: **EXIT**)와
+`runlogs/LEDGER.tsv`. 우리 프로그램의 출력이라 커밋한다(`docs/DECISIONS.md` D-2026-10-04-A; crab 명령은 `runlogs/nocommit/`).
+같은 기록을 지금 셸에서: `/bin/bash tools/runlog/runlog.sh <step> -- <명령>`. 메모리 기본 4GB — `-j4` 빌드는
+`--cpus 4 --memory 12GB`, analyzer 자체를 돌리면 `--source setup.sh`. 자세히: [`tools/runlog/README.md`](tools/runlog/README.md).
 
 ## 8. 전체 워크플로우 (처음부터 끝까지)
 

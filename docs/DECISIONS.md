@@ -2,7 +2,7 @@
 
 > **Purpose:** record each significant decision — the choice, why, what else was considered, and whether it still holds — so no one silently reopens a settled question or treats a proposal as settled.
 > **Audience:** anyone about to change behavior or unsure whether something is fixed.
-> **Status:** living, append-and-supersede · last meaningful update **2026-10-02** (D-2026-10-02-A…E: v15 analyzer order, eventBuffer policy, event cleaning, answers N0–N8, blinding).
+> **Status:** living, append-and-supersede · last meaningful update **2026-10-04** (D-2026-10-04-A: run records are committed) · 2026-10-02 (D-2026-10-02-A…E: v15 analyzer order, eventBuffer policy, event cleaning, answers N0–N8, blinding).
 > **Links:** index [`README.md`](README.md) · current state [`STATUS.md`](STATUS.md) · per-change detail [`changes/`](changes/).
 
 ## How to use this log
@@ -85,6 +85,15 @@ Each entry has an id `D-<date>-<letter>`, a **Status** (DECIDED / PROPOSED / OPE
 **Proposal.** Withdraws the AI's earlier suggestion to hide data in the ≥4b plots (user's question N6: "왜 저 경우에 data를 숨겨야 해?"). Data are shown in every preselection and control-region plot, including nb ≥ 4. Blinding applies later to the bins of the final discriminant (e.g. high BDT/DNN score in the ≥4b categories) where the expected S/B is largest, with the criterion and the unblinding procedure taken from the AN.
 **Why.** Blinding exists so that selection choices are not tuned on data where the signal would show. At preselection the SM signal is negligible: σ(ttHH)·BR(HH→4b) = 0.756 fb × 0.339 = 0.256 fb at 13 TeV (`data/samples_2017UL.json`), i.e. about 11 events produced in 2017 (42.07 fb⁻¹) and about 28 in 2024 C–I (109.8 fb⁻¹, 13 TeV σ; the 13.6 TeV σ is higher, D5) before any selection and a few after it, while the background in the same selection is expected to be orders of magnitude larger. The data there cannot reveal the signal, and hiding it removes the most relevant validation region. Stage 8 writes the S/B per cut step and region, so this expectation is checked, not assumed. The 2017 step-8 study already showed nb ≥ 4 data.
 **Alternatives considered.** Hide nb ≥ 4 everywhere — rejected for the reason above.
+
+## D-2026-10-04-A — Run records of our own programs are committed; CRAB transcripts are not · **DECIDED**
+
+**Decision (user, 2026-10-04).** "로컬 run 로그나 condor job 로그는 올려도 될텐데 (어차피 우리가 만든 cout이라면 말이야. 저번 메일에도 crab job만 안된다고 하지 않았던가)". The output of our own programs (analyzer builds, unit tests, file scans, test harnesses), run at KNU in a shell or as a condor job, is recorded by `tools/runlog/runlog.sh` as `runlogs/run_<step>_<UTC>.log` plus a line in `runlogs/LEDGER.tsv`, and committed. The AI session then reads the files (exact output, git commit, exit code) instead of pasted text, and the record outlives the session. A command line that mentions `crab` is logged under `runlogs/nocommit/` (gitignored) and left out of the ledger; so is any output that turns out to contain a pre-signed URL signature.
+**Why.** CRAB submit transcripts embed pre-signed S3 URLs, i.e. credentials (NtupleForge `script/runlog.sh` header and its `docs/03_DECISIONS.md` D-2026-08-17-no-logs-in-git — the reason that `runlog.sh` already routes them to `nocommit/`); our own `cout` carries none.
+**Scope guard.** (1) condor's own files (`condor/runlog/<step>_<UTC>/job.out|err|log`) stay in the gitignored `condor/`: `job.log` holds the IP addresses and ports of the schedd and the worker, and the useful part of `job.out` is already in the runlog. (2) The user's 2026-10-02 rule for the PUBLIC NtupleForge repository (the jsonpog payload inventory and preliminary lumi logs are not committed there; the numbers live in this repository) is unchanged. (3) As a safety net, `runlog.sh` also moves a log to `runlogs/nocommit/` when the output turns out to contain a pre-signed URL signature (a script that calls crab inside).
+**Consistency with NtupleForge `docs/03_DECISIONS.md` D-2026-08-17-no-logs-in-git.** Its tier 1 (CRAB transcripts never) is kept as is. Its tier 2 (bulk run logs — local test output, condor job logs, hadd transcripts — not by default) is kept by keeping bulk output out of the record: condor's own files stay in `condor/`, `tools/stage0/build_check.sh` writes the full make output under `condor/build/` and prints a summary, and the record's footer flags a record over 2 MB. What is committed is the step record, as NtupleForge does with `script/runlogs/` since 2026-09-16.
+**Alternatives considered.** Copy logs to the Mac with scp, as for the lxplus logs of 10-02 — kept as a fallback, but it is a manual copy every round and leaves nothing in git. Push from inside the condor job — rejected: the worker has no usable ssh key (the user's keys need a passphrase).
+**Detail.** `changes/STEP_23_runlog_condor.md`; usage `../tools/runlog/README.md`.
 
 ## D-(historical) — carried invariants · **DECIDED**
 

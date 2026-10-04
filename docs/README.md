@@ -2,7 +2,7 @@
 
 > **Purpose:** the map. Tells any reader (human or AI, with no prior context) which document answers which question, and where to start.
 > **Audience:** everyone — read this first.
-> **Status:** living index · last meaningful update **2026-10-01** (v15 계획 문서 추가).
+> **Status:** living index · last meaningful update **2026-10-04** (실행 기록 `runlogs/` 와 `tools/runlog/` 추가) · 2026-10-01 (v15 계획 문서 추가).
 > **Links:** every document below.
 
 ## Bottom line — where to start
@@ -27,6 +27,8 @@ This repository is worked on **asynchronously by several people and AI threads t
 | [`ttbarCategorization.md`](ttbarCategorization.md) / [`_KR`](ttbarCategorization_KR.md) | tt+B / tt+nb categorization physics | working on ttbar categorization |
 | [`stitch_logs_2017/`](stitch_logs_2017/) | Stitch-factor derivation logs + JSON | working on ttbar stitching |
 | [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) | v15 ntuple 로 가는 작업 목록과 연도별 한 명령 드라이버 설계(PROPOSED 2026-10-01); **§9: 2024 먼저의 단계별 계획(Stage 0~9, 통과 기준), 연도별 event cleaning 표, eventBuffer 정책, ttbar ID 검증, QCD 비교 정의 (2026-10-02)** | 2024/2018/2017 v15 작업을 시작할 때 |
+| [`../runlogs/`](../runlogs/) (`LEDGER.tsv`) | 실행 기록: KNU 의 빌드·시험·파일 점검이 어느 커밋에서 어떻게 끝났나(condor job 포함; [D-2026-10-04-A](DECISIONS.md)) | KNU 단계의 결과를 볼 때 |
+| [`../tools/runlog/README.md`](../tools/runlog/README.md) | 기록을 남기며 돌리기: `runlog.sh`(지금 셸), `condor_run.sh`(KNU condor job), `status.sh` | 오래 걸리는 단계를 돌리기 전 |
 | [`../README.md`](../README.md) | Repo-level build/run entry | first checkout |
 
 ## Workflow (the run order)

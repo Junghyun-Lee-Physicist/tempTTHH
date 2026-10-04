@@ -2,10 +2,26 @@
 
 > **Purpose:** one chronological line per change, newest first, linking to the full record. The detail lives in [`changes/STEP_*.md`](changes/); this file is the index, not a copy.
 > **Audience:** anyone tracing when and why something changed.
-> **Status:** append-only · last meaningful update **2026-10-03**.
+> **Status:** append-only · last meaningful update **2026-10-04**.
 > **Links:** decisions [`DECISIONS.md`](DECISIONS.md) · state [`STATUS.md`](STATUS.md).
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
+
+## 2026-10-04: [도구] 실행 기록(runlog)과 KNU condor — 오래 걸리는 단계는 job 으로, 출력은 커밋 (analyzer 로직 변경 없음)
+
+`tools/runlog/`(`runlog.sh`: NtupleForge 와 같은 형식의 실행 기록 `runlogs/run_<step>_<UTC>.log` + `runlogs/LEDGER.tsv`;
+`condor_run.sh`: 같은 기록을 KNU condor job 으로 — 이 저장소의 제출 관례 `getenv`·`MY.WantOS`·worker cmsenv; `status.sh`; 시험 71),
+`tools/stage0/`(D14 `runs_in_lumiblocks.py`, D16 `branch_signature.py`, `build_check.sh`, `treestream_v15check.sh`; 시험 19),
+`test/run_unit_tests.sh`, `runlogs/README.md`, `.gitignore` 세 줄, `README.md` §3·§7.6. 사용자 결정 [`DECISIONS.md`](DECISIONS.md)
+D-2026-10-04-A: 우리 프로그램의 실행 기록은 커밋, CRAB transcript 만 제외. 워크스페이스 RUNBOOK §20 9·10 의 heredoc 은 새 PyROOT 에서
+깨진 파일 하나에 죽는 것을 고쳐 스크립트로 옮겼다. 독립 검토 한 번(14 건, 모두 반영). 상세 [`changes/STEP_23_runlog_condor.md`](changes/STEP_23_runlog_condor.md).
+
+## 2026-10-03 (2): [기록] treestream 패치 커밋, KNU 의 pull 거절과 clean 빌드 (코드 변경 없음)
+
+사용자가 10-03 점검의 패치를 fork treestream `forTTHH_v1` 에 커밋했다(`8be42e8`; 패치를 적용한 트리와 22 파일 모두 같음) — [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) §9.3·Stage 1 (a)·D16 에 커밋 번호.
+KNU 의 이 저장소는 `c1178fe5`(07-29)에 있고, KNU 에서만 고친 `AnalyzerConfig/Tier3_2017_FH_unified_main.yml` 을 `1aa450ef`(2017 lumi 42.07)도
+바꾸므로 `git pull --ff-only` 가 거절됐다 → 백업 뒤 그 파일만 stash·pull·pop(워크스페이스 RUNBOOK §20 6). 최상위 `Makefile` 의 목적 파일
+규칙은 `.cc` 에만 의존해 header 변경을 모른다: header 를 바꾼 뒤에는 `make clean && make -j4`(PLAN §9.3). [`STATUS.md`](STATUS.md) 10-03 (2).
 
 ## 2026-10-03: [기록] Stage 0 정리 — 2024 payload 실측, PHYSICS 유효 lumi, eventBuffer 생성기 점검 (코드 변경 없음)
 

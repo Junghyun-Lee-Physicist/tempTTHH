@@ -2,7 +2,7 @@
 
 > **Purpose:** the single place that answers "where are we right now?" — current state, what is ready, what is pending, and what is OPEN.
 > **Audience:** anyone starting a session.
-> **Status:** living · last meaningful update **2026-10-03** (Stage 0 의 payload·lumi 실측 반영, eventBuffer 생성기 = 사용자 fork treestream 점검) · 2026-10-02 (2024 먼저 결정, 단계별 계획 [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) §9, 2017 lumi 42.07 반영) · 그 전 2026-10-01 (v15 계획 PROPOSED) · 2026-07-26 (2018UL 준비: samples_2018UL.json, --preflight, OPEN #5).
+> **Status:** living · last meaningful update **2026-10-04** (KNU 의 긴 단계는 condor job, 실행 기록은 `runlogs/` 에 커밋 — STEP 23) · 2026-10-03 (Stage 0 의 payload·lumi 실측 반영, eventBuffer 생성기 = 사용자 fork treestream 점검, 그 패치 커밋 `8be42e8`; KNU 의 pull 과 clean 빌드) · 2026-10-02 (2024 먼저 결정, 단계별 계획 [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) §9, 2017 lumi 42.07 반영) · 그 전 2026-10-01 (v15 계획 PROPOSED) · 2026-07-26 (2018UL 준비: samples_2018UL.json, --preflight, OPEN #5).
 > **Links:** decisions [`DECISIONS.md`](DECISIONS.md) · history [`CHANGELOG.md`](CHANGELOG.md) · exit codes [`reference/ERROR_CODES.md`](reference/ERROR_CODES.md) · path policy [`reference/CONFIG_PATHS.md`](reference/CONFIG_PATHS.md).
 
 ## Bottom line
@@ -29,6 +29,15 @@ v9 는 필요할 때). 단계(Stage 0~9)와 통과 기준, 연도별 event clean
 (c) 생성기는 사용자 fork treestream `forTTHH_v1` — 10-03 점검에서 조용히 틀리는 경우 일곱을 재현하고 패치와 시험을 워크스페이스
 `treestream_review_2026-10-03/` 에 둠(적용은 사용자; PLAN §9.3), 2024 HLT branch 가 era 마다 달라 chain 이 죽을 수 있음(D16). 남은 것:
 KNU 의 빌드·시험·확인 셋(RUNBOOK §20 8~12).
+**10-03 (2):** 패치는 사용자가 fork 에 커밋(`8be42e8`, 패치와 22 파일 모두 같음). KNU 의 이 저장소는 `c1178fe5`(07-29)에 있고, KNU 에서만 고친
+`AnalyzerConfig/Tier3_2017_FH_unified_main.yml` 을 들어오는 `1aa450ef`(2017 lumi 42.07)도 바꾸므로 `git pull --ff-only` 가 거절됐다 → 백업 뒤
+그 파일만 stash·pull·pop(RUNBOOK §20 6). KNU 에는 커밋되지 않은 2017 산출물 수정도 있다(`DerivedCorr/stitchFactors/stitch_factors_2017.json`,
+`prescan_summary/prescan_summary.{csv,json}`) — 2017 회귀 기준 출력(Y1) 전에 커밋할지 되돌릴지 정한다(사용자). 최상위 `Makefile` 은 header
+의존성이 없어 header 를 바꾼 뒤에는 `make clean && make -j4`(PLAN §9.3). 남은 것: lxplus §20 5·11, KNU §20 6·9·10·12.
+**10-04:** KNU 의 오래 걸리는 단계는 condor job 으로 돌리고(`tools/runlog/condor_run.sh`), 기록 `runlogs/run_<step>_<UTC>.log` +
+`runlogs/LEDGER.tsv` 를 커밋한다([`DECISIONS.md`](DECISIONS.md) D-2026-10-04-A, [`changes/STEP_23_runlog_condor.md`](changes/STEP_23_runlog_condor.md);
+오프라인 시험 71·19, 독립 검토 반영). Stage 0 의 남은 KNU 단계(단위 시험, D14, D16, treestream 시험)도 이 방식으로: 워크스페이스 RUNBOOK §20 13.
+RUNBOOK §20 9·10 의 heredoc 은 새 PyROOT 에서 깨진 파일 하나에 죽어서 스크립트(`tools/stage0/`)로 바꿨다.
 
 ## What is ready (DECIDED)
 
