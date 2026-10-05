@@ -27,3 +27,4 @@ utc_start	step	exit	wall_s	host	git_head	log	outputs
 2026-10-05T15:03:33Z	knu_consolidate_prescan_2024	1	11	cms01	886e87b9	runlogs/run_knu_consolidate_prescan_2024_20261005_150333.log	prescan_summary_2024/prescan_summary.csv;prescan_summary_2024/prescan_summary.json
 2026-10-05T15:21:20Z	knu_submit_main_2024	0	55	cms01	ddb65396	runlogs/run_knu_submit_main_2024_20261005_152120.log	none
 2026-10-05T15:26:58Z	knu_test_consolidate	0	28	cms01	559c7f42	runlogs/run_knu_test_consolidate_20261005_152658.log	none
+2026-10-05T17:32:42Z	knu_merge_main_2024	0	1	cms01	66913686	runlogs/run_knu_merge_main_2024_20261005_173241.log	outputMerger/_merge_workdir/AnalyzerOutput_main_notrig_2024_20261006-023243/arguments.txt;outputMerger/_merge_workdir/AnalyzerOutput_main_notrig_2024_20261006-023243/logs/log.2180772.log;outputMerger/_merge_workdir/AnalyzerOutput_main_notrig_2024_20261006-023243/merge.sub

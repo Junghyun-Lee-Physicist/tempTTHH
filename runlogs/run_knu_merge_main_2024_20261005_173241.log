@@ -1,0 +1,113 @@
+=== RUNLOG ================================================================
+step        : knu_merge_main_2024
+start_utc   : 2026-10-05T17:32:42Z
+host        : cms01   user: jhlee
+cwd         : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+repo        : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+git_head    : 66913686   modified_tracked_files: 0
+cmd         : python3 outputMerger/merge_outputs.py --base /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024 --mode condor --proxy proxy.cert 
+CMSSW_BASE  : /u/user/jhlee/ttHH/CMSSW_14_2_1
+root        : 6.30.09
+python3     : Python 3.9.14
+===========================================================================
+Submitting job(s)............................................................................
+76 job(s) submitted to cluster 2180772.
+
+==================================================================
+merge discovery under: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024
+==================================================================
+process                                files  action
+------------------------------------------------------------------
+JetMET0_Run2024C-MINIv6NANOv15-v1        160  MERGE -> JetMET0_Run2024C-MINIv6NANOv15-v1.root
+JetMET0_Run2024D-MINIv6NANOv15-v1        151  MERGE -> JetMET0_Run2024D-MINIv6NANOv15-v1.root
+JetMET0_Run2024E-MINIv6NANOv15-v1        231  MERGE -> JetMET0_Run2024E-MINIv6NANOv15-v1.root
+JetMET0_Run2024F-MINIv6NANOv15-v2        366  MERGE -> JetMET0_Run2024F-MINIv6NANOv15-v2.root
+JetMET0_Run2024G-MINIv6NANOv15-v2        438  MERGE -> JetMET0_Run2024G-MINIv6NANOv15-v2.root
+JetMET0_Run2024H-MINIv6NANOv15-v2         82  MERGE -> JetMET0_Run2024H-MINIv6NANOv15-v2.root
+JetMET0_Run2024I-MINIv6NANOv15-v2        149  MERGE -> JetMET0_Run2024I-MINIv6NANOv15-v2.root
+JetMET0_Run2024I-MINIv6NANOv15_v2-v1     179  MERGE -> JetMET0_Run2024I-MINIv6NANOv15_v2-v1.root
+JetMET1_Run2024C-MINIv6NANOv15-v1        109  MERGE -> JetMET1_Run2024C-MINIv6NANOv15-v1.root
+JetMET1_Run2024D-MINIv6NANOv15-v1        155  MERGE -> JetMET1_Run2024D-MINIv6NANOv15-v1.root
+JetMET1_Run2024E-MINIv6NANOv15-v1        226  MERGE -> JetMET1_Run2024E-MINIv6NANOv15-v1.root
+JetMET1_Run2024F-MINIv6NANOv15-v2        381  MERGE -> JetMET1_Run2024F-MINIv6NANOv15-v2.root
+JetMET1_Run2024G-MINIv6NANOv15-v2        451  MERGE -> JetMET1_Run2024G-MINIv6NANOv15-v2.root
+JetMET1_Run2024H-MINIv6NANOv15-v2         76  MERGE -> JetMET1_Run2024H-MINIv6NANOv15-v2.root
+JetMET1_Run2024I-MINIv6NANOv15-v1         82  MERGE -> JetMET1_Run2024I-MINIv6NANOv15-v1.root
+JetMET1_Run2024I-MINIv6NANOv15_v2-v2     116  MERGE -> JetMET1_Run2024I-MINIv6NANOv15_v2-v2.root
+QCD_HT1000to1200                          23  MERGE -> QCD_HT1000to1200.root
+QCD_HT1200to1500                          23  MERGE -> QCD_HT1200to1500.root
+QCD_HT1500to2000                          25  MERGE -> QCD_HT1500to2000.root
+QCD_HT2000toInf                           23  MERGE -> QCD_HT2000toInf.root
+QCD_HT200to400                            17  MERGE -> QCD_HT200to400.root
+QCD_HT400to600                            18  MERGE -> QCD_HT400to600.root
+QCD_HT600to800                            23  MERGE -> QCD_HT600to800.root
+QCD_HT800to1000                           26  MERGE -> QCD_HT800to1000.root
+ST_s_antitop_had                          10  MERGE -> ST_s_antitop_had.root
+ST_s_antitop_lep                          23  MERGE -> ST_s_antitop_lep.root
+ST_s_top_had                              10  MERGE -> ST_s_top_had.root
+ST_s_top_lep                              28  MERGE -> ST_s_top_lep.root
+ST_tW_antitop_dilep                        9  MERGE -> ST_tW_antitop_dilep.root
+ST_tW_antitop_had                         20  MERGE -> ST_tW_antitop_had.root
+ST_tW_antitop_semilep                     26  MERGE -> ST_tW_antitop_semilep.root
+ST_tW_top_dilep                           18  MERGE -> ST_tW_top_dilep.root
+ST_tW_top_had                             16  MERGE -> ST_tW_top_had.root
+ST_tW_top_semilep                         26  MERGE -> ST_tW_top_semilep.root
+ST_t_antitop_had                          83  MERGE -> ST_t_antitop_had.root
+ST_t_antitop_lep                          25  MERGE -> ST_t_antitop_lep.root
+ST_t_top_had                              78  MERGE -> ST_t_top_had.root
+ST_t_top_lep                              40  MERGE -> ST_t_top_lep.root
+TT4b                                       4  MERGE -> TT4b.root
+TTHHto4b                                   4  MERGE -> TTHHto4b.root
+TTLL_MLL4to50                              4  MERGE -> TTLL_MLL4to50.root
+TTLL_MLL50                                 5  MERGE -> TTLL_MLL50.root
+TTNuNu                                     5  MERGE -> TTNuNu.root
+TTTT                                      11  MERGE -> TTTT.root
+TTTWminus                                 19  MERGE -> TTTWminus.root
+TTTWplus                                  18  MERGE -> TTTWplus.root
+TTWH                                      10  MERGE -> TTWH.root
+TTWJetsToQQ                                9  MERGE -> TTWJetsToQQ.root
+TTWW                                       6  MERGE -> TTWW.root
+TTWZ                                       6  MERGE -> TTWZ.root
+TTZHTo4b                                   3  MERGE -> TTZHTo4b.root
+TTZToQQ                                    7  MERGE -> TTZToQQ.root
+TTZZTo4b                                   4  MERGE -> TTZZTo4b.root
+TTbar_DiLep                               78  MERGE -> TTbar_DiLep.root
+TTbar_Hadronic                            77  MERGE -> TTbar_Hadronic.root
+TTbar_SemiLep                             79  MERGE -> TTbar_SemiLep.root
+TTbb_DiLep                                21  MERGE -> TTbb_DiLep.root
+TTbb_Hadronic                             19  MERGE -> TTbb_Hadronic.root
+TTbb_SemiLep                              29  MERGE -> TTbb_SemiLep.root
+WJetsToQQ_HT1500to2500                    38  MERGE -> WJetsToQQ_HT1500to2500.root
+WJetsToQQ_HT2500toInf                     44  MERGE -> WJetsToQQ_HT2500toInf.root
+WJetsToQQ_HT400to800                     254  MERGE -> WJetsToQQ_HT400to800.root
+WJetsToQQ_HT800to1500                     42  MERGE -> WJetsToQQ_HT800to1500.root
+WW                                        52  MERGE -> WW.root
+WZ                                        31  MERGE -> WZ.root
+ZJetsToQQ_HT1500to2500                    56  MERGE -> ZJetsToQQ_HT1500to2500.root
+ZJetsToQQ_HT2500toInf                     50  MERGE -> ZJetsToQQ_HT2500toInf.root
+ZJetsToQQ_HT400to800                      97  MERGE -> ZJetsToQQ_HT400to800.root
+ZJetsToQQ_HT800to1500                     46  MERGE -> ZJetsToQQ_HT800to1500.root
+ZZ                                         8  MERGE -> ZZ.root
+tHW                                       27  MERGE -> tHW.root
+tHq                                       36  MERGE -> tHq.root
+ttHToNonbb                                54  MERGE -> ttHToNonbb.root
+ttHTobb_dilep                             32  MERGE -> ttHTobb_dilep.root
+ttHTobb_had                               33  MERGE -> ttHTobb_had.root
+ttHTobb_semilep                           31  MERGE -> ttHTobb_semilep.root
+------------------------------------------------------------------
+total: merge=76  skip=0  unmatched-dirs=0
+==================================================================
+[condor] submit file: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/outputMerger/_merge_workdir/AnalyzerOutput_main_notrig_2024_20261006-023243/merge.sub  (76 jobs)
+[condor] worker env : cmsenv from /u/user/jhlee/ttHH/CMSSW_14_2_1/src
+[condor] submitted. 상태: condor_q / 로그: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/outputMerger/_merge_workdir/AnalyzerOutput_main_notrig_2024_20261006-023243/logs
+===========================================================================
+end_utc     : 2026-10-05T17:32:44Z
+wall_s      : 1
+EXIT        : 0
+outputs (files of this repo changed during the run; tmp/ condor/ runlogs/ left out): 3
+       18288  outputMerger/_merge_workdir/AnalyzerOutput_main_notrig_2024_20261006-023243/arguments.txt
+       12692  outputMerger/_merge_workdir/AnalyzerOutput_main_notrig_2024_20261006-023243/logs/log.2180772.log
+         954  outputMerger/_merge_workdir/AnalyzerOutput_main_notrig_2024_20261006-023243/merge.sub
+log         : runlogs/run_knu_merge_main_2024_20261005_173241.log
+log_kb      : 8
+=== END ===================================================================
