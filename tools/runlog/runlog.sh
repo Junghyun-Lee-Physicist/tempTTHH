@@ -21,8 +21,8 @@
 #               when that is another repo), the command, CMSSW_BASE, ROOT,
 #               python3, and the condor job id when run by condor_run.sh
 #      body   : the command's stdout+stderr, live on the terminal too (tee)
-#      footer : end (UTC), wall seconds, EXIT code (143/130 when the run was
-#               stopped by SIGTERM/SIGINT, e.g. condor_rm or a hold), files of
+#      footer : end (UTC), wall seconds, EXIT code (143/130/129 when stopped by
+#               SIGTERM/SIGINT/SIGHUP: condor_rm, a hold, Ctrl-C, ssh lost), files of
 #               this repo changed during the run (tmp/ condor/ runlogs/ .git/
 #               left out; <= 40 listed)
 #    runlogs/LEDGER.tsv : one line per run
@@ -51,6 +51,80 @@ shift
 [[ "$STEP" =~ ^[A-Za-z0-9_.-]+$ ]] || { echo "runlog.sh: step must match [A-Za-z0-9_.-]+" >&2; exit 2; }
 
 CMD=("$@")
+
+# ---- signals: caught from here on ---------------------------------------------
+# SIGTERM (condor_rm, a hold, an eviction), SIGINT (Ctrl-C) and SIGHUP (the ssh
+# session was lost) do not cost the record its footer and ledger line:
+#  - before the command has started: the command is not started;
+#  - while it runs: SIGTERM goes to the command and everything under it; the
+#    copier that writes the log ignores it and takes the rest of the output
+#    (also the footer of a runlog.sh inside the command);
+#  - after the command has ended: ignored until the record is complete.
+# What still runs RUNLOG_KILL_AFTER seconds (default 5) after the SIGTERM gets
+# SIGKILL, so that a process that ignores SIGTERM cannot hold the record open
+# (a runlog.sh inside the command must finish its own record within that time).
+# Under nohup SIGHUP stays ignored (bash cannot catch a signal ignored at start).
+# (Until 2026-10-04 (2): TERM/INT only, caught only around the command, and
+# passed only to the command's own process.)
+SIGNAL=""; RUNPID=""; WATCHDOG=""; NOT_STARTED=0; STOP_NOTE=""
+KILL_AFTER="${RUNLOG_KILL_AFTER:-5}"; [[ "$KILL_AFTER" =~ ^[0-9]+$ ]] || KILL_AFTER=5
+kids_of () {     # the direct children of $1 (procps pgrep, else /proc)
+  if command -v pgrep >/dev/null 2>&1; then pgrep -P "$1" 2>/dev/null
+  else cat /proc/"$1"/task/*/children 2>/dev/null | tr ' ' '\n' | grep -E '^[0-9]+$'; fi
+}
+proc_stat () {   # <pid> <1 = state | 2 = ppid>   (/proc, else ps)
+  if [[ -r /proc/$1/stat ]]; then sed -E 's/^.*\) //' "/proc/$1/stat" 2>/dev/null | cut -d' ' -f"$2"
+  elif [[ "$2" == 1 ]]; then ps -o stat= -p "$1" 2>/dev/null
+  else ps -o ppid= -p "$1" 2>/dev/null | tr -d ' '; fi
+}
+tree_pids () {   # the pids under $1 (not $1 itself), each parent before its children
+  local c
+  for c in $(kids_of "$1"); do echo "$c"; tree_pids "$c"; done
+}
+stop_cmd () {    # SIGTERM to everything under the run subshell
+  local _ pids="" st
+  for _ in $(seq 1 40); do       # the subshell may not have started the command yet
+    pids="$(tree_pids "$RUNPID")"
+    [[ -n "$pids" ]] && break
+    kill -0 "$RUNPID" 2>/dev/null || return 0     # it has ended
+    st="$(proc_stat "$RUNPID" 1)"
+    [[ "$st" == Z* ]] && return 0                 # it has ended, not yet reaped
+    sleep 0.05
+  done
+  if [[ -z "$pids" ]]; then
+    kill -TERM "$RUNPID" 2>/dev/null
+    if ! command -v pgrep >/dev/null 2>&1 && [[ ! -r /proc/$$/task/$$/children ]]; then
+      STOP_NOTE="no pgrep and no /proc children list here: only the run subshell was stopped, the command may have run on"
+    fi
+    return 0
+  fi
+  # shellcheck disable=SC2086
+  kill -TERM $pids 2>/dev/null
+  sleep 0.2                      # and what was forked in between
+  pids="$(tree_pids "$RUNPID")"
+  # shellcheck disable=SC2086
+  [[ -n "$pids" ]] && kill -TERM $pids 2>/dev/null
+  if [[ -z "$WATCHDOG" ]]; then  # SIGKILL to what is still there after KILL_AFTER s
+    ( trap '' INT HUP
+      sleep "$KILL_AFTER"
+      [[ "$(proc_stat "$RUNPID" 2)" == "$$" ]] || exit 0
+      pids="$(tree_pids "$RUNPID")"
+      # shellcheck disable=SC2086
+      [[ -n "$pids" ]] && kill -KILL $pids 2>/dev/null
+      exit 0 ) &
+    WATCHDOG=$!
+  fi
+  return 0
+}
+on_sig () {
+  [[ -n "$SIGNAL" ]] || SIGNAL="$1"
+  [[ -n "$RUNPID" ]] && stop_cmd
+  return 0
+}
+trap 'on_sig TERM' TERM
+trap 'on_sig INT' INT
+trap 'on_sig HUP' HUP
+
 ARGVSTR="$(printf '%q ' "${CMD[@]}")"
 # Set by condor_run.sh's job.sh for THIS run only; unset so that a runlog.sh
 # inside the command does not take them over.
@@ -74,8 +148,9 @@ if mkdir -p "$LOGDIR" 2>/dev/null && [[ -w "$LOGDIR" ]]; then
 fi
 [[ -n "$LOG" ]] || echo "runlog.sh: cannot write under $LOGDIR -- the record is only on stdout" >&2
 
-# out: append stdin to the log (and the terminal); terminal only if no log
-out () { if [[ -n "$LOG" ]]; then tee -a "$LOG"; else cat; fi; }
+# out: append stdin to the log (and the terminal); terminal only if no log.
+# It ignores TERM/INT/HUP: a stopped run still gets all of its output written.
+out () { trap '' TERM INT HUP; if [[ -n "$LOG" ]]; then tee -a "$LOG"; else cat; fi; }
 
 # start mark for the outputs list (kept next to the log, not in /tmp: a condor
 # job may inherit a TMPDIR that does not exist on the worker)
@@ -141,28 +216,29 @@ fi
 # ---- run --------------------------------------------------------------------
 # The command runs in the background so that a SIGTERM (condor_rm, a hold, an
 # eviction) or a SIGINT (Ctrl-C) still lets this script write the footer and
-# the ledger line. stdin is handed through on fd 3.
-SIGNAL=""
-on_sig () {
-  SIGNAL="$1"
-  if [[ -n "${RUNPID:-}" ]]; then
-    pkill -TERM -P "$RUNPID" 2>/dev/null || kill -TERM "$RUNPID" 2>/dev/null || true
-  fi
-}
-trap 'on_sig TERM' TERM
-trap 'on_sig INT' INT
-exec 3<&0
-{ "${CMD[@]}" 2>&1 0<&3 3<&- | out; exit "${PIPESTATUS[0]}"; } &
-RUNPID=$!
-exec 3<&-
-while :; do
-  wait "$RUNPID"; RC=$?
-  kill -0 "$RUNPID" 2>/dev/null || break
-done
-trap - TERM INT
-if [[ -n "$SIGNAL" ]]; then
-  if [[ "$SIGNAL" == TERM ]]; then RC=143; else RC=130; fi
+# the ledger line (traps: see "signals" above). stdin is handed through on fd 3.
+RC=0
+if [[ -z "$SIGNAL" ]]; then
+  exec 3<&0
+  # the subshell checks SIGNAL again (its copy is taken at the fork): a signal
+  # that came after the check above means the command is not started either
+  { [[ -n "$SIGNAL" ]] && exit 199; "${CMD[@]}" 2>&1 0<&3 3<&- | out; exit "${PIPESTATUS[0]}"; } &
+  RUNPID=$!
+  exec 3<&-
+  [[ -n "$SIGNAL" ]] && stop_cmd     # the signal came while the command was being started
+  while :; do
+    wait "$RUNPID"; RC=$?
+    kill -0 "$RUNPID" 2>/dev/null || break
+  done
 fi
+trap '' TERM INT HUP                 # the command has ended: finish the record whatever comes
+if [[ -n "$WATCHDOG" ]]; then        # the watchdog and its sleep
+  WK="$(kids_of "$WATCHDOG")"
+  # shellcheck disable=SC2086
+  kill "$WATCHDOG" $WK 2>/dev/null
+fi
+[[ -n "$SIGNAL" && -n "$RUNPID" && $RC -eq 199 ]] && NOT_STARTED=1   # the subshell's own check
+case "$SIGNAL" in TERM) RC=143 ;; INT) RC=130 ;; HUP) RC=129 ;; esac
 
 T1=$(date +%s); WALL=$((T1 - T0))
 
@@ -180,7 +256,14 @@ NOUTS=0; [[ -n "$OUTS" ]] && NOUTS=$(printf '%s\n' "$OUTS" | wc -l | tr -d ' ')
   echo "==========================================================================="
   echo "end_utc     : $(date -u +%FT%TZ)"
   echo "wall_s      : $WALL"
-  [[ -n "$SIGNAL" ]] && echo "stopped     : by SIG$SIGNAL (condor_rm, a hold, an eviction or Ctrl-C)"
+  if [[ -n "$SIGNAL" ]]; then
+    if [[ -n "$RUNPID" && $NOT_STARTED -eq 0 ]]; then
+      echo "stopped     : by SIG$SIGNAL (condor_rm, a hold, an eviction, Ctrl-C or a lost ssh session)"
+    else
+      echo "stopped     : by SIG$SIGNAL before the command started (condor_rm, a hold, an eviction, Ctrl-C or a lost ssh session)"
+    fi
+  fi
+  [[ -n "$STOP_NOTE" ]] && echo "NOTE        : $STOP_NOTE"
   echo "EXIT        : $RC"
   if [[ $NOUTS -gt 0 ]]; then
     echo "outputs (files of this repo changed during the run; tmp/ condor/ runlogs/ left out): $NOUTS"

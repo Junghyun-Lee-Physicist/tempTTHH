@@ -38,6 +38,17 @@ KNU 의 빌드·시험·확인 셋(RUNBOOK §20 8~12).
 `runlogs/LEDGER.tsv` 를 커밋한다([`DECISIONS.md`](DECISIONS.md) D-2026-10-04-A, [`changes/STEP_23_runlog_condor.md`](changes/STEP_23_runlog_condor.md);
 오프라인 시험 71·19, 독립 검토 반영). Stage 0 의 남은 KNU 단계(단위 시험, D14, D16, treestream 시험)도 이 방식으로: 워크스페이스 RUNBOOK §20 13.
 RUNBOOK §20 9·10 의 heredoc 은 새 PyROOT 에서 깨진 파일 하나에 죽어서 스크립트(`tools/stage0/`)로 바꿨다.
+**10-04 (2):** KNU 가 `90feebc0` 을 받았다(4 개의 로컬 수정은 그대로). 시험 69/2(두 줄 확인 중)·19/19. **10-03 의 빌드는 끝나지 않았다**:
+`lib/` 는 있고 `ttHHanalyzer_unified` 는 없음(링크 전에 끊김) → condor 로 다시 빌드(RUNBOOK §20 13 (d) 의 대안). 그 기록의 `EXIT : 0` 은
+`build_check.sh` 의 빈틈이었고 고쳤다(끝난 빌드만 0). `runlog.sh` 의 signal 처리와 시험(83 check)도 보강 —
+[`changes/STEP_23_runlog_condor.md`](changes/STEP_23_runlog_condor.md) "2026-10-04 (2)". **10-05 의 condor job**(기록 `runlogs/`,
+KNU 커밋 `39936117`): `knu_build` EXIT 0(cluster300, 20 분, 실행 파일 02:52 KST), `knu_unittests` EXIT 0(`PASS 47 / FAIL 0`, KNU 판
+`prescan_summary.json` 으로), `knu_d14_runs` EXIT 0 — run 380126/380127/380128 이 우리 2024C 출력에 있다: LS 991/533/393, skim 뒤 event
+708,132/307,634/179,727, 파일 93/44/30(269 파일 중; D14 의 입력), `knu_d16_branchsig` 는 도는 중(중간 출력은 LUMI_SOURCES §6.4 와 맞음:
+Run2024C 파일의 일부에만 PNet 4J3T branch). `39936117` 에는 기록 말고도 KNU 의 2017 로컬 수정 넷(결정 1 이 커밋 쪽으로 됨 — 사용자 확인
+대기), `filelistTier3/`(문서가 말하는 2017 기준 목록이라 그대로 둠)와 빌드 산출물·작업 파일 15 개가 들어갔다 → 산출물은 `.gitignore` 에
+더하고 KNU 에서 추적만 끊는다(사용자 결정 10-05; RUNBOOK §20 14). analyzer: 2017 은 지금 실행 파일로 돌 수 있다; 2024 는 PLAN §9
+Stage 1(eventBuffer 재생성과 필수 branch 검사)·Stage 2(`EraConfig` 2024) 뒤 — 사용자 결정(10-05): 다음은 Stage 1·2.
 
 ## What is ready (DECIDED)
 

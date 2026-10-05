@@ -2,7 +2,7 @@
 
 > **목적:** KNU 에서 오래 걸리는 단계(빌드, `/pnfs` 파일 훑기, 시험)를 condor job 으로 돌리고, 무엇이 어느 커밋에서 어떻게
 > 끝났는지를 이 저장소의 `runlogs/` 에 남긴다. 사람이 출력을 복사해 붙이는 대신 로그를 커밋한다.
-> **상태:** 2026-10-04 작성 (docs/changes/STEP_23_runlog_condor.md). 커밋 규칙은 docs/DECISIONS.md D-2026-10-04-A.
+> **상태:** 2026-10-04 작성, 같은 날 (2) KNU 첫 실행 뒤 고침 (docs/changes/STEP_23_runlog_condor.md). 커밋 규칙은 docs/DECISIONS.md D-2026-10-04-A.
 
 ## 한 번에 보기
 
@@ -19,7 +19,7 @@ git add runlogs && git commit -m "runlogs: ..." && git push          # 기록 �
 | `runlog.sh` | 명령 하나를 돌리고 `runlogs/run_<step>_<UTC>.log`(머리: 시각·host·cwd·git HEAD 와 수정 파일 수·명령·CMSSW·ROOT·python·condor job, 본문: stdout+stderr, 꼬리: 시간·**EXIT**·바뀐 파일)와 `runlogs/LEDGER.tsv` 한 줄을 남긴다. exit code 는 명령의 것. NtupleForge `script/runlog.sh` 와 같은 형식 |
 | `condor_run.sh` | 같은 기록을 condor job 으로. job 은 worker 에서 `$CMSSW_BASE/src` 로 cmsenv 하고, 제출한 디렉터리에서 명령을 그대로(인자 그대로) 돌린다 |
 | `status.sh` | `condor_run.sh` 로 낸 job 마다 한 줄(제출 시각 순): cluster, 상태, exit code, 기록 파일. held 면 HoldReason |
-| `test_runlog.sh` | 위 셋의 오프라인 시험(가짜 condor_submit·condor_q·scram; 71 check). `RESULT: 71 PASS, 0 FAIL` |
+| `test_runlog.sh` | 위 셋의 오프라인 시험(가짜 condor_submit·condor_q·scram; 83 check). `RESULT: 83 PASS, 0 FAIL`. 가짜 대신 진짜 condor 명령이 잡히는 환경(noexec `TMPDIR` 등)이면 condor 시험 전에 `ABORT` 하고 멈춘다 |
 
 ## condor job 의 모양
 
@@ -32,7 +32,9 @@ git add runlogs && git commit -m "runlogs: ..." && git push          # 기록 �
   `job.log` 에는 schedd·worker 의 IP 주소와 포트가 있다 — `condor/` 를 커밋하지 않는 이유 하나.
 - 환경이 worker 에서 안 되면 그것도 기록에 남는다: exit 90(cmsset), 91(CMSSW 디렉터리), 92(`scram runtime`), 93(작업 디렉터리),
   94(`--source`). `job.sh` 자신이 작업 디렉터리에 못 들어가면(공유 파일 시스템 없음) 기록 전이라 `job.out` 에만 남는다.
-- `condor_rm`·hold·eviction 으로 멈추면 기록 꼬리에 `stopped : by SIGTERM`, EXIT 143.
+- `condor_rm`·hold·eviction 으로 멈추면 기록 꼬리에 `stopped : by SIGTERM`, EXIT 143(Ctrl-C 는 SIGINT 130, ssh 끊김은 SIGHUP 129).
+  명령이 시작되기 전이었으면 `… before the command started` 이고 명령은 돌지 않는다. SIGTERM 은 명령과 그 자식 전부에 가고, 기록은
+  남은 출력까지 쓴 뒤 닫힌다; `RUNLOG_KILL_AFTER` 초(기본 5) 뒤에도 남은 것은 SIGKILL. `nohup` 아래에서는 SIGHUP 을 잡을 수 없다.
 - job 안에서는 ssh 키도 grid 암호도 없다. `git pull`·`git clone`·`voms-proxy-init` 은 제출 전에 직접 한다.
 
 ## 상태 읽기

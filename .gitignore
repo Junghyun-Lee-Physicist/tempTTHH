@@ -64,3 +64,19 @@ include/*.h.bk_*
 runlogs/nocommit/
 runlogs/*.lock
 runlogs/.runlog_mark_*
+
+# ── build products and work files (2026-10-05) ──────────────────────────────
+# Committed by mistake in 39936117 ("condor job": everything was added, not only
+# runlogs/) and untracked again right after; all are rebuilt or regenerated:
+# `make` (executable, lib/, the ROOT dictionary), bTagSF_ReweightStudy's Makefile
+# (exe_*), outputMerger/merge_outputs.py in condor mode (_merge_workdir/), and a
+# local backup copy (prescan_summary_bk/). filelistTier3/ stays tracked: it is
+# the committed 2017 reference of make_filelists.py (76 lists, 6042 split files;
+# docs/RUNBOOK_2017_SF_rederive.md).
+/ttHHanalyzer_unified
+/lib/
+/src/dictionaryForROOT.cc
+/src/dictionaryForROOT_rdict.pcm
+/bTagSF_ReweightStudy/exe_*
+/outputMerger/_merge_workdir/
+/prescan_summary_bk/

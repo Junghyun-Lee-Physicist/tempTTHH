@@ -7,11 +7,23 @@
 #  three scripts in a temporary git repo; the real runlogs/ is not touched.
 #
 #    /bin/bash tools/runlog/test_runlog.sh        -> RESULT: <n> PASS, <m> FAIL
+#
+#  2026-10-04 (2), after the first KNU run (69 PASS, 2 FAIL): the work area is
+#  taken by its physical path (a TMPDIR through a symlink no longer breaks the
+#  path comparisons), the SIGTERM test waits for the command's own line, the
+#  stubs are checked before anything could reach a real condor_submit, the
+#  throw-away repo is made without the user's git configuration, and T22-T28
+#  cover the signal cases (header phase, command tree, nested record, SIGHUP,
+#  footer phase, a command that ignores SIGTERM).
 # =============================================================================
 set -u
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 W="$(mktemp -d "${TMPDIR:-/tmp}/test_runlog.XXXXXX")" || exit 2
 trap 'rm -rf "$W"' EXIT
+W="$(cd "$W" && pwd -P)" || exit 2          # physical: the scripts record physical paths
+# nothing of the caller's git or condor context may leak into the runs below
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE RUNLOG_CMD_DISPLAY RUNLOG_CONDOR_JOBDIR RUNLOG_KILL_AFTER \
+      _CONDOR_JOB_AD _CONDOR_SCRATCH_DIR _CONDOR_SLOT
 NP=0; NF=0
 ok ()  { NP=$((NP + 1)); echo "PASS $1"; }
 bad () { NF=$((NF + 1)); echo "FAIL $1"; }
@@ -22,8 +34,11 @@ R="$W/repo"; mkdir -p "$R/tools/runlog" "$R/tmp" "$R/sub"
 cp "$SRC/runlog.sh" "$SRC/condor_run.sh" "$SRC/status.sh" "$R/tools/runlog/"
 cp "$SRC/../../.gitignore" "$R/.gitignore"      # the repository's own rules
 echo a > "$R/tracked.txt"
-( cd "$R" && git init -q && git config user.email t@t && git config user.name t && git add -A && git commit -qm init )
+( cd "$R" && export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 \
+  && git init -q && git config user.email t@t && git config user.name t && git add -A \
+  && git -c core.hooksPath=/dev/null -c commit.gpgsign=false commit -q --no-verify -m init ) > "$W/git_init.out" 2>&1
 RL="$R/tools/runlog/runlog.sh"; CR="$R/tools/runlog/condor_run.sh"; ST="$R/tools/runlog/status.sh"
+check "T0 throw-away repo has a commit"  "git -C '$R' rev-parse -q --verify HEAD >/dev/null"
 
 # ---- stubs --------------------------------------------------------------------
 S="$W/stub"; mkdir -p "$S"
@@ -57,6 +72,18 @@ mkdir -p "$W/cmssw/src"
 echo '# fake cmsset_default.sh' > "$W/cmsset.sh"
 export PATH="$S:$PATH" STUB_LOG="$W" CONDOR_RUN_CMSSET="$W/cmsset.sh"
 export CMSSW_BASE="$W/cmssw"
+# The stubs must be what a child bash finds (a noexec TMPDIR, a BASH_ENV that
+# edits PATH or an exported shell function would let a real one through): stop.
+for c in condor_submit condor_q voms-proxy-info scram; do
+  got="$(/bin/bash -c "command -v $c" 2>/dev/null | tail -n 1)"
+  if [[ "$got" != "$S/$c" ]]; then
+    echo "ABORT: a child bash finds '$c' as '${got:-nothing}', not the stub $S/$c."
+    echo "       Causes: TMPDIR on a noexec mount, a BASH_ENV that changes PATH, an exported function '$c'."
+    echo "       For a noexec TMPDIR:  mkdir -p \$HOME/tmp_test && TMPDIR=\$HOME/tmp_test /bin/bash $0"
+    echo "RESULT: $NP PASS, $((NF + 1)) FAIL (aborted before the condor tests)"
+    exit 2
+  fi
+done
 
 # simulate a condor worker running the job.sh of one job dir
 run_worker () {   # <jobdir> [extra env assignments...]
@@ -210,7 +237,8 @@ fi
 n0=$(wc -l < "$R/runlogs/LEDGER.tsv")
 /bin/bash "$RL" t13_term -- /bin/bash -c 'echo started; sleep 30; echo never' > "$W/t13.out" 2>&1 &
 P13=$!
-for _ in $(seq 1 50); do grep -q started "$W/t13.out" 2>/dev/null && break; sleep 0.1; done
+# wait for the command's own line (-x): the header's cmd line also contains the word
+for _ in $(seq 1 300); do grep -qx started "$W/t13.out" 2>/dev/null && break; sleep 0.1; done
 kill -TERM "$P13"; wait "$P13"; rc=$?
 L13="$(ls "$R"/runlogs/run_t13_term_*.log | head -1)"
 check "T13 exit 143 after SIGTERM"       "[[ $rc -eq 143 ]]"
@@ -280,6 +308,106 @@ check "T20 --source failing -> exit 94 in the record" "[[ \$(cat '$J20b/exit_cod
 L21="$(ls "$R"/runlogs/run_t21_big_*.log | head -1)"
 check "T21 log_kb line and large-record note" "grep -qE '^log_kb      : [0-9]+' '$L21' && grep -q '^NOTE        : large record' '$L21'"
 check "T21 small record has no note"      "! grep -q 'large record' '$L1'"
+
+# ---- T22 SIGTERM while the header is being written: footer, ledger, command not started ------------------
+# a slow root-config (the header asks it for the ROOT version) holds runlog.sh in the header phase
+mkdir -p "$W/slowbin"
+cat > "$W/slowbin/root-config" <<EOF
+#!/bin/bash
+: > "$W/t22_in_header"; sleep 2; echo 6.99.99
+EOF
+chmod +x "$W/slowbin/root-config"
+n0=$(wc -l < "$R/runlogs/LEDGER.tsv")
+PATH="$W/slowbin:$PATH" /bin/bash "$RL" t22_early -- /bin/bash -c ": > '$W/t22_ran'" > "$W/t22.out" 2>&1 &
+P22=$!
+for _ in $(seq 1 300); do [[ -e "$W/t22_in_header" ]] && break; sleep 0.1; done
+kill -TERM "$P22"; wait "$P22"; rc=$?
+L22="$(ls "$R"/runlogs/run_t22_early_*.log 2>/dev/null | head -1)"
+check "T22 exit 143, command not started" "[[ $rc -eq 143 && ! -e '$W/t22_ran' ]]"
+check "T22 footer says before the command started" "grep -q '^stopped     : by SIGTERM before the command started' '$L22' && grep -q '^EXIT        : 143' '$L22'"
+check "T22 ledger line, no mark file"    "[[ \$(( \$(wc -l < '$R/runlogs/LEDGER.tsv') - n0 )) -eq 1 ]] && tail -1 '$R/runlogs/LEDGER.tsv' | awk -F'\t' '\$2==\"t22_early\" && \$3==143 {f=1} END{exit !f}' && ! ls '$R'/runlogs/.runlog_mark_* >/dev/null 2>&1"
+
+# ---- T23 submitted from a path through a symlink: the job files use the physical paths ----------------
+ln -s "$R" "$W/link"
+( cd "$W/link/sub" && /bin/bash "$W/link/tools/runlog/condor_run.sh" --dry-run t23_link -- true ) > /dev/null 2>&1; rc=$?
+J23="$(ls -d "$R"/condor/runlog/t23_link_* 2>/dev/null | head -1)"
+Q23="$(printf '%q' "$R/sub")"      # job.sh holds the path %q-quoted
+check "T23 job under the physical repo, cd to the physical workdir" "[[ $rc -eq 0 ]] && grep -q '^executable *= $R/condor/runlog/t23_link_' '$J23/job.sub' && grep -qF -- 'cd $Q23 ||' '$J23/job.sh'"
+
+wait_line () {   # <file> <exact line>: wait up to 30 s for it
+  local _
+  for _ in $(seq 1 300); do grep -qx -- "$2" "$1" 2>/dev/null && return 0; sleep 0.1; done
+  return 1
+}
+
+# ---- T24 SIGTERM reaches what the command started, not only the command itself -----------------------
+/bin/bash "$RL" t24_tree -- /bin/bash -c "( sleep 2; : > '$W/t24_late' ) & echo started; wait" > "$W/t24.out" 2>&1 &
+P24=$!
+wait_line "$W/t24.out" started
+kill -TERM "$P24"; wait "$P24"; rc=$?
+sleep 3
+check "T24 the command's child is stopped too"  "[[ $rc -eq 143 && ! -e '$W/t24_late' ]]"
+
+# ---- T25 a runlog.sh inside the command still completes its own record when the outer one is stopped ---
+/bin/bash "$RL" t25_outer -- /bin/bash "$RL" t25_inner -- /bin/bash -c 'echo started; sleep 30; echo never' > "$W/t25.out" 2>&1 &
+P25=$!
+wait_line "$W/t25.out" started
+kill -TERM "$P25"; wait "$P25"; rc=$?
+L25o="$(ls "$R"/runlogs/run_t25_outer_*.log | head -1)"; L25i="$(ls "$R"/runlogs/run_t25_inner_*.log | head -1)"
+check "T25 inner record: footer and EXIT 143"   "grep -q '^stopped     : by SIGTERM' '$L25i' && grep -q '^EXIT        : 143' '$L25i' && ! grep -qx never '$L25i'"
+check "T25 outer record: has the inner footer, EXIT 143" "[[ $rc -eq 143 ]] && grep -q '^log         : runlogs/run_t25_inner_' '$L25o' && grep -q '^EXIT        : 143' '$L25o'"
+
+# ---- T26 SIGHUP (the ssh session was lost) -------------------------------------------------------------
+# under nohup SIGHUP is ignored from the start and bash cannot catch it: nothing to test then
+hup_ignored () { local m; m="$(awk '/^SigIgn:/{print $2}' /proc/$$/status 2>/dev/null)"; [[ -n "$m" ]] && (( (16#$m & 1) != 0 )); }
+if hup_ignored; then
+  ok "T26 skipped (SIGHUP is ignored in this shell, e.g. under nohup)"
+else
+/bin/bash "$RL" t26_hup -- /bin/bash -c 'echo started; sleep 30; echo never' > "$W/t26.out" 2>&1 &
+P26=$!
+wait_line "$W/t26.out" started
+kill -HUP "$P26"; wait "$P26"; rc=$?
+L26="$(ls "$R"/runlogs/run_t26_hup_*.log | head -1)"
+check "T26 SIGHUP: footer, EXIT 129, ledger"    "[[ $rc -eq 129 ]] && grep -q '^stopped     : by SIGHUP' '$L26' && grep -q '^EXIT        : 129' '$L26' && ! grep -qx never '$L26' && tail -1 '$R/runlogs/LEDGER.tsv' | awk -F'\t' '\$2==\"t26_hup\" && \$3==129 {f=1} END{exit !f}'"
+fi
+
+# ---- T27 a signal after the command has ended: the record is completed, with the command's exit code ----
+# a slow find (the footer's list of changed files) holds runlog.sh after the command
+REALFIND="$(command -v find)"
+mkdir -p "$W/slowfind"
+printf '#!/bin/bash\n: > %q; sleep 2; exec %q "$@"\n' "$W/t27_in_footer" "$REALFIND" > "$W/slowfind/find"
+chmod +x "$W/slowfind/find"
+PATH="$W/slowfind:$PATH" /bin/bash "$RL" t27_late -- /bin/bash -c 'echo body; exit 5' > "$W/t27.out" 2>&1 &
+P27=$!
+for _ in $(seq 1 300); do [[ -e "$W/t27_in_footer" ]] && break; sleep 0.1; done
+kill -TERM "$P27"; wait "$P27"; rc=$?
+L27="$(ls "$R"/runlogs/run_t27_late_*.log | head -1)"
+check "T27 signal in the footer phase: footer, ledger, the command's exit 5" "[[ $rc -eq 5 ]] && grep -q '^EXIT        : 5' '$L27' && ! grep -q '^stopped' '$L27' && tail -1 '$R/runlogs/LEDGER.tsv' | awk -F'\t' '\$2==\"t27_late\" && \$3==5 {f=1} END{exit !f}'"
+
+# ---- T28 a command that ignores SIGTERM: SIGKILL after RUNLOG_KILL_AFTER s, the record is still complete --
+/bin/bash -c "RUNLOG_KILL_AFTER=1 exec /bin/bash '$RL' t28_stubborn -- /bin/bash -c 'trap \"\" TERM; echo started; sleep 30; echo never'" > "$W/t28.out" 2>&1 &
+P28=$!
+wait_line "$W/t28.out" started
+t0=$(date +%s); kill -TERM "$P28"; wait "$P28"; rc=$?; t1=$(date +%s)
+L28="$(ls "$R"/runlogs/run_t28_stubborn_*.log | head -1)"
+check "T28 SIGTERM ignored by the command: SIGKILL, footer, EXIT 143 within seconds" "[[ $rc -eq 143 && $((t1 - t0)) -le 10 ]] && grep -q '^stopped     : by SIGTERM' '$L28' && grep -q '^EXIT        : 143' '$L28' && ! grep -qx never '$L28'"
+
+# ---- T29 no procps (pgrep, ps) on PATH: the command is still found (through /proc) and stopped ------------
+if [[ -r /proc/$$/task/$$/children ]]; then
+  mkdir -p "$W/nops"
+  for f in /usr/bin/* /bin/*; do
+    b="${f##*/}"; case "$b" in pgrep|pkill|ps|pidof|pidwait) continue ;; esac
+    [[ -e "$W/nops/$b" ]] || ln -s "$f" "$W/nops/$b" 2>/dev/null
+  done
+  PATH="$S:$W/nops" /bin/bash "$RL" t29_nops -- /bin/bash -c "echo \$\$ > '$W/t29.pid'; echo started; sleep 30; echo never" > "$W/t29.out" 2>&1 &
+  P29=$!
+  wait_line "$W/t29.out" started
+  kill -TERM "$P29"; wait "$P29"; rc=$?
+  L29="$(ls "$R"/runlogs/run_t29_nops_*.log | head -1)"
+  check "T29 without pgrep/ps: stopped through /proc, EXIT 143" "[[ $rc -eq 143 ]] && grep -q '^EXIT        : 143' '$L29' && ! grep -q '^NOTE        : no pgrep' '$L29' && ! kill -0 \$(cat '$W/t29.pid') 2>/dev/null"
+else
+  ok "T29 skipped (no /proc children list on this system)"
+fi
 
 echo "RESULT: $NP PASS, $NF FAIL"
 [[ $NF -eq 0 ]]

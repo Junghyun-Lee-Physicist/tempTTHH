@@ -7,6 +7,19 @@
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
 
+## 2026-10-04 (2): [도구] KNU 첫 실행 뒤 — `build_check.sh` 의 판정, `runlog.sh` 의 signal, 시험 보강 (analyzer 로직 변경 없음)
+
+KNU(cms01, `90feebc0`): `test_runlog.sh` 69/2(어느 둘인지 미확인), `test_stage0.py` 19/19, 그리고 10-03 대화형 빌드의 기록
+`runlogs/run_knu_build_1003_20261004_164415.log` 이 실행 파일 없이 `EXIT : 0` — 그 빌드는 `lib/` 뒤 링크 전에 끊겼다(condor 로 다시
+빌드). `build_check.sh`: 끝난 빌드만 exit 0(실행 파일이 있어야; `--from-log` 는 VERBOSE log 의 `[Done] Built` 줄, 조용한 log 는 실행
+파일의 시각으로; make 의 `***` 줄도 오류), `--from-log ""` 가 clean 빌드를 시작하던 것을 막음, 빌드는 `VERBOSE=1`(새 시험
+`tools/stage0/test_build_check.sh` 18). `runlog.sh`: TERM/INT/HUP 을 처음부터 잡고, 명령과 그 자식 전부에 TERM, 기록 복사기는 출력을
+끝까지 쓰고, 남은 것은 5 초 뒤 SIGKILL, 명령이 끝난 뒤의 signal 은 기록이 끝날 때까지 무시. `test_runlog.sh` 71 → 83(symlink 인
+`TMPDIR`, T13 의 경쟁, 진짜 condor 명령이 잡히면 ABORT, 사용자 git 설정 없이 만드는 시험 저장소, signal 시험 일곱). 독립 검토 두 번.
+`.gitignore`: KNU 커밋 `39936117` 에 잘못 들어간 빌드 산출물·작업 파일(실행 파일, `lib/`, ROOT dictionary, `bTagSF_ReweightStudy/exe_*`,
+`outputMerger/_merge_workdir/`, `prescan_summary_bk/`) — 다음 커밋에서 추적을 끊는다.
+상세 [`changes/STEP_23_runlog_condor.md`](changes/STEP_23_runlog_condor.md) "2026-10-04 (2)".
+
 ## 2026-10-04: [도구] 실행 기록(runlog)과 KNU condor — 오래 걸리는 단계는 job 으로, 출력은 커밋 (analyzer 로직 변경 없음)
 
 `tools/runlog/`(`runlog.sh`: NtupleForge 와 같은 형식의 실행 기록 `runlogs/run_<step>_<UTC>.log` + `runlogs/LEDGER.tsv`;

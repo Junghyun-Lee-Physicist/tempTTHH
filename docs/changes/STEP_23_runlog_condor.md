@@ -1,10 +1,11 @@
 # STEP 23 — 실행 기록(runlog)과 KNU condor: 오래 걸리는 단계는 job 으로, 출력은 커밋으로
 
-- 날짜: 2026-10-04 (코드: 도구만. analyzer 의 물리 로직 변경 없음)
+- 날짜: 2026-10-04 (코드: 도구만. analyzer 의 물리 로직 변경 없음). 같은 날 (2): KNU 첫 실행 뒤 고친 것 — 아래 "2026-10-04 (2)" 절
 - 신규: `tools/runlog/{runlog.sh, condor_run.sh, status.sh, test_runlog.sh, README.md}`,
   `tools/stage0/{runs_in_lumiblocks.py, branch_signature.py, build_check.sh, treestream_v15check.sh, test_stage0.py}`,
-  `test/run_unit_tests.sh`, `runlogs/README.md`
-- 수정: `.gitignore`(`runlogs/nocommit/`, `runlogs/*.lock`, `runlogs/.runlog_mark_*`), `README.md` §3(header 를 바꾼 뒤 clean 빌드)·§7.6(새 절)
+  `test/run_unit_tests.sh`, `runlogs/README.md`; (2) `tools/stage0/test_build_check.sh`
+- 수정: `.gitignore`(`runlogs/nocommit/`, `runlogs/*.lock`, `runlogs/.runlog_mark_*`), `README.md` §3(header 를 바꾼 뒤 clean 빌드)·§7.6(새 절);
+  (2) `build_check.sh`(판정), `runlog.sh`(signal), `test_runlog.sh`(71 → 83), `tools/runlog/README.md`
 - 결정: [`../DECISIONS.md`](../DECISIONS.md) D-2026-10-04-A (우리 프로그램의 실행 기록은 커밋, CRAB transcript 만 제외)
 - 배경: PLAN §9 Stage 0 의 KNU 단계(빌드, `/pnfs` 파일 훑기 10~30 분, treestream 시험)를 대화형 셸에서 돌리고 출력을 복사해
   AI 세션에 붙였다. 10-03 KNU 의 clean 빌드가 오래 걸리자 사용자가 물었다(10-04): "이런 작업들 condor로 대체하고 로그를 남겨서
@@ -105,10 +106,77 @@ NtupleForge 판과 다른 점:
 인자 전달의 모든 따옴표·특수 문자 경우, exit code 전달(7·90·92), 실제 `.gitignore`, `TMPDIR` 가 없는 worker, `flock` 이 없을 때,
 EL9 의 GNU 옵션·bash 5.1, Python 3.9 문법, PyROOT 의 두 open 실패 경우, 파일 간 LS 중복 제거.
 
-## 확인하지 못한 것 (KNU 에서 처음 확인)
+## 2026-10-04 (2): KNU 첫 실행 뒤 고친 것
 
-- worker 가 `/u/user` 에 쓸 수 있는지: 기존 analyzer job 의 `.out`·`.err` 가 `tempTTHH/condor/` 아래(`/u/user`)에 써지므로 될 것으로
-  본다(추론). 안 되면 `status.sh` 가 `gone` 이고 `condor/runlog/<dir>/job.out` 에 이유가 있다.
-- KNU 가 메모리를 어떻게 강제하는지(cgroup 이면 넘을 때 hold, 기록에는 143).
-- `request_cpus` 는 기존 KNU 제출 파일에 없던 줄이다(`--cpus` 를 줄 때만 쓴다).
-- 첫 실제 job 의 결과로 이 절을 갱신한다.
+**KNU 에서 받은 것** (cms01, `90feebc0`, ROOT 6.30.09, Python 3.9.14; 사용자가 붙인 출력):
+`test_runlog.sh` **69 PASS, 2 FAIL**(`| tail -1` 이라 어느 둘인지는 아직 모름), `test_stage0.py` **19/19 PASS**(KNU 의 PyROOT 에서
+D14·D16 스크립트 확인), 그리고 RUNBOOK §20 13 (d) 의 `runlogs/run_knu_build_1003_20261004_164415.log`: `errors : 0 lines`,
+`lib/libEventShape.a`(05:07:51 KST)·`lib/libToolsForAnalysis.so`(05:08:14 KST)는 있는데 **`ttHHanalyzer_unified` 가 없다**, 그런데
+`EXIT : 0`. 10-03 의 대화형 `make clean && make -j4` 는 `lib/` 까지 만든 뒤 링크 전에 끊겼다(오류 줄이 없는 것도 중간에 끊긴 빌드와
+맞다; condor job 으로 다시 빌드한다). `EXIT : 0` 은 아래 1 의 빈틈 때문이다. 그 기록은 지우지 않는다: "10-03 빌드는 링크 전에
+끊겼다" 의 정직한 기록이고, 내용(실행 파일 없음)은 맞다.
+
+**1. `build_check.sh` — 끝난 빌드만 exit 0.**
+- 빌드 모드: make 가 0 이고 실행 파일 `ttHHanalyzer_unified` 가 있어야 0(make 가 실패하면 그 code, 실행 파일이 없으면 1).
+  `make -j N VERBOSE=1` 로 빌드한다: 이 `Makefile` 에서 `VERBOSE` 는 `INFO` 를 `@:` 에서 `@echo` 로 바꿀 뿐이고(`[App] Linking`,
+  끝의 `[Done] Built`), 빌드 자체는 같다(검토 2 가 Makefile 을 읽어 확인).
+- `--from-log`: 빈 log, error 줄, 실행 파일 없음은 FAIL. VERBOSE log(`Verbose log output enabled` 줄)는 `[Done] Built` 줄이 있어야
+  하고 실행 파일이 log 보다 10 분 넘게 오래되면 FAIL. 끝을 볼 수 없는 조용한 log(10-03 의 것)는 실행 파일의 시각이 log 의 마지막
+  쓰기와 10 분 안이어야 한다 — 나중 빌드의 실행 파일은 그 log 의 빌드가 끝났다는 증거가 아니다. 그래서 condor 로 다시 빌드한 뒤에도
+  10-03 log 는 FAIL 이다.
+- error 줄: `error:` 와 make 자신의 `***` 줄(`Error n`, `Stop.`, `Interrupt`). 컴파일러가 진단 아래 다시 보여 주는 소스 줄
+  (`  10 |   ...`)은 세지 않는다. 끝에 `done_line` 과 `result : OK|FAIL (이유)`, make log 의 마지막 5 줄.
+- 인자를 먼저 읽고 경로를 절대 경로로 바꾼 뒤 `cd`: `--from-log ""`(예: 빈 `$(ls …)`)가 **clean 빌드를 시작하던 것**과 디렉터리를
+  log 로 준 것은 이제 exit 2, 다른 디렉터리에서의 `-h` 와 상대 경로 log 도 된다.
+- 시험 `tools/stage0/test_build_check.sh` 새로(가짜 Makefile; **18 check**). 배포된 스크립트(`90feebc0`)로 돌리면 18 모두 FAIL.
+
+**2. `runlog.sh` — signal 이 와도 기록은 끝까지.**
+- trap 을 인자 확인 바로 뒤로 옮기고 SIGHUP(ssh 끊김, exit 129)을 더했다. 전에는 명령 직전에만 걸어서, 머리를 쓰는 동안(머리 전에
+  git 을 부른다 — KNU 의 그 기록에서 파일 이름의 STAMP 와 `start_utc` 가 1 초 다르다) SIGTERM 이 오면 꼬리도 LEDGER 줄도 없이 죽었다.
+- 명령 시작 전의 signal: 명령을 시작하지 않는다(`stopped : by SIG… before the command started`). run subshell 도 fork 직후 다시 본다.
+- 명령이 도는 동안: SIGTERM 을 run subshell 아래 **전부**(명령과 그 자식들)에 보낸다(`pgrep -P` 로 나무를 훑음; `pgrep` 이 없으면
+  `/proc/<pid>/task/*/children`). 전에는 직접 자식에게만 보내서, condor 에서는 `bash payload.sh` 만 멈추고 진짜 명령은 condor 의
+  SIGKILL 까지 계속 돌았다. 기록을 쓰는 복사기(`tee`)는 TERM/INT/HUP 을 무시하고 남은 출력을 끝까지 쓴다. 그래도 남는 것은
+  `RUNLOG_KILL_AFTER` 초(기본 5) 뒤 SIGKILL(TERM 을 무시하는 명령이 기록을 붙잡지 못하게; 명령 안의 `runlog.sh` 는 그 안에 자기
+  기록을 끝내야 한다 — 그런 겹친 사용은 지금 우리 job 에 없다).
+- 명령이 끝난 뒤의 signal: 기록이 끝날 때까지 무시한다(전에는 꼬리·LEDGER·`exit_code.txt` 를 쓰기 전에 죽을 수 있었다; 검토가
+  80 번 중 2 번을 자연 발생으로 봄).
+- 한계: `nohup` 아래에서는 SIGHUP 이 처음부터 무시되어 bash 가 잡을 수 없다(그때 ssh 가 끊겨도 명령은 계속 돈다 — nohup 의 뜻대로).
+
+**3. `test_runlog.sh` — 71 → 83 check.** 컨테이너에서 재현한 실패 방식(KNU 의 두 줄이 이 중 무엇인지는 미확인):
+- `TMPDIR` 가 symlink 를 거치면 3 FAIL(T7 의 둘, T9): 스크립트는 물리 경로를 적는데 시험이 논리 경로와 비교했다 → 작업 디렉터리를
+  물리 경로로. 의도한 동작(symlink 로 들어와도 job 파일은 물리 경로)은 T23. KNU 기록에서 `cwd` 와 `repo` 가 같아 `/u/user` 는
+  symlink 가 아니다.
+- T13 의 경쟁: 시험이 출력에서 `started` 를 찾는데 머리의 cmd 줄에도 그 글자가 있어, 명령보다 먼저 SIGTERM 을 보낼 수 있었다.
+  머리 뒤에 0.5 초를 넣으면(바쁜 노드) 3 FAIL, trap 과 명령 시작 사이면 1 FAIL → 명령 자신의 줄(`grep -qx`)을 기다린다(최대 30 초).
+- 사용자의 git 설정(`commit.gpgsign`, 전역 hook)이 시험용 저장소의 첫 커밋을 막으면 T1 이 FAIL(`gpgsign` 으로 재현) →
+  `GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1`, `-c core.hooksPath=/dev/null`, 새 T0 이 커밋을 확인.
+- 안전장치: 자식 bash 가 가짜 대신 진짜 `condor_submit`·`condor_q`·`voms-proxy-info`·`scram` 을 찾으면(noexec `TMPDIR`, PATH 를 바꾸는
+  `BASH_ENV`, export 된 함수) condor 시험 전에 `ABORT`(exit 2) — 시험이 진짜 job 을 내지 않게(`BASH_ENV` 로 재현해 확인).
+- 새 signal 시험: T22 머리 단계의 SIGTERM, T24 명령의 자식까지 멈춤, T25 명령 안의 `runlog.sh` 도 자기 꼬리를 씀, T26 SIGHUP(nohup
+  아래면 건너뜀), T27 꼬리를 쓰는 동안의 signal, T28 TERM 을 무시하는 명령(1 초 뒤 SIGKILL), T29 `pgrep`·`ps` 없이(`/proc`).
+
+**검증** (AI 세션, 2026-10-04 (2)):
+- `test_runlog.sh` **83/83**: root, 일반 사용자(`ubuntu`; T12 가 실제로 돔), symlink 인 `TMPDIR`, 공백이 든 `TMPDIR`, bash 5.1.16(EL9 는
+  5.1.8), `nohup` 아래(T26 건너뜀), 8 개의 `yes` 부하 아래 반복. `test_build_check.sh` **18/18**. `test_stage0.py` 19/19,
+  `test/run_unit_tests.sh` PASS(바뀐 것 없음, 다시 돌림).
+- 음성 대조: 배포된 `runlog.sh`(`90feebc0`)로 새 시험 → 6 FAIL(T22 둘, T24, T26, T27, T28); 복사기의 무시를 빼면 T25 둘 FAIL;
+  watchdog 을 빼면 T28 FAIL; `pgrep` 만 쓰면 T29 FAIL; 옛 시험·옛 `runlog.sh` + 머리 뒤 0.5 초 → 3 FAIL.
+- 명령 시작 직전 창에 SIGTERM(검토 1 이 0.3 초 창을 넣어 재현한 경우; 부하 아래) 뒤 명령이 끝까지 돈 횟수: 첫 고침 판 50 번 중 9 번
+  (검토 1), 나무 kill 만 더한 중간 판 40 번 중 8 번, 지금 판 25 번 중 0 번; subshell 안의 창(builtin 으로 넓힘) 30 번 중 0 번.
+
+**독립 검토 두 번** (서브에이전트): 1 차는 첫 고침에서 버그 셋을 찾았다 — 시작 직전 창에서 명령이 계속 돎, 꼬리를 쓰는 동안의
+signal 로 기록이 끊김, `--from-log` 가 log 가 아니라 지금의 트리를 판정(+ `--from-log ""` 가 빌드를 시작) — 그리고 TERM 이 명령의
+자식에 안 감, SIGHUP 없음, 작은 것 넷. 모두 고쳤다. 2 차는 고친 판에서 nohup 아래의 T26, 겹친 `runlog.sh` 와 watchdog, 조용한 log 의
+10 분 규칙, 소스 줄 안의 `***`, `pgrep` 없을 때, watchdog 의 `sleep`, "시작 전" 문구, 문서를 보고했다 — 겹친 사용의 시간 제한은
+위 한계로 적고 나머지는 고쳤다. 2 차가 "괜찮다" 고 확인한 것: 실제 pty 의 Ctrl-C(명령·머리·python, INT 를 무시하는 명령은 5.5 초 뒤),
+나무 밖으로 빠져 파이프를 붙든 writer 도 5.3 초에 끝남, watchdog 이 나무 밖을 건드리지 않음, `VERBOSE=1` 이 빌드를 바꾸지 않음.
+
+## 확인하지 못한 것 (KNU 에서 처음 확인) — 10-05 의 첫 job 으로 갱신
+
+- worker 가 `/u/user` 에 쓸 수 있는지: **된다**(10-05: 네 job 의 기록·`exit_code.txt` 가 worker cluster291·298·300·313 에서 써짐).
+- worker 의 cmsenv: **된다**(`cmsenv ok`, ROOT 6.30.09, Python 3.9.14, `TMPDIR` = job scratch `/home/condor/dir_*`).
+- `request_cpus` 는 기존 KNU 제출 파일에 없던 줄이다: `--cpus 4 --memory 12GB` 의 빌드가 받아들여져 20 분에 끝났다(10-05).
+- `condor_tail <job>` 은 이 job 들에 쓸 수 없다: 출력이 condor sandbox 가 아니라 `/u/user` 의 `condor/runlog/<dir>/job.out` 에 바로
+  써지므로 "outside sandbox" 로 거절된다(10-05) → `tail -f condor/runlog/<dir>/job.out`.
+- 아직 모르는 것: KNU 가 메모리를 어떻게 강제하는지(cgroup 이면 넘을 때 hold, 기록에는 143).
