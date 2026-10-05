@@ -51,6 +51,9 @@
 //          25-Sep-2018 HBP - go back to a single header to avoid problems
 //                      with mkanalyzer.py
 //----------------------------------------------------------------------------
+//  Updated: Junghyun Lee <junghyun.lee@cern.ch>
+//           15-Mar-2026 JhLee - Author credit for standalone branch updates
+//----------------------------------------------------------------------------
 #include <vector>
 #include <string>
 #include <list>

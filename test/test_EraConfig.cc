@@ -66,6 +66,24 @@ int main(){
     assert(!EraConfig::inHemRegion("2017",-2.0f,-1.2f));   // never for 2017
     assert(!EraConfig::hemJes("2017").active && EraConfig::hemJes("2018").active);
 
+    // 8) [STEP 24] 2024 (PLAN 9.2 / 9.6: BTV UParTAK4 WPs, JME veto map, Run 3 MET filters, no prefiring)
+    assert(EraConfig::yearForCorr("2024")=="2024_Summer24");
+    assert(EraConfig::normalizeYear("2024_Summer24")=="2024");
+    assert( EraConfig::isRun3("2024") && !EraConfig::isRun3("2017") && !EraConfig::isRun3("2018"));
+    auto w24=EraConfig::btagWP("2024");
+    assert(std::fabs(w24.loose-0.0246f)<1e-7 && std::fabs(w24.medium-0.1272f)<1e-7 && std::fabs(w24.tight-0.4648f)<1e-7);
+    assert(!EraConfig::usesL1Prefiring("2024"));
+    assert(!EraConfig::usesPUJetID("2024") && EraConfig::usesPUJetID("2017"));
+    assert( EraConfig::jetIdFromJson("2024") && !EraConfig::jetIdFromJson("2018"));
+    assert( EraConfig::jetVetoMap("2024").active && std::string(EraConfig::jetVetoMap("2024").correction)=="Summer24Prompt24_RunBCDEFGHI_V1");
+    assert(!EraConfig::jetVetoMap("2017").active);
+    assert(!EraConfig::hasBTagShapeSF("2024") && EraConfig::hasBTagShapeSF("2017"));
+    assert(!EraConfig::hasTtNbLookup("2024") && EraConfig::hasTtNbLookup("2017") && EraConfig::hasTtNbLookup("2018"));
+    assert(EraConfig::metFilters("2017").size()==9 && EraConfig::metFilters("2024").size()==8);
+    for (const auto& f : EraConfig::metFilters("2024")) assert(f!="Flag_HBHENoiseFilter" && f!="Flag_HBHENoiseIsoFilter");
+    assert(EraConfig::goldenJsonFile("2024")=="Cert_Collisions2024_378981_386951_Golden.json");
+    assert(!EraConfig::hemJes("2024").active);
+
     std::cout<<"ALL ERACONFIG ASSERTIONS PASSED\n";
     return 0;
 }

@@ -13,6 +13,9 @@
 - 수정(묶음 2): `include/EraConfig.h`, `include/CorrectionsManager.h`, `src/CorrectionsManager.cc`, `ttHHanalyzer_unified.{h,cc}`,
   `submit_job_FH_Tier3_unified.py`, `test/test_EraConfig.cc`(2024), `tools/stage1/{y1_reference.sh, y1_compare.py, test_stage1.py}`(§3),
   `docs/DECISIONS.md`(D-2026-10-05-B, -C)
+- 커밋 B(§11): `include/eventBuffer.h`(KNU 기록에서), `include/eventBuffer_variables.txt`(신규), `include/treestream.h`, `src/treestream.cc`,
+  묶음 2 의 C++·제출기·`test/test_EraConfig.cc`, 로그 줄 셋, 제출기의 `files_per_job_data`, `tools/stage3/smoke_2024.sh`(신규),
+  `test/offline_smoke/run_offline_smoke.sh`(+3 check), 2024 yml 의 files per job
 - 결정: [`../DECISIONS.md`](../DECISIONS.md) D-2026-10-05-A (사용자 10-05: 첫 plot 의 범위, D14, blinding; D15 의 방법), D-2026-10-05-B
   (2024 MC 의 4J3T 는 PNet 경로만, PROPOSED), D-2026-10-05-C (2024 는 tt+nb lookup 없이, D-2026-10-02-A 의 구현)
 - 배경: 사용자(10-05) "얼른 plot 만들고 싶은데" → 첫 plot 은 2024 FH, trigger·b-tag SF 없이, σ 는 임시값 표시(D-2026-10-05-A). 그
@@ -197,6 +200,48 @@ B 에만 있는 파일 FAIL, tree 값만 바뀜 FAIL, EXPECTED 의 run 이 양�
   변환기 둘).
 - P8 둘과 Data lumi 점검은 도는 중(P8 기록도 명령의 `crabConfig` 로 `nocommit/`).
 
+### 11. 커밋 B: 진짜 header 와 2024 analyzer (10-05 저녁)
+
+- **기록**: `runlogs/run_knu_eventbuffer_manifest_20261005_105905.log`(KNU `66ea1301`; `RESULT OK`, 146 s). base 넷(2024 MC 60 dataset
+  19,111 파일·Data 32·7,787, 2018 v15 MC 42·Data 8) + v9 record(`EXTRA ... records=1782 new=1357 type_conflicts=41 count_unified=54`; 형 충돌은
+  short→int 12, uchar→int 27, ushort→int 1, `event` long64/ulong64 → ulong64 1). treestream 은 파일의 leaf 형으로 읽고 header 의 형으로 바꿔
+  넘긴다(fork 의 iotype/srctype, `run_knu_treestream_v15check_20261005_055524.log` 의 실제 파일 시험 PASS).
+- **header**: `eventbuffer_from_record.py --check-only` 다음 쓰기(fork `8be42e8`, `bin/`·treestream.cc/.h 수정 없음): variables md5
+  `605e8320ea853256035e41068075807e`(764 record) = 기록, header md5_normalized `14da4cbd08def3372a5b68ff9200faf1`(9,052 줄) = 기록.
+  쓴 파일: `include/eventBuffer.h` `bdc221e811c335e57d2d71aff16b7cf9`(9,054 줄, stamp
+  `treestream 8be42e8; variables md5 605e8320...; record run_knu_eventbuffer_manifest_20261005_105905.log`),
+  `include/eventBuffer_variables.txt` `605e8320...`, `src/treestream.cc` `c4a5873c5cc63f1c3e10f8bf7c597fbc`, `include/treestream.h`
+  `c0cfff1974cdf4bdb79925599956c17c`. §10 의 컨테이너 모의 header 와 `Created:`·`Author:`·stamp 줄 밖에서 같다. `include/linkdef.h` 의 struct
+  17 개는 그대로 있다(rootcling 이 빌드에서 통과).
+- **C++**: 맥 `STEP24_batch2_hold/` 의 일곱(§6)에 **로그만** 바꾼 것 셋(selection·weight 는 그대로):
+  (a) `[objectJet] <tagger> WP for <year>` — 2024 는 `UParTAK4 (Jet_btagUParTAK4B)`(예전 줄은 모든 연도에 "DeepJet"; 값은 처음부터 UParTAK4 의
+  것); (b) `CorrectionsManager::loadJME_` 끝에 `[CorrectionsManager] JEC/JER (<year>): <file> -> JEC <key>, JER <resolution> + <SF>` (Data 는 Data
+  JEC key) — 모든 job 로그에 JEC/JER payload 이름이 남는다; (c) `[branches]` 줄이 any-of 묶음의 이름마다 `: yes/no`(2024 Data 파일의 4J3T
+  경로: `one of {..._PNet3BTag_4p3: yes, ..._TriplePFBTagDeepJet_4p5: no}`).
+- **제출기**: `common.files_per_job_data`(Data 에만; `_files_per_job`: `--files-per-job` > Data 의 `files_per_job_data` > `files_per_job` > 1).
+  2024 Data 에 1 보다 크면 preflight FAIL 에 더해 제출 때에도 그 샘플을 건너뛴다(오류 한 줄, 다른 샘플은 그대로). preflight 의 job 수는
+  샘플마다 나눈 합(1 file/job 이면 예전과 같은 수; 2017 main preflight 는 글자 단위로 같다; `--files-per-job 3` 이면 예전 178 → 맞는 수 228).
+  2024 yml: prescan `files_per_job: 20`(MC 60, 19,110 파일 → 983 job, 1.86 TB), main `files_per_job: 10`·`files_per_job_data: 1`(MC 1,939 + Data
+  3,352 job). MC 는 dataset 마다 branch 집합이 하나다(§1 의 MC 스캔).
+- **`tools/stage3/smoke_2024.sh`**(신규): 진짜 2024 파일로, condor job 과 같은 환경(`setup.sh`, yml 의 경로를 제출기 자신의 reader 와 env map 으로
+  — map 은 제출기 소스에서 `ast` 로 읽어 사본이 없다): `mc_sig`(TTHHto4b), `mc_tt`(TTbar_Hadronic), `pre_sig`(prescan), `dC_pnet`·`dC_nopnet`(era C 의
+  PNet 4J3T branch 가 있는/없는 파일; 파일을 열어 찾는다), `dC_mix`(둘을 한 job → E11), `dI`(JetMET1 I `_v2-v2`), `mc_multi`·`pre_multi`
+  (QCD_HT200to400 의 job 0 = filelist 의 처음 files_per_job 줄: 여러 파일 job). 파일은 크기의 10 번째 백분위; Data 는 LS 의 절반 이상이 golden 인
+  파일만(2024 Data 는 lumi mask 없이 만들었고 analyzer 는 golden 이 아닌 LS 를 객체를 읽기 전에 건너뛴다 — golden LS 가 없는 파일이면 아무것도 안
+  보인다; era I 의 끝 run 들은 golden 밖).
+  check: exit 0, stamp(**실행 파일이 이 checkout 의 header 로 빌드되었나**), `[branches]`, yml 의 jsonpog·PU 경로, payload 이름(jet ID, veto map,
+  PU, JEC MC/DATA·JER, UParTAK4 WP), cutflow HadTrigger·njets≥6·HT>500 > 0(MC 는 nbjets≥2 도), 출력의 끝 표지(`cutflow_w_full`; prescan 은 한 행
+  `prescan` tree — 제출기의 완료 판정과 같은 규칙), TTbar 의 tt+nb 꺼짐, era C 의 4J3T yes/no. `TIMING`(event/s, kB/event)으로 생산 시간을
+  어림한다. 합성 입력으로 69/69(golden LS 가 없는 Data 파일은 건너뜀; PNet 없는 파일이 없으면 둘을 건너뜀; PU JSON 이 없으면 FAIL 과 log 꼬리 —
+  확인).
+- **독립 검토(10-05 저녁, 오늘 바뀐 것)**: C++ 셋과 제출기는 문제 없음(2017 main·prescan·btagtrig preflight 는 옛 제출기와 바이트 단위로 같다;
+  submit·`--report`·`--status`·`--resubmit` 이 같은 `parse_config_entry` 로 나눈다; prescan 20 file/job 도 한 행 규칙을 지킨다). 지적 셋: (1) smoke 가
+  Data 를 크기로만 골라 golden LS 가 없는 파일이면 거짓 FAIL → golden 조건(위); (2) MC files per job 의 근거 — MC 스캔 기록
+  `runlogs/run_knu_d16_branchsig_mc_20261005_063612.log`(60 dataset 모두 branch 집합 하나)는 맥 저장소에 있다(검토한 사본에 없었을 뿐), 그래도
+  production 의 나눔을 그대로 시험하도록 `mc_multi`·`pre_multi` 를 더함; (3) `--files-per-job 0` 이면 FAIL 뒤에 PASS 줄이 찍힘 → 찍지 않는다.
+- **시험(컨테이너, 마지막 빌드 `cb.HIUj`)**: clean 빌드 `MAKE_RC=0`; `run_unit_tests.sh` PASS; `test_stage1` 48/48; offline smoke **34/34**(+3: JEC/JER·WP 줄,
+  Data JEC, 4J3T yes/no), 2017 넷은 옛 빌드와 같다(히스토그램 620 개 + tree, `y1_compare.py` PASS). 2017 의 실제 파일 Y1 은 없다(D-2026-10-05-D).
+
 ## 확인하지 못한 것
 
 - TTbar_Hadronic 의 `260930_162708/0000/forgedNtuple_443.root` 는 크기 0(10-02 18:48 KST; NtupleForge `docs/05_troubleshooting.md` A29):
@@ -208,3 +253,6 @@ B 에만 있는 파일 FAIL, tree 값만 바뀜 FAIL, EXPECTED 의 run 이 양�
 - `data/samples_2024.json` 의 σ 는 모두 임시. 낮은 신뢰도 다섯(비율로 올린 것)과 TTZHTo4b(XSDB 의 exact-dataset 값이 B(Z→bb) 만 포함한
   것으로 보여 쓰지 않음)는 첫 plot 에 영향이 없거나 작다. XSDB 로 확인할 사람: CERN 로그인이 있는 사용자.
 - D-2026-10-05-B(2024 MC 의 4J3T 는 PNet 만)는 PROPOSED — Stage 6 의 trigger SF 와 함께 정한다.
+- 커밋 B 의 KNU 빌드(ROOT 6.30, correctionlib 의 CMSSW 판)와 `smoke_2024.sh`(진짜 파일·진짜 payload) 결과는 아직(워크스페이스 RUNBOOK §23).
+  진짜 payload 로 JEC·JER·jet ID·veto map·PU 가 실제로 평가되는 것은 그 smoke 가 처음이다(컨테이너는 이름과 입력만 같은 가짜 payload).
+- Data lumi 점검 기록(`runlogs/run_knu_data_lumi_2024_20261005_094727.log`, exit 0)은 KNU 에만 있다 — 커밋 뒤 빠진 LS 를 본다.

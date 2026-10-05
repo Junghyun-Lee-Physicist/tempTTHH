@@ -19,6 +19,8 @@
 #include <fstream>
 #include <iostream>
 #include <filesystem>   // JSON 파일 존재 확인용
+#include <algorithm>    // [STEP 24] std::clamp
+#include <cmath>
 #include <TRandom3.h>
 
 // static flag for verbose logging:
@@ -60,6 +62,12 @@ CorrectionsManager::CorrectionsManager(const std::string& runYear,
     goldenJsonPath   = cfgpath::resolve("TTHH_GOLDENJSON_PATH", "GoldenJSON dir",           /*required=*/isData_);
     trigSFPath       = cfgpath::resolve("TTHH_TRIGSF_DIR",      "trigger SF dir",           /*required=*/false);
     btagReweightPath = cfgpath::resolve("TTHH_BTAGRW_JSON",     "b-tag norm reweight JSON", /*required=*/false);
+    // [STEP 24] 2024: jsonpog 에 POG/LUM 의 2024 가 없어 우리가 만든 PU weight JSON
+    //   (DerivedCorr/PU/2024_Summer24/, tools/stage2/pu_weights.py; docs/DECISIONS.md D-2026-10-05-A).
+    //   2016-2018 은 jsonpog 그대로이고 이 env 를 읽지도 않는다(그 연도의 yml·job 은 바뀌지 않는다).
+    if (EraConfig::isRun3(EraConfig::normalizeYear(runYear_)))
+        puJsonPath = cfgpath::resolve("TTHH_PU_JSON", "2024 PU weight JSON", /*required=*/true);
+
     std::cout << "[CorrectionsManager] derived-correction policy: "
               << (requireDerived_ ? "REQUIRED if path given (load fail -> FATAL 50/51)"
                                   : "optional (bootstrap; load fail -> WARN, SF=1)")
@@ -69,13 +77,14 @@ CorrectionsManager::CorrectionsManager(const std::string& runYear,
     // correctionlib의 throw를 여기서 잡아 Condor가 식별 가능한 exit로 변환.
     try {
         loadJME_();          // always load MC JEC/JER; Data only if isData_
+        loadRun3Jet_();      // [STEP 24] 2024: jet ID (jetid.json) + jet veto map; Run 2: nothing
         loadPU_();           // always load PU (both MC & Data)
         loadBTag_();         // MC-only b-tag SF (or Data if you wish)
         loadGoldenJSON_();   // only Data
     } catch (const std::exception& e) {
         std::cerr << "[FATAL][CorrectionsManager] central correction load failed: "
                   << e.what() << "\n"
-                  << "  -> check TTHH_JSONPOG_PATH / TTHH_GOLDENJSON_PATH "
+                  << "  -> check TTHH_JSONPOG_PATH / TTHH_GOLDENJSON_PATH / TTHH_PU_JSON (2024) "
                   << "(or yml common.path_*).\n";
         std::exit(tthh::CENTRAL_CORR_LOAD_FAIL);
     }
@@ -133,6 +142,14 @@ void CorrectionsManager::loadJME_() {
         key_res = "Summer19UL18_JRV2_MC_PtResolution_AK4PFchs";
         key_sf  = "Summer19UL18_JRV2_MC_ScaleFactor_AK4PFchs";
     }
+    else if (runYear_ == "2024_Summer24") {
+        // [STEP 24] payload 실측(2026-10-02, PLAN §9.2): JEC Summer24Prompt24_V1 (compound
+        //   (JetA, JetEta, JetPt, Rho, JetPhi)), JER 는 2023 BPix 의 것(Summer23BPixPrompt23_RunD_JRV1,
+        //   SF 입력 (JetEta, JetPt, systematic)) — 이 jet_jerc.json.gz 에 함께 들어 있다.
+        key_mc  = "Summer24Prompt24_V1_MC_L1L2L3Res_AK4PFPuppi";
+        key_res = "Summer23BPixPrompt23_RunD_JRV1_MC_PtResolution_AK4PFPuppi";
+        key_sf  = "Summer23BPixPrompt23_RunD_JRV1_MC_ScaleFactor_AK4PFPuppi";
+    }
     else {
         throw std::runtime_error("Unsupported runYear in loadJME_: " + runYear_);
     }
@@ -142,6 +159,10 @@ void CorrectionsManager::loadJME_() {
     jec_MC_  = cset->compound().at(key_mc);
     jerRes_  = cset->at(key_res);
     jerSF_   = cset->at(key_sf);
+    // [STEP 24] 입력 순서를 payload 의 이름에서 (모르는 이름이면 throw -> FATAL 49)
+    jecInMC_  = mapJetInputs_(jec_MC_->inputs(), key_mc);
+    jerSFIn_  = mapJetInputs_(jerSF_->inputs(), key_sf);
+    jerResIn_ = mapJetInputs_(jerRes_->inputs(), key_res);
 
     if (kVerbose) {
         std::cout
@@ -151,6 +172,7 @@ void CorrectionsManager::loadJME_() {
     }
 
     // 3) 데이터면 Data용 JEC도 로드
+    std::string key_jec_used = key_mc;   // [STEP 24] for the provenance line below
     if (isData_) {
         std::string key_data;
         if (runYear_ == "2016preVFP_UL" || runYear_ == "2016postVFP_UL") {
@@ -175,6 +197,10 @@ void CorrectionsManager::loadJME_() {
             key_data = "Summer19UL18_Run" + EraConfig::jecDataEraTag("2018", dataEra_)
                      + "_V5_DATA_L1L2L3Res_AK4PFchs";
         }
+        else if (runYear_ == "2024_Summer24") {
+            // [STEP 24] era 마다 tag 가 따로 없다: residual 이 입력 `run` 으로 갈린다
+            key_data = "Summer24Prompt24_V1_DATA_L1L2L3Res_AK4PFPuppi";
+        }
 
         // [2018] Data 인데 키를 못 정했다면 (미지원 연도) 그냥 두면 아래 catch 가
         //   MC JEC 로 조용히 대체해버린다. 명시적으로 끊는다.
@@ -186,6 +212,8 @@ void CorrectionsManager::loadJME_() {
 
         try {
             jec_Data_ = cset->compound().at(key_data);
+            jecInData_ = mapJetInputs_(jec_Data_->inputs(), key_data);
+            key_jec_used = key_data;
             if (kVerbose)
                 std::cout << "  -> JEC_Data key: " << key_data << "\n";
         } catch (const std::exception& e) {
@@ -200,12 +228,24 @@ void CorrectionsManager::loadJME_() {
             std::exit(tthh::CONFIG_BAD_RUNINFO);
         }
     }
+    // [STEP 24] the JEC/JER payload names in every job log (provenance; tools/stage3/smoke_2024.sh reads it)
+    std::cout << "[CorrectionsManager] JEC/JER (" << runYear_ << "): " << file << " -> JEC " << key_jec_used
+              << ", JER " << key_res << " + " << key_sf << "\n";
 }
 
 //--------------------------------------------------------------------------------------------------
 // 2) Pileup reweighting
 //--------------------------------------------------------------------------------------------------
 void CorrectionsManager::loadPU_() {
+    if (runYear_ == "2024_Summer24") {
+        // [STEP 24] 우리 JSON (생성자에서 TTHH_PU_JSON 으로 받은 경로), correction 이름은
+        //   tools/stage2/pu_weights.py 의 CORR_NAME. 입력은 jsonpog 와 같다 (NumTrueInteractions, weights).
+        auto cs = correction::CorrectionSet::from_file(puJsonPath);
+        puCorr_ = cs->at("Collisions24_goldenJSON");
+        std::cout << "[CorrectionsManager] PU weights (2024): " << puJsonPath
+                  << " -> Collisions24_goldenJSON" << std::endl;
+        return;
+    }
     const std::string file = jsonPath + "/POG/LUM/" + runYear_ + "/puWeights.json.gz";
     if (kVerbose) std::cout << "[loadPU] Loading from " << file << "\n";
     auto cset = correction::CorrectionSet::from_file(file);
@@ -229,6 +269,13 @@ void CorrectionsManager::loadPU_() {
 //--------------------------------------------------------------------------------------------------
 void CorrectionsManager::loadBTag_() {
     if (isData_) return; // 데이터에는 b-tag SF 적용하지 않음
+    if (!EraConfig::hasBTagShapeSF(EraConfig::normalizeYear(runYear_))) {
+        // [STEP 24] 2024 BTV 에는 deepJet 도 UParTAK4 의 shape SF 도 없다(PLAN §9.6 D10):
+        //   불러오지 않고 getBTagSF_* 는 1 을 돌려준다. --btagsf on 은 analyzer 가 FATAL 로 막는다.
+        std::cout << "[CorrectionsManager] b-tag SF: none for " << runYear_
+                  << " (no shape SF in the BTV payload; D10) -> 1.0" << std::endl;
+        return;
+    }
 
     const std::string file = jsonPath + "/POG/BTV/" + runYear_ + "/btagging.json.gz";
     if (kVerbose) std::cout << "[loadBTag] Loading from " << file << "\n";
@@ -287,6 +334,76 @@ void CorrectionsManager::loadGoldenJSON_() {
                           << " [" << rng[0] << "," << rng[1] << "]\n";
         }
     }
+}
+
+//--------------------------------------------------------------------------------------------------
+// [STEP 24] Run 3 jet ID and jet veto map (2024)
+//   jetid.json.gz       : AK4PUPPI_Tight, AK4PUPPI_TightLeptonVeto; inputs (eta, chHEF, neHEF, chEmEF,
+//                         neEmEF, muEF, chMultiplicity, neMultiplicity, multiplicity), the last three int
+//                         (payload 실측 2026-10-02; 파일 설명 "Run3 Rereco2022CDE", JetID13p6TeV rev 18 —
+//                         2024 전용 기준이 따로 없는지는 JME 로 확인할 것, PLAN §9.2)
+//   jetvetomaps.json.gz : EraConfig::jetVetoMap(year): correction + type; inputs (type, eta, phi),
+//                         eta [-5.191, 5.191] 82 bin, phi [-pi, pi] 72 bin
+//--------------------------------------------------------------------------------------------------
+void CorrectionsManager::loadRun3Jet_() {
+    const std::string year = EraConfig::normalizeYear(runYear_);
+    if (EraConfig::jetIdFromJson(year)) {
+        const std::string file = jsonPath + "/POG/JME/" + runYear_ + "/jetid.json.gz";
+        auto cs = correction::CorrectionSet::from_file(file);
+        jetIdTight_         = cs->at("AK4PUPPI_Tight");
+        jetIdTightLepVeto_  = cs->at("AK4PUPPI_TightLeptonVeto");
+        std::cout << "[CorrectionsManager] jet ID (" << runYear_ << "): " << file
+                  << " -> AK4PUPPI_Tight, AK4PUPPI_TightLeptonVeto" << std::endl;
+    }
+    const EraConfig::JetVetoMap vm = EraConfig::jetVetoMap(year);
+    if (vm.active) {
+        const std::string file = jsonPath + "/POG/JME/" + runYear_ + "/jetvetomaps.json.gz";
+        auto cs = correction::CorrectionSet::from_file(file);
+        jetVetoMap_  = cs->at(vm.correction);
+        jetVetoType_ = vm.type;
+        std::cout << "[CorrectionsManager] jet veto map (" << runYear_ << "): " << file << " -> "
+                  << vm.correction << " type " << vm.type << std::endl;
+    }
+}
+
+namespace {
+// jetid.json 의 int 입력에는 variant 의 정수 자리를 준다 (correctionlib 판마다 int / int64_t)
+using CorrInt = std::variant_alternative_t<0, correction::Variable::Type>;
+
+double evalJetId(const std::shared_ptr<const correction::Correction>& c, const char* what,
+                 double eta, double chHEF, double neHEF, double chEmEF, double neEmEF,
+                 double muEF, int chMult, int neMult) {
+    if (!c) {
+        std::cerr << "\n[FATAL][CorrectionsManager] " << what << " asked, but no jet ID payload is loaded "
+                  << "for this year (EraConfig::jetIdFromJson is false). Aborting." << std::endl;
+        std::exit(tthh::CONFIG_BAD_RUNINFO);
+    }
+    return c->evaluate({std::abs(eta), chHEF, neHEF, chEmEF, neEmEF, muEF,
+                        CorrInt(chMult), CorrInt(neMult), CorrInt(chMult + neMult)});
+}
+}  // namespace
+
+bool CorrectionsManager::passJetIdTight(double eta, double chHEF, double neHEF, double chEmEF,
+                                        double neEmEF, double muEF, int chMult, int neMult) const {
+    return evalJetId(jetIdTight_, "passJetIdTight", eta, chHEF, neHEF, chEmEF, neEmEF, muEF, chMult, neMult) > 0.5;
+}
+
+bool CorrectionsManager::passJetIdTightLepVeto(double eta, double chHEF, double neHEF, double chEmEF,
+                                               double neEmEF, double muEF, int chMult, int neMult) const {
+    return evalJetId(jetIdTightLepVeto_, "passJetIdTightLepVeto", eta, chHEF, neHEF, chEmEF, neEmEF, muEF,
+                     chMult, neMult) > 0.5;
+}
+
+bool CorrectionsManager::inJetVetoMap(double eta, double phi) const {
+    if (!jetVetoMap_) {
+        std::cerr << "\n[FATAL][CorrectionsManager] inJetVetoMap asked, but no veto map is loaded for "
+                  << runYear_ << ". Aborting." << std::endl;
+        std::exit(tthh::CONFIG_BAD_RUNINFO);
+    }
+    // the map's edges are |eta| <= 5.191 and |phi| <= pi: keep the inputs inside
+    const double e = std::clamp(eta, -5.19, 5.19);
+    const double p = std::clamp(phi, -3.1415, 3.1415);
+    return jetVetoMap_->evaluate({jetVetoType_, e, p}) != 0.0;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -502,12 +619,32 @@ double CorrectionsManager::getPUWeight(double nTrueInt,
     return puCorr_->evaluate({nTrueInt, var});
 }
 
-//double CorrectionsManager::getJEC(int run,
+// [STEP 24] payload 의 입력 이름 -> 우리 값의 자리. JEC compound: JetA, JetEta, JetPt, Rho (Run 2),
+//   + JetPhi (2024), + run (2024 DATA). JER SF: JetEta, systematic (Run 2), + JetPt (2023 BPix JER).
+std::vector<CorrectionsManager::JetIn>
+CorrectionsManager::mapJetInputs_(const std::vector<correction::Variable>& vars, const std::string& what) {
+    std::vector<JetIn> out;
+    for (const auto& v : vars) {
+        const std::string n = v.name();
+        if      (n == "JetA")       out.push_back(JetIn::A);
+        else if (n == "JetEta")     out.push_back(JetIn::Eta);
+        else if (n == "JetPt")      out.push_back(JetIn::Pt);
+        else if (n == "Rho")        out.push_back(JetIn::Rho);
+        else if (n == "JetPhi")     out.push_back(JetIn::Phi);
+        else if (n == "run")        out.push_back(v.type() == correction::Variable::VarType::integer ? JetIn::RunInt : JetIn::Run);
+        else if (n == "systematic") out.push_back(JetIn::Syst);
+        else throw std::runtime_error("unknown input '" + n + "' of " + what);
+    }
+    return out;
+}
+
 double CorrectionsManager::getJEC(
                                   double eta,
+                                  double phi,
                                   double raw_pt,
                                   double area,
-				  double rho) const
+				  double rho,
+                                  unsigned int run) const
 {
     if (kVerbose) std::cout << "[getJEC] -----  "
                             << " isData="<<isData_
@@ -516,7 +653,22 @@ double CorrectionsManager::getJEC(
                             << " area="<<area
 			    << " rho="<<rho<<"\n";
     auto &corr = isData_ ? jec_Data_ : jec_MC_;
-    return corr->evaluate({ area, eta, raw_pt, rho});
+    const auto &order = isData_ ? jecInData_ : jecInMC_;
+    std::vector<correction::Variable::Type> in;
+    in.reserve(order.size());
+    for (JetIn k : order) {
+        switch (k) {
+            case JetIn::A:   in.emplace_back(area);   break;
+            case JetIn::Eta: in.emplace_back(eta);    break;
+            case JetIn::Pt:  in.emplace_back(raw_pt); break;
+            case JetIn::Rho: in.emplace_back(rho);    break;
+            case JetIn::Phi: in.emplace_back(phi);    break;
+            case JetIn::Run: in.emplace_back(static_cast<double>(run)); break;   // payload: run real
+            case JetIn::RunInt: in.emplace_back(std::variant_alternative_t<0, correction::Variable::Type>(run)); break;
+            case JetIn::Syst: throw std::runtime_error("JEC compound with a systematic input");
+        }
+    }
+    return corr->evaluate(in);
 }
 
 
@@ -576,7 +728,15 @@ double CorrectionsManager::smearJER(double corr_pt,
     try {
         if (kVerbose) std::cout << "[smearJER] jerSF_->evaluate({eta, syst}) -> {"
                                 << etaIn << ", " << syst << "}\n";
-        sf = jerSF_->evaluate({etaIn, syst});
+        // [STEP 24] 입력은 payload 순서대로: Run 2 (JetEta, systematic), 2024 (JetEta, JetPt, systematic)
+        std::vector<correction::Variable::Type> in;
+        for (JetIn k : jerSFIn_) {
+            if      (k == JetIn::Eta)  in.emplace_back(etaIn);
+            else if (k == JetIn::Pt)   in.emplace_back(corr_pt);
+            else if (k == JetIn::Syst) in.emplace_back(syst);
+            else throw std::runtime_error("unexpected input of the JER scale factor");
+        }
+        sf = jerSF_->evaluate(in);
         if (kVerbose) std::cout << "[smearJER] jerSF returned " << sf << "\n";
     } catch (const std::exception& e) {
         std::cerr << "[smearJER] ERROR in jerSF_->evaluate: " << e.what() << "\n";
@@ -587,7 +747,15 @@ double CorrectionsManager::smearJER(double corr_pt,
     try {
         if (kVerbose) std::cout << "[smearJER] jerRes_->evaluate({eta, corr_pt, rho}) -> {"
                                 << etaIn << ", " << corr_pt << ", " << rho << "}\n";
-        res = jerRes_->evaluate({etaIn, corr_pt, rho});
+        // [STEP 24] inputs by the payload's names (Run 2 and 2024: JetEta, JetPt, Rho -- the order as before)
+        std::vector<correction::Variable::Type> rin;
+        for (JetIn k : jerResIn_) {
+            if      (k == JetIn::Eta) rin.emplace_back(etaIn);
+            else if (k == JetIn::Pt)  rin.emplace_back(corr_pt);
+            else if (k == JetIn::Rho) rin.emplace_back(rho);
+            else throw std::runtime_error("unexpected input of the JER resolution");
+        }
+        res = jerRes_->evaluate(rin);
         if (kVerbose) std::cout << "[smearJER] jerRes returned " << res << "\n";
     } catch (const std::exception& e) {
         std::cerr << "[smearJER] ERROR in jerRes_->evaluate: " << e.what() << "\n";
@@ -731,6 +899,7 @@ double CorrectionsManager::getBTagSF_FixedWP(int hadFlav, double absEta, double 
                                               const std::string& wp,
                                               const std::string& syst) const {
     if (isData_) return 1.0;
+    if (!btagCorr_bc_ || !btagCorr_light_) return 1.0;   // [STEP 24] 그 연도의 payload 에 없다 (2024)
     
     // Flavor 정규화: 5=b, 4=c, 나머지=0(light)
     int flav = hadFlav;
@@ -763,6 +932,7 @@ double CorrectionsManager::getBTagSF_FixedWP(int hadFlav, double absEta, double 
 double CorrectionsManager::getBTagSF_Shape(int hadFlav, double eta, double pt, double discr,
                                             const std::string& syst) const {
     if (isData_) return 1.0;
+    if (!btagCorr_shape_) return 1.0;   // [STEP 24] 그 연도의 payload 에 shape SF 가 없다 (2024, D10)
     
     // Flavor 정규화: 5=b, 4=c, 나머지=0(light)
     int flav = hadFlav;

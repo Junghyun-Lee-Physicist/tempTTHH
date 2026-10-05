@@ -12,9 +12,11 @@ common:
   lumi_fb_inv: 109.816
   xsec_db: "data/samples_2024.json"                          # PROVISIONAL 13.6 TeV cross sections (D-2026-10-05-A)
   prescan: "prescan_summary_2024/prescan_summary.json"       # consolidate_prescan.py --outdir prescan_summary_2024
-  # one input file per job: 2024 era C Data files differ in their HLT branches, and a job with several
-  # files must have one branch set (ttHHanalyzer_unified.cc requireSameBranchSet_; the preflight fails for > 1)
-  files_per_job: 1
+  # MC: 10 files per job (one branch set per MC dataset). Data: 1 -- 2024 era C files differ in their HLT
+  # branches and a job of several files stops (E11, requireSameBranchSet_; the submitter refuses > 1 for 2024
+  # Data). --report/--resubmit read these values, so do not give --files-per-job. 1,939 MC + 3,352 Data jobs.
+  files_per_job: 10
+  files_per_job_data: 1
   # [STEP18] path policy: "" / missing -> E12; null -> optional correction off (required -> E13); "<path>" -> used
   path_jsonpog: "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration"
   path_goldenjson: "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/GoldenJson"

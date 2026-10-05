@@ -71,11 +71,17 @@ public:
     // ═══════════════════════════════════════════════════════════════════════
     // JEC API
     // ═══════════════════════════════════════════════════════════════════════
+    // [STEP 24] 입력은 payload 의 compound 가 선언한 이름으로 맞춘다(load 때 한 번 정함):
+    //   JetA=area, JetEta=eta, JetPt=raw_pt, Rho=rho, JetPhi=phi, run=run.
+    //   2016-2018 의 compound 는 (JetA, JetEta, JetPt, Rho) 라 phi·run 은 쓰이지 않고 값은 예전과 같다.
+    //   2024 MC 는 JetPhi 가 더해지고(L2Relative), 2024 DATA 는 run 도(L2L3Residual 이 run 의존).
     double getJEC(
                   double eta,
+                  double phi,
                   double raw_pt,
                   double area,
-		  double rho) const;
+		  double rho,
+                  unsigned int run) const;
 
     // ═══════════════════════════════════════════════════════════════════════
     // JER Smearing API (두 가지 오버로드)
@@ -209,6 +215,21 @@ public:
     bool   passGoldenJSON(int run, int lumi) const;
 
     // ═══════════════════════════════════════════════════════════════════════
+    // [STEP 24] Run 3: jet ID (jetid.json) 와 jet veto map (jetvetomaps.json)
+    //   load 하는 연도(EraConfig::jetIdFromJson / jetVetoMap().active)가 아니면 부르지 말 것:
+    //   부르면 FATAL (조용히 통과시키지 않는다).
+    // ═══════════════════════════════════════════════════════════════════════
+    // AK4PUPPI_Tight / AK4PUPPI_TightLeptonVeto. eta 는 부호 있는 값을 주면 |eta| 로 쓴다
+    // (payload 의 eta binning 은 [0, 5.2]).
+    bool passJetIdTight(double eta, double chHEF, double neHEF, double chEmEF, double neEmEF,
+                        double muEF, int chMult, int neMult) const;
+    bool passJetIdTightLepVeto(double eta, double chHEF, double neHEF, double chEmEF, double neEmEF,
+                               double muEF, int chMult, int neMult) const;
+    // veto map 의 값이 0 이 아니면 true (그 jet 이 veto 영역에 있다)
+    bool inJetVetoMap(double eta, double phi) const;
+    bool hasJetVetoMap() const { return static_cast<bool>(jetVetoMap_); }
+
+    // ═══════════════════════════════════════════════════════════════════════
     // JEC Uncertainty API
     // ═══════════════════════════════════════════════════════════════════════
     double getJECUncertainty(double eta, double pt, double area = 0.0, double rho = 0.0) const;
@@ -222,12 +243,14 @@ private:
     void loadJECUncertainty_();
     void loadTrigger_();            // [UPDATED] correctionlib JSON에서 trigger SF 로드
     void loadBTagReweight_();       // correctionlib JSON에서 정규화 비율 로드
+    void loadRun3Jet_();            // [STEP 24] jet ID (jetid.json) + jet veto map (2024)
 
     // ─── 설정 변수 (Configuration) ───
     std::string jsonPath;
     std::string goldenJsonPath;
     std::string trigSFPath;         // trigger_sf.json.gz가 위치한 디렉토리 경로
     std::string btagReweightPath;   // b-tag reweight JSON 전체 파일 경로
+    std::string puJsonPath;         // [STEP 24] 우리가 만든 PU weight JSON (2024; 2016-2018 은 jsonpog)
     bool requireDerived_ = true;    // [STEP4] 파생 보정 누락 시 FATAL 여부 (모드별)
     std::string runYear_;
     std::string dataEra_;
@@ -241,6 +264,17 @@ private:
     std::shared_ptr<const correction::Correction>         jerSF_;
     std::shared_ptr<const correction::Correction>         puCorr_;
     std::shared_ptr<const correction::Correction>         jec_Unc_;
+
+    // [STEP 24] JEC compound / JER SF 입력의 순서 (payload 가 선언한 이름에서 load 때 정함)
+    enum class JetIn { A, Eta, Pt, Rho, Phi, Run, RunInt, Syst };   // RunInt: a payload that declares run int
+    std::vector<JetIn> jecInMC_, jecInData_, jerSFIn_, jerResIn_;
+    static std::vector<JetIn> mapJetInputs_(const std::vector<correction::Variable>& vars, const std::string& what);
+
+    // [STEP 24] Run 3 jet ID / veto map
+    std::shared_ptr<const correction::Correction> jetIdTight_;
+    std::shared_ptr<const correction::Correction> jetIdTightLepVeto_;
+    std::shared_ptr<const correction::Correction> jetVetoMap_;
+    std::string jetVetoType_;
 
     // B-tag correction objects (POG correctionlib)
     std::shared_ptr<const correction::Correction> btagCorr_shape_;    // deepJet_shape

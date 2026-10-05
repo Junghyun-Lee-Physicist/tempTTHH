@@ -17,7 +17,9 @@
 #    lookup for TTbar_Hadronic.
 #  Checks (CHECK <name> PASS|FAIL): 2024 MC signal / ttbar without a tt+nb
 #  lookup / Data C / Data I run (exit 0, the required-branch line, a non-empty
-#  cutflow); the 2024 guards stop with their exit code (--btagsf on, no
+#  cutflow); the payload names in the log (jet ID, veto map, PU, JEC/JER, the
+#  UParTAK4 WPs; the Data JEC for Data) and which 4J3T path a Data file has;
+#  the 2024 guards stop with their exit code (--btagsf on, no
 #  TTHH_PU_JSON, an unknown PD, no 4J3T branch, a missing jet branch, no
 #  HLT_IsoMu24, a prescan without genWeight, a two-file job whose files differ
 #  in their branches); a Data file without the DeepJet 4J3T branch runs, and so
@@ -30,7 +32,7 @@
 set -u
 KEEP=0; ARGS=()
 for x in "$@"; do [[ "$x" == "--keep" ]] && KEEP=1 || ARGS+=("$x"); done
-[[ ${#ARGS[@]} -ge 1 && ${#ARGS[@]} -le 2 ]] || { sed -n '3,28p' "$0" | sed 's/^# \{0,2\}//'; exit 2; }
+[[ ${#ARGS[@]} -ge 1 && ${#ARGS[@]} -le 2 ]] || { sed -n '3,30p' "$0" | sed 's/^# \{0,2\}//'; exit 2; }
 NEW="$(cd "${ARGS[0]}" && pwd -P)" || exit 2
 OLD=""; [[ ${#ARGS[@]} -eq 2 ]] && { OLD="$(cd "${ARGS[1]}" && pwd -P)" || exit 2; }
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
@@ -128,9 +130,14 @@ check "2024 TTbar_Hadronic says the tt+nb split is off" "$(grep -q 'NOT split fr
 check "2024 MC prints the jet ID, veto map and PU payloads" \
       "$(grep -q 'jet ID (2024_Summer24)' "$LAST.log" && grep -q 'jet veto map (2024_Summer24)' "$LAST.log" && grep -q 'PU weights (2024)' "$LAST.log" && echo 1)"
 check "2024 MC prints the cleaning counts" "$(grep -q '^\[cleaning\] events .*MET filters fail' "$LAST.log" && echo 1)"
+check "2024 MC prints the JEC/JER payload names and the UParTAK4 WPs" \
+      "$(grep -q 'JEC/JER (2024_Summer24): .* -> JEC Summer24Prompt24_V1_MC_L1L2L3Res_AK4PFPuppi, JER Summer23BPixPrompt23_RunD_JRV1_MC_PtResolution_AK4PFPuppi + Summer23BPixPrompt23_RunD_JRV1_MC_ScaleFactor_AK4PFPuppi' "$LAST.log" && grep -q '^\[objectJet\] UParTAK4 (Jet_btagUParTAK4B) WP for 2024 : L=0.0246 M=0.1272 T=0.4648' "$LAST.log" && echo 1)"
 runa d24C "$NEW" Data JetMET0_Run2024C-MINIv6NANOv15-v1 C 2024 "$IN/jetmet24C.root"; ok_run "2024 Data era C runs"
+check "2024 Data uses the Data JEC" "$(grep -q -- '-> JEC Summer24Prompt24_V1_DATA_L1L2L3Res_AK4PFPuppi,' "$LAST.log" && echo 1)"
 runa d24I "$NEW" Data JetMET1_Run2024I-MINIv6NANOv15_v2-v2 I 2024 "$IN/jetmet24I.root"; ok_run "2024 Data era I runs"
 runa noDJ "$NEW" Data JetMET0_Run2024I-MINIv6NANOv15-v2 I 2024 "$IN/noDeepJet.root"; ok_run "2024 Data without the DeepJet 4J3T branch runs"
+check "2024 Data says which 4J3T path the file has" \
+      "$(grep -q 'one of {HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_4p3: yes, HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepJet_4p5: no}' "$LAST.log" && echo 1)"
 BTAGSF=on runa btag "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root"; stops "2024 --btagsf on stops (E11)" 11 "btagsf on for runYear=2024"
 runa nopu "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root" TTHH_PU_JSON=; stops "2024 without TTHH_PU_JSON stops (E12)" 12 "TTHH_PU_JSON"
 runa pd "$NEW" Data EGamma0_Run2024C-MINIv6NANOv15-v1 C 2024 "$IN/jetmet24C.root"; stops "2024 unknown Data PD stops (E11)" 11 "PD not recognised"

@@ -254,6 +254,10 @@ python3 submit_job_FH_Tier3_unified.py --mode main --region electron --resubmit 
   (per-file split 디렉토리 불필요. `N=1` 이면 한 줄=한 job 기존 동작.)
 - ⚠ `--resubmit`/`--report` 는 **원 제출과 같은 `--files-per-job` + 같은 `--region`
   + 같은 SF 인자** 로 호출해야 chunk↔output 매핑과 디렉토리가 일치한다.
+- [STEP 24] yml `common.files_per_job`(MC; Data 도 아래가 없으면) 와 `common.files_per_job_data`(Data 만). 순서:
+  `--files-per-job` > (Data) `files_per_job_data` > `files_per_job` > 1. 2024 Data 는 1 이어야 한다(era C 파일마다 HLT branch 가
+  다르고, 여러 파일 job 은 E11) — preflight FAIL, 제출에서도 그 샘플을 건너뛴다. 값을 yml 에 두면 `--report`/`--resubmit` 이 같은 수로 나눈다
+  (2024 yml 은 그렇게 되어 있으니 `--files-per-job` 을 주지 않는다).
 
 ### 7.2 Data 샘플 era (자동 추출)
 analyzer 는 Data 에 `--era` 를 필수로 요구한다(트리거 PD 분기 등). yml 이

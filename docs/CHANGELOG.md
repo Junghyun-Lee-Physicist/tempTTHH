@@ -7,6 +7,18 @@
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
 
+## 2026-10-05: [analyzer·제출기·도구] STEP 24 B — 진짜 eventBuffer.h(KNU 기록)와 2024 analyzer, files_per_job_data, 진짜 파일 smoke
+
+`include/eventBuffer.h`(기록 `run_knu_eventbuffer_manifest_20261005_105905.log` 에서 `eventbuffer_from_record.py`; 764 record, md5 기록과 같음,
+stamp), `include/eventBuffer_variables.txt`, fork `8be42e8` 의 `src/treestream.cc`·`include/treestream.h`; 묶음 2 의 `include/EraConfig.h`,
+`include/CorrectionsManager.h`, `src/CorrectionsManager.cc`, `ttHHanalyzer_unified.{h,cc}`, `submit_job_FH_Tier3_unified.py`, `test/test_EraConfig.cc`
+(§6) 에 로그 줄 셋(`[objectJet]` 의 tagger 이름, `[CorrectionsManager] JEC/JER` payload 이름, `[branches]` 의 any-of yes/no — 물리 없음).
+제출기: `common.files_per_job_data`(Data 에만), 2024 Data 에 > 1 이면 제출에서도 그 샘플을 건너뜀, job 수 추정은 샘플마다(2017 출력 같음).
+2024 yml: prescan 20, main MC 10·Data 1 files per job. `tools/stage3/smoke_2024.sh`(KNU 의 진짜 2024 파일로, condor job 의 환경, Data 는 golden LS
+가 있는 파일, 여러 파일 MC job 둘; 합성 입력 69/69),
+`test/offline_smoke/run_offline_smoke.sh` 34 check. 컨테이너: 빌드 OK, unit PASS, `test_stage1` 48/48, smoke 34/34(2017 옛 빌드와 같음).
+상세 [`changes/STEP_24_stage1_2_2024.md`](changes/STEP_24_stage1_2_2024.md) §11.
+
 ## 2026-10-05: [도구] STEP 24 A2 — 2017 v20 이 KNU 에서 지워져 v9 branch 집합을 지금 header 에서 (D-2026-10-05-D); 2024 PU weight
 
 `tools/stage1/variables_from_header.py`(mkanalyzer 판 header → record), `tools/stage1/variables_v9_2017UL_fullNano_v20.txt`(1782 record,

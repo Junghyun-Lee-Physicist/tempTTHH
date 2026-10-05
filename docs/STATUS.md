@@ -2,7 +2,7 @@
 
 > **Purpose:** the single place that answers "where are we right now?" — current state, what is ready, what is pending, and what is OPEN.
 > **Audience:** anyone starting a session.
-> **Status:** living · last meaningful update **2026-10-05** (STEP 24 묶음 1: 2024 eventBuffer·PU 도구와 입력, Y1 도구; D-2026-10-05-A · 묶음 2: analyzer 의 2024 코드는 진짜 header 와 함께 커밋 대기, Stage 3 도구·yml·임시 σ, 오프라인 smoke 31/31; D-2026-10-05-B·C) · 2026-10-04 (KNU 의 긴 단계는 condor job, 실행 기록은 `runlogs/` 에 커밋 — STEP 23) · 2026-10-03 (Stage 0 의 payload·lumi 실측 반영, eventBuffer 생성기 = 사용자 fork treestream 점검, 그 패치 커밋 `8be42e8`; KNU 의 pull 과 clean 빌드) · 2026-10-02 (2024 먼저 결정, 단계별 계획 [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) §9, 2017 lumi 42.07 반영) · 그 전 2026-10-01 (v15 계획 PROPOSED) · 2026-07-26 (2018UL 준비: samples_2018UL.json, --preflight, OPEN #5).
+> **Status:** living · last meaningful update **2026-10-05** (STEP 24 커밋 B: 진짜 eventBuffer.h 와 2024 analyzer·제출기, smoke_2024 · 묶음 1: 2024 eventBuffer·PU 도구와 입력, Y1 도구; D-2026-10-05-A · 묶음 2: analyzer 의 2024 코드는 진짜 header 와 함께 커밋 대기, Stage 3 도구·yml·임시 σ, 오프라인 smoke 31/31; D-2026-10-05-B·C) · 2026-10-04 (KNU 의 긴 단계는 condor job, 실행 기록은 `runlogs/` 에 커밋 — STEP 23) · 2026-10-03 (Stage 0 의 payload·lumi 실측 반영, eventBuffer 생성기 = 사용자 fork treestream 점검, 그 패치 커밋 `8be42e8`; KNU 의 pull 과 clean 빌드) · 2026-10-02 (2024 먼저 결정, 단계별 계획 [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) §9, 2017 lumi 42.07 반영) · 그 전 2026-10-01 (v15 계획 PROPOSED) · 2026-07-26 (2018UL 준비: samples_2018UL.json, --preflight, OPEN #5).
 > **Links:** decisions [`DECISIONS.md`](DECISIONS.md) · history [`CHANGELOG.md`](CHANGELOG.md) · exit codes [`reference/ERROR_CODES.md`](reference/ERROR_CODES.md) · path policy [`reference/CONFIG_PATHS.md`](reference/CONFIG_PATHS.md).
 
 ## Bottom line
@@ -67,6 +67,11 @@ Y1 스크립트 수정: TTbar_Hadronic 은 2017 tt+nb lookup 이 있어야 돈�
 KNU 에서 지워짐**(manifest `MISSINGBASE`, Y1 입력 없음; 사용자 확인) → D-2026-10-05-D: v9 branch 는 2026-06-29 header 에서
 (`tools/stage1/variables_v9_2017UL_fullNano_v20.txt`, manifest 의 `--extra-variables`), 실제 2017 Y1 은 지금은 없음(컨테이너 비교로 대신).
 다음: manifest 다시(RUNBOOK §22) → 맥에서 header → 커밋 B → KNU 빌드·2024 smoke → prescan → main → plot.
+**10-05 (STEP 24 커밋 B):** manifest 다시(`66ea1301`, `RESULT OK`) → 진짜 `include/eventBuffer.h`(764 record, md5 기록과 같음, stamp)와
+묶음 2 의 C++·제출기를 함께. 더한 것: 로그 줄 셋(tagger 이름, JEC/JER payload 이름, 4J3T yes/no — 물리 없음), 제출기의
+`files_per_job_data`(2024 main: MC 10, Data 1; prescan 20), 진짜 파일 smoke `tools/stage3/smoke_2024.sh`. 컨테이너: 빌드 OK, unit PASS,
+`test_stage1` 48/48, offline smoke 34/34(2017 은 옛 빌드와 같음), smoke_2024 합성 입력 69/69, 독립 검토 지적 셋 반영 — STEP 24 §11. 다음(RUNBOOK §23): KNU clean
+빌드 → smoke_2024 → proxy → prescan(983 job) → consolidate → main(5,291 job, `--trigsf off --btagsf off --btagrw off`) → merge → plot.
 
 ## What is ready (DECIDED)
 

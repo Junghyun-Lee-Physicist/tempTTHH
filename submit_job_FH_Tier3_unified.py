@@ -55,6 +55,25 @@ def _fatal(code, msg):
     sys.exit(code)
 
 
+# [STEP 24] Data sample names: the Run 2 PDs anywhere in the name (as before) or a 2024 PD at the start
+#   (JetMET0/1, Muon0/1, EGamma0/1: NtupleForge keys like JetMET0_Run2024C-MINIv6NANOv15-v1).
+DATA_PD_RE = re.compile(r"(JetHT|BTagCSV|SingleMuon|EGamma|MuonEG|DoubleMuon)|^(JetMET|Muon)\d")
+# era letter: '..._Run2017F', '..._Run2024C-MINIv6NANOv15-v1' (2024 keys go on after the era), or '..._F'
+ERA_RE = (re.compile(r"Run\d{4}([A-Z])(?=$|-)"), re.compile(r"_([A-Z])$"))
+
+
+def is_data_name(name):
+    return bool(DATA_PD_RE.search(str(name)))
+
+
+def era_from_name(name):
+    for r in ERA_RE:
+        m = r.search(str(name))
+        if m:
+            return m.group(1)
+    return None
+
+
 class CondorJobManager:
 
     def __init__(self):
@@ -101,10 +120,11 @@ class CondorJobManager:
                             help="b-tag shape SF 적용 (기본 off)")
         parser.add_argument("--btagrw", default="off", choices=["on", "off"],
                             help="b-tag norm reweight 적용 (기본 off; 8-group JSON 필요)")
-        parser.add_argument("--filelist-dir", default="filelistTier3",
-                            help="master filelist 디렉토리 (기본 filelistTier3). "
-                                 "연도별로 분리된 경우 지정: 예) --filelist-dir filelistTier3_2018 "
-                                 "(make_filelists.py 2018 이 만드는 디렉토리)")
+        parser.add_argument("--filelist-dir", default="",
+                            help="master filelist 디렉토리 (기본: 2017 은 filelistTier3, 다른 연도는 "
+                                 "filelistTier3_<year> -- yml common.year 로 정한다 [STEP 24]). "
+                                 "직접 지정: 예) --filelist-dir filelistTier3_2018 "
+                                 "(make_filelists.py 2018 / tools/stage3/make_filelists_v15.py --year 2024 이 만드는 디렉토리)")
         parser.add_argument("--preflight", action="store_true",
                             help="읽기 전용 사전 점검: yml/xsec_db/prescan_summary/"
                                  "filelist/실행파일/보정 경로/era 추출/output 디렉토리 "
@@ -155,12 +175,6 @@ class CondorJobManager:
         if self._cli_btagrw == "on":  _sf_tags.append("btagrw")
         _sf_suffix = ("_" + "_".join(_sf_tags)) if _sf_tags else ""
         self._dir_suffix = f"{_region_suffix}{_sf_suffix}"
-        self.path_output_base = (
-            f"/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/"
-            f"AnalyzerOutput_{self.AnalyzerMode}{self._dir_suffix}"
-        )
-        self.os_version = "el9"
-        self.memorySize = "12 GB"
 
         # [TrackC] --config 우선; 미지정 시 모드 이름으로 자동 결정 (기존 동작)
         if getattr(self, "_cli_config", ""):
@@ -170,13 +184,34 @@ class CondorJobManager:
             self.config_file_path = os.path.join(
                 self.analyzer_path,
                 f"AnalyzerConfig/Tier3_2017_FH_unified_{self.AnalyzerMode}.yml")
+
+        # [STEP 24] the year goes into the output and condor directories for every year but 2017 (README §7
+        #   P0' #9): the sample names are the same in every year (D-2026-06-30-A), so a 2024 job would write into
+        #   the 2017 directory, and --resubmit / --report would count the 2017 files as done. 2017 keeps its paths.
+        self._year_suffix = ""
+        try:
+            _year = str((self.load_yaml_config(self.config_file_path).get("common", {}) or {})
+                        .get("year", "")).strip()
+        except Exception:
+            _year = ""       # an unreadable yml is reported by the preflight / process_config_file
+        if _year and _year != "2017":
+            self._year_suffix = f"_{_year}"
+        self.path_output_base = (
+            f"/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/"
+            f"AnalyzerOutput_{self.AnalyzerMode}{self._dir_suffix}{self._year_suffix}"
+        )
+        self.os_version = "el9"
+        self.memorySize = "12 GB"
         self.proxy_path = os.path.join(self.analyzer_path, "proxy.cert")
         self.condor_files_path = os.path.join(
             self.analyzer_path,
-            f"condor/filelistTier3_unified_{self.AnalyzerMode}{self._dir_suffix}"
+            f"condor/filelistTier3_unified_{self.AnalyzerMode}{self._dir_suffix}{self._year_suffix}"
         )
+        # [STEP 24] default per year: the sample names are shared by every year, so the 2017 lists must not be
+        #   picked up by a 2024 config (each job would then stop with E11 on the v9 files)
+        _fl_default = "filelistTier3" + (self._year_suffix if self._year_suffix else "")
         self.sample_list_path = os.path.join(self.analyzer_path,
-                                             args.filelist_dir.strip() or "filelistTier3")
+                                             args.filelist_dir.strip() or _fl_default)
 
         # ── [--preflight] 읽기 전용 사전 점검 ────────────────────────────────
         # 디렉토리 생성/proxy 체크/제출을 일절 하지 않고, 필요한 것들이 갖춰졌는지만
@@ -228,11 +263,11 @@ class CondorJobManager:
         ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         log_path = os.path.join(
             self.analyzer_path,
-            f"preflight_{self.AnalyzerMode}{self._dir_suffix}_{ts}.log")
+            f"preflight_{self.AnalyzerMode}{self._dir_suffix}{self._year_suffix}_{ts}.log")
 
         note("=" * 84)
         note("tempTTHH condor PREFLIGHT (read-only)")
-        note(f"  mode        : {self.AnalyzerMode}{self._dir_suffix}")
+        note(f"  mode        : {self.AnalyzerMode}{self._dir_suffix}{self._year_suffix}")
         note(f"  config      : {self.config_file_path}")
         note(f"  analyzer    : {self.analyzer_path}")
         note(f"  SF toggles  : trigsf={self._cli_trigsf} btagsf={self._cli_btagsf} btagrw={self._cli_btagrw}")
@@ -285,8 +320,11 @@ class CondorJobManager:
         # ---- 3. correction paths (null 정책) --------------------------------
         # "" 또는 키 누락 -> E12, null -> 선택 보정 비활성(필수면 E13)
         required_now = {"path_jsonpog"}
-        if any(str(s).startswith(("JetHT", "BTagCSV", "SingleMuon")) for s in samples):
+        if any(is_data_name(s["sample_name"] if isinstance(s, dict) else s) for s in samples):
             required_now.add("path_goldenjson")
+        # [STEP 24] 2024: our PU weight JSON (the analyzer reads TTHH_PU_JSON for every 2024 job)
+        if str(common.get("year", "")).strip() == "2024":
+            required_now.add("path_pu_json")
         if self.AnalyzerMode in ("main", "debug"):
             if self._cli_trigsf == "on":
                 required_now.add("path_trigsf_dir")
@@ -294,7 +332,9 @@ class CondorJobManager:
                 required_now.add("path_btag_reweight_json")
         for key in ("path_jsonpog", "path_goldenjson", "path_trigsf_dir",
                     "path_btag_reweight_json", "path_stitch_json",
-                    "path_expanded_ttbarid_dir"):
+                    "path_expanded_ttbarid_dir", "path_pu_json"):
+            if key == "path_pu_json" and key not in required_now and key not in common:
+                continue                       # [STEP 24] only 2024 has (and needs) it
             if key not in common:
                 bad(f"{key}", "KEY MISSING -> analyzer exits E12 (no silent default)")
                 continue
@@ -362,6 +402,8 @@ class CondorJobManager:
         note(f"Per-sample checks ({len(samples)} samples; filelist dir = {self.sample_list_path})")
         miss_fl, empty_fl, miss_db, miss_pre, era_fail, n_data, n_mc = [], [], [], [], [], 0, 0
         total_files = 0
+        total_jobs = 0
+        fpj_mc, fpj_data = self._files_per_job(common, False), self._files_per_job(common, True)   # [STEP 24]
         for s in samples:
             name = s["sample_name"] if isinstance(s, dict) else str(s)
             fl = os.path.join(self.sample_list_path, f"filelist_{name}.txt")
@@ -370,12 +412,13 @@ class CondorJobManager:
             else:
                 n = sum(1 for l in open(fl) if l.strip())
                 total_files += n
+                total_jobs += -(-n // max(fpj_data if is_data_name(name) else fpj_mc, 1))
                 if n == 0:
                     empty_fl.append(name)
-            is_data = bool(re.search(r"(JetHT|BTagCSV|SingleMuon|EGamma|MuonEG|DoubleMuon)", name))
+            is_data = is_data_name(name)
             if is_data:
                 n_data += 1
-                if not (re.search(r"Run\d{4}([A-Z])$", name) or re.search(r"_([A-Z])$", name)):
+                if era_from_name(name) is None:
                     era_fail.append(name)
             else:
                 n_mc += 1
@@ -402,13 +445,17 @@ class CondorJobManager:
             bad("filelists non-empty", f"{empty_fl[:6]}")
         elif not miss_fl:
             ok("filelists non-empty", "ok")
-        fpj = self.cli_files_per_job or int(common.get("files_per_job", 1) or 1)
-        if total_files:
+        if min(fpj_mc, fpj_data) < 1:
+            bad("files per job", f"MC {fpj_mc}, Data {fpj_data}: must be >= 1")
+        if total_files and min(fpj_mc, fpj_data) >= 1:
+            # [STEP 24] summed per sample (each sample is cut into its own chunks); the same as before for 1 file/job
             ok("job count estimate",
-               f"~{-(-total_files // max(fpj,1))} jobs (files={total_files}, files-per-job={fpj})")
+               f"~{total_jobs} jobs (files={total_files}, files-per-job: MC {fpj_mc}, Data {fpj_data})"
+               if (n_data and fpj_data != fpj_mc) else
+               f"~{total_jobs} jobs (files={total_files}, files-per-job={fpj_mc})")
         if era_fail:
             bad("Data era extraction", f"cannot derive era for: {era_fail[:6]} "
-                                       f"(need '<PD>_Run<year><ERA>' or '<PD>_<ERA>')")
+                                       f"(need '<PD>_Run<year><ERA>[-...]' or '<PD>_<ERA>')")
         elif n_data:
             ok("Data era extraction", f"ok for all {n_data} Data samples")
         if not is_prescan:
@@ -422,6 +469,26 @@ class CondorJobManager:
                 ok("prescan coverage", f"all {n_mc} MC samples have runs.genEventSumw > 0")
         else:
             ok("xsec_db / prescan coverage", "not required in prescan mode (weight=1.0)")
+
+        # ---- 5b. [STEP 24] 2024 rules the analyzer would only find in the jobs (E11) ----
+        if str(common.get("year", "")).strip() == "2024":
+            if self._cli_btagsf == "on":
+                bad("2024 --btagsf", "on, but 2024 has no b-tag shape SF (PLAN 9.6 D10) -> every MC job E11")
+            else:
+                ok("2024 --btagsf", "off")
+            pd_bad = [str(s["sample_name"] if isinstance(s, dict) else s) for s in samples
+                      if is_data_name(s["sample_name"] if isinstance(s, dict) else s)
+                      and not re.match(r"^(JetMET|Muon)[01]_", str(s["sample_name"] if isinstance(s, dict) else s))]
+            if pd_bad:
+                bad("2024 Data PDs", f"not JetMET0/1 or Muon0/1 (the analyzer has no trigger logic for them): {pd_bad[:4]}")
+            elif n_data:
+                ok("2024 Data PDs", "JetMET0/1, Muon0/1 only")
+            if n_data and fpj_data > 1:
+                bad("2024 Data files per job", f"{fpj_data} > 1: 2024 era C files differ in their HLT branches; a job "
+                                               "with several files stops (E11, requireSameBranchSet_) -> "
+                                               "common.files_per_job_data: 1 and no --files-per-job")
+            elif n_data and fpj_data == 1:
+                ok("2024 Data files per job", str(fpj_data))
 
         # ---- 6. output / condor dirs (생성하지 않고 확인만) -----------------
         note("-" * 84)
@@ -657,9 +724,7 @@ class CondorJobManager:
         if "data_or_mc" in entry:
             self.data_or_mc = entry["data_or_mc"]
         elif _is_prescan:
-            self.data_or_mc = ("Data"
-                               if re.search(r"(JetHT|BTagCSV|SingleMuon)", self.sample_name)
-                               else "MC")
+            self.data_or_mc = "Data" if is_data_name(self.sample_name) else "MC"   # [STEP 24] + 2024 PDs
         else:
             db = self._load_xsec_db(common["xsec_db"])
             rec = db.get(self.sample_name, {})
@@ -674,10 +739,10 @@ class CondorJobManager:
             #   기존: r"Run2017([A-Z])$" 는 2018 키(JetHT_Run2018A)를 못 잡고,
             #   fallback r"_([A-Z])$" 도 'A' 앞 문자가 '8' 이라 실패 -> FATAL.
             #   이제 Run2016/2017/2018/Run3 키 모두 era 를 추출한다.
-            m = (re.search(r"Run\d{4}([A-Z])$", self.sample_name)
-                 or re.search(r"_([A-Z])$", self.sample_name))
-            if m:
-                self.era = m.group(1)
+            # [STEP 24] 2024 keys go on after the era letter (JetMET0_Run2024C-MINIv6NANOv15-v1 -> C)
+            era = era_from_name(self.sample_name)
+            if era:
+                self.era = era
                 print(f"  [era] {self.sample_name}: Data -> era '{self.era}' "
                       f"(샘플명에서 자동 추출)")
             else:
@@ -704,11 +769,15 @@ class CondorJobManager:
 
         # [STEP7] job당 파일 수: CLI > yml common.files_per_job > 1
         # (=1 이면 기존 동작과 완전 동일: 한 줄=한 job, output 인덱스 동일)
-        fpj = self.cli_files_per_job
-        if fpj is None:
-            fpj = int(common.get("files_per_job", 1) or 1)
+        # [STEP 24] Data: common.files_per_job_data when given (_files_per_job)
+        fpj = self._files_per_job(common, self.data_or_mc == "Data")
         if fpj < 1:
             raise ValueError(f"[FATAL] files_per_job must be >= 1 (got {fpj})")
+        if str(common.get("year", "")).strip() == "2024" and self.data_or_mc == "Data" and fpj > 1:
+            # the preflight rule (5b), enforced here too: this sample is skipped, the others go on
+            raise ValueError(f"[FATAL] 2024 Data '{self.sample_name}': {fpj} files per job -- 2024 era C files differ "
+                             f"in their HLT branches and such a job stops (E11, requireSameBranchSet_). "
+                             f"Use common.files_per_job_data: 1 and no --files-per-job.")
         self.files_per_job = fpj
 
         # [STEP18] 보정 입력 경로 정책 (코드 default 폐기 — ConfigPath.h 와 동일 계약):
@@ -724,7 +793,11 @@ class CondorJobManager:
             "path_btag_reweight_json":    "TTHH_BTAGRW_JSON",
             "path_stitch_json":           "STITCH_FACTORS_JSON",
             "path_expanded_ttbarid_dir":  "EXPANDED_TTBARID_DIR",
+            "path_pu_json":               "TTHH_PU_JSON",   # [STEP 24] 2024 only
         }
+        is_2024     = (str(common.get("year", "")).strip() == "2024")
+        if not is_2024 and "path_pu_json" not in common:
+            del path_env_map["path_pu_json"]   # 2016-2018: jsonpog PU; their yml has no such key
         is_data     = (self.data_or_mc == "Data")
         derived_req = self.AnalyzerMode in ("main", "debug")
         # 필수 여부: jsonpog 는 항상(JME/PU); goldenjson 은 Data; trigsf/btagrw 는
@@ -736,6 +809,8 @@ class CondorJobManager:
             required_keys.add("path_trigsf_dir")
         if derived_req and self._cli_btagrw == "on":
             required_keys.add("path_btag_reweight_json")
+        if is_2024:
+            required_keys.add("path_pu_json")   # [STEP 24] CorrectionsManager reads it for every 2024 job
 
         self.env_exports = {}
         for yml_key, env_name in path_env_map.items():
@@ -790,6 +865,18 @@ class CondorJobManager:
         # 이제 generate_argument_list 가 첫 per-job filelist 를 쓰기 직전에만
         # 생성한다 → 빈 디렉토리 리터 제거. (job .out/.err 도 이 디렉토리에
         # 남으므로, 생성 = "이 invocation 이 이 샘플에 실제 job 을 큐잉했다".)
+
+    # -------------------------------------------------------------------------
+    def _files_per_job(self, common, is_data):
+        """[STEP 24] input files per job: --files-per-job > (Data) common.files_per_job_data > common.files_per_job > 1.
+        2024 Data needs 1 (era C files differ in their HLT branches; a job of several files stops with E11), while
+        MC can take more: files_per_job_data lets one yml have both. --report/--resubmit read the same yml, so the
+        chunks (and the output index <sample>_<job>.root) stay the same as at submission."""
+        if self.cli_files_per_job is not None:
+            return int(self.cli_files_per_job)
+        if is_data and common.get("files_per_job_data") not in (None, ""):
+            return int(common["files_per_job_data"])
+        return int(common.get("files_per_job", 1) or 1)
 
     # -------------------------------------------------------------------------
     def load_yaml_config(self, path):

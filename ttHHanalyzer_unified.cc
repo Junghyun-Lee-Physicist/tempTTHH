@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <vector>
 #include <map>
+#include <memory>   // [STEP 24] requireSameBranchSet_
 #include "TVector3.h"
 #include "ttHHanalyzer_unified.h"
 #include <iostream>
@@ -47,6 +48,8 @@ void ttHHanalyzer_unified::computeBTagWeight(event* thisEvent) {
     
     // Data는 SF 적용하지 않음
     if (_DataOrMC == "Data") return;
+    // [STEP 24] no b-tag shape SF for this year (2024, PLAN 9.6 D10): every weight stays 1
+    if (!_hasBTagShapeSF) return;
     
     // 선택된 모든 jet에 대해 SF 계산
     const auto* jets = thisEvent->getSelJets();
@@ -160,7 +163,8 @@ void ttHHanalyzer_unified::loop(sysName sysType, bool up){
         // 실제로 전달됐는지 로컬/condor 로그에서 즉시 확인할 수 있다.
         const char* pathEnvs[] = { "TTHH_JSONPOG_PATH", "TTHH_GOLDENJSON_PATH",
                                    "TTHH_TRIGSF_DIR",   "TTHH_BTAGRW_JSON",
-                                   "STITCH_FACTORS_JSON", "EXPANDED_TTBARID_DIR" };
+                                   "STITCH_FACTORS_JSON", "EXPANDED_TTBARID_DIR",
+                                   "TTHH_PU_JSON" };   // [STEP 24]
         for (const char* pe : pathEnvs) {
             const char* v = std::getenv(pe);
             std::printf("[dbg][paths] %-22s = %s\n", pe, (v && *v) ? v : "(unset/__NULL__)");
@@ -272,6 +276,10 @@ void ttHHanalyzer_unified::loop(sysName sysType, bool up){
     if(debugCorrections) std::cout<<"debug : After writeTree() & Before hcutFlow()"<<std::endl;
 
     // 종료 시 cutflow 요약을 stdout으로 출력 (히스토그램과 별개의 텍스트 확인용)
+    // [STEP 24] event cleaning, item by item (the noiseFilter cut step holds both; PLAN 9.1 Stage 2)
+    std::cout << "[cleaning] events " << _nCleanAll << ": MET filters fail " << _nCleanMETFail
+              << ", jet veto map " << (_useJetVetoMap ? std::to_string(_nCleanVetoFail) : std::string("not used"))
+              << " (before the trigger; the two can overlap)" << std::endl;
     std::cout << "=== CutFlow Summary ===" << std::endl;
     for (size_t i = 0; i < _cutStepLabels.size(); ++i) {
         std::cout << _cutStepLabels[i] 
@@ -373,6 +381,212 @@ void ttHHanalyzer_unified::requireTriggerBranches2018_() {
               << required.size() << " present." << std::endl;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// [STEP 24] Stage 1 (c), PLAN 9.3 / D-2026-10-02-B: no silent 0 for a branch the analysis reads.
+//   Every branch this year's code reads (below) must be selected by the eventBuffer (choose) AND present
+//   in the input file. Checked once, at the first event. treestream fixes the branch set from the FIRST
+//   file of the chain: a branch absent there reads 0 for every later file too, and one present there but
+//   absent in a later file stops the job (exit 1). So the first file is checked here, and a job with
+//   several files must have the same branch set in all of them (requireSameBranchSet_: 2024 era C Data
+//   files differ in their HLT branches). Counters (nJet, ...) are not in `choose`; their arrays are
+//   checked instead. The 2018 hadronic HLT check above is the same idea for the three 2018 paths.
+// ═══════════════════════════════════════════════════════════════════════════
+bool ttHHanalyzer_unified::branchUsable_(const std::string& b, std::string& why) const {
+    const std::string key = "Events/" + b;
+    auto itc = _ev->choose.find(key);
+    if (itc == _ev->choose.end() || !itc->second) { why = "not in include/eventBuffer.h (or not chosen)"; return false; }
+    if (_ev->input == nullptr || !_ev->input->present(key)) { why = "not in the input file"; return false; }
+    return true;
+}
+
+void ttHHanalyzer_unified::requireUsable_(const std::vector<std::string>& req,
+                                          const std::vector<std::vector<std::string>>& anyOf,
+                                          const std::string& label) {
+    std::vector<std::string> bad;
+    std::string why;
+    for (const auto& b : req)
+        if (!branchUsable_(b, why)) bad.push_back(b + "   (" + why + ")");
+    for (const auto& g : anyOf) {
+        bool one = false;
+        for (const auto& b : g) if (branchUsable_(b, why)) { one = true; break; }
+        if (!one) {
+            std::string names;
+            for (const auto& b : g) names += (names.empty() ? "" : " | ") + b;
+            bad.push_back("one of: " + names + "   (none usable)");
+        }
+    }
+    if (!bad.empty()) {
+        std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO << "] branches the runYear=" << _runYear
+                  << " " << _DataOrMC << " " << label << " reads are not usable:\n";
+        for (const auto& b : bad) std::cerr << "    - " << b << "\n";
+        std::cerr << "  A branch the code reads that is not there reads back as 0, i.e. a silent wrong result\n"
+                  << "  (D-2026-10-02-B). Check the NanoAOD version of the input (2018 v15 is not supported yet:\n"
+                  << "  PLAN 9 Y3) and that include/eventBuffer.h was made from inputs that have these branches.\n";
+        std::exit(tthh::CONFIG_BAD_RUNINFO);
+    }
+    // which members of each any-of group the file has (2024 Data: the 4J3T path(s) of this file's runs)
+    std::string groups;
+    for (const auto& g : anyOf) {
+        groups += " and one of {";
+        for (size_t i = 0; i < g.size(); ++i)
+            groups += (i ? ", " : "") + g[i] + (branchUsable_(g[i], why) ? ": yes" : ": no");
+        groups += "}";
+    }
+    std::cout << "[branches] runYear=" << _runYear << " " << _DataOrMC << " (" << label << "): all " << req.size()
+              << " required branches present" << groups << "." << std::endl;
+}
+
+void ttHHanalyzer_unified::requireBranches_() {
+    static bool checked = false;
+    if (checked) return;
+    checked = true;
+    const bool isMC = (_DataOrMC != "Data");
+    std::vector<std::string> req = {
+        "run", "luminosityBlock", "event", "PV_npvsGood",
+        "Jet_pt", "Jet_eta", "Jet_phi", "Jet_mass", "Jet_rawFactor", "Jet_area",
+        "Muon_pt", "Muon_eta", "Muon_phi", "Muon_tightId", "Muon_pfRelIso04_all", "Muon_charge", "Muon_miniPFRelIso_all",
+        "Electron_pt", "Electron_eta", "Electron_phi", "Electron_deltaEtaSC", "Electron_charge",
+        "Electron_miniPFRelIso_all", "Electron_pfRelIso03_all",
+        "HLT_PFHT1050"};
+    std::vector<std::vector<std::string>> anyOf;   // at least one of each group
+    if (_isRun3) {
+        for (const char* b : {"Rho_fixedGridRhoFastjetAll", "PuppiMET_pt", "Jet_btagUParTAK4B", "Jet_chHEF", "Jet_neHEF",
+                              "Jet_chEmEF", "Jet_neEmEF", "Jet_muEF", "Jet_chMultiplicity", "Jet_neMultiplicity",
+                              "Electron_mvaIso_WP90", "Muon_isPFcand", "HLT_IsoMu24",
+                              "HLT_PFHT450_SixPFJet36_PNetBTag0p35", "HLT_PFHT400_SixPFJet32_PNet2BTagMean0p50"})
+            req.push_back(b);
+        // 4J3T (2024, D4): the DeepJet path in the first 38 runs, the PNet path after, never both
+        // (docs/reference/LUMI_SOURCES.md 6.3) -> a Data file has at least one; MC has both, the PNet one is used
+        if (isMC) req.push_back("HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_4p3");
+        else anyOf.push_back({"HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_4p3",
+                              "HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepJet_4p5"});
+    } else {
+        for (const char* b : {"fixedGridRhoFastjetAll", "MET_pt", "Jet_jetId", "Jet_puId", "Jet_btagDeepFlavB",
+                              "Electron_mvaFall17V2Iso_WP90"})
+            req.push_back(b);
+        if (_runYear == "2017") {
+            // era B (Data) has the older CSV names only; C-F and MC the PF names only (NtupleForge inventories)
+            const bool eraB = (_DataOrMC == "Data" && _era == "B");
+            for (const char* b : (eraB ? std::vector<const char*>{"HLT_HT300PT30_QuadJet_75_60_45_40_TripeCSV_p07",
+                                                                   "HLT_PFHT430_SixJet40_BTagCSV_p080",
+                                                                   "HLT_PFHT380_SixJet32_DoubleBTagCSV_p075"}
+                                       : std::vector<const char*>{"HLT_PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0",
+                                                                   "HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5",
+                                                                   "HLT_PFHT380_SixPFJet32_DoublePFBTagCSV_2p2"}))
+                req.push_back(b);
+            req.push_back("HLT_IsoMu27");                 // the 2017 trigger-SF reference (fillTree)
+        } else {
+            req.push_back("HLT_IsoMu24");                 // the 2018 trigger-SF reference (fillTree)
+        }
+        if (isMC && EraConfig::usesL1Prefiring(_runYear)) req.push_back("L1PreFiringWeight_Nom");
+    }
+    if (isMC)
+        for (const char* b : {"genWeight", "Pileup_nTrueInt", "genTtbarId", "Jet_hadronFlavour", "Jet_partonFlavour",
+                              "Jet_genJetIdx", "GenJet_pt", "GenJet_eta", "GenJet_phi", "GenJet_hadronFlavour",
+                              "GenPart_pdgId", "GenPart_statusFlags", "GenPart_genPartIdxMother", "GenPart_pt",
+                              "GenPart_eta", "GenPart_phi", "GenPart_mass"})
+            req.push_back(b);
+    for (const auto& f : EraConfig::metFilters(_runYear)) req.push_back(f);
+    requireUsable_(req, anyOf, "analysis code");
+    requireSameBranchSet_();
+}
+
+void ttHHanalyzer_unified::requirePrescanBranches_() {
+    std::vector<std::string> req = {"run", "luminosityBlock", "event"};
+    if (_DataOrMC != "Data") { req.push_back("genWeight"); req.push_back("genTtbarId"); }
+    requireUsable_(req, {}, "prescan");
+    requireSameBranchSet_();
+}
+
+void ttHHanalyzer_unified::requireSameBranchSet_() {
+    const std::vector<std::string> files = _ev->input->filenames();
+    if (files.size() < 2) return;
+    // the branches the header selects, and whether the first file has them (what treestream uses)
+    std::vector<std::pair<std::string, bool>> chosen;
+    for (const auto& kv : _ev->choose) {
+        if (!kv.second || kv.first.compare(0, 7, "Events/") != 0) continue;
+        chosen.emplace_back(kv.first.substr(7), _ev->input->present(kv.first));
+    }
+    std::vector<std::string> diffs;
+    for (size_t i = 1; i < files.size(); ++i) {
+        std::unique_ptr<TFile> f(TFile::Open(files[i].c_str(), "READ"));
+        TTree* t = (f && !f->IsZombie()) ? dynamic_cast<TTree*>(f->Get("Events")) : nullptr;
+        if (!t) {
+            diffs.push_back(files[i] + ": cannot read its Events tree");
+            continue;
+        }
+        int n = 0;
+        for (const auto& c : chosen) {
+            const bool here = (t->GetBranch(c.first.c_str()) != nullptr);
+            if (here == c.second) continue;
+            if (n++ < 10)
+                diffs.push_back(files[i] + ": " + c.first + (here ? " present (absent in the first file: read as 0 there)"
+                                                               : " absent (present in the first file: the job would stop)"));
+        }
+        if (n > 10) diffs.push_back(files[i] + ": ... " + std::to_string(n - 10) + " more");
+    }
+    if (!diffs.empty()) {
+        std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO << "] the " << files.size()
+                  << " input files of this job do not have the same branches (first file " << files[0] << "):\n";
+        for (const auto& d : diffs) std::cerr << "    - " << d << "\n";
+        std::cerr << "  treestream takes the branch set of the first file for the whole job. Run such files one per\n"
+                  << "  job (files_per_job: 1, the 2024 yml), or group them by branch set (tools/stage0/branch_signature.py).\n";
+        std::exit(tthh::CONFIG_BAD_RUNINFO);
+    }
+    std::cout << "[branches] " << files.size() << " input files, the same " << chosen.size()
+              << " selected branches in each." << std::endl;
+}
+
+// [STEP 24] EraConfig::metFilters(year) -> the eventBuffer members. An unknown name is fatal (it would be
+//   a filter that silently does nothing). The member table lists every flag either list can name.
+void ttHHanalyzer_unified::setupMetFilters_() {
+    const std::map<std::string, const bool*> member = {
+        {"Flag_goodVertices",                       &_ev->Flag_goodVertices},
+        {"Flag_globalSuperTightHalo2016Filter",     &_ev->Flag_globalSuperTightHalo2016Filter},
+        {"Flag_HBHENoiseFilter",                    &_ev->Flag_HBHENoiseFilter},
+        {"Flag_HBHENoiseIsoFilter",                 &_ev->Flag_HBHENoiseIsoFilter},
+        {"Flag_EcalDeadCellTriggerPrimitiveFilter", &_ev->Flag_EcalDeadCellTriggerPrimitiveFilter},
+        {"Flag_BadPFMuonFilter",                    &_ev->Flag_BadPFMuonFilter},
+        {"Flag_BadPFMuonDzFilter",                  &_ev->Flag_BadPFMuonDzFilter},
+        {"Flag_hfNoisyHitsFilter",                  &_ev->Flag_hfNoisyHitsFilter},
+        {"Flag_eeBadScFilter",                      &_ev->Flag_eeBadScFilter},
+        {"Flag_ecalBadCalibFilter",                 &_ev->Flag_ecalBadCalibFilter},
+    };
+    _metFilterPtrs.clear();
+    std::string names;
+    for (const auto& f : EraConfig::metFilters(_runYear)) {
+        auto it = member.find(f);
+        if (it == member.end()) {
+            std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO << "] MET filter '" << f
+                      << "' (EraConfig::metFilters) has no member in setupMetFilters_.\n" << std::endl;
+            std::exit(tthh::CONFIG_BAD_RUNINFO);
+        }
+        _metFilterPtrs.push_back(it->second);
+        names += (names.empty() ? "" : " ") + f;
+    }
+    std::cout << "[cleaning] MET filters (" << _runYear << "): " << names << std::endl;
+}
+
+// [STEP 24] jet veto map (2024): the event is vetoed when a jet in a veto region passes
+//   NanoAOD pT > 15 GeV, tight ID (AK4PUPPI_Tight), chEmEF + neEmEF < 0.9 and has no PF muon within
+//   dR 0.2 (the JERC recommendation as remembered — to be confirmed, PLAN 9.6 D11). The NanoAOD pT is used
+//   (the cut is loose and the JEC difference small); |eta| above 5.19 is outside the map.
+bool ttHHanalyzer_unified::jetVetoed_(const std::vector<eventBuffer::Jet_s>& jets,
+                                      const std::vector<eventBuffer::Muon_s>& muons) const {
+    for (const auto& j : jets) {
+        if (!(j.pt > 15.f) || std::fabs(j.eta) > 5.19f) continue;
+        if (!(j.chEmEF + j.neEmEF < 0.9f)) continue;
+        if (!corrMgr->passJetIdTight(j.eta, j.chHEF, j.neHEF, j.chEmEF, j.neEmEF, j.muEF,
+                                     j.chMultiplicity, j.neMultiplicity)) continue;
+        bool nearMuon = false;
+        for (const auto& m : muons)
+            if (m.isPFcand && deltaR(j.eta, j.phi, m.eta, m.phi) < 0.2) { nearMuon = true; break; }
+        if (nearMuon) continue;
+        if (corrMgr->inJetVetoMap(j.eta, j.phi)) return true;
+    }
+    return false;
+}
+
 void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, bool up){
 
     _ev->fillObjects();
@@ -404,7 +618,9 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
     //              통째로 사라진다.)
     // ─────────────────────────────────────────────────────────────────
     bool fired_4J3T = false, fired_6J1T = false, fired_6J2T = false;
-    bool fired_HT   = _ev->HLT_PFHT1050;   // 2017/2018 공통
+    bool fired_HT   = _ev->HLT_PFHT1050;   // 2017/2018/2024 공통
+
+    requireBranches_();   // [STEP 24] every year, once (first event)
 
     if (_runYear == "2018") {
         requireTriggerBranches2018_();
@@ -423,13 +639,25 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
         fired_6J2T = isEraB ? _ev->HLT_PFHT380_SixJet32_DoubleBTagCSV_p075
                             : _ev->HLT_PFHT380_SixPFJet32_DoublePFBTagCSV_2p2;
     }
+    else if (_runYear == "2024") {
+        // [STEP 24] 2024 (PLAN 9.6 D4): the PNet counterparts of the 2017 paths; HT1050 as before.
+        //   4J3T: the DeepJet path ran in the first 38 runs (6.354 fb-1 BRIL), the PNet path after, never
+        //   both (LUMI_SOURCES 6.3) -> Data takes the OR. MC has both branches; it uses the PNet path only,
+        //   like 2017 MC uses the non-era-B names. PROVISIONAL until Stage 6 (trigger SF) defines the MC
+        //   emulation with the SF (docs/DECISIONS.md D-2026-10-05-B).
+        const bool pnet4J3T    = _ev->HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_4p3;
+        const bool deepjet4J3T = _ev->HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepJet_4p5;
+        fired_4J3T = (_DataOrMC == "Data") ? (pnet4J3T || deepjet4J3T) : pnet4J3T;
+        fired_6J1T = _ev->HLT_PFHT450_SixPFJet36_PNetBTag0p35;
+        fired_6J2T = _ev->HLT_PFHT400_SixPFJet32_PNet2BTagMean0p50;
+    }
     else {
         // 2016 은 경로 세트가 아직 확정되지 않았다. 조용히 2017 경로로
         // 돌아가면 위와 같은 무증상 통계 손실이 나므로 명시적으로 막는다.
         std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO
                   << "] Hadronic HLT path set is not defined for runYear='"
                   << _runYear << "'.\n"
-                  << "  Only 2017 and 2018 are implemented. Add the path set here\n"
+                  << "  Only 2017, 2018 and 2024 are implemented. Add the path set here\n"
                   << "  (and the branches to eventBuffer.h) before running this year.\n";
         std::exit(tthh::CONFIG_BAD_RUNINFO);
     }
@@ -447,6 +675,22 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
     if (_DataOrMC == "MC") {
         // [MC]: 해당 연도의 경로 중 뭐라도 터지면 가져감 (OR)
         passHadTrig = (group_4J3T || group_JetHT);
+    }
+    else if (_runYear == "2024") {
+        // [STEP 24] 2024 Data: JetMET0 / JetMET1 each carry every hadronic path (the two PDs split the
+        //   events, they do not split the paths) -> plain OR, no PD veto (as 2018 JetHT). Muon0 / Muon1:
+        //   the trigger-SF measurement sample, same OR (as SingleMuon in 2017/2018).
+        if (_sampleName.find("JetMET") != std::string::npos ||
+            _sampleName.find("Muon0") != std::string::npos ||
+            _sampleName.find("Muon1") != std::string::npos) {
+            passHadTrig = (group_4J3T || group_JetHT);
+        }
+        else {
+            std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO
+                      << "] 2024 Data PD not recognised (expected JetMET0/1 or Muon0/1): "
+                      << _sampleName << std::endl;
+            std::exit(tthh::CONFIG_BAD_RUNINFO);
+        }
     }
     else if (_runYear == "2018") {
         // [2018 Data] JetHT 단독 PD — 중복 계수 위험이 없으므로 단순 OR.
@@ -492,16 +736,15 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
  
     // Set the noise filter
     // https://twiki.cern.ch/twiki/bin/viewauth/CMS/MissingETOptionalFiltersRun2#2018_2017_data_and_MC_UL
-    thisEvent->setFilter(_ev->Flag_goodVertices &&
-                         _ev->Flag_globalSuperTightHalo2016Filter &&
-                         _ev->Flag_HBHENoiseFilter &&
-                         _ev->Flag_HBHENoiseIsoFilter &&
-                         _ev->Flag_EcalDeadCellTriggerPrimitiveFilter &&
-                         _ev->Flag_BadPFMuonFilter &&
-                         _ev->Flag_BadPFMuonDzFilter &&
-                         _ev->Flag_eeBadScFilter &&
-                         _ev->Flag_ecalBadCalibFilter
-                         );
+    // [STEP 24] the list is EraConfig::metFilters(year) (Run 2: the nine flags this line had; 2024: the
+    //   Run 3 list). 2024 adds the jet veto map to the same cut step (noiseFilter): the cutflow keeps its
+    //   bins, the two parts are counted apart (_nCleanMETFail, _nCleanVetoFail; printed at the end).
+    const bool metOK = passMetFilters_();
+    _jetVetoed = _useJetVetoMap && jetVetoed_(_ev->Jet, _ev->Muon);
+    ++_nCleanAll;
+    if (!metOK) ++_nCleanMETFail;
+    if (_jetVetoed) ++_nCleanVetoFail;
+    thisEvent->setFilter(metOK && !_jetVetoed);
 
   
     thisEvent->setPV(_ev->PV_npvsGood);
@@ -546,7 +789,7 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
         if((fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || 
             fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660) &&
            fabs(ele[i].eta) < Cuts::eleEta && 
-           ele[i].mvaFall17V2Iso_WP90 == true && 
+           eleWP90_(ele[i]) && 
            //ele[i].pfRelIso03_all < eleIso && // We don't need Iso, It's already in ID
            ele[i].pt > Cuts::subLeadElePt) {
             nVetoEle++;
@@ -587,7 +830,7 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
                 if((fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || 
                     fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660) &&
                    fabs(ele[i].eta) < Cuts::eleEta && 
-                   ele[i].mvaFall17V2Iso_WP90 == true && 
+                   eleWP90_(ele[i]) && 
                    //ele[i].pfRelIso03_all < eleIso && // We don't need Iso, It's already in ID
                    ele[i].pt > Cuts::leadElePt) { 
                     hasLeadElectron = true;
@@ -644,7 +887,7 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
                 if((fabs(ele[i].deltaEtaSC + ele[i].eta) < 1.4442 || 
                     fabs(ele[i].deltaEtaSC + ele[i].eta) > 1.5660) &&
                    fabs(ele[i].eta) < Cuts::eleEta && 
-                   ele[i].mvaFall17V2Iso_WP90 == true && 
+                   eleWP90_(ele[i]) && 
                    //ele[i].pfRelIso03_all < eleIso && // We don't need Iso, It's already in ID
                    ele[i].pt > Cuts::subLeadElePt) { 
                    
@@ -668,14 +911,22 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
 
     float dR = 0., deltaEta = 0., deltaPhi = 0.;
     bool passPuId = false;
-    float rho = _ev->fixedGridRhoFastjetAll;
+    // [STEP 24] v15: Rho_fixedGridRhoFastjetAll (same quantity, renamed)
+    float rho = _isRun3 ? _ev->Rho_fixedGridRhoFastjetAll : _ev->fixedGridRhoFastjetAll;
     for (int i = 0; i < (int)jet.size(); ++i) {
 
         const auto& jetRaw = jet[i];
 
         // 1. Pre-cuts
         // [UPDATE] 보정 후 기준으로 pT 컷을 적용하기 위해 여기서는 eta/ID만 최소한으로 확인
-        if( !(fabs(jetRaw.eta) < Cuts::jetEta && jetRaw.jetId >= Cuts::jetID) ) continue;
+        // [STEP 24] v15 has no Jet_jetId: 2024 recomputes it with JME's jetid.json, the same level
+        //   (AK4PUPPI_TightLeptonVeto = tight && lepton veto = Jet_jetId >= 6 of v9, Cuts::jetID).
+        //   eta first, so the payload (|eta| <= 5.2) only sees central jets.
+        if( !(fabs(jetRaw.eta) < Cuts::jetEta) ) continue;
+        if (_isRun3) {
+            if (!corrMgr->passJetIdTightLepVeto(jetRaw.eta, jetRaw.chHEF, jetRaw.neHEF, jetRaw.chEmEF, jetRaw.neEmEF,
+                                                jetRaw.muEF, jetRaw.chMultiplicity, jetRaw.neMultiplicity)) continue;
+        } else if (!(jetRaw.jetId >= Cuts::jetID)) continue;
  
         // 2. Calculation (지역 변수 사용, Heap 할당 X)
         float ntuplePt  = jetRaw.pt;                // NanoAOD Default (Corrected)
@@ -684,7 +935,9 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
         float rawMass   = jetRaw.mass * (1.0f - rawFactor);
 
             // --- A) Re-apply JEC ---
-            double jecSF = corrMgr->getJEC(jetRaw.eta, rawPt, jetRaw.area, rho);
+            // [STEP 24] phi and run are inputs of the 2024 compound (L2Relative, DATA L2L3Residual);
+            //   the Run 2 compounds do not take them (CorrectionsManager::getJEC)
+            double jecSF = corrMgr->getJEC(jetRaw.eta, jetRaw.phi, rawPt, jetRaw.area, rho, _ev->run);
             float ptJEC  = rawPt * jecSF;               // 내가 재계산한 pT
             float massJEC = rawMass * jecSF;
 
@@ -723,7 +976,8 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
         
         // PU ID Check (Low pT only)
         passPuId = true;
-        if (smearedPt < 50.0 && jetRaw.puId < Cuts::jetPUid) {
+        // [STEP 24] no PU jet ID for PUPPI jets (2024; EraConfig::usesPUJetID)
+        if (_usePUJetID && smearedPt < 50.0 && jetRaw.puId < Cuts::jetPUid) {
              continue; 
         }
 
@@ -737,9 +991,11 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
 
         // 메타데이터 저장
         newJet->JEC_DiffRatio = relDiff;
-        newJet->bTagCSV       = jetRaw.btagDeepFlavB;
-        newJet->jetID         = jetRaw.jetId;
-        newJet->jetPUid       = jetRaw.puId;
+        // [STEP 24] 2024: UParTAK4 score (its WPs: EraConfig::btagWP); jetID 6 = passed the tight +
+        //   lepton-veto ID above; jetPUid 7 = no PU ID for PUPPI jets (every WP bit set, nothing cut)
+        newJet->bTagCSV       = _isRun3 ? jetRaw.btagUParTAK4B : jetRaw.btagDeepFlavB;
+        newJet->jetID         = _isRun3 ? 6 : jetRaw.jetId;
+        newJet->jetPUid       = _usePUJetID ? jetRaw.puId : 7;
         newJet->passPuId      = passPuId;
         newJet->hadFlav       = jetRaw.hadronFlavour;
         newJet->partonFlav    = jetRaw.partonFlavour;
@@ -1193,7 +1449,7 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
         if (!_lepCRmode.empty() && c.step == CutStep::kLeptonVeto) {
             const int nMu = thisEvent->getnSelMuon();
             const int nEl = thisEvent->getnSelElectron();
-            const float met = _ev->MET_pt;
+            const float met = metPt_();   // [STEP 24] 2024: PuppiMET (N3)
             if (_lepCRmode == "muon")
                 ok = (nMu == 1 && nEl == 0 && met > metCutCR);
             else // "electron"
@@ -1873,16 +2129,29 @@ void ttHHanalyzer_unified::fillTree(event * thisEvent){
 
     // For Trigger Path
     passTrigger_HLT_IsoMu27 = _ev->HLT_IsoMu27; // Reference Muon Trigger
+    passTrigger_HLT_IsoMu24 = _ev->HLT_IsoMu24; // [STEP 24]
     passTrigger_HLT_PFHT1050 = _ev->HLT_PFHT1050;
     //passTrigger_HLT_PFHT450_SixPFJet36_PFBTagDeepCSV_1p59 = _ev->HLT_PFHT450_SixPFJet36_PFBTagDeepCSV_1p59;
     //passTrigger_HLT_PFHT400_SixPFJet32_DoublePFBTagDeepCSV_2p94 = _ev->HLT_PFHT400_SixPFJet32_DoublePFBTagDeepCSV_2p94;
     //passTrigger_HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5 = _ev->HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5;
+    if (_runYear == "2024") {
+        // [STEP 24] 2024: the PNet paths in the CDEF slots (the slot = "the main version"); the _B
+        //   slots are 0. 4J3T as in the trigger decision: Data the PNet | DeepJet OR, MC the PNet path.
+        passTrigger_6J1T_B    = false;
+        passTrigger_6J2T_B    = false;
+        passTrigger_4J3T_B    = false;
+        passTrigger_6J1T_CDEF = _ev->HLT_PFHT450_SixPFJet36_PNetBTag0p35;
+        passTrigger_6J2T_CDEF = _ev->HLT_PFHT400_SixPFJet32_PNet2BTagMean0p50;
+        passTrigger_4J3T_CDEF = _ev->HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_4p3 ||
+            (_DataOrMC == "Data" && _ev->HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepJet_4p5);
+    } else {
     passTrigger_6J1T_B    = _ev->HLT_PFHT430_SixJet40_BTagCSV_p080;
     passTrigger_6J1T_CDEF = _ev->HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5;
     passTrigger_6J2T_B    = _ev->HLT_PFHT380_SixJet32_DoubleBTagCSV_p075;
     passTrigger_6J2T_CDEF = _ev->HLT_PFHT380_SixPFJet32_DoublePFBTagCSV_2p2;
     passTrigger_4J3T_B    = _ev->HLT_HT300PT30_QuadJet_75_60_45_40_TripeCSV_p07;
     passTrigger_4J3T_CDEF = _ev->HLT_PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0;
+    }
 
     nMuons = thisEvent->getnSelMuon();
     nElecs = thisEvent->getnSelElectron();
@@ -1895,7 +2164,7 @@ void ttHHanalyzer_unified::fillTree(event * thisEvent){
     HT = thisEvent->getSumSelJetScalarpT();
     // [2026-07-29] lepton-CR 재현용. _lepCRmode 가 쓰는 것과 **같은 값**이어야
     //   하므로 동일하게 _ev->MET_pt 를 그대로 싣는다 (가공하지 않는다).
-    MET_pt = _ev->MET_pt;
+    MET_pt = metPt_();   // [STEP 24] the value the lepton CR cut uses (2024: PuppiMET)
 
 
     // Fill the jet information [ It will fill the nJets && maximum 30th jets ]
@@ -1969,6 +2238,8 @@ void ttHHanalyzer_unified::runPrescan() {
     print("[Prescan] Running kPrescan mode — no selection applied.", "b");
     print("[Prescan] Sample: " + _sampleName, "b");
     print("--------------------------------------------------------------------------", "b");
+
+    requirePrescanBranches_();   // [STEP 24] genWeight / genTtbarId / run-LS-event: no silent 0 here either
 
     // 1) Read the Runs tree(s) BEFORE the Events loop.
     //    Uses a fresh TFile per input file; never touches eventBuffer's TFile.
@@ -2351,6 +2622,11 @@ int main(int argc, char** argv){
         std::exit(tthh::INPUT_OPEN_FAIL);
     }
     eventBuffer ev(stream);
+#ifdef TTHH_EVENTBUFFER_STAMP
+    std::cout << "[eventBuffer] " << TTHH_EVENTBUFFER_STAMP << std::endl;   // [STEP 24] which header
+#else
+    std::cout << "[eventBuffer] header without a STEP 24 stamp" << std::endl;
+#endif
     std::cout << " Output filename: " << cl.outputfilename << std::endl;
 
     // ─────────────────────────────────────────────────────────────────────

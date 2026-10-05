@@ -262,7 +262,9 @@ class objectJet:public objectPhysics {
         valbTagMedium = wp.medium;
         valbTagTight  = wp.tight;
         bTagWPConfigured = true;
-        std::cout << "[objectJet] DeepJet WP for " << runYear << " : "
+        // [STEP 24] the tagger by year (the 2024 WPs are UParTAK4's; the line said "DeepJet" for every year)
+        std::cout << "[objectJet] " << (EraConfig::isRun3(runYear) ? "UParTAK4 (Jet_btagUParTAK4B)" : "DeepJet")
+                  << " WP for " << runYear << " : "
                   << "L=" << valbTagLoose << " M=" << valbTagMedium
                   << " T=" << valbTagTight << std::endl;
     }
@@ -1113,6 +1115,13 @@ class ttHHanalyzer_unified {
 	_sampleName = sampleName;
 	_era = trimWhitespace(era);
 
+    // [STEP 24] year switches, once (EraConfig is the single source; it is fatal for an unknown year)
+    _isRun3         = EraConfig::isRun3(_runYear);
+    _usePUJetID     = EraConfig::usesPUJetID(_runYear);
+    _useJetVetoMap  = EraConfig::jetVetoMap(_runYear).active;
+    _hasBTagShapeSF = EraConfig::hasBTagShapeSF(_runYear);
+    setupMetFilters_();
+
     // [STEP2][debug] kDebug 모드: 디버그 로거 활성화.
     // 이벤트 단위 상세 출력 수는 환경변수 TTHH_DEBUG_NEVENTS (기본 10).
     if (_analysisMode == AnalysisMode::kDebug) {
@@ -1223,6 +1232,15 @@ class ttHHanalyzer_unified {
     //   <dir>/ttnb_<sampleName>.root   (default dir DerivedCorr/expandedTtbarId).
     // Missing file -> INACTIVE (logged). This is the normal entry point.
     void setExpandedTtbarIdDir(const std::string& dir) {
+        // [STEP 24] a year without tt+nb lookups (2024) and the yml null: every sample INACTIVE (NanoAOD
+        //   genTtbarId; tt+nb not split) instead of the stitch-set FATAL of loadFromDir. PROVISIONAL,
+        //   docs/DECISIONS.md D-2026-10-05-C. A dir given, or 2017/2018: as before.
+        if (dir.empty() && !EraConfig::hasTtNbLookup(_runYear)) {
+            _expTtbarId.load("", _sampleName);
+            std::cout << "[ExpandedTtbarId] runYear " << _runYear << ": no tt+nb lookup exists for this year yet; "
+                      << "tt+nb (61/62/71/72) is NOT split from 51-55 (PROVISIONAL, D-2026-10-05-C)" << std::endl;
+            return;
+        }
         _expTtbarId.loadFromDir(dir, _sampleName);
     }
 
@@ -1246,6 +1264,33 @@ class ttHHanalyzer_unified {
     //   한 번 확인한다. 없으면 FATAL. (없는 branch 는 0 으로 남아 "안 터졌다"와
     //   구분이 안 되므로, 검사하지 않으면 조용히 0 event 가 된다.)
     void requireTriggerBranches2018_();
+
+    // [STEP 24] Stage 1 (c): every branch this year's code reads must be selected AND in the input
+    //   (first event; ttHHanalyzer_unified.cc). Replaces the 2018-only HLT check for all years.
+    void requireBranches_();
+    // [STEP 24] the same idea for the prescan (it reads only run/LS/event and, for MC, genWeight, genTtbarId)
+    void requirePrescanBranches_();
+    // [STEP 24] chosen in include/eventBuffer.h AND present in the (first) input file; else why not
+    bool branchUsable_(const std::string& b, std::string& why) const;
+    // [STEP 24] FATAL when the given branches are not usable (label: what the list is for)
+    void requireUsable_(const std::vector<std::string>& req, const std::vector<std::vector<std::string>>& anyOf,
+                        const std::string& label);
+    // [STEP 24] a job with several input files: every file must have the same set of the branches the
+    //   header selects (treestream takes the set from the first file; 2024 era C files differ in HLT)
+    void requireSameBranchSet_();
+    // [STEP 24] EraConfig::metFilters(year) -> pointers to the eventBuffer members (constructor)
+    void setupMetFilters_();
+    bool passMetFilters_() const {
+        for (const bool* f : _metFilterPtrs) if (!*f) return false;
+        return true;
+    }
+    // [STEP 24] the v9 / v15 names in one place (Run 2 = the code as it was)
+    float metPt_() const { return _isRun3 ? _ev->PuppiMET_pt : _ev->MET_pt; }
+    bool  eleWP90_(const eventBuffer::Electron_s& e) const {
+        return _isRun3 ? static_cast<bool>(e.mvaIso_WP90) : static_cast<bool>(e.mvaFall17V2Iso_WP90);
+    }
+    bool  jetVetoed_(const std::vector<eventBuffer::Jet_s>& jets,
+                     const std::vector<eventBuffer::Muon_s>& muons) const;
 
     bool selectObjects(event*);
     void analyze(event*);
@@ -1292,6 +1337,15 @@ class ttHHanalyzer_unified {
     bool  _failGoldenJson;
     bool  _passMETFilters;
     std::string _DataOrMC, _runYear, _sampleName, _era;
+
+    // [STEP 24] year switches (constructor, from EraConfig) and the event-cleaning count
+    bool _isRun3         = false;
+    bool _usePUJetID     = true;
+    bool _useJetVetoMap  = false;
+    bool _hasBTagShapeSF = true;
+    bool _jetVetoed      = false;
+    std::vector<const bool*> _metFilterPtrs;
+    long long _nCleanAll = 0, _nCleanMETFail = 0, _nCleanVetoFail = 0;
 
     // ── [tt+nb] extended ttbar-Id ────────────────────────────────────────
     ExpandedTtbarId _expTtbarId;        // per-sample lookup; inactive until load()
@@ -1461,6 +1515,12 @@ public:
         _applyTrigSF = parse(trig,   _applyTrigSF);
         _applyBtagSF = parse(btag,   _applyBtagSF);
         _applyBtagRW = parse(btagrw, _applyBtagRW);
+        if (_applyBtagSF && !_hasBTagShapeSF) {
+            // [STEP 24] 2024: no b-tag shape SF in the BTV payload (PLAN 9.6 D10) -> refuse, not SF=1 silently
+            std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO << "] --btagsf on for runYear=" << _runYear
+                      << ": this year has no b-tag shape SF (PLAN 9.6 D10). Use --btagsf off.\n" << std::endl;
+            std::exit(tthh::CONFIG_BAD_RUNINFO);
+        }
         _skipBtagReweight = !_applyBtagRW;   // 동기화 (skip == !apply)
         std::cout << "[SF toggle] production evtWeight: "
                   << "trigSF=" << (_applyTrigSF ? "ON" : "off")
@@ -2080,7 +2140,9 @@ private:
             const unsigned char d1 = sampleName[rp + 5];
             const unsigned char d2 = sampleName[rp + 6];
             const unsigned char er = sampleName[rp + 7];
-            const bool tokenEnds = (rp + 8 == sampleName.size()) || (sampleName[rp + 8] == '_');
+            // [STEP 24] '-' too: the 2024 NtupleForge keys are <PD>_Run2024<E>-MINIv6NANOv15-v<n>
+            const bool tokenEnds = (rp + 8 == sampleName.size()) || (sampleName[rp + 8] == '_')
+                                   || (sampleName[rp + 8] == '-');
             if (std::isdigit(d1) && std::isdigit(d2) && std::isalpha(er) && tokenEnds) {
                 return std::string(1, static_cast<char>(er));
             }
@@ -2721,6 +2783,7 @@ private:
 
     // Variables for Trigger Path                                                        
     bool passTrigger_HLT_IsoMu27; // Reference Muon Trigger to Calculate efficiency & SFs
+    bool passTrigger_HLT_IsoMu24; // [STEP 24] the 2018 / 2024 reference (D2: 2024 uses IsoMu24)
     bool passTrigger_HLT_PFHT1050;                                                      
     //bool passTrigger_HLT_PFHT450_SixPFJet36_PFBTagDeepCSV_1p59;                          
     //bool passTrigger_HLT_PFHT400_SixPFJet32_DoublePFBTagDeepCSV_2p94;                   
@@ -2804,6 +2867,9 @@ private:
 
         // Branch for Trigger Path                                                        
         _inputTree->Branch("passTrigger_HLT_IsoMu27", &passTrigger_HLT_IsoMu27, "passTrigger_HLT_IsoMu27/O");
+        // [STEP 24] the 2018 / 2024 reference; not booked for 2017 (its tree stays as it was; IsoMu27 above)
+        if (_runYear != "2017")
+            _inputTree->Branch("passTrigger_HLT_IsoMu24", &passTrigger_HLT_IsoMu24, "passTrigger_HLT_IsoMu24/O");
         _inputTree->Branch("passTrigger_HLT_PFHT1050", &passTrigger_HLT_PFHT1050, "passTrigger_HLT_PFHT1050/O");
         _inputTree->Branch("passTrigger_6J1T_B", &passTrigger_6J1T_B, "passTrigger_6J1T_B/O");
         _inputTree->Branch("passTrigger_6J1T_CDEF", &passTrigger_6J1T_CDEF, "passTrigger_6J1T_CDEF/O");

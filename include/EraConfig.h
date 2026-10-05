@@ -3,11 +3,14 @@
 // =============================================================================
 //  EraConfig.h — single source of truth for every YEAR-DEPENDENT constant
 // =============================================================================
-//  목적 : 연도(2016preVFP/2016postVFP/2017/2018)에 따라 달라지는 값을 한 곳에
+//  목적 : 연도(2016preVFP/2016postVFP/2017/2018/2024)에 따라 달라지는 값을 한 곳에
 //         모은다. 이 파일 밖에서 `if (year == "2017")` 를 쓰지 않는다.
 //  대상 : 2018 UL 확장 작업자, 그리고 Run3 확장자.
 //  상태 : DECIDED (2026-07-28). 2017 값은 기존 코드에서 그대로 옮겨온 것이며
 //         2018 값은 ttHH AN-2022/122 v26 에 근거한다 (아래 각 항목의 출처 주석).
+//         2024 (Run 3, NanoAOD v15) 는 2026-10-05 STEP 24 에 더했다: AN 에 2024 가
+//         없으므로 값의 출처는 CVMFS jsonpog payload 의 실측(2026-10-02, PLAN §9.2 의
+//         2024 열)과 사용자 결정(docs/DECISIONS.md D-2026-10-05-A)이다.
 //
 //  왜 이 파일이 생겼나
 //  -------------------
@@ -40,7 +43,7 @@ namespace EraConfig {
 // -----------------------------------------------------------------------------
 inline const std::vector<std::string>& validYears() {
     static const std::vector<std::string> v = {
-        "2016preVFP", "2016postVFP", "2017", "2018"
+        "2016preVFP", "2016postVFP", "2017", "2018", "2024"
     };
     return v;
 }
@@ -53,7 +56,7 @@ inline bool isValidYear(const std::string& y) {
 [[noreturn]] inline void fatalYear(const std::string& y, const char* where) {
     std::fprintf(stderr,
         "\n[EraConfig] FATAL: unsupported runYear '%s' (asked by %s).\n"
-        "  Supported: 2016preVFP, 2016postVFP, 2017, 2018.\n"
+        "  Supported: 2016preVFP, 2016postVFP, 2017, 2018, 2024.\n"
         "  This is deliberately fatal: every year-dependent value in this\n"
         "  analysis fails SILENTLY when the year is unknown (MC weight 0,\n"
         "  wrong b-tag WP, zero triggered events). Refusing to continue.\n",
@@ -72,6 +75,9 @@ inline std::string yearForCorr(const std::string& year) {
     if (year == "2016postVFP") return "2016postVFP_UL";
     if (year == "2017")        return "2017_UL";
     if (year == "2018")        return "2018_UL";
+    // [STEP 24] jsonpog 의 2024 era 디렉터리(JME, BTV 의 `2024_Summer24`). GoldenJson/ 과
+    //   DerivedCorr/PU/ 의 2024 디렉터리도 이 이름이다.
+    if (year == "2024")        return "2024_Summer24";
     fatalYear(year, "yearForCorr");
 }
 
@@ -87,6 +93,9 @@ inline std::string yearForCorr(const std::string& year) {
 //     여기서 한 번에 흡수하고, 표준형은 소문자 `2016preVFP` 로 통일한다.
 // -----------------------------------------------------------------------------
 inline std::string normalizeYear(const std::string& in) {
+    // [STEP 24] jsonpog 키(yearForCorr 의 값) 그대로면 그 연도: "2024_Summer24" -> "2024"
+    for (const auto& v : validYears())
+        if (in == yearForCorr(v)) return v;
     std::string s = in;
     // "_UL" / "UL_" 접미·접두 제거
     const std::string suf = "_UL";
@@ -121,7 +130,81 @@ inline BTagWP btagWP(const std::string& year) {
     if (year == "2016postVFP") return {0.0480f, 0.2489f, 0.6377f};
     if (year == "2017")        return {0.0532f, 0.3040f, 0.7476f};
     if (year == "2018")        return {0.0490f, 0.2783f, 0.7100f};
+    // [STEP 24] 2024: UParTAK4 (Jet_btagUParTAK4B) — BTV payload 실측(2026-10-02):
+    //   POG/BTV/2024_Summer24/btagging.json.gz 의 UParTAK4_wp_values
+    //   L 0.0246, M 0.1272, T 0.4648 (XT 0.6298, XXT 0.9739). AN 에는 2024 가 없다.
+    if (year == "2024")        return {0.0246f, 0.1272f, 0.4648f};
     fatalYear(year, "btagWP");
+}
+
+// -----------------------------------------------------------------------------
+// [STEP 24] Run 3 (NanoAOD v15) 인가 — branch 이름과 object 정의가 갈린다
+//   (rho `Rho_fixedGridRhoFastjetAll`, MET `PuppiMET_pt`, b-tag `Jet_btagUParTAK4B`,
+//    electron `Electron_mvaIso_WP90`, jet ID 는 jetid.json 으로 재계산, PU jet ID 없음).
+//   2016-2018 은 지금 코드의 v9 이름 그대로다. 2018 v15 생산(ttHH2018UL_v15_had)은
+//   이름이 v15 라서 지금 코드로는 필수 branch 검사(ttHHanalyzer_unified.cc
+//   requireBranches_)가 FATAL 로 멈춘다 — 2018 v15 지원은 PLAN §9 Y3 (아직).
+// -----------------------------------------------------------------------------
+inline bool isRun3(const std::string& year) {
+    if (year == "2024") return true;
+    if (year == "2016preVFP" || year == "2016postVFP" || year == "2017" || year == "2018") return false;
+    fatalYear(year, "isRun3");
+}
+
+// PU jet ID (CHS 의 Jet_puId, pT < 50 GeV) — Run 3 의 PUPPI jet 에는 없다 (PLAN §9.2, §7 D8)
+inline bool usesPUJetID(const std::string& year) { return !isRun3(year); }
+
+// jet ID 를 JME 의 jetid.json 으로 재계산하는가 (v15 에는 Jet_jetId 가 없다).
+//   2024: POG/JME/2024_Summer24/jetid.json.gz 의 AK4PUPPI_TightLeptonVeto
+//   (= v9 의 `Jet_jetId >= 6`, tight && tightLepVeto 에 해당; Cuts::jetID 주석).
+inline bool jetIdFromJson(const std::string& year) { return isRun3(year); }
+
+// -----------------------------------------------------------------------------
+// [STEP 24] jet veto map (event veto) — Run 3 는 JME 가 모든 분석에 요구한다.
+//   2024: POG/JME/2024_Summer24/jetvetomaps.json.gz, correction
+//   `Summer24Prompt24_RunBCDEFGHI_V1`, type `jetvetomap` (파일 설명: data 와 MC 모두에
+//   권고하는 map; PLAN §9.6 D11). Run 2 는 쓰지 않는다 (AN 에 없음; hemJes 주석).
+//   veto 에 쓰는 jet 의 조건은 ttHHanalyzer_unified.cc 의 jetVetoed_ 에
+//   (pT > 15 GeV, tight ID, EM 분율 < 0.9, PF muon 과 ΔR > 0.2 — JERC 권고로 확인할 것).
+// -----------------------------------------------------------------------------
+struct JetVetoMap { bool active; const char* correction; const char* type; };
+
+inline JetVetoMap jetVetoMap(const std::string& year) {
+    if (year == "2024") return {true, "Summer24Prompt24_RunBCDEFGHI_V1", "jetvetomap"};
+    if (year == "2016preVFP" || year == "2016postVFP" || year == "2017" || year == "2018")
+        return {false, "", ""};
+    fatalYear(year, "jetVetoMap");
+}
+
+// b-tag shape SF (deepJet_shape) 가 있는가. 2024 BTV 에는 UParTAK4 의 shape SF 가
+// 없다(fixed-WP kinfit, b jet 만; PLAN §9.6 D10) → 2024 의 b-tag SF 는 1, --btagsf on 은 FATAL.
+inline bool hasBTagShapeSF(const std::string& year) { return !isRun3(year); }
+
+// [STEP 24] tt+nb lookup (Expanded_genTtbarId, ttnb_<sample>.root; TTHHGenCategoryTools) 가 그 연도에
+//   만들어져 있는가. 2017/2018 은 있다 -> ttbar stitching 집합의 샘플은 lookup 이 없으면 FATAL (기존 그대로).
+//   2024 는 아직 없다(Summer24 에 extractTtbarIdPatch 를 돌리지 않았다) -> yml 이 null 이면 모든 샘플이
+//   NanoAOD genTtbarId 로 돈다 (tt+nb 61/62/71/72 는 나뉘지 않고 51-55 에 남는다). PROVISIONAL,
+//   docs/DECISIONS.md D-2026-10-05-C. 경로를 주면 2017/2018 과 같은 규칙 (없으면 FATAL).
+inline bool hasTtNbLookup(const std::string& year) { return !isRun3(year); }
+
+// -----------------------------------------------------------------------------
+// [STEP 24] MET filter 목록 (D-2026-10-02-C, PLAN §9.2)
+//   Run 2: 지금 코드의 목록 그대로 (MissingETOptionalFiltersRun2, UL 2017/2018).
+//   2024 : Run 3 목록 — HBHENoise·HBHENoiseIso 는 빠지고 hfNoisyHits 가 들어간다
+//          (목록은 기억 → JME 권고로 확인할 것, PLAN §9.2 의 MET filter 칸).
+//   이름은 NanoAOD 의 Flag_* branch 이름이다. analyzer 는 이 목록으로 읽고(이름 -> member
+//   표), 필수 branch 검사도 이 목록을 쓴다.
+// -----------------------------------------------------------------------------
+inline const std::vector<std::string>& metFilters(const std::string& year) {
+    static const std::vector<std::string> run2 = {
+        "Flag_goodVertices", "Flag_globalSuperTightHalo2016Filter", "Flag_HBHENoiseFilter",
+        "Flag_HBHENoiseIsoFilter", "Flag_EcalDeadCellTriggerPrimitiveFilter", "Flag_BadPFMuonFilter",
+        "Flag_BadPFMuonDzFilter", "Flag_eeBadScFilter", "Flag_ecalBadCalibFilter"};
+    static const std::vector<std::string> run3 = {
+        "Flag_goodVertices", "Flag_globalSuperTightHalo2016Filter", "Flag_EcalDeadCellTriggerPrimitiveFilter",
+        "Flag_BadPFMuonFilter", "Flag_BadPFMuonDzFilter", "Flag_hfNoisyHitsFilter", "Flag_eeBadScFilter",
+        "Flag_ecalBadCalibFilter"};
+    return isRun3(year) ? run3 : run2;
 }
 
 // -----------------------------------------------------------------------------
@@ -136,6 +219,8 @@ inline BTagWP btagWP(const std::string& year) {
 inline bool usesL1Prefiring(const std::string& year) {
     if (year == "2016preVFP" || year == "2016postVFP" || year == "2017") return true;
     if (year == "2018") return false;
+    // [STEP 24] Run 3 에는 L1 prefiring 보정이 없고 2024 v15 에 branch 도 없다 (PLAN §9.2, 실측)
+    if (year == "2024") return false;
     fatalYear(year, "usesL1Prefiring");
 }
 
@@ -154,6 +239,10 @@ inline std::string goldenJsonFile(const std::string& year) {
         return "Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt";
     if (year == "2018")
         return "Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt";
+    // [STEP 24] 2026-08-04 판 (md5 3f8543e8062915c9de97472e7dcf744f; GoldenJson/README.md,
+    //   docs/reference/LUMI_SOURCES.md §6.1). 같은 이름의 2024-12-19 판이 EOS 에 남아 있으니 md5 로 확인.
+    if (year == "2024")
+        return "Cert_Collisions2024_378981_386951_Golden.json";
     fatalYear(year, "goldenJsonFile");
 }
 
@@ -169,6 +258,10 @@ inline std::string jecDataEraTag(const std::string& year, const std::string& era
     if (year == "2016preVFP" || year == "2016postVFP" || year == "2017" ||
         year == "2018")
         return era;              // 연도 불문 era 문자 그대로 — 축약 금지
+    // [STEP 24] 2024 의 Data JEC(Summer24Prompt24_V1_DATA)는 era 태그가 없고 residual 이
+    //   입력 `run` 으로 갈린다 — era 문자는 쓰이지 않지만 그대로 돌려준다.
+    if (year == "2024")
+        return era;
     fatalYear(year, "jecDataEraTag");
 }
 
@@ -196,7 +289,7 @@ struct HemJesRegion {
 inline HemJesRegion hemJes(const std::string& year) {
     if (year == "2018")
         return {true, -1.57f, -0.87f, -2.5f, -1.3f, 0.20f, -3.0f, -2.5f, 0.35f};
-    if (year == "2016preVFP" || year == "2016postVFP" || year == "2017")
+    if (year == "2016preVFP" || year == "2016postVFP" || year == "2017" || year == "2024")
         return {false, 0, 0, 0, 0, 0, 0, 0, 0};
     fatalYear(year, "hemJes");
 }
