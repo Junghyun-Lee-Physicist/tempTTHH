@@ -2,10 +2,31 @@
 
 > **Purpose:** one chronological line per change, newest first, linking to the full record. The detail lives in [`changes/STEP_*.md`](changes/); this file is the index, not a copy.
 > **Audience:** anyone tracing when and why something changed.
-> **Status:** append-only · last meaningful update **2026-10-04**.
+> **Status:** append-only · last meaningful update **2026-10-05**.
 > **Links:** decisions [`DECISIONS.md`](DECISIONS.md) · state [`STATUS.md`](STATUS.md).
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
+
+## 2026-10-05: [analyzer·제출기·도구] STEP 24 묶음 2 — 2024 지원(코드는 진짜 header 와 함께 커밋), Stage 3 도구·yml·임시 σ, 오프라인 smoke
+
+이번 커밋: `tools/stage3/make_filelists_v15.py`(v15 CRAB 배치 → `filelistTier3_2024/`, 크기 0 제외, task 중복·config 누락 FAIL),
+`tools/stage3/data_lumi_check.py`(Data 의 LS 가 golden 에 다 있는지, era I 두 dataset 의 중복), `test/offline_smoke/`(가짜 payload·합성 파일로
+analyzer 를 돌리는 시험, 31 check), `data/samples_2024.json`(임시 13.6 TeV σ, 출처·신뢰도 표기), `AnalyzerConfig/Tier3_2024_FH_unified_{prescan,main}.yml`,
+`tools/stage1/y1_reference.sh`(2017 tt+nb lookup 디렉터리, `EXPECTED`)·`y1_compare.py`(`EXPECTED` 의 run 이 양쪽에 없으면 FAIL)·`test_stage1.py`(42),
+결정 D-2026-10-05-B(2024 MC 4J3T = PNet, PROPOSED)·-C(2024 는 tt+nb lookup 없이). **다음 커밋(진짜 header 와 함께)**: `include/EraConfig.h`,
+`include/CorrectionsManager.h`, `src/CorrectionsManager.cc`, `ttHHanalyzer_unified.{h,cc}`, `submit_job_FH_Tier3_unified.py`, `test/test_EraConfig.cc`
+— 2017/2018 의 selection·weight 는 그대로(옛/새 빌드 출력 동일), 없는 branch 는 0 대신 E11. 상세
+[`changes/STEP_24_stage1_2_2024.md`](changes/STEP_24_stage1_2_2024.md) §3, §6–9.
+
+## 2026-10-05: [도구·입력] STEP 24 묶음 1 — eventBuffer 합집합의 KNU 기록, 2024 PU weight, 2017 회귀 기준(Y1) (analyzer 로직 변경 없음)
+
+`tools/stage1/eventbuffer_manifest.py`(KNU: 우리 생산 다섯의 CRAB task 마다 한 파일, 겹치는 CRAB 파일 이름은 symlink 로 구분, fork 의
+`mkvariables.py --merge`, `HLT_*`·`L1_*` 는 `hlt_keep.txt` 27 개만, analyzer 가 읽는 HLT 이름 검사, 잘린 `variables.txt` 를 기록 안에),
+`eventbuffer_from_record.py`(맥: 그 기록에서 같은 fork 로 header, md5 확인, stamp, treestream.cc/.h 사본), `tools/stage2/pu_weights.py`
+(KNU 의 MC 분포 기록 → correctionlib JSON), `y1_reference.sh`·`y1_compare.py`, 시험 `test_stage1.py` 40(컨테이너 40/40; 독립 검토 9 건 반영). 입력:
+`GoldenJson/2024_Summer24/`(2026-08-04 판), `DerivedCorr/PU/2024_Summer24/input/`(DQM 2024CDEFGHI 69200/66000/72400 ub; 4월 판의 LS 집합은
+우리 JSON 과 lumi 0.2 % 차이). 결정 D-2026-10-05-A(첫 plot 범위, D14 109.816, D15, blinding DECIDED). 상세
+[`changes/STEP_24_stage1_2_2024.md`](changes/STEP_24_stage1_2_2024.md).
 
 ## 2026-10-04 (2): [도구] KNU 첫 실행 뒤 — `build_check.sh` 의 판정, `runlog.sh` 의 signal, 시험 보강 (analyzer 로직 변경 없음)
 

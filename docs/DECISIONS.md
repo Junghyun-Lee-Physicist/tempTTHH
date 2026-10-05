@@ -2,7 +2,7 @@
 
 > **Purpose:** record each significant decision — the choice, why, what else was considered, and whether it still holds — so no one silently reopens a settled question or treats a proposal as settled.
 > **Audience:** anyone about to change behavior or unsure whether something is fixed.
-> **Status:** living, append-and-supersede · last meaningful update **2026-10-04** (D-2026-10-04-A: run records are committed) · 2026-10-02 (D-2026-10-02-A…E: v15 analyzer order, eventBuffer policy, event cleaning, answers N0–N8, blinding).
+> **Status:** living, append-and-supersede · last meaningful update **2026-10-05** (D-2026-10-05-A: 2024 first-look scope, D14 109.816, D15 PU inputs; D-2026-10-02-E DECIDED; D-2026-10-05-B 2024 MC 4J3T bit PROPOSED; D-2026-10-05-C 2024 without tt+nb lookup) · 2026-10-04 (D-2026-10-04-A: run records are committed) · 2026-10-02 (D-2026-10-02-A…E: v15 analyzer order, eventBuffer policy, event cleaning, answers N0–N8, blinding).
 > **Links:** index [`README.md`](README.md) · current state [`STATUS.md`](STATUS.md) · per-change detail [`changes/`](changes/).
 
 ## How to use this log
@@ -76,11 +76,11 @@ Each entry has an id `D-<date>-<letter>`, a **Status** (DECIDED / PROPOSED / OPE
 | N3 | MET | "그렇게 하라" | PF (Type-1) MET for Run 2 (`MET_pt` v9, `PFMET_pt` v15), PUPPI MET (`PuppiMET_pt`) for 2024 |
 | N4 | Lepton SFs in the lepton CRs | "그렇게 하라" | Not applied at first (interim); the expected size is stated next to every CR number and measured once with the POG SFs |
 | N5 | Data for the lepton CRs | "그렇게 하라" | Hadronic PDs (same hadronic trigger as FH): 2024 `JetMET0/1`; as `QUICK_COMMANDS.txt` already says |
-| N6 | Hide data in some plots? | "왜 저 경우에 data를 숨겨야 해?" | Answered in D-2026-10-02-E (PROPOSED) |
+| N6 | Hide data in some plots? | "왜 저 경우에 data를 숨겨야 해?" | Answered in D-2026-10-02-E (DECIDED 2026-10-05) |
 | N7 | b-tag norm reweight regions | "eCR region을 추가하자" | `TTHH_BTAGRW_REGION` gets `eCR` (nElecs == 1, nMuons == 0, MET > `metCutCR`); needs the btagtrig skim to collect electrons without a lead muon (today only with one) — PLAN §9 Stage 7 |
 | N8 | 2024 b-tag SF method | "BTV 자료 확인하고 하자" | Read the 2024 BTV payload (PLAN §9 Stage 0) and the BTV documentation before choosing (PLAN §9.6 D10) |
 
-## D-2026-10-02-E — Blinding: no data hidden in preselection or control-region plots; only the signal-sensitive bins of the final discriminant are blinded · **PROPOSED** (AI, 2026-10-02)
+## D-2026-10-02-E — Blinding: no data hidden in preselection or control-region plots; only the signal-sensitive bins of the final discriminant are blinded · **DECIDED** (proposed by the AI 2026-10-02; accepted by the user 2026-10-05, D-2026-10-05-A)
 
 **Proposal.** Withdraws the AI's earlier suggestion to hide data in the ≥4b plots (user's question N6: "왜 저 경우에 data를 숨겨야 해?"). Data are shown in every preselection and control-region plot, including nb ≥ 4. Blinding applies later to the bins of the final discriminant (e.g. high BDT/DNN score in the ≥4b categories) where the expected S/B is largest, with the criterion and the unblinding procedure taken from the AN.
 **Why.** Blinding exists so that selection choices are not tuned on data where the signal would show. At preselection the SM signal is negligible: σ(ttHH)·BR(HH→4b) = 0.756 fb × 0.339 = 0.256 fb at 13 TeV (`data/samples_2017UL.json`), i.e. about 11 events produced in 2017 (42.07 fb⁻¹) and about 28 in 2024 C–I (109.8 fb⁻¹, 13 TeV σ; the 13.6 TeV σ is higher, D5) before any selection and a few after it, while the background in the same selection is expected to be orders of magnitude larger. The data there cannot reveal the signal, and hiding it removes the most relevant validation region. Stage 8 writes the S/B per cut step and region, so this expectation is checked, not assumed. The 2017 step-8 study already showed nb ≥ 4 data.
@@ -94,6 +94,53 @@ Each entry has an id `D-<date>-<letter>`, a **Status** (DECIDED / PROPOSED / OPE
 **Consistency with NtupleForge `docs/03_DECISIONS.md` D-2026-08-17-no-logs-in-git.** Its tier 1 (CRAB transcripts never) is kept as is. Its tier 2 (bulk run logs — local test output, condor job logs, hadd transcripts — not by default) is kept by keeping bulk output out of the record: condor's own files stay in `condor/`, `tools/stage0/build_check.sh` writes the full make output under `condor/build/` and prints a summary, and the record's footer flags a record over 2 MB. What is committed is the step record, as NtupleForge does with `script/runlogs/` since 2026-09-16.
 **Alternatives considered.** Copy logs to the Mac with scp, as for the lxplus logs of 10-02 — kept as a fallback, but it is a manual copy every round and leaves nothing in git. Push from inside the condor job — rejected: the worker has no usable ssh key (the user's keys need a passphrase).
 **Detail.** `changes/STEP_23_runlog_condor.md`; usage `../tools/runlog/README.md`.
+
+## D-2026-10-05-A — 2024 first look: FH without trigger and b-tag SF, lumi 109.816, data shown except the SR bins; PU weights from the official DQM histograms · **DECIDED**
+
+**Decision (user, 2026-10-05, answers to four questions; "얼른 plot 만들고 싶은데").** (1) The first 2024 plots are the FH region **without
+trigger SF and without b-tag SF**; the cross sections are the provisional 13.6 TeV values, marked as such in the sample DB and on the plots.
+(2) PLAN §9.6 D14: the 2024 normalization lumi is **109.816 fb⁻¹** (C–I, normtag_PHYSICS). (3) D-2026-10-02-E is accepted: data are shown,
+only the signal-region bins are blinded. (4) D15, PU weights: the user asked "pu weight 는 보통 그냥 값이 주어지지 않나?" and supplied the
+EOS listing of `Collisions24/PileUp/` and the jsonpog `POG/LUM` listing (no 2024).
+**Consequence for D15 (AI, from those facts).** The data side is the official DQM histogram `dataPileupHistogram-2024CDEFGHI_Golden-69200ub.root`
+(nominal; 66000 ub and 72400 ub as down/up, i.e. 69.2 mb ±4.6 %), no pileupCalc. Its April lumisection set differs from our 2026-08-04
+golden JSON by 0.2 % of the lumi (`changes/STEP_24_stage1_2_2024.md` §2), too little to change the profile. The MC side is
+`Pileup_nTrueInt` of the **unskimmed** Summer24 ZZ pilot, because our 2024 production is skimmed (6j20) and a jet-count skim biases the
+pileup profile; all Summer24 samples share one premix library. Weights: `tools/stage2/pu_weights.py`, output
+`DerivedCorr/PU/2024_Summer24/puWeights_2024.json` in the jsonpog shape; a central jsonpog 2024 file replaces it when it appears.
+**Alternatives considered.** pileupCalc on our golden JSON — not needed at a 0.2 % LS difference (kept as the fallback). The MC profile of our
+own (skimmed) ntuples — the PLAN's first draft; rejected for the skim bias. The premix scenario's probability table from `SimGeneral/MixingModule`
+— the Summer24 scenario name is not known here; the realized distribution of 4.8 M unskimmed events serves the purpose.
+**Detail.** `changes/STEP_24_stage1_2_2024.md`; PLAN §9.6 D14, D15.
+
+## D-2026-10-05-B — 2024 MC: the 4J3T trigger bit is the PNet path alone; Data take PNet OR DeepJet · **PROPOSED** (AI, 2026-10-05; used by the first look)
+
+**Proposal.** In 2024 Data the 4J3T path is `..._TriplePFBTagDeepJet_4p5` in the first 38 runs (6.354 fb⁻¹ BRIL, 5.8 % of 109.8 fb⁻¹)
+and `..._PNet3BTag_4p3` after, never both in one run ([`reference/LUMI_SOURCES.md`](reference/LUMI_SOURCES.md) §6.3), so a Data event
+takes their OR. Summer24 MC carries both bits; it uses the **PNet bit only**, as 2017 MC uses the C–F path names and not the era-B ones
+(`ttHHanalyzer_unified.cc` createObjects, 2024 branch). The 6J1T, 6J2T and HT1050 groups are unchanged (one path each).
+**Why.** It is the menu that recorded 94 % of the luminosity, and the trigger SF (PLAN §9 Stage 6) is measured with exactly this
+definition (Data OR, MC PNet), so the remaining 5.8 % difference goes into the SF. In the first look (no trigger SF, D-2026-10-05-A)
+it is a known, small mismodelling of the 4J3T leg only.
+**Alternatives considered.** MC takes the OR — rejected: it counts events that no Data run could have, the OR of two b-tag algorithms
+is more efficient than either. MC draws the DeepJet bit for 5.8 % of its events (lumi-weighted emulation) — closer, but it adds
+randomness to every MC histogram before the SF exists; reconsider in Stage 6 if the SF shows a period dependence.
+**Supersede when.** Stage 6 defines the MC emulation together with the trigger SF.
+
+## D-2026-10-05-C — 2024 runs without a tt+nb lookup: Expanded_genTtbarId inactive, tt+≥3b stays in tt+B · **DECIDED** (implements D-2026-10-02-A)
+
+**Decision.** D-2026-10-02-A already fixed that until a 2024 tt+nb patch exists (NtupleForge V6 = TTHHGenCategoryTools O5) the 2024
+plots keep tt+≥3b inside tt+B and do not use `TT4B`. The code did not allow it: `ExpandedTtbarId::loadFromDir` stops a sample of the
+ttbar stitching set (`TTbar_*`, `TTbb_*`, `TT4b`; `SampleAlias::stitchPlanTable`) with E11 when no `ttnb_<sample>.root` is found, also
+for an explicit `null`. Now `EraConfig::hasTtNbLookup(year)` is false for 2024, and a 2024 job with `path_expanded_ttbarid_dir: null`
+runs every sample with the lookup **inactive** (NanoAOD `genTtbarId`, categories 51–55; 61/62/71/72 never appear) and says so in its
+log. A path given behaves as before (missing file → E11). 2017/2018 are unchanged (lookups exist there; a stitch-set sample without
+one is still E11).
+**Why.** The first look needs the inclusive ttbar samples; the FATAL protects a production that relies on the tt+nb split, which the
+2024 first look explicitly does not.
+**Scope guard.** No stitching in 2024 either (`path_stitch_json: null`): the plots must not stack the 4FS `TTbb_*` or `TT4b` samples on
+top of the inclusive ttbar (double counting) — `changes/STEP_24_stage1_2_2024.md` §6 lists the first-look sample set.
+**Supersede when.** A 2024 tt+nb patch exists → set the path in the 2024 yml and flip `hasTtNbLookup("2024")`.
 
 ## D-(historical) — carried invariants · **DECIDED**
 

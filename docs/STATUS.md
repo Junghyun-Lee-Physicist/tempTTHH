@@ -2,7 +2,7 @@
 
 > **Purpose:** the single place that answers "where are we right now?" — current state, what is ready, what is pending, and what is OPEN.
 > **Audience:** anyone starting a session.
-> **Status:** living · last meaningful update **2026-10-04** (KNU 의 긴 단계는 condor job, 실행 기록은 `runlogs/` 에 커밋 — STEP 23) · 2026-10-03 (Stage 0 의 payload·lumi 실측 반영, eventBuffer 생성기 = 사용자 fork treestream 점검, 그 패치 커밋 `8be42e8`; KNU 의 pull 과 clean 빌드) · 2026-10-02 (2024 먼저 결정, 단계별 계획 [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) §9, 2017 lumi 42.07 반영) · 그 전 2026-10-01 (v15 계획 PROPOSED) · 2026-07-26 (2018UL 준비: samples_2018UL.json, --preflight, OPEN #5).
+> **Status:** living · last meaningful update **2026-10-05** (STEP 24 묶음 1: 2024 eventBuffer·PU 도구와 입력, Y1 도구; D-2026-10-05-A · 묶음 2: analyzer 의 2024 코드는 진짜 header 와 함께 커밋 대기, Stage 3 도구·yml·임시 σ, 오프라인 smoke 31/31; D-2026-10-05-B·C) · 2026-10-04 (KNU 의 긴 단계는 condor job, 실행 기록은 `runlogs/` 에 커밋 — STEP 23) · 2026-10-03 (Stage 0 의 payload·lumi 실측 반영, eventBuffer 생성기 = 사용자 fork treestream 점검, 그 패치 커밋 `8be42e8`; KNU 의 pull 과 clean 빌드) · 2026-10-02 (2024 먼저 결정, 단계별 계획 [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) §9, 2017 lumi 42.07 반영) · 그 전 2026-10-01 (v15 계획 PROPOSED) · 2026-07-26 (2018UL 준비: samples_2018UL.json, --preflight, OPEN #5).
 > **Links:** decisions [`DECISIONS.md`](DECISIONS.md) · history [`CHANGELOG.md`](CHANGELOG.md) · exit codes [`reference/ERROR_CODES.md`](reference/ERROR_CODES.md) · path policy [`reference/CONFIG_PATHS.md`](reference/CONFIG_PATHS.md).
 
 ## Bottom line
@@ -49,6 +49,21 @@ Run2024C 파일의 일부에만 PNet 4J3T branch). `39936117` 에는 기록 말�
 대기), `filelistTier3/`(문서가 말하는 2017 기준 목록이라 그대로 둠)와 빌드 산출물·작업 파일 15 개가 들어갔다 → 산출물은 `.gitignore` 에
 더하고 KNU 에서 추적만 끊는다(사용자 결정 10-05; RUNBOOK §20 14). analyzer: 2017 은 지금 실행 파일로 돌 수 있다; 2024 는 PLAN §9
 Stage 1(eventBuffer 재생성과 필수 branch 검사)·Stage 2(`EraConfig` 2024) 뒤 — 사용자 결정(10-05): 다음은 Stage 1·2.
+**10-05 (STEP 24 묶음 1, 도구만):** Stage 0 의 KNU 기록(`c45304aa`): D16 Data 32 dataset 7,787 파일 못 읽은 것 0, 차이는 HLT 뿐; treestream
+확인 SUMMARY PASS 두 번; 시험 83/0·18/0. 사용자 결정 [`DECISIONS.md`](DECISIONS.md) D-2026-10-05-A: 첫 plot 은 2024 FH, trigger·b-tag SF 없이,
+σ 는 임시값 표시; lumi 109.816(D14); data 는 SR bin 만 가림(D-2026-10-02-E DECIDED); PU 는 DQM 의 공식 2024CDEFGHI 히스토그램, MC 분포는 skim
+없는 ZZ 파일럿(D15). 묶음 1: eventBuffer 합집합의 KNU 기록 도구(header 는 맥에서 그 기록으로), PU weight 도구, 2017 회귀 기준(Y1) 도구와 시험
+40(독립 검토 9 건 반영), 2024 golden JSON(8월 판, md5 확인)과 PU 입력 셋 — [`changes/STEP_24_stage1_2_2024.md`](changes/STEP_24_stage1_2_2024.md); KNU 단계는 워크스페이스
+RUNBOOK §21. MC branch 스캔 끝(`406fa531`): 60 dataset 19,111 파일 모두 dataset 당 branch 집합 하나, TTbar_Hadronic 의 출력 하나가 크기 0
+(NtupleForge A29).
+**10-05 (STEP 24 묶음 2):** analyzer 의 2024 코드(EraConfig 2024, JEC/JER 입력을 payload 이름으로, jet ID·veto map·우리 PU JSON, v15 이름,
+2024 HLT·PD·MET filter, 필수 branch 검사와 여러 파일 job 의 branch 집합 검사, 2024 의 tt+nb lookup 없이 — D-2026-10-05-C)와 제출기(2024 PD·era,
+`path_pu_json`, 연도가 붙는 출력·condor·filelist 디렉터리, 2024 preflight). Stage 3: `tools/stage3/make_filelists_v15.py`, `data_lumi_check.py`,
+`data/samples_2024.json`(**임시 13.6 TeV σ**, 60 MC 모두, 출처·신뢰도 표기), 2024 prescan·main yml. 컨테이너 시험: 빌드 OK, unit PASS,
+`test_stage1` 42/42, 새 오프라인 smoke 31/31(2017 은 옛 빌드와 출력 동일); 독립 검토 11 건 반영. C++·제출기·`test_EraConfig.cc` 는 KNU 기록으로
+만들 진짜 `eventBuffer.h`·PU JSON 과 **함께** 커밋한다(그 전에 KNU 에서 빌드하지 말 것: Y1 `before` 는 지금 실행 파일로) — STEP 24 §6–9.
+Y1 스크립트 수정: TTbar_Hadronic 은 2017 tt+nb lookup 이 있어야 돈다(없으면 E11 로 MC 가 비교에서 빠졌을 것).
+다음: KNU 의 기록 job(RUNBOOK §21 C·D) → 맥에서 header·PU JSON → 묶음 2 커밋 → KNU 빌드·Y1 비교·2024 smoke → prescan → main → plot.
 
 ## What is ready (DECIDED)
 

@@ -1,0 +1,100 @@
+# [STEP 24] 2024 prescan -- sum of genWeight per sample (runs.genEventSumw), no selection, MC only
+# ============================================================================
+# ttHH2024_v15_had_MC_v1 (NtupleForge campaign_ttHH2024_v15_had_MC_v1, 60 datasets). Sample names = the
+# NtupleForge keys (D-2026-06-30-A). Filelists: tools/stage3/make_filelists_v15.py --year 2024 ->
+# filelistTier3_2024/ (the submitter picks filelistTier3_<year> for years other than 2017).
+# Output: .../AnalyzerOutput_prescan_2024/ (the year is in the path for every year but 2017).
+#   python3 submit_job_FH_Tier3_unified.py --mode prescan --config AnalyzerConfig/Tier3_2024_FH_unified_prescan.yml --preflight
+# The prescan reads only run/LS/event, genWeight, genTtbarId and the Runs tree; xsec_db is not used here.
+# ============================================================================
+common:
+  year: "2024"
+  analysis_mode: prescan
+  # 2024 C-I, normtag_PHYSICS, golden JSON 2026-08-04 (PLAN 9.6 D14, docs/DECISIONS.md D-2026-10-05-A)
+  lumi_fb_inv: 109.816
+  xsec_db: "data/samples_2024.json"                          # PROVISIONAL 13.6 TeV cross sections (D-2026-10-05-A)
+  prescan: "prescan_summary_2024/prescan_summary.json"       # consolidate_prescan.py --outdir prescan_summary_2024
+  # one input file per job: 2024 era C Data files differ in their HLT branches, and a job with several
+  # files must have one branch set (ttHHanalyzer_unified.cc requireSameBranchSet_; the preflight fails for > 1)
+  files_per_job: 1
+  # [STEP18] path policy: "" / missing -> E12; null -> optional correction off (required -> E13); "<path>" -> used
+  path_jsonpog: "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration"
+  path_goldenjson: "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/GoldenJson"
+  # [STEP 24] our 2024 PU weights (jsonpog has no POG/LUM 2024; tools/stage2/pu_weights.py, D-2026-10-05-A);
+  #   read by every 2024 job (Data too: CorrectionsManager loads it for the year)
+  path_pu_json: "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/DerivedCorr/PU/2024_Summer24/puWeights_2024.json"
+  path_trigsf_dir: null               # no 2024 trigger SF yet (first look: --trigsf off)
+  path_btag_reweight_json: null       # no 2024 b-tag norm reweight
+  path_stitch_json: null              # no 2024 stitch factors (D-2026-10-05-C: the 4FS tt+bb / tt4b are not stacked)
+  path_expanded_ttbarid_dir: null     # no 2024 tt+nb lookup: tt+>=3b stays in 51-55 (D-2026-10-02-A, D-2026-10-05-C)
+samples:
+  # -- signal / ttH / 4b-like --
+  - TTHHto4b
+  - ttHTobb_had
+  - ttHTobb_semilep
+  - ttHTobb_dilep
+  - ttHToNonbb
+  - TTZHTo4b
+  - TTZZTo4b
+  # -- tH (single-top + H) --
+  - tHq
+  - tHW
+  # -- tt+jets inclusive (5FS; the 2024 first look uses these alone for tt, D-2026-10-05-C) --
+  - TTbar_Hadronic
+  - TTbar_SemiLep
+  - TTbar_DiLep
+  # -- tt+bb (4FS) and tt+4b dedicated -- run, but NOT stacked with the inclusive tt until 2024 stitching exists (D-2026-10-05-C) --
+  - TTbb_Hadronic
+  - TTbb_SemiLep
+  - TTbb_DiLep
+  - TT4b
+  # -- ttV --
+  - TTZToQQ
+  - TTWJetsToQQ
+  - TTLL_MLL50
+  - TTLL_MLL4to50
+  - TTNuNu
+  # -- ttVV / ttVH / multi-top --
+  - TTWW
+  - TTWH
+  - TTWZ
+  - TTTWminus
+  - TTTWplus
+  - TTTT
+  # -- single top (non-Higgs) --
+  - ST_t_top_had
+  - ST_t_top_lep
+  - ST_t_antitop_had
+  - ST_t_antitop_lep
+  - ST_tW_top_had
+  - ST_tW_top_semilep
+  - ST_tW_top_dilep
+  - ST_tW_antitop_had
+  - ST_tW_antitop_semilep
+  - ST_tW_antitop_dilep
+  - ST_s_top_had
+  - ST_s_top_lep
+  - ST_s_antitop_had
+  - ST_s_antitop_lep
+  # -- diboson --
+  - WW
+  - WZ
+  - ZZ
+  # -- QCD multijet (HT-binned; 2024 bins) --
+  - QCD_HT200to400
+  - QCD_HT400to600
+  - QCD_HT600to800
+  - QCD_HT800to1000
+  - QCD_HT1000to1200
+  - QCD_HT1200to1500
+  - QCD_HT1500to2000
+  - QCD_HT2000toInf
+  # -- V->qq (HT-binned; 2024 bins) --
+  - WJetsToQQ_HT400to800
+  - WJetsToQQ_HT800to1500
+  - WJetsToQQ_HT1500to2500
+  - WJetsToQQ_HT2500toInf
+  - ZJetsToQQ_HT400to800
+  - ZJetsToQQ_HT800to1500
+  - ZJetsToQQ_HT1500to2500
+  - ZJetsToQQ_HT2500toInf

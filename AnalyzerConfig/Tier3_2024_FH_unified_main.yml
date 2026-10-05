@@ -1,0 +1,117 @@
+# [STEP 24] 2024 main -- the FH first look (D-2026-10-05-A): no trigger SF, no b-tag SF, provisional sigma
+# ============================================================================
+# weight = lumi x cross_section_fb x br / runs.genEventSumw (data/samples_2024.json, prescan_summary_2024/)
+#   python3 submit_job_FH_Tier3_unified.py --mode main --config AnalyzerConfig/Tier3_2024_FH_unified_main.yml --trigsf off --btagsf off --btagrw off --preflight
+# Output: .../AnalyzerOutput_main_notrig_2024/ (region and SF tags as for 2017, then the year).
+# --btagsf on is refused for 2024 (no shape SF, PLAN 9.6 D10; analyzer E11, preflight FAIL).
+# ============================================================================
+common:
+  year: "2024"
+  analysis_mode: main
+  # 2024 C-I, normtag_PHYSICS, golden JSON 2026-08-04 (PLAN 9.6 D14, docs/DECISIONS.md D-2026-10-05-A)
+  lumi_fb_inv: 109.816
+  xsec_db: "data/samples_2024.json"                          # PROVISIONAL 13.6 TeV cross sections (D-2026-10-05-A)
+  prescan: "prescan_summary_2024/prescan_summary.json"       # consolidate_prescan.py --outdir prescan_summary_2024
+  # one input file per job: 2024 era C Data files differ in their HLT branches, and a job with several
+  # files must have one branch set (ttHHanalyzer_unified.cc requireSameBranchSet_; the preflight fails for > 1)
+  files_per_job: 1
+  # [STEP18] path policy: "" / missing -> E12; null -> optional correction off (required -> E13); "<path>" -> used
+  path_jsonpog: "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration"
+  path_goldenjson: "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/GoldenJson"
+  # [STEP 24] our 2024 PU weights (jsonpog has no POG/LUM 2024; tools/stage2/pu_weights.py, D-2026-10-05-A);
+  #   read by every 2024 job (Data too: CorrectionsManager loads it for the year)
+  path_pu_json: "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/DerivedCorr/PU/2024_Summer24/puWeights_2024.json"
+  path_trigsf_dir: null               # no 2024 trigger SF yet (first look: --trigsf off)
+  path_btag_reweight_json: null       # no 2024 b-tag norm reweight
+  path_stitch_json: null              # no 2024 stitch factors (D-2026-10-05-C: the 4FS tt+bb / tt4b are not stacked)
+  path_expanded_ttbarid_dir: null     # no 2024 tt+nb lookup: tt+>=3b stays in 51-55 (D-2026-10-02-A, D-2026-10-05-C)
+samples:
+  # -- signal / ttH / 4b-like --
+  - TTHHto4b
+  - ttHTobb_had
+  - ttHTobb_semilep
+  - ttHTobb_dilep
+  - ttHToNonbb
+  - TTZHTo4b
+  - TTZZTo4b
+  # -- tH (single-top + H) --
+  - tHq
+  - tHW
+  # -- tt+jets inclusive (5FS; the 2024 first look uses these alone for tt, D-2026-10-05-C) --
+  - TTbar_Hadronic
+  - TTbar_SemiLep
+  - TTbar_DiLep
+  # -- tt+bb (4FS) and tt+4b dedicated -- run, but NOT stacked with the inclusive tt until 2024 stitching exists (D-2026-10-05-C) --
+  - TTbb_Hadronic
+  - TTbb_SemiLep
+  - TTbb_DiLep
+  - TT4b
+  # -- ttV --
+  - TTZToQQ
+  - TTWJetsToQQ
+  - TTLL_MLL50
+  - TTLL_MLL4to50
+  - TTNuNu
+  # -- ttVV / ttVH / multi-top --
+  - TTWW
+  - TTWH
+  - TTWZ
+  - TTTWminus
+  - TTTWplus
+  - TTTT
+  # -- single top (non-Higgs) --
+  - ST_t_top_had
+  - ST_t_top_lep
+  - ST_t_antitop_had
+  - ST_t_antitop_lep
+  - ST_tW_top_had
+  - ST_tW_top_semilep
+  - ST_tW_top_dilep
+  - ST_tW_antitop_had
+  - ST_tW_antitop_semilep
+  - ST_tW_antitop_dilep
+  - ST_s_top_had
+  - ST_s_top_lep
+  - ST_s_antitop_had
+  - ST_s_antitop_lep
+  # -- diboson --
+  - WW
+  - WZ
+  - ZZ
+  # -- QCD multijet (HT-binned; 2024 bins) --
+  - QCD_HT200to400
+  - QCD_HT400to600
+  - QCD_HT600to800
+  - QCD_HT800to1000
+  - QCD_HT1000to1200
+  - QCD_HT1200to1500
+  - QCD_HT1500to2000
+  - QCD_HT2000toInf
+  # -- V->qq (HT-binned; 2024 bins) --
+  - WJetsToQQ_HT400to800
+  - WJetsToQQ_HT800to1500
+  - WJetsToQQ_HT1500to2500
+  - WJetsToQQ_HT2500toInf
+  - ZJetsToQQ_HT400to800
+  - ZJetsToQQ_HT800to1500
+  - ZJetsToQQ_HT1500to2500
+  - ZJetsToQQ_HT2500toInf
+  # -- Data: JetMET0 / JetMET1, eras C-I (era I: two datasets per PD, disjoint by run -- checked by
+  #    tools/stage3/data_lumi_check.py). The era letter comes from the name (Run2024<X>-...). Muon0/1 (trigger
+  #    SF, PLAN 9 Stage 6) are not in the FH first look.
+  - JetMET0_Run2024C-MINIv6NANOv15-v1
+  - JetMET0_Run2024D-MINIv6NANOv15-v1
+  - JetMET0_Run2024E-MINIv6NANOv15-v1
+  - JetMET0_Run2024F-MINIv6NANOv15-v2
+  - JetMET0_Run2024G-MINIv6NANOv15-v2
+  - JetMET0_Run2024H-MINIv6NANOv15-v2
+  - JetMET0_Run2024I-MINIv6NANOv15-v2
+  - JetMET0_Run2024I-MINIv6NANOv15_v2-v1
+  - JetMET1_Run2024C-MINIv6NANOv15-v1
+  - JetMET1_Run2024D-MINIv6NANOv15-v1
+  - JetMET1_Run2024E-MINIv6NANOv15-v1
+  - JetMET1_Run2024F-MINIv6NANOv15-v2
+  - JetMET1_Run2024G-MINIv6NANOv15-v2
+  - JetMET1_Run2024H-MINIv6NANOv15-v2
+  - JetMET1_Run2024I-MINIv6NANOv15-v1
+  - JetMET1_Run2024I-MINIv6NANOv15_v2-v2

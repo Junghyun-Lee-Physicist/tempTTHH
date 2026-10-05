@@ -1,0 +1,51 @@
+# hlt_keep.txt -- the HLT branches kept in include/eventBuffer.h (PLAN section 9.6 D16; STEP 24)
+#
+# tools/stage1/eventbuffer_manifest.py drops every other branch named HLT_* or L1_* from the branch
+# union before the header is generated. Reason: the HLT menu changes from run to run, so the HLT
+# branch set changes from file to file (2024: 270 to 280 per era, and inside era C and I), and
+# treestream takes the branch set of a chain from its FIRST file (PLAN 9.3). The analysis reads only
+# the paths below; Flag_*, objects, weights and everything else stay as they are.
+#
+# One name per line; '#' starts a comment. A name may be absent from some inputs (it is then 0 =
+# "did not fire" in those files, which is right when the path did not exist there) but must be in at
+# least one input, or the manifest lists it as WARN. Every HLT name the analyzer source reads
+# (_ev->HLT_... or "Events/HLT_...") must be here, or the manifest stops (exit 1): the header would
+# not have the member and the build would fail.
+
+# ---- 2017 (ttHHanalyzer_unified.cc; era B uses the older CSV names) ----
+HLT_PFHT1050
+HLT_HT300PT30_QuadJet_75_60_45_40_TripeCSV_p07
+HLT_PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0
+HLT_PFHT430_SixJet40_BTagCSV_p080
+HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5
+HLT_PFHT380_SixJet32_DoubleBTagCSV_p075
+HLT_PFHT380_SixPFJet32_DoublePFBTagCSV_2p2
+HLT_IsoMu27
+
+# ---- 2018 (DeepCSV paths, JetHT only) ----
+HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5
+HLT_PFHT400_SixPFJet32_DoublePFBTagDeepCSV_2p94
+HLT_PFHT450_SixPFJet36_PFBTagDeepCSV_1p59
+
+# ---- 2024 analysis OR (D4; docs/reference/LUMI_SOURCES.md section 6.3) ----
+# 4J3T: the DeepJet path ran in the first 38 runs (6.354 fb-1 BRIL), the PNet path after; never both
+HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_4p3
+HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepJet_4p5
+HLT_PFHT450_SixPFJet36_PNetBTag0p35
+HLT_PFHT400_SixPFJet32_PNet2BTagMean0p50
+
+# ---- lepton references (trigger SF, lepton CRs) ----
+HLT_IsoMu24
+HLT_Ele30_WPTight_Gsf
+
+# ---- 2024 comparison paths (D4 candidates and the un-tagged references, for the trigger studies) ----
+HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_2p0
+HLT_PFHT280_QuadPFJet30_PNet2BTagMean0p55
+HLT_PFHT280_QuadPFJet30_PNet2BTagMean0p60
+HLT_PFHT280_QuadPFJet35_PNet2BTagMean0p60
+HLT_PFHT340_QuadPFJet70_50_40_40_PNet2BTagMean0p70
+HLT_PFHT400_FivePFJet_120_120_60_30_30_PNet2BTag_4p3
+HLT_PFHT400_FivePFJet_120_120_60_30_30_PNet2BTag_5p6
+HLT_PFHT400_SixPFJet32
+HLT_PFHT450_SixPFJet36
+HLT_PFHT330PT30_QuadPFJet_75_60_45_40
