@@ -1,0 +1,541 @@
+=== RUNLOG ================================================================
+step        : knu_eventbuffer_manifest
+start_utc   : 2026-10-05T09:44:37Z
+host        : cluster344   user: jhlee
+cwd         : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+repo        : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+git_head    : 0a2693ca   modified_tracked_files: 1
+cmd         : python3 tools/stage1/eventbuffer_manifest.py --treestream ../treestream 
+CMSSW_BASE  : /u/user/jhlee/ttHH/CMSSW_14_2_1
+root        : 6.30.09
+python3     : Python 3.9.14
+condor_job  : 2180621.0  slot slot1_15   jobdir: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/runlog/knu_eventbuffer_manifest_20261005_094427
+===========================================================================
+[condor_run] worker cluster344  scratch /home/condor/dir_3250164
+[condor_run] cmsenv ok: CMSSW_BASE=/u/user/jhlee/ttHH/CMSSW_14_2_1  root 6.30.09  Python 3.9.14  TMPDIR=/home/condor/dir_3250164
+[condor_run] running in /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH: python3 tools/stage1/eventbuffer_manifest.py --treestream ../treestream 
+----------------------------------------------------------------------------
+TREESTREAM /u/user/jhlee/ttHH/CMSSW_14_2_1/src/treestream @ 8be42e8 v15 review: object size from the longest bound field, counters read, no ghost structs, read errors stop the job, varlist and single-mode tree fixed, merge type conflicts; test/v15check (troubleshooting A11-A17) (clean)
+KEEP /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/tools/stage1/hlt_keep.txt names=27 md5=448b4bc397a9a5ed28cfe9a5029860d3
+TOOL /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/tools/stage1/eventbuffer_manifest.py md5=e4f0e7d0b7e062fd5f9ecaad5d029324
+WORK /home/condor/dir_3250164/eventbuffer_manifest_3250425
+BASE 2024MC /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1 datasets=60 files=19111
+BASE 2024Data /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1 datasets=32 files=7787
+BASE 2018MC /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1 datasets=42 files=2277
+BASE 2018Data /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_Data_v1 datasets=8 files=1466
+MISSINGBASE 2017 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2017UL_fullNano_v20
+INPUT 000 2024MC QCD-4Jets_Bin-HT-1000to1200_TuneCP5_13p6TeV_madgraphMLM-pythia8/QCD_HT1000to1200/260930_162814 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/QCD-4Jets_Bin-HT-1000to1200_TuneCP5_13p6TeV_madgraphMLM-pythia8/QCD_HT1000to1200/260930_162814/0000/forgedNtuple_1.root
+INPUT 001 2024MC QCD-4Jets_Bin-HT-1200to1500_TuneCP5_13p6TeV_madgraphMLM-pythia8/QCD_HT1200to1500/260930_162819 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/QCD-4Jets_Bin-HT-1200to1500_TuneCP5_13p6TeV_madgraphMLM-pythia8/QCD_HT1200to1500/260930_162819/0000/forgedNtuple_1.root
+INPUT 002 2024MC QCD-4Jets_Bin-HT-1500to2000_TuneCP5_13p6TeV_madgraphMLM-pythia8/QCD_HT1500to2000/260930_162824 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/QCD-4Jets_Bin-HT-1500to2000_TuneCP5_13p6TeV_madgraphMLM-pythia8/QCD_HT1500to2000/260930_162824/0000/forgedNtuple_1.root
+INPUT 003 2024MC QCD-4Jets_Bin-HT-2000_TuneCP5_13p6TeV_madgraphMLM-pythia8/QCD_HT2000toInf/260930_162829 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/QCD-4Jets_Bin-HT-2000_TuneCP5_13p6TeV_madgraphMLM-pythia8/QCD_HT2000toInf/260930_162829/0000/forgedNtuple_1.root
+INPUT 004 2024MC QCD-4Jets_Bin-HT-200to400_TuneCP5_13p6TeV_madgraphMLM-pythia8/QCD_HT200to400/260930_162722 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/QCD-4Jets_Bin-HT-200to400_TuneCP5_13p6TeV_madgraphMLM-pythia8/QCD_HT200to400/260930_162722/0000/forgedNtuple_1.root
+INPUT 005 2024MC QCD-4Jets_Bin-HT-400to600_TuneCP5_13p6TeV_madgraphMLM-pythia8/QCD_HT400to600/260930_162725 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/QCD-4Jets_Bin-HT-400to600_TuneCP5_13p6TeV_madgraphMLM-pythia8/QCD_HT400to600/260930_162725/0000/forgedNtuple_1.root
+INPUT 006 2024MC QCD-4Jets_Bin-HT-600to800_TuneCP5_13p6TeV_madgraphMLM-pythia8/QCD_HT600to800/260930_162729 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/QCD-4Jets_Bin-HT-600to800_TuneCP5_13p6TeV_madgraphMLM-pythia8/QCD_HT600to800/260930_162729/0000/forgedNtuple_1.root
+INPUT 007 2024MC QCD-4Jets_Bin-HT-800to1000_TuneCP5_13p6TeV_madgraphMLM-pythia8/QCD_HT800to1000/260930_162735 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/QCD-4Jets_Bin-HT-800to1000_TuneCP5_13p6TeV_madgraphMLM-pythia8/QCD_HT800to1000/260930_162735/0000/forgedNtuple_1.root
+INPUT 008 2024MC TBbarQto2Q-t-channel-4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/ST_t_top_had/260930_162958 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TBbarQto2Q-t-channel-4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/ST_t_top_had/260930_162958/0000/forgedNtuple_1.root
+INPUT 009 2024MC TBbarQtoLNu-t-channel-4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/ST_t_top_lep/260930_163003 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TBbarQtoLNu-t-channel-4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/ST_t_top_lep/260930_163003/0000/forgedNtuple_1.root
+INPUT 010 2024MC TBbarto2Q-s-channel_TuneCP5_13p6TeV_powheg-pythia8/ST_s_top_had/260930_163045 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TBbarto2Q-s-channel_TuneCP5_13p6TeV_powheg-pythia8/ST_s_top_had/260930_163045/0000/forgedNtuple_1.root
+INPUT 011 2024MC TBbartoLNu-s-channel_TuneCP5_13p6TeV_powheg-pythia8/ST_s_top_lep/260930_163050 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TBbartoLNu-s-channel_TuneCP5_13p6TeV_powheg-pythia8/ST_s_top_lep/260930_163050/0000/forgedNtuple_1.root
+INPUT 012 2024MC THQ-4FS-ctcvcp_Par-M-125_TuneCP5_13p6TeV_madgraph-pythia8/tHq/260930_162851 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/THQ-4FS-ctcvcp_Par-M-125_TuneCP5_13p6TeV_madgraph-pythia8/tHq/260930_162851/0000/forgedNtuple_1.root
+INPUT 013 2024MC THW-5FS-ctcvcp_Par-M-125_TuneCP5_13p6TeV_madgraph-pythia8/tHW/260930_162856 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/THW-5FS-ctcvcp_Par-M-125_TuneCP5_13p6TeV_madgraph-pythia8/tHW/260930_162856/0000/forgedNtuple_1.root
+INPUT 014 2024MC TT4B_TuneCP5_13p6TeV_madgraph-pythia8/TT4b/260930_162953 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TT4B_TuneCP5_13p6TeV_madgraph-pythia8/TT4b/260930_162953/0000/forgedNtuple_1.root
+INPUT 015 2024MC TTBBto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/TTbb_DiLep/260930_162720 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTBBto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/TTbb_DiLep/260930_162720/0000/forgedNtuple_1.root
+INPUT 016 2024MC TTBBto4Q_TuneCP5_13p6TeV_powheg-pythia8/TTbb_Hadronic/260930_162717 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTBBto4Q_TuneCP5_13p6TeV_powheg-pythia8/TTbb_Hadronic/260930_162717/0000/forgedNtuple_1.root
+INPUT 017 2024MC TTBBtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/TTbb_SemiLep/260930_162714 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTBBtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/TTbb_SemiLep/260930_162714/0000/forgedNtuple_1.root
+INPUT 018 2024MC TTH-Hto2B-TTto2L2Nu_Par-M-125_TuneCP5_13p6TeV_powheg-pythia8/ttHTobb_dilep/260930_162843 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTH-Hto2B-TTto2L2Nu_Par-M-125_TuneCP5_13p6TeV_powheg-pythia8/ttHTobb_dilep/260930_162843/0000/forgedNtuple_1.root
+INPUT 019 2024MC TTH-Hto2B-TTto4Q_Par-M-125_TuneCP5_13p6TeV_powheg-pythia8/ttHTobb_had/260930_162834 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTH-Hto2B-TTto4Q_Par-M-125_TuneCP5_13p6TeV_powheg-pythia8/ttHTobb_had/260930_162834/0000/forgedNtuple_1.root
+INPUT 020 2024MC TTH-Hto2B-TTtoLNu2Q_Par-M-125_TuneCP5_13p6TeV_powheg-pythia8/ttHTobb_semilep/260930_162838 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTH-Hto2B-TTtoLNu2Q_Par-M-125_TuneCP5_13p6TeV_powheg-pythia8/ttHTobb_semilep/260930_162838/0000/forgedNtuple_10.root
+INPUT 021 2024MC TTH-HtoNon2B_Par-M-125_TuneCP5_13p6TeV_powheg-pythia8/ttHToNonbb/260930_162847 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTH-HtoNon2B_Par-M-125_TuneCP5_13p6TeV_powheg-pythia8/ttHToNonbb/260930_162847/0000/forgedNtuple_1.root
+INPUT 022 2024MC TTHH-HHto4B_TuneCP5_13p6TeV_madgraph-pythia8/TTHHto4b/260930_162701 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTHH-HHto4B_TuneCP5_13p6TeV_madgraph-pythia8/TTHHto4b/260930_162701/0000/forgedNtuple_1.root
+INPUT 023 2024MC TTLL_Bin-MLL-4to50_TuneCP5_13p6TeV_amcatnlo-pythia8/TTLL_MLL4to50/260930_162911 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTLL_Bin-MLL-4to50_TuneCP5_13p6TeV_amcatnlo-pythia8/TTLL_MLL4to50/260930_162911/0000/forgedNtuple_1.root
+INPUT 024 2024MC TTLL_Bin-MLL-50_TuneCP5_13p6TeV_amcatnlo-pythia8/TTLL_MLL50/260930_162909 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTLL_Bin-MLL-50_TuneCP5_13p6TeV_amcatnlo-pythia8/TTLL_MLL50/260930_162909/0000/forgedNtuple_1.root
+INPUT 025 2024MC TTNuNu_TuneCP5_13p6TeV_amcatnlo-pythia8/TTNuNu/260930_162914 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTNuNu_TuneCP5_13p6TeV_amcatnlo-pythia8/TTNuNu/260930_162914/0000/forgedNtuple_1.root
+INPUT 026 2024MC TTTT_TuneCP5_13p6TeV_amcatnlo-pythia8/TTTT/260930_162948 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTTT_TuneCP5_13p6TeV_amcatnlo-pythia8/TTTT/260930_162948/0000/forgedNtuple_1.root
+INPUT 027 2024MC TTTWminus-DR1_TuneCP5_13p6TeV_amcatnlo-pythia8/TTTWminus/260930_162938 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTTWminus-DR1_TuneCP5_13p6TeV_amcatnlo-pythia8/TTTWminus/260930_162938/0000/forgedNtuple_1.root
+INPUT 028 2024MC TTTWplus-DR1_TuneCP5_13p6TeV_amcatnlo-pythia8/TTTWplus/260930_162943 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTTWplus-DR1_TuneCP5_13p6TeV_amcatnlo-pythia8/TTTWplus/260930_162943/0000/forgedNtuple_1.root
+INPUT 029 2024MC TTW-WtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/TTWJetsToQQ/260930_162905 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTW-WtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/TTWJetsToQQ/260930_162905/0000/forgedNtuple_1.root
+INPUT 030 2024MC TTWH_TuneCP5_13p6TeV_madgraph-pythia8/TTWH/260930_162932 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTWH_TuneCP5_13p6TeV_madgraph-pythia8/TTWH/260930_162932/0000/forgedNtuple_1.root
+INPUT 031 2024MC TTWW_TuneCP5_13p6TeV_madgraph-pythia8/TTWW/260930_162927 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTWW_TuneCP5_13p6TeV_madgraph-pythia8/TTWW/260930_162927/0000/forgedNtuple_1.root
+INPUT 032 2024MC TTWZ_TuneCP5_13p6TeV_madgraph-pythia8/TTWZ/260930_162935 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTWZ_TuneCP5_13p6TeV_madgraph-pythia8/TTWZ/260930_162935/0000/forgedNtuple_1.root
+INPUT 033 2024MC TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/TTZToQQ/260930_162900 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/TTZToQQ/260930_162900/0000/forgedNtuple_1.root
+INPUT 034 2024MC TTZH-ZHto4B_TuneCP5_13p6TeV_madgraph-pythia8/TTZHTo4b/260930_162917 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTZH-ZHto4B_TuneCP5_13p6TeV_madgraph-pythia8/TTZHTo4b/260930_162917/0000/forgedNtuple_1.root
+INPUT 035 2024MC TTZZ-ZZto4B_TuneCP5_13p6TeV_madgraph-pythia8/TTZZTo4b/260930_162922 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTZZ-ZZto4B_TuneCP5_13p6TeV_madgraph-pythia8/TTZZTo4b/260930_162922/0000/forgedNtuple_1.root
+INPUT 036 2024MC TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/TTbar_DiLep/260930_162711 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/TTbar_DiLep/260930_162711/0000/forgedNtuple_1.root
+INPUT 037 2024MC TTto4Q_TuneCP5_13p6TeV_powheg-pythia8/TTbar_Hadronic/260930_162708 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTto4Q_TuneCP5_13p6TeV_powheg-pythia8/TTbar_Hadronic/260930_162708/0000/forgedNtuple_1.root
+INPUT 038 2024MC TTtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/TTbar_SemiLep/260930_162704 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/TTbar_SemiLep/260930_162704/0000/forgedNtuple_1.root
+INPUT 039 2024MC TWminusto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/ST_tW_top_dilep/260930_163026 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TWminusto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/ST_tW_top_dilep/260930_163026/0000/forgedNtuple_1.root
+INPUT 040 2024MC TWminusto4Q_TuneCP5_13p6TeV_powheg-pythia8/ST_tW_top_had/260930_163016 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TWminusto4Q_TuneCP5_13p6TeV_powheg-pythia8/ST_tW_top_had/260930_163016/0000/forgedNtuple_1.root
+INPUT 041 2024MC TWminustoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/ST_tW_top_semilep/260930_163021 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TWminustoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/ST_tW_top_semilep/260930_163021/0000/forgedNtuple_1.root
+INPUT 042 2024MC TbarBQto2Q-t-channel-4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/ST_t_antitop_had/260930_163008 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TbarBQto2Q-t-channel-4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/ST_t_antitop_had/260930_163008/0000/forgedNtuple_1.root
+INPUT 043 2024MC TbarBQtoLNu-t-channel-4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/ST_t_antitop_lep/260930_163012 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TbarBQtoLNu-t-channel-4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/ST_t_antitop_lep/260930_163012/0000/forgedNtuple_1.root
+INPUT 044 2024MC TbarBto2Q-s-channel_TuneCP5_13p6TeV_powheg-pythia8/ST_s_antitop_had/260930_163054 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TbarBto2Q-s-channel_TuneCP5_13p6TeV_powheg-pythia8/ST_s_antitop_had/260930_163054/0000/forgedNtuple_1.root
+INPUT 045 2024MC TbarBtoLNu-s-channel_TuneCP5_13p6TeV_powheg-pythia8/ST_s_antitop_lep/260930_163058 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TbarBtoLNu-s-channel_TuneCP5_13p6TeV_powheg-pythia8/ST_s_antitop_lep/260930_163058/0000/forgedNtuple_1.root
+INPUT 046 2024MC TbarWplusto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/ST_tW_antitop_dilep/260930_163040 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TbarWplusto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/ST_tW_antitop_dilep/260930_163040/0000/forgedNtuple_1.root
+INPUT 047 2024MC TbarWplusto4Q_TuneCP5_13p6TeV_powheg-pythia8/ST_tW_antitop_had/260930_163030 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TbarWplusto4Q_TuneCP5_13p6TeV_powheg-pythia8/ST_tW_antitop_had/260930_163030/0000/forgedNtuple_1.root
+INPUT 048 2024MC TbarWplustoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/ST_tW_antitop_semilep/260930_163036 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TbarWplustoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/ST_tW_antitop_semilep/260930_163036/0000/forgedNtuple_1.root
+INPUT 049 2024MC WW_TuneCP5_13p6TeV_pythia8/WW/260930_163104 branches=506 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/WW_TuneCP5_13p6TeV_pythia8/WW/260930_163104/0000/forgedNtuple_1.root
+INPUT 050 2024MC WZ_TuneCP5_13p6TeV_pythia8/WZ/260930_163109 branches=506 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/WZ_TuneCP5_13p6TeV_pythia8/WZ/260930_163109/0000/forgedNtuple_1.root
+INPUT 051 2024MC Wto2Q-3Jets_Bin-HT-1500to2500_TuneCP5_13p6TeV_madgraphMLM-pythia8/WJetsToQQ_HT1500to2500/260930_163126 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/Wto2Q-3Jets_Bin-HT-1500to2500_TuneCP5_13p6TeV_madgraphMLM-pythia8/WJetsToQQ_HT1500to2500/260930_163126/0000/forgedNtuple_1.root
+INPUT 052 2024MC Wto2Q-3Jets_Bin-HT-2500_TuneCP5_13p6TeV_madgraphMLM-pythia8/WJetsToQQ_HT2500toInf/260930_163131 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/Wto2Q-3Jets_Bin-HT-2500_TuneCP5_13p6TeV_madgraphMLM-pythia8/WJetsToQQ_HT2500toInf/260930_163131/0000/forgedNtuple_1.root
+INPUT 053 2024MC Wto2Q-3Jets_Bin-HT-400to800_TuneCP5_13p6TeV_madgraphMLM-pythia8/WJetsToQQ_HT400to800/260930_163118 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/Wto2Q-3Jets_Bin-HT-400to800_TuneCP5_13p6TeV_madgraphMLM-pythia8/WJetsToQQ_HT400to800/260930_163118/0000/forgedNtuple_1.root
+INPUT 054 2024MC Wto2Q-3Jets_Bin-HT-800to1500_TuneCP5_13p6TeV_madgraphMLM-pythia8/WJetsToQQ_HT800to1500/260930_163122 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/Wto2Q-3Jets_Bin-HT-800to1500_TuneCP5_13p6TeV_madgraphMLM-pythia8/WJetsToQQ_HT800to1500/260930_163122/0000/forgedNtuple_1.root
+INPUT 055 2024MC ZZ_TuneCP5_13p6TeV_pythia8/ZZ/260930_163113 branches=506 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/ZZ_TuneCP5_13p6TeV_pythia8/ZZ/260930_163113/0000/forgedNtuple_1.root
+INPUT 056 2024MC Zto2Q-4Jets_Bin-HT-1500to2500_TuneCP5_13p6TeV_madgraphMLM-pythia8/ZJetsToQQ_HT1500to2500/260930_163144 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/Zto2Q-4Jets_Bin-HT-1500to2500_TuneCP5_13p6TeV_madgraphMLM-pythia8/ZJetsToQQ_HT1500to2500/260930_163144/0000/forgedNtuple_1.root
+INPUT 057 2024MC Zto2Q-4Jets_Bin-HT-2500_TuneCP5_13p6TeV_madgraphMLM-pythia8/ZJetsToQQ_HT2500toInf/260930_163149 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/Zto2Q-4Jets_Bin-HT-2500_TuneCP5_13p6TeV_madgraphMLM-pythia8/ZJetsToQQ_HT2500toInf/260930_163149/0000/forgedNtuple_1.root
+INPUT 058 2024MC Zto2Q-4Jets_Bin-HT-400to800_TuneCP5_13p6TeV_madgraphMLM-pythia8/ZJetsToQQ_HT400to800/260930_163135 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/Zto2Q-4Jets_Bin-HT-400to800_TuneCP5_13p6TeV_madgraphMLM-pythia8/ZJetsToQQ_HT400to800/260930_163135/0000/forgedNtuple_1.root
+INPUT 059 2024MC Zto2Q-4Jets_Bin-HT-800to1500_TuneCP5_13p6TeV_madgraphMLM-pythia8/ZJetsToQQ_HT800to1500/260930_163140 branches=524 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/Zto2Q-4Jets_Bin-HT-800to1500_TuneCP5_13p6TeV_madgraphMLM-pythia8/ZJetsToQQ_HT800to1500/260930_163140/0000/forgedNtuple_1.root
+INPUT 060 2024Data JetMET0/JetMET0_Run2024C-MINIv6NANOv15-v1/260930_132643 branches=484 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET0/JetMET0_Run2024C-MINIv6NANOv15-v1/260930_132643/0000/forgedNtuple_1.root
+INPUT 061 2024Data JetMET0/JetMET0_Run2024D-MINIv6NANOv15-v1/260930_132706 branches=484 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET0/JetMET0_Run2024D-MINIv6NANOv15-v1/260930_132706/0000/forgedNtuple_1.root
+INPUT 062 2024Data JetMET0/JetMET0_Run2024E-MINIv6NANOv15-v1/260930_132710 branches=488 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET0/JetMET0_Run2024E-MINIv6NANOv15-v1/260930_132710/0000/forgedNtuple_1.root
+INPUT 063 2024Data JetMET0/JetMET0_Run2024F-MINIv6NANOv15-v2/260930_132716 branches=492 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET0/JetMET0_Run2024F-MINIv6NANOv15-v2/260930_132716/0000/forgedNtuple_1.root
+INPUT 064 2024Data JetMET0/JetMET0_Run2024G-MINIv6NANOv15-v2/260930_132720 branches=492 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET0/JetMET0_Run2024G-MINIv6NANOv15-v2/260930_132720/0000/forgedNtuple_1.root
+INPUT 065 2024Data JetMET0/JetMET0_Run2024H-MINIv6NANOv15-v2/260930_132722 branches=492 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET0/JetMET0_Run2024H-MINIv6NANOv15-v2/260930_132722/0000/forgedNtuple_1.root
+INPUT 066 2024Data JetMET0/JetMET0_Run2024I-MINIv6NANOv15-v2/260930_132725 branches=494 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET0/JetMET0_Run2024I-MINIv6NANOv15-v2/260930_132725/0000/forgedNtuple_1.root
+INPUT 067 2024Data JetMET0/JetMET0_Run2024I-MINIv6NANOv15_v2-v1/260930_132727 branches=494 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET0/JetMET0_Run2024I-MINIv6NANOv15_v2-v1/260930_132727/0000/forgedNtuple_1.root
+INPUT 068 2024Data JetMET1/JetMET1_Run2024C-MINIv6NANOv15-v1/260930_132730 branches=477 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET1/JetMET1_Run2024C-MINIv6NANOv15-v1/260930_132730/0000/forgedNtuple_1.root
+INPUT 069 2024Data JetMET1/JetMET1_Run2024D-MINIv6NANOv15-v1/260930_132734 branches=484 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET1/JetMET1_Run2024D-MINIv6NANOv15-v1/260930_132734/0000/forgedNtuple_1.root
+INPUT 070 2024Data JetMET1/JetMET1_Run2024E-MINIv6NANOv15-v1/260930_132737 branches=488 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET1/JetMET1_Run2024E-MINIv6NANOv15-v1/260930_132737/0000/forgedNtuple_1.root
+INPUT 071 2024Data JetMET1/JetMET1_Run2024F-MINIv6NANOv15-v2/260930_132741 branches=492 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET1/JetMET1_Run2024F-MINIv6NANOv15-v2/260930_132741/0000/forgedNtuple_1.root
+INPUT 072 2024Data JetMET1/JetMET1_Run2024G-MINIv6NANOv15-v2/260930_132744 branches=492 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET1/JetMET1_Run2024G-MINIv6NANOv15-v2/260930_132744/0000/forgedNtuple_1.root
+INPUT 073 2024Data JetMET1/JetMET1_Run2024H-MINIv6NANOv15-v2/260930_132747 branches=492 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET1/JetMET1_Run2024H-MINIv6NANOv15-v2/260930_132747/0000/forgedNtuple_1.root
+INPUT 074 2024Data JetMET1/JetMET1_Run2024I-MINIv6NANOv15-v1/260930_132749 branches=494 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET1/JetMET1_Run2024I-MINIv6NANOv15-v1/260930_132749/0000/forgedNtuple_1.root
+INPUT 075 2024Data JetMET1/JetMET1_Run2024I-MINIv6NANOv15_v2-v2/260930_132751 branches=494 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET1/JetMET1_Run2024I-MINIv6NANOv15_v2-v2/260930_132751/0000/forgedNtuple_1.root
+INPUT 076 2024Data Muon0/Muon0_Run2024C-MINIv6NANOv15-v1/260930_132753 branches=477 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/Muon0/Muon0_Run2024C-MINIv6NANOv15-v1/260930_132753/0000/forgedNtuple_1.root
+INPUT 077 2024Data Muon0/Muon0_Run2024D-MINIv6NANOv15-v1/260930_132756 branches=484 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/Muon0/Muon0_Run2024D-MINIv6NANOv15-v1/260930_132756/0000/forgedNtuple_1.root
+INPUT 078 2024Data Muon0/Muon0_Run2024E-MINIv6NANOv15-v1/260930_132759 branches=488 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/Muon0/Muon0_Run2024E-MINIv6NANOv15-v1/260930_132759/0000/forgedNtuple_1.root
+INPUT 079 2024Data Muon0/Muon0_Run2024F-MINIv6NANOv15-v1/260930_132803 branches=492 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/Muon0/Muon0_Run2024F-MINIv6NANOv15-v1/260930_132803/0000/forgedNtuple_1.root
+INPUT 080 2024Data Muon0/Muon0_Run2024G-MINIv6NANOv15-v1/260930_132807 branches=492 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/Muon0/Muon0_Run2024G-MINIv6NANOv15-v1/260930_132807/0000/forgedNtuple_1.root
+INPUT 081 2024Data Muon0/Muon0_Run2024H-MINIv6NANOv15-v1/260930_132809 branches=492 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/Muon0/Muon0_Run2024H-MINIv6NANOv15-v1/260930_132809/0000/forgedNtuple_1.root
+INPUT 082 2024Data Muon0/Muon0_Run2024I-MINIv6NANOv15-v1/260930_132813 branches=494 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/Muon0/Muon0_Run2024I-MINIv6NANOv15-v1/260930_132813/0000/forgedNtuple_1.root
+INPUT 083 2024Data Muon0/Muon0_Run2024I-MINIv6NANOv15_v2-v1/260930_132818 branches=494 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/Muon0/Muon0_Run2024I-MINIv6NANOv15_v2-v1/260930_132818/0000/forgedNtuple_1.root
+INPUT 084 2024Data Muon1/Muon1_Run2024C-MINIv6NANOv15-v1/260930_132821 branches=484 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/Muon1/Muon1_Run2024C-MINIv6NANOv15-v1/260930_132821/0000/forgedNtuple_1.root
+INPUT 085 2024Data Muon1/Muon1_Run2024D-MINIv6NANOv15-v1/260930_132825 branches=484 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/Muon1/Muon1_Run2024D-MINIv6NANOv15-v1/260930_132825/0000/forgedNtuple_1.root
+INPUT 086 2024Data Muon1/Muon1_Run2024E-MINIv6NANOv15-v1/260930_132829 branches=488 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/Muon1/Muon1_Run2024E-MINIv6NANOv15-v1/260930_132829/0000/forgedNtuple_1.root
+INPUT 087 2024Data Muon1/Muon1_Run2024F-MINIv6NANOv15-v1/260930_132832 branches=492 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/Muon1/Muon1_Run2024F-MINIv6NANOv15-v1/260930_132832/0000/forgedNtuple_1.root
+INPUT 088 2024Data Muon1/Muon1_Run2024G-MINIv6NANOv15-v2/260930_132835 branches=492 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/Muon1/Muon1_Run2024G-MINIv6NANOv15-v2/260930_132835/0000/forgedNtuple_1.root
+INPUT 089 2024Data Muon1/Muon1_Run2024H-MINIv6NANOv15-v2/260930_132839 branches=492 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/Muon1/Muon1_Run2024H-MINIv6NANOv15-v2/260930_132839/0000/forgedNtuple_1.root
+INPUT 090 2024Data Muon1/Muon1_Run2024I-MINIv6NANOv15-v1/260930_132842 branches=494 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/Muon1/Muon1_Run2024I-MINIv6NANOv15-v1/260930_132842/0000/forgedNtuple_1.root
+INPUT 091 2024Data Muon1/Muon1_Run2024I-MINIv6NANOv15_v2-v1/260930_132846 branches=494 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/Muon1/Muon1_Run2024I-MINIv6NANOv15_v2-v1/260930_132846/0000/forgedNtuple_1.root
+INPUT 092 2018MC QCD_HT1000to1500_TuneCP5_PSWeights_13TeV-madgraph-pythia8/QCD_HT1000to1500/260928_172006 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/QCD_HT1000to1500_TuneCP5_PSWeights_13TeV-madgraph-pythia8/QCD_HT1000to1500/260928_172006/0000/forgedNtuple_1.root
+INPUT 093 2018MC QCD_HT1500to2000_TuneCP5_PSWeights_13TeV-madgraph-pythia8/QCD_HT1500to2000/260928_172008 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/QCD_HT1500to2000_TuneCP5_PSWeights_13TeV-madgraph-pythia8/QCD_HT1500to2000/260928_172008/0000/forgedNtuple_1.root
+INPUT 094 2018MC QCD_HT2000toInf_TuneCP5_PSWeights_13TeV-madgraph-pythia8/QCD_HT2000toInf/260928_172011 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/QCD_HT2000toInf_TuneCP5_PSWeights_13TeV-madgraph-pythia8/QCD_HT2000toInf/260928_172011/0000/forgedNtuple_1.root
+INPUT 095 2018MC QCD_HT200to300_TuneCP5_PSWeights_13TeV-madgraph-pythia8/QCD_HT200to300/260928_171957 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/QCD_HT200to300_TuneCP5_PSWeights_13TeV-madgraph-pythia8/QCD_HT200to300/260928_171957/0000/forgedNtuple_1.root
+INPUT 096 2018MC QCD_HT300to500_TuneCP5_PSWeights_13TeV-madgraph-pythia8/QCD_HT300to500/260928_171959 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/QCD_HT300to500_TuneCP5_PSWeights_13TeV-madgraph-pythia8/QCD_HT300to500/260928_171959/0000/forgedNtuple_1.root
+INPUT 097 2018MC QCD_HT500to700_TuneCP5_PSWeights_13TeV-madgraph-pythia8/QCD_HT500to700/260928_172001 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/QCD_HT500to700_TuneCP5_PSWeights_13TeV-madgraph-pythia8/QCD_HT500to700/260928_172001/0000/forgedNtuple_1.root
+INPUT 098 2018MC QCD_HT700to1000_TuneCP5_PSWeights_13TeV-madgraph-pythia8/QCD_HT700to1000/260928_172004 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/QCD_HT700to1000_TuneCP5_PSWeights_13TeV-madgraph-pythia8/QCD_HT700to1000/260928_172004/0000/forgedNtuple_1.root
+INPUT 099 2018MC ST_s-channel_4f_hadronicDecays_TuneCP5_13TeV-amcatnlo-pythia8/ST_s_had/260928_172053 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/ST_s-channel_4f_hadronicDecays_TuneCP5_13TeV-amcatnlo-pythia8/ST_s_had/260928_172053/0000/forgedNtuple_1.root
+INPUT 100 2018MC ST_s-channel_4f_leptonDecays_TuneCP5_13TeV-amcatnlo-pythia8/ST_s_lep/260928_172051 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/ST_s-channel_4f_leptonDecays_TuneCP5_13TeV-amcatnlo-pythia8/ST_s_lep/260928_172051/0000/forgedNtuple_1.root
+INPUT 101 2018MC ST_t-channel_antitop_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8/ST_t_antitop/260928_172044 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/ST_t-channel_antitop_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8/ST_t_antitop/260928_172044/0000/forgedNtuple_1.root
+INPUT 102 2018MC ST_t-channel_top_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8/ST_t_top/260928_172042 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/ST_t-channel_top_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8/ST_t_top/260928_172042/0000/forgedNtuple_1.root
+INPUT 103 2018MC ST_tW_antitop_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8/ST_tW_antitop/260928_172048 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/ST_tW_antitop_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8/ST_tW_antitop/260928_172048/0000/forgedNtuple_1.root
+INPUT 104 2018MC ST_tW_top_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8/ST_tW_top/260928_172046 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/ST_tW_top_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8/ST_tW_top/260928_172046/0000/forgedNtuple_1.root
+INPUT 105 2018MC THQ_ctcvcp_4f_Hincl_TuneCP5_13TeV_madgraph_pythia8/tHq/260928_172017 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/THQ_ctcvcp_4f_Hincl_TuneCP5_13TeV_madgraph_pythia8/tHq/260928_172017/0000/forgedNtuple_1.root
+INPUT 106 2018MC TTTT_TuneCP5_13TeV-amcatnlo-pythia8/TTTT/260928_172040 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/TTTT_TuneCP5_13TeV-amcatnlo-pythia8/TTTT/260928_172040/0000/forgedNtuple_1.root
+INPUT 107 2018MC TTTWminus-DR1_TuneCP5_13TeV_amcatnlo-pythia8/TTTWminus/260928_172036 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/TTTWminus-DR1_TuneCP5_13TeV_amcatnlo-pythia8/TTTWminus/260928_172036/0000/forgedNtuple_1.root
+INPUT 108 2018MC TTTWplus-DR1_TuneCP5_13TeV_amcatnlo-pythia8/TTTWplus/260928_172038 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/TTTWplus-DR1_TuneCP5_13TeV_amcatnlo-pythia8/TTTWplus/260928_172038/0000/forgedNtuple_1.root
+INPUT 109 2018MC TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/TTbar_DiLep/260928_171948 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/TTbar_DiLep/260928_171948/0000/forgedNtuple_1.root
+INPUT 110 2018MC TTToHadronic_TuneCP5_13TeV-powheg-pythia8/TTbar_Hadronic/260928_171946 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/TTToHadronic_TuneCP5_13TeV-powheg-pythia8/TTbar_Hadronic/260928_171946/0000/forgedNtuple_1.root
+INPUT 111 2018MC TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/TTbar_SemiLep/260928_171943 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/TTbar_SemiLep/260928_171943/0000/forgedNtuple_1.root
+INPUT 112 2018MC TTWH_TuneCP5_13TeV-madgraph-pythia8/TTWH/260928_172032 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/TTWH_TuneCP5_13TeV-madgraph-pythia8/TTWH/260928_172032/0000/forgedNtuple_1.root
+INPUT 113 2018MC TTWJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/TTWJetsToLNu/260928_172023 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/TTWJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/TTWJetsToLNu/260928_172023/0000/forgedNtuple_1.root
+INPUT 114 2018MC TTWJetsToQQ_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/TTWJetsToQQ/260928_172021 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/TTWJetsToQQ_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/TTWJetsToQQ/260928_172021/0000/forgedNtuple_1.root
+INPUT 115 2018MC TTWW_TuneCP5_13TeV-madgraph-pythia8/TTWW/260928_172027 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/TTWW_TuneCP5_13TeV-madgraph-pythia8/TTWW/260928_172027/0000/forgedNtuple_1.root
+INPUT 116 2018MC TTWW_TuneCP5_13TeV-madgraph-pythia8/TTWW_ext1/260928_172030 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/TTWW_TuneCP5_13TeV-madgraph-pythia8/TTWW_ext1/260928_172030/0000/forgedNtuple_1.root
+INPUT 117 2018MC TTWZ_TuneCP5_13TeV-madgraph-pythia8/TTWZ/260928_172034 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/TTWZ_TuneCP5_13TeV-madgraph-pythia8/TTWZ/260928_172034/0000/forgedNtuple_1.root
+INPUT 118 2018MC TTZToLLNuNu_M-10_TuneCP5_13TeV-amcatnlo-pythia8/TTZToLLNuNu/260928_172025 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/TTZToLLNuNu_M-10_TuneCP5_13TeV-amcatnlo-pythia8/TTZToLLNuNu/260928_172025/0000/forgedNtuple_1.root
+INPUT 119 2018MC TTZToQQ_TuneCP5_13TeV-amcatnlo-pythia8/TTZToQQ/260928_172019 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/TTZToQQ_TuneCP5_13TeV-amcatnlo-pythia8/TTZToQQ/260928_172019/0000/forgedNtuple_1.root
+INPUT 120 2018MC TTbb_4f_TTTo2L2Nu_TuneCP5-Powheg-Openloops-Pythia8/TTbb_DiLep/260928_171955 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/TTbb_4f_TTTo2L2Nu_TuneCP5-Powheg-Openloops-Pythia8/TTbb_DiLep/260928_171955/0000/forgedNtuple_1.root
+INPUT 121 2018MC TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/TTbb_Hadronic/260928_171952 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/TTbb_4f_TTToHadronic_TuneCP5-Powheg-Openloops-Pythia8/TTbb_Hadronic/260928_171952/0000/forgedNtuple_1.root
+INPUT 122 2018MC TTbb_4f_TTToSemiLeptonic_TuneCP5-Powheg-Openloops-Pythia8/TTbb_SemiLep/260928_171950 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/TTbb_4f_TTToSemiLeptonic_TuneCP5-Powheg-Openloops-Pythia8/TTbb_SemiLep/260928_171950/0000/forgedNtuple_1.root
+INPUT 123 2018MC WJetsToQQ_HT-400to600_TuneCP5_13TeV-madgraphMLM-pythia8/WJetsToQQ_HT400to600/260928_172101 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/WJetsToQQ_HT-400to600_TuneCP5_13TeV-madgraphMLM-pythia8/WJetsToQQ_HT400to600/260928_172101/0000/forgedNtuple_1.root
+INPUT 124 2018MC WJetsToQQ_HT-600to800_TuneCP5_13TeV-madgraphMLM-pythia8/WJetsToQQ_HT600to800/260928_172103 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/WJetsToQQ_HT-600to800_TuneCP5_13TeV-madgraphMLM-pythia8/WJetsToQQ_HT600to800/260928_172103/0000/forgedNtuple_1.root
+INPUT 125 2018MC WJetsToQQ_HT-800toInf_TuneCP5_13TeV-madgraphMLM-pythia8/WJetsToQQ_HT800toInf/260928_172105 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/WJetsToQQ_HT-800toInf_TuneCP5_13TeV-madgraphMLM-pythia8/WJetsToQQ_HT800toInf/260928_172105/0000/forgedNtuple_1.root
+INPUT 126 2018MC WW_TuneCP5_13TeV-pythia8/WW/260928_172055 branches=533 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/WW_TuneCP5_13TeV-pythia8/WW/260928_172055/0000/forgedNtuple_1.root
+INPUT 127 2018MC WZ_TuneCP5_13TeV-pythia8/WZ/260928_172057 branches=533 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/WZ_TuneCP5_13TeV-pythia8/WZ/260928_172057/0000/forgedNtuple_1.root
+INPUT 128 2018MC ZJetsToQQ_HT-400to600_TuneCP5_13TeV-madgraphMLM-pythia8/ZJetsToQQ_HT400to600/260928_172107 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/ZJetsToQQ_HT-400to600_TuneCP5_13TeV-madgraphMLM-pythia8/ZJetsToQQ_HT400to600/260928_172107/0000/forgedNtuple_1.root
+INPUT 129 2018MC ZJetsToQQ_HT-600to800_TuneCP5_13TeV-madgraphMLM-pythia8/ZJetsToQQ_HT600to800/260928_172109 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/ZJetsToQQ_HT-600to800_TuneCP5_13TeV-madgraphMLM-pythia8/ZJetsToQQ_HT600to800/260928_172109/0000/forgedNtuple_1.root
+INPUT 130 2018MC ZJetsToQQ_HT-800toInf_TuneCP5_13TeV-madgraphMLM-pythia8/ZJetsToQQ_HT800toInf/260928_172111 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/ZJetsToQQ_HT-800toInf_TuneCP5_13TeV-madgraphMLM-pythia8/ZJetsToQQ_HT800toInf/260928_172111/0000/forgedNtuple_1.root
+INPUT 131 2018MC ZZ_TuneCP5_13TeV-pythia8/ZZ/260928_172059 branches=533 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/ZZ_TuneCP5_13TeV-pythia8/ZZ/260928_172059/0000/forgedNtuple_1.root
+INPUT 132 2018MC ttHToNonbb_M125_TuneCP5_13TeV-powheg-pythia8/ttHToNonbb/260928_172015 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/ttHToNonbb_M125_TuneCP5_13TeV-powheg-pythia8/ttHToNonbb/260928_172015/0000/forgedNtuple_1.root
+INPUT 133 2018MC ttHTobb_M125_TuneCP5_13TeV-powheg-pythia8/ttHTobb/260928_172013 branches=551 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_MC_v1/ttHTobb_M125_TuneCP5_13TeV-powheg-pythia8/ttHTobb/260928_172013/0000/forgedNtuple_1.root
+INPUT 134 2018Data JetHT/JetHT_Run2018A/260928_172222 branches=509 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_Data_v1/JetHT/JetHT_Run2018A/260928_172222/0000/forgedNtuple_1.root
+INPUT 135 2018Data JetHT/JetHT_Run2018B/260928_172224 branches=544 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_Data_v1/JetHT/JetHT_Run2018B/260928_172224/0000/forgedNtuple_1.root
+INPUT 136 2018Data JetHT/JetHT_Run2018C/260928_172227 branches=507 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_Data_v1/JetHT/JetHT_Run2018C/260928_172227/0000/forgedNtuple_1.root
+INPUT 137 2018Data JetHT/JetHT_Run2018D/260928_172229 branches=522 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_Data_v1/JetHT/JetHT_Run2018D/260928_172229/0000/forgedNtuple_1.root
+INPUT 138 2018Data SingleMuon/SingleMuon_Run2018A/260928_172231 branches=509 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_Data_v1/SingleMuon/SingleMuon_Run2018A/260928_172231/0000/forgedNtuple_1.root
+INPUT 139 2018Data SingleMuon/SingleMuon_Run2018B/260928_172233 branches=544 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_Data_v1/SingleMuon/SingleMuon_Run2018B/260928_172233/0000/forgedNtuple_1.root
+INPUT 140 2018Data SingleMuon/SingleMuon_Run2018C/260928_172235 branches=507 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_Data_v1/SingleMuon/SingleMuon_Run2018C/260928_172235/0000/forgedNtuple_1.root
+INPUT 141 2018Data SingleMuon/SingleMuon_Run2018D/260928_172237 branches=516 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2018UL_v15_had_Data_v1/SingleMuon/SingleMuon_Run2018D/260928_172237/0000/forgedNtuple_1.root
+MKVAR rc=0 union=788 conflicts=0
+PRUNE records_in=788 kept=302 dropped_HLT=486 dropped_L1=0 kept_menu=23
+KEEP_ABSENT HLT_HT300PT30_QuadJet_75_60_45_40_TripeCSV_p07 (WARN: in no input)
+KEEP_ABSENT HLT_PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0 (WARN: in no input)
+KEEP_ABSENT HLT_PFHT430_SixJet40_BTagCSV_p080 (WARN: in no input)
+KEEP_ABSENT HLT_PFHT380_SixJet32_DoubleBTagCSV_p075 (WARN: in no input)
+CODE_HLT names=11 missing=4 (sources: ttHHanalyzer_unified.cc, ttHHanalyzer_unified.h)
+CODE_MISSING HLT_HT300PT30_QuadJet_75_60_45_40_TripeCSV_p07 (read by the analyzer, not kept: add it to the keep list or an input that has it)
+CODE_MISSING HLT_PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0 (read by the analyzer, not kept: add it to the keep list or an input that has it)
+CODE_MISSING HLT_PFHT380_SixJet32_DoubleBTagCSV_p075 (read by the analyzer, not kept: add it to the keep list or an input that has it)
+CODE_MISSING HLT_PFHT430_SixJet40_BTagCSV_p080 (read by the analyzer, not kept: add it to the keep list or an input that has it)
+HEADER rc=0 lines=3251 md5_normalized=d66d72f16d2fa4f48f3520577b02fae9 (without the Created/Author lines)
+VARIABLES md5=c8e1a7cf942adb831bb27a455a7c8430 lines=308 records=302
+BEGIN VARIABLES c8e1a7cf942adb831bb27a455a7c8430
+Tree Events
+
+# tempTTHH tools/stage1/eventbuffer_manifest.py (STEP 24); treestream 8be42e8 v15 review: object size from the longest bound field, counters read, no ghost structs, read errors stop the job, varlist and single-mode tree fixed, merge type conflicts; test/v15check (troubleshooting A11-A17)
+# inputs: 142 files, one per dataset, from 2018Data, 2018MC, 2024Data, 2024MC
+# union 788 records; HLT_/L1_ records kept only from hlt_keep.txt (md5 448b4bc397a9a5ed28cfe9a5029860d3): 23 of 509
+
+int/Events/Electron_charge/Electron_charge/25 nElectron
+bool/Events/Electron_convVeto/Electron_convVeto/25 nElectron
+uchar/Events/Electron_cutBased/Electron_cutBased/25 nElectron
+float/Events/Electron_deltaEtaSC/Electron_deltaEtaSC/25 nElectron
+float/Events/Electron_dxy/Electron_dxy/25 nElectron
+float/Events/Electron_dz/Electron_dz/25 nElectron
+float/Events/Electron_eta/Electron_eta/25 nElectron
+float/Events/Electron_ip3d/Electron_ip3d/25 nElectron
+bool/Events/Electron_isEB/Electron_isEB/25 nElectron
+short/Events/Electron_jetIdx/Electron_jetIdx/25 nElectron
+uchar/Events/Electron_lostHits/Electron_lostHits/25 nElectron
+float/Events/Electron_mass/Electron_mass/25 nElectron
+float/Events/Electron_miniPFRelIso_all/Electron_miniPFRelIso_all/25 nElectron
+float/Events/Electron_miniPFRelIso_chg/Electron_miniPFRelIso_chg/25 nElectron
+float/Events/Electron_mvaIso/Electron_mvaIso/25 nElectron
+bool/Events/Electron_mvaIso_WP80/Electron_mvaIso_WP80/25 nElectron
+bool/Events/Electron_mvaIso_WP90/Electron_mvaIso_WP90/25 nElectron
+float/Events/Electron_mvaNoIso/Electron_mvaNoIso/25 nElectron
+bool/Events/Electron_mvaNoIso_WP80/Electron_mvaNoIso_WP80/25 nElectron
+bool/Events/Electron_mvaNoIso_WP90/Electron_mvaNoIso_WP90/25 nElectron
+int/Events/Electron_pdgId/Electron_pdgId/25 nElectron
+float/Events/Electron_pfRelIso03_all/Electron_pfRelIso03_all/25 nElectron
+float/Events/Electron_pfRelIso03_chg/Electron_pfRelIso03_chg/25 nElectron
+float/Events/Electron_pfRelIso04_all/Electron_pfRelIso04_all/25 nElectron
+float/Events/Electron_phi/Electron_phi/25 nElectron
+float/Events/Electron_promptMVA/Electron_promptMVA/25 nElectron
+float/Events/Electron_pt/Electron_pt/25 nElectron
+float/Events/Electron_r9/Electron_r9/25 nElectron
+float/Events/Electron_scEtOverPt/Electron_scEtOverPt/25 nElectron
+uchar/Events/Electron_seedGain/Electron_seedGain/25 nElectron
+float/Events/Electron_sip3d/Electron_sip3d/25 nElectron
+float/Events/Electron_superclusterEta/Electron_superclusterEta/25 nElectron
+uchar/Events/Electron_tightCharge/Electron_tightCharge/25 nElectron
+int/Events/Electron_vidNestedWPBitmap/Electron_vidNestedWPBitmap/25 nElectron
+bool/Events/Flag_BadChargedCandidateFilter/Flag_BadChargedCandidateFilter/1 
+bool/Events/Flag_BadChargedCandidateSummer16Filter/Flag_BadChargedCandidateSummer16Filter/1 
+bool/Events/Flag_BadPFMuonDzFilter/Flag_BadPFMuonDzFilter/1 
+bool/Events/Flag_BadPFMuonFilter/Flag_BadPFMuonFilter/1 
+bool/Events/Flag_BadPFMuonSummer16Filter/Flag_BadPFMuonSummer16Filter/1 
+bool/Events/Flag_CSCTightHalo2015Filter/Flag_CSCTightHalo2015Filter/1 
+bool/Events/Flag_CSCTightHaloFilter/Flag_CSCTightHaloFilter/1 
+bool/Events/Flag_CSCTightHaloTrkMuUnvetoFilter/Flag_CSCTightHaloTrkMuUnvetoFilter/1 
+bool/Events/Flag_EcalDeadCellBoundaryEnergyFilter/Flag_EcalDeadCellBoundaryEnergyFilter/1 
+bool/Events/Flag_EcalDeadCellTriggerPrimitiveFilter/Flag_EcalDeadCellTriggerPrimitiveFilter/1 
+bool/Events/Flag_HBHENoiseFilter/Flag_HBHENoiseFilter/1 
+bool/Events/Flag_HBHENoiseIsoFilter/Flag_HBHENoiseIsoFilter/1 
+bool/Events/Flag_HcalStripHaloFilter/Flag_HcalStripHaloFilter/1 
+bool/Events/Flag_chargedHadronTrackResolutionFilter/Flag_chargedHadronTrackResolutionFilter/1 
+bool/Events/Flag_ecalBadCalibFilter/Flag_ecalBadCalibFilter/1 
+bool/Events/Flag_ecalLaserCorrFilter/Flag_ecalLaserCorrFilter/1 
+bool/Events/Flag_eeBadScFilter/Flag_eeBadScFilter/1 
+bool/Events/Flag_globalSuperTightHalo2016Filter/Flag_globalSuperTightHalo2016Filter/1 
+bool/Events/Flag_globalTightHalo2016Filter/Flag_globalTightHalo2016Filter/1 
+bool/Events/Flag_goodVertices/Flag_goodVertices/1 
+bool/Events/Flag_hcalLaserEventFilter/Flag_hcalLaserEventFilter/1 
+bool/Events/Flag_hfNoisyHitsFilter/Flag_hfNoisyHitsFilter/1 
+bool/Events/Flag_muonBadTrackFilter/Flag_muonBadTrackFilter/1 
+bool/Events/Flag_trkPOGFilters/Flag_trkPOGFilters/1 
+bool/Events/Flag_trkPOG_logErrorTooManyClusters/Flag_trkPOG_logErrorTooManyClusters/1 
+bool/Events/Flag_trkPOG_manystripclus53X/Flag_trkPOG_manystripclus53X/1 
+bool/Events/Flag_trkPOG_toomanystripclus53X/Flag_trkPOG_toomanystripclus53X/1 
+bool/Events/HLT_IsoMu24/HLT_IsoMu24/1 
+bool/Events/HLT_IsoMu27/HLT_IsoMu27/1 
+bool/Events/HLT_PFHT1050/HLT_PFHT1050/1 
+bool/Events/HLT_PFHT330PT30_QuadPFJet_75_60_45_40/HLT_PFHT330PT30_QuadPFJet_75_60_45_40/1 
+float/Events/Jet_PNetRegPtRawCorr/Jet_PNetRegPtRawCorr/87 nJet
+float/Events/Jet_PNetRegPtRawCorrNeutrino/Jet_PNetRegPtRawCorrNeutrino/87 nJet
+float/Events/Jet_PNetRegPtRawRes/Jet_PNetRegPtRawRes/87 nJet
+float/Events/Jet_UParTAK4RegPtRawCorr/Jet_UParTAK4RegPtRawCorr/87 nJet
+float/Events/Jet_UParTAK4RegPtRawCorrNeutrino/Jet_UParTAK4RegPtRawCorrNeutrino/87 nJet
+float/Events/Jet_UParTAK4RegPtRawRes/Jet_UParTAK4RegPtRawRes/87 nJet
+float/Events/Jet_UParTAK4V1RegPtRawCorr/Jet_UParTAK4V1RegPtRawCorr/87 nJet
+float/Events/Jet_UParTAK4V1RegPtRawCorrNeutrino/Jet_UParTAK4V1RegPtRawCorrNeutrino/87 nJet
+float/Events/Jet_UParTAK4V1RegPtRawRes/Jet_UParTAK4V1RegPtRawRes/87 nJet
+float/Events/Jet_area/Jet_area/87 nJet
+float/Events/Jet_btagDeepFlavB/Jet_btagDeepFlavB/87 nJet
+float/Events/Jet_btagDeepFlavCvB/Jet_btagDeepFlavCvB/87 nJet
+float/Events/Jet_btagDeepFlavCvL/Jet_btagDeepFlavCvL/87 nJet
+float/Events/Jet_btagDeepFlavQG/Jet_btagDeepFlavQG/87 nJet
+float/Events/Jet_btagPNetB/Jet_btagPNetB/87 nJet
+float/Events/Jet_btagPNetCvB/Jet_btagPNetCvB/87 nJet
+float/Events/Jet_btagPNetCvL/Jet_btagPNetCvL/87 nJet
+float/Events/Jet_btagPNetQvG/Jet_btagPNetQvG/87 nJet
+float/Events/Jet_btagUParTAK4B/Jet_btagUParTAK4B/87 nJet
+float/Events/Jet_btagUParTAK4CvB/Jet_btagUParTAK4CvB/87 nJet
+float/Events/Jet_btagUParTAK4CvL/Jet_btagUParTAK4CvL/87 nJet
+float/Events/Jet_btagUParTAK4QvG/Jet_btagUParTAK4QvG/87 nJet
+float/Events/Jet_chEmEF/Jet_chEmEF/87 nJet
+float/Events/Jet_chHEF/Jet_chHEF/87 nJet
+uchar/Events/Jet_chMultiplicity/Jet_chMultiplicity/87 nJet
+short/Events/Jet_electronIdx1/Jet_electronIdx1/87 nJet
+short/Events/Jet_electronIdx2/Jet_electronIdx2/87 nJet
+float/Events/Jet_eta/Jet_eta/87 nJet
+float/Events/Jet_hfEmEF/Jet_hfEmEF/87 nJet
+float/Events/Jet_hfHEF/Jet_hfHEF/87 nJet
+float/Events/Jet_mass/Jet_mass/87 nJet
+float/Events/Jet_muEF/Jet_muEF/87 nJet
+short/Events/Jet_muonIdx1/Jet_muonIdx1/87 nJet
+short/Events/Jet_muonIdx2/Jet_muonIdx2/87 nJet
+float/Events/Jet_muonSubtrFactor/Jet_muonSubtrFactor/87 nJet
+uchar/Events/Jet_nConstituents/Jet_nConstituents/87 nJet
+uchar/Events/Jet_nElectrons/Jet_nElectrons/87 nJet
+uchar/Events/Jet_nMuons/Jet_nMuons/87 nJet
+float/Events/Jet_neEmEF/Jet_neEmEF/87 nJet
+float/Events/Jet_neHEF/Jet_neHEF/87 nJet
+uchar/Events/Jet_neMultiplicity/Jet_neMultiplicity/87 nJet
+float/Events/Jet_phi/Jet_phi/87 nJet
+float/Events/Jet_pt/Jet_pt/87 nJet
+float/Events/Jet_puIdDisc/Jet_puIdDisc/87 nJet
+float/Events/Jet_rawFactor/Jet_rawFactor/87 nJet
+int/Events/Muon_charge/Muon_charge/31 nMuon
+float/Events/Muon_dxy/Muon_dxy/31 nMuon
+float/Events/Muon_dz/Muon_dz/31 nMuon
+float/Events/Muon_eta/Muon_eta/31 nMuon
+uchar/Events/Muon_highPtId/Muon_highPtId/31 nMuon
+float/Events/Muon_ip3d/Muon_ip3d/31 nMuon
+bool/Events/Muon_isGlobal/Muon_isGlobal/31 nMuon
+bool/Events/Muon_isPFcand/Muon_isPFcand/31 nMuon
+bool/Events/Muon_isTracker/Muon_isTracker/31 nMuon
+short/Events/Muon_jetIdx/Muon_jetIdx/31 nMuon
+bool/Events/Muon_looseId/Muon_looseId/31 nMuon
+float/Events/Muon_mass/Muon_mass/31 nMuon
+bool/Events/Muon_mediumId/Muon_mediumId/31 nMuon
+bool/Events/Muon_mediumPromptId/Muon_mediumPromptId/31 nMuon
+uchar/Events/Muon_miniIsoId/Muon_miniIsoId/31 nMuon
+float/Events/Muon_miniPFRelIso_all/Muon_miniPFRelIso_all/31 nMuon
+float/Events/Muon_miniPFRelIso_chg/Muon_miniPFRelIso_chg/31 nMuon
+float/Events/Muon_mvaMuID/Muon_mvaMuID/31 nMuon
+uchar/Events/Muon_mvaMuID_WP/Muon_mvaMuID_WP/31 nMuon
+uchar/Events/Muon_nStations/Muon_nStations/31 nMuon
+uchar/Events/Muon_nTrackerLayers/Muon_nTrackerLayers/31 nMuon
+int/Events/Muon_pdgId/Muon_pdgId/31 nMuon
+uchar/Events/Muon_pfIsoId/Muon_pfIsoId/31 nMuon
+float/Events/Muon_pfRelIso03_all/Muon_pfRelIso03_all/31 nMuon
+float/Events/Muon_pfRelIso03_chg/Muon_pfRelIso03_chg/31 nMuon
+float/Events/Muon_pfRelIso04_all/Muon_pfRelIso04_all/31 nMuon
+float/Events/Muon_phi/Muon_phi/31 nMuon
+float/Events/Muon_promptMVA/Muon_promptMVA/31 nMuon
+float/Events/Muon_pt/Muon_pt/31 nMuon
+float/Events/Muon_ptErr/Muon_ptErr/31 nMuon
+float/Events/Muon_sip3d/Muon_sip3d/31 nMuon
+uchar/Events/Muon_tightCharge/Muon_tightCharge/31 nMuon
+bool/Events/Muon_tightId/Muon_tightId/31 nMuon
+uchar/Events/Muon_tkIsoId/Muon_tkIsoId/31 nMuon
+float/Events/Muon_tkRelIso/Muon_tkRelIso/31 nMuon
+float/Events/PFMET_covXX/PFMET_covXX/1 
+float/Events/PFMET_covXY/PFMET_covXY/1 
+float/Events/PFMET_covYY/PFMET_covYY/1 
+float/Events/PFMET_phi/PFMET_phi/1 
+float/Events/PFMET_phiUnclusteredDown/PFMET_phiUnclusteredDown/1 
+float/Events/PFMET_phiUnclusteredUp/PFMET_phiUnclusteredUp/1 
+float/Events/PFMET_pt/PFMET_pt/1 
+float/Events/PFMET_ptUnclusteredDown/PFMET_ptUnclusteredDown/1 
+float/Events/PFMET_ptUnclusteredUp/PFMET_ptUnclusteredUp/1 
+float/Events/PFMET_significance/PFMET_significance/1 
+float/Events/PFMET_sumEt/PFMET_sumEt/1 
+float/Events/PFMET_sumPtUnclustered/PFMET_sumPtUnclustered/1 
+uchar/Events/PV_npvs/PV_npvs/1 
+uchar/Events/PV_npvsGood/PV_npvsGood/1 
+float/Events/PV_z/PV_z/1 
+float/Events/PuppiMET_covXX/PuppiMET_covXX/1 
+float/Events/PuppiMET_covXY/PuppiMET_covXY/1 
+float/Events/PuppiMET_covYY/PuppiMET_covYY/1 
+float/Events/PuppiMET_phi/PuppiMET_phi/1 
+float/Events/PuppiMET_phiUnclusteredDown/PuppiMET_phiUnclusteredDown/1 
+float/Events/PuppiMET_phiUnclusteredUp/PuppiMET_phiUnclusteredUp/1 
+float/Events/PuppiMET_pt/PuppiMET_pt/1 
+float/Events/PuppiMET_ptUnclusteredDown/PuppiMET_ptUnclusteredDown/1 
+float/Events/PuppiMET_ptUnclusteredUp/PuppiMET_ptUnclusteredUp/1 
+float/Events/PuppiMET_significance/PuppiMET_significance/1 
+float/Events/PuppiMET_sumEt/PuppiMET_sumEt/1 
+float/Events/PuppiMET_sumPtUnclustered/PuppiMET_sumPtUnclustered/1 
+float/Events/RawPFMET_phi/RawPFMET_phi/1 
+float/Events/RawPFMET_pt/RawPFMET_pt/1 
+float/Events/RawPFMET_sumEt/RawPFMET_sumEt/1 
+float/Events/RawPuppiMET_phi/RawPuppiMET_phi/1 
+float/Events/RawPuppiMET_pt/RawPuppiMET_pt/1 
+float/Events/RawPuppiMET_sumEt/RawPuppiMET_sumEt/1 
+float/Events/Rho_fixedGridRhoAll/Rho_fixedGridRhoAll/1 
+float/Events/Rho_fixedGridRhoFastjetAll/Rho_fixedGridRhoFastjetAll/1 
+float/Events/Rho_fixedGridRhoFastjetCentral/Rho_fixedGridRhoFastjetCentral/1 
+float/Events/Rho_fixedGridRhoFastjetCentralCalo/Rho_fixedGridRhoFastjetCentralCalo/1 
+float/Events/Rho_fixedGridRhoFastjetCentralChargedPileUp/Rho_fixedGridRhoFastjetCentralChargedPileUp/1 
+float/Events/Rho_fixedGridRhoFastjetCentralNeutral/Rho_fixedGridRhoFastjetCentralNeutral/1 
+ulong64/Events/event/event/1 
+uint/Events/luminosityBlock/luminosityBlock/1 
+uint/Events/run/run/1 
+bool/Events/HLT_PFHT400_SixPFJet32/HLT_PFHT400_SixPFJet32/1 
+bool/Events/HLT_PFHT450_SixPFJet36/HLT_PFHT450_SixPFJet36/1 
+bool/Events/HLT_Ele30_WPTight_Gsf/HLT_Ele30_WPTight_Gsf/1 
+uchar/Events/Electron_genPartFlav/Electron_genPartFlav/25 nElectron
+short/Events/Electron_genPartIdx/Electron_genPartIdx/25 nElectron
+float/Events/GenJet_eta/GenJet_eta/31 nGenJet
+uchar/Events/GenJet_hadronFlavour/GenJet_hadronFlavour/31 nGenJet
+float/Events/GenJet_mass/GenJet_mass/31 nGenJet
+uchar/Events/GenJet_nBHadrons/GenJet_nBHadrons/31 nGenJet
+uchar/Events/GenJet_nCHadrons/GenJet_nCHadrons/31 nGenJet
+short/Events/GenJet_partonFlavour/GenJet_partonFlavour/31 nGenJet
+float/Events/GenJet_phi/GenJet_phi/31 nGenJet
+float/Events/GenJet_pt/GenJet_pt/31 nGenJet
+float/Events/GenMET_phi/GenMET_phi/1 
+float/Events/GenMET_pt/GenMET_pt/1 
+float/Events/GenPart_eta/GenPart_eta/231 nGenPart
+short/Events/GenPart_genPartIdxMother/GenPart_genPartIdxMother/231 nGenPart
+float/Events/GenPart_mass/GenPart_mass/231 nGenPart
+int/Events/GenPart_pdgId/GenPart_pdgId/231 nGenPart
+float/Events/GenPart_phi/GenPart_phi/231 nGenPart
+float/Events/GenPart_pt/GenPart_pt/231 nGenPart
+int/Events/GenPart_status/GenPart_status/231 nGenPart
+ushort/Events/GenPart_statusFlags/GenPart_statusFlags/231 nGenPart
+float/Events/Generator_binvar/Generator_binvar/1 
+int/Events/Generator_id1/Generator_id1/1 
+int/Events/Generator_id2/Generator_id2/1 
+float/Events/Generator_scalePDF/Generator_scalePDF/1 
+float/Events/Generator_weight/Generator_weight/1 
+float/Events/Generator_x1/Generator_x1/1 
+float/Events/Generator_x2/Generator_x2/1 
+float/Events/Generator_xpdf1/Generator_xpdf1/1 
+float/Events/Generator_xpdf2/Generator_xpdf2/1 
+short/Events/Jet_genJetIdx/Jet_genJetIdx/87 nJet
+uchar/Events/Jet_hadronFlavour/Jet_hadronFlavour/87 nJet
+short/Events/Jet_partonFlavour/Jet_partonFlavour/87 nJet
+uchar/Events/Muon_genPartFlav/Muon_genPartFlav/31 nMuon
+short/Events/Muon_genPartIdx/Muon_genPartIdx/31 nMuon
+float/Events/PSWeight/PSWeight/4 nPSWeight
+int/Events/Pileup_nPU/Pileup_nPU/1 
+float/Events/Pileup_nTrueInt/Pileup_nTrueInt/1 
+int/Events/genTtbarId/genTtbarId/1 
+float/Events/genWeight/genWeight/1 
+float/Events/LHEPdfWeight/LHEPdfWeight/103 nLHEPdfWeight
+float/Events/LHEReweightingWeight/LHEReweightingWeight/0 nLHEReweightingWeight
+float/Events/LHEScaleWeight/LHEScaleWeight/9 nLHEScaleWeight
+float/Events/LHEWeight_originalXWGTUP/LHEWeight_originalXWGTUP/1 
+float/Events/LHE_AlphaS/LHE_AlphaS/1 
+float/Events/LHE_HT/LHE_HT/1 
+float/Events/LHE_HTIncoming/LHE_HTIncoming/1 
+uchar/Events/LHE_Nb/LHE_Nb/1 
+uchar/Events/LHE_Nc/LHE_Nc/1 
+uchar/Events/LHE_Nglu/LHE_Nglu/1 
+uchar/Events/LHE_Njets/LHE_Njets/1 
+uchar/Events/LHE_NpLO/LHE_NpLO/1 
+uchar/Events/LHE_NpNLO/LHE_NpNLO/1 
+uchar/Events/LHE_Nuds/LHE_Nuds/1 
+float/Events/LHE_Vpt/LHE_Vpt/1 
+bool/Events/HLT_PFHT280_QuadPFJet30_PNet2BTagMean0p55/HLT_PFHT280_QuadPFJet30_PNet2BTagMean0p55/1 
+bool/Events/HLT_PFHT280_QuadPFJet30_PNet2BTagMean0p60/HLT_PFHT280_QuadPFJet30_PNet2BTagMean0p60/1 
+bool/Events/HLT_PFHT280_QuadPFJet35_PNet2BTagMean0p60/HLT_PFHT280_QuadPFJet35_PNet2BTagMean0p60/1 
+bool/Events/HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepJet_4p5/HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepJet_4p5/1 
+bool/Events/HLT_PFHT340_QuadPFJet70_50_40_40_PNet2BTagMean0p70/HLT_PFHT340_QuadPFJet70_50_40_40_PNet2BTagMean0p70/1 
+bool/Events/HLT_PFHT400_FivePFJet_120_120_60_30_30_PNet2BTag_4p3/HLT_PFHT400_FivePFJet_120_120_60_30_30_PNet2BTag_4p3/1 
+bool/Events/HLT_PFHT400_FivePFJet_120_120_60_30_30_PNet2BTag_5p6/HLT_PFHT400_FivePFJet_120_120_60_30_30_PNet2BTag_5p6/1 
+bool/Events/HLT_PFHT400_SixPFJet32_PNet2BTagMean0p50/HLT_PFHT400_SixPFJet32_PNet2BTagMean0p50/1 
+bool/Events/HLT_PFHT450_SixPFJet36_PNetBTag0p35/HLT_PFHT450_SixPFJet36_PNetBTag0p35/1 
+bool/Events/HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_2p0/HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_2p0/1 
+bool/Events/HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_4p3/HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_4p3/1 
+bool/Events/Flag_METFilters/Flag_METFilters/1 
+bool/Events/Electron_mvaIso_WPL/Electron_mvaIso_WPL/25 nElectron
+bool/Events/Electron_mvaNoIso_WPL/Electron_mvaNoIso_WPL/25 nElectron
+bool/Events/HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5/HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5/1 
+bool/Events/HLT_PFHT400_SixPFJet32_DoublePFBTagDeepCSV_2p94/HLT_PFHT400_SixPFJet32_DoublePFBTagDeepCSV_2p94/1 
+bool/Events/HLT_PFHT450_SixPFJet36_PFBTagDeepCSV_1p59/HLT_PFHT450_SixPFJet36_PFBTagDeepCSV_1p59/1 
+float/Events/L1PreFiringWeight_Dn/L1PreFiringWeight_Dn/1 
+float/Events/L1PreFiringWeight_ECAL_Dn/L1PreFiringWeight_ECAL_Dn/1 
+float/Events/L1PreFiringWeight_ECAL_Nom/L1PreFiringWeight_ECAL_Nom/1 
+float/Events/L1PreFiringWeight_ECAL_Up/L1PreFiringWeight_ECAL_Up/1 
+float/Events/L1PreFiringWeight_Muon_Nom/L1PreFiringWeight_Muon_Nom/1 
+float/Events/L1PreFiringWeight_Muon_StatDn/L1PreFiringWeight_Muon_StatDn/1 
+float/Events/L1PreFiringWeight_Muon_StatUp/L1PreFiringWeight_Muon_StatUp/1 
+float/Events/L1PreFiringWeight_Muon_SystDn/L1PreFiringWeight_Muon_SystDn/1 
+float/Events/L1PreFiringWeight_Muon_SystUp/L1PreFiringWeight_Muon_SystUp/1 
+float/Events/L1PreFiringWeight_Nom/L1PreFiringWeight_Nom/1 
+float/Events/L1PreFiringWeight_Up/L1PreFiringWeight_Up/1 
+bool/Events/Flag_BadChargedCandidateFilter_pRECO/Flag_BadChargedCandidateFilter_pRECO/1 
+bool/Events/Flag_BadChargedCandidateSummer16Filter_pRECO/Flag_BadChargedCandidateSummer16Filter_pRECO/1 
+bool/Events/Flag_BadPFMuonDzFilter_pRECO/Flag_BadPFMuonDzFilter_pRECO/1 
+bool/Events/Flag_BadPFMuonFilter_pRECO/Flag_BadPFMuonFilter_pRECO/1 
+bool/Events/Flag_BadPFMuonSummer16Filter_pRECO/Flag_BadPFMuonSummer16Filter_pRECO/1 
+bool/Events/Flag_CSCTightHalo2015Filter_pRECO/Flag_CSCTightHalo2015Filter_pRECO/1 
+bool/Events/Flag_CSCTightHaloFilter_pRECO/Flag_CSCTightHaloFilter_pRECO/1 
+bool/Events/Flag_CSCTightHaloTrkMuUnvetoFilter_pRECO/Flag_CSCTightHaloTrkMuUnvetoFilter_pRECO/1 
+bool/Events/Flag_EcalDeadCellBoundaryEnergyFilter_pRECO/Flag_EcalDeadCellBoundaryEnergyFilter_pRECO/1 
+bool/Events/Flag_EcalDeadCellTriggerPrimitiveFilter_pRECO/Flag_EcalDeadCellTriggerPrimitiveFilter_pRECO/1 
+bool/Events/Flag_HBHENoiseFilter_pRECO/Flag_HBHENoiseFilter_pRECO/1 
+bool/Events/Flag_HBHENoiseIsoFilter_pRECO/Flag_HBHENoiseIsoFilter_pRECO/1 
+bool/Events/Flag_HcalStripHaloFilter_pRECO/Flag_HcalStripHaloFilter_pRECO/1 
+bool/Events/Flag_chargedHadronTrackResolutionFilter_pRECO/Flag_chargedHadronTrackResolutionFilter_pRECO/1 
+bool/Events/Flag_ecalBadCalibFilter_pRECO/Flag_ecalBadCalibFilter_pRECO/1 
+bool/Events/Flag_ecalLaserCorrFilter_pRECO/Flag_ecalLaserCorrFilter_pRECO/1 
+bool/Events/Flag_eeBadScFilter_pRECO/Flag_eeBadScFilter_pRECO/1 
+bool/Events/Flag_globalSuperTightHalo2016Filter_pRECO/Flag_globalSuperTightHalo2016Filter_pRECO/1 
+bool/Events/Flag_globalTightHalo2016Filter_pRECO/Flag_globalTightHalo2016Filter_pRECO/1 
+bool/Events/Flag_goodVertices_pRECO/Flag_goodVertices_pRECO/1 
+bool/Events/Flag_hcalLaserEventFilter_pRECO/Flag_hcalLaserEventFilter_pRECO/1 
+bool/Events/Flag_hfNoisyHitsFilter_pRECO/Flag_hfNoisyHitsFilter_pRECO/1 
+bool/Events/Flag_muonBadTrackFilter_pRECO/Flag_muonBadTrackFilter_pRECO/1 
+bool/Events/Flag_trkPOGFilters_pRECO/Flag_trkPOGFilters_pRECO/1 
+bool/Events/Flag_trkPOG_logErrorTooManyClusters_pRECO/Flag_trkPOG_logErrorTooManyClusters_pRECO/1 
+bool/Events/Flag_trkPOG_manystripclus53X_pRECO/Flag_trkPOG_manystripclus53X_pRECO/1 
+bool/Events/Flag_trkPOG_toomanystripclus53X_pRECO/Flag_trkPOG_toomanystripclus53X_pRECO/1 
+bool/Events/Flag_METFilters_pRECO/Flag_METFilters_pRECO/1 
+bool/Events/HLT_PFHT380_SixPFJet32_DoublePFBTagCSV_2p2/HLT_PFHT380_SixPFJet32_DoublePFBTagCSV_2p2/1 
+bool/Events/HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5/HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5/1 
+END VARIABLES
+RESULT FAIL (4 HLT names read by the analyzer are not kept; 1 bases or tasks without a readable file (MISSINGBASE, EMPTYBASE, NOINPUT))
+===========================================================================
+end_utc     : 2026-10-05T09:45:45Z
+wall_s      : 68
+EXIT        : 1
+outputs (files of this repo changed during the run; tmp/ condor/ runlogs/ left out): 93
+       14440  filelistTier3_2024/MANIFEST.tsv
+       24374  filelistTier3_2024/filelist_JetMET0_Run2024C-MINIv6NANOv15-v1.txt
+       22995  filelistTier3_2024/filelist_JetMET0_Run2024D-MINIv6NANOv15-v1.txt
+       35235  filelistTier3_2024/filelist_JetMET0_Run2024E-MINIv6NANOv15-v1.txt
+       55896  filelistTier3_2024/filelist_JetMET0_Run2024F-MINIv6NANOv15-v2.txt
+       66908  filelistTier3_2024/filelist_JetMET0_Run2024G-MINIv6NANOv15-v2.txt
+       12455  filelistTier3_2024/filelist_JetMET0_Run2024H-MINIv6NANOv15-v2.txt
+       22689  filelistTier3_2024/filelist_JetMET0_Run2024I-MINIv6NANOv15-v2.txt
+       27816  filelistTier3_2024/filelist_JetMET0_Run2024I-MINIv6NANOv15_v2-v1.txt
+       16571  filelistTier3_2024/filelist_JetMET1_Run2024C-MINIv6NANOv15-v1.txt
+       23607  filelistTier3_2024/filelist_JetMET1_Run2024D-MINIv6NANOv15-v1.txt
+       34471  filelistTier3_2024/filelist_JetMET1_Run2024E-MINIv6NANOv15-v1.txt
+       58185  filelistTier3_2024/filelist_JetMET1_Run2024F-MINIv6NANOv15-v2.txt
+       68895  filelistTier3_2024/filelist_JetMET1_Run2024G-MINIv6NANOv15-v2.txt
+       11543  filelistTier3_2024/filelist_JetMET1_Run2024H-MINIv6NANOv15-v2.txt
+       12455  filelistTier3_2024/filelist_JetMET1_Run2024I-MINIv6NANOv15-v1.txt
+       17988  filelistTier3_2024/filelist_JetMET1_Run2024I-MINIv6NANOv15_v2-v2.txt
+       15239  filelistTier3_2024/filelist_Muon0_Run2024C-MINIv6NANOv15-v1.txt
+       26712  filelistTier3_2024/filelist_Muon0_Run2024D-MINIv6NANOv15-v1.txt
+       37887  filelistTier3_2024/filelist_Muon0_Run2024E-MINIv6NANOv15-v1.txt
+       88398  filelistTier3_2024/filelist_Muon0_Run2024F-MINIv6NANOv15-v1.txt
+      141144  filelistTier3_2024/filelist_Muon0_Run2024G-MINIv6NANOv15-v1.txt
+       22540  filelistTier3_2024/filelist_Muon0_Run2024H-MINIv6NANOv15-v1.txt
+       25669  filelistTier3_2024/filelist_Muon0_Run2024I-MINIv6NANOv15-v1.txt
+       26340  filelistTier3_2024/filelist_Muon0_Run2024I-MINIv6NANOv15_v2-v1.txt
+       13903  filelistTier3_2024/filelist_Muon1_Run2024C-MINIv6NANOv15-v1.txt
+       24924  filelistTier3_2024/filelist_Muon1_Run2024D-MINIv6NANOv15-v1.txt
+       25371  filelistTier3_2024/filelist_Muon1_Run2024E-MINIv6NANOv15-v1.txt
+       80054  filelistTier3_2024/filelist_Muon1_Run2024F-MINIv6NANOv15-v1.txt
+       84077  filelistTier3_2024/filelist_Muon1_Run2024G-MINIv6NANOv15-v2.txt
+       13755  filelistTier3_2024/filelist_Muon1_Run2024H-MINIv6NANOv15-v2.txt
+       13903  filelistTier3_2024/filelist_Muon1_Run2024I-MINIv6NANOv15-v1.txt
+       20108  filelistTier3_2024/filelist_Muon1_Run2024I-MINIv6NANOv15_v2-v1.txt
+       42452  filelistTier3_2024/filelist_QCD_HT1000to1200.txt
+       43592  filelistTier3_2024/filelist_QCD_HT1200to1500.txt
+       47012  filelistTier3_2024/filelist_QCD_HT1500to2000.txt
+       40335  filelistTier3_2024/filelist_QCD_HT2000toInf.txt
+       30210  filelistTier3_2024/filelist_QCD_HT200to400.txt
+       32070  filelistTier3_2024/filelist_QCD_HT400to600.txt
+       42301  filelistTier3_2024/filelist_QCD_HT600to800.txt
+  ... and 53 more
+log         : runlogs/run_knu_eventbuffer_manifest_20261005_094436.log
+log_kb      : 62
+=== END ===================================================================

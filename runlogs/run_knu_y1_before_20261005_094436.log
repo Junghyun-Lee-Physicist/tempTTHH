@@ -1,0 +1,39 @@
+=== RUNLOG ================================================================
+step        : knu_y1_before
+start_utc   : 2026-10-05T09:44:36Z
+host        : cluster337   user: jhlee
+cwd         : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+repo        : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+git_head    : 0a2693ca   modified_tracked_files: 1
+cmd         : /bin/bash tools/stage1/y1_reference.sh before 
+CMSSW_BASE  : /u/user/jhlee/ttHH/CMSSW_14_2_1
+root        : 6.30.09
+python3     : Python 3.9.14
+condor_job  : 2180620.0  slot slot1_16   jobdir: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/runlog/knu_y1_before_20261005_094423
+===========================================================================
+[condor_run] worker cluster337  scratch /home/condor/dir_2151474
+[condor_run] cmsenv ok: CMSSW_BASE=/u/user/jhlee/ttHH/CMSSW_14_2_1  root 6.30.09  Python 3.9.14  TMPDIR=/home/condor/dir_2151474
+[condor_run] running in /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH: /bin/bash tools/stage1/y1_reference.sh before 
+----------------------------------------------------------------------------
+tag         : before
+executable  : 30a791b2af7b07e14bee4451b684c18c  2026-10-05T02:52:40
+libraries   : 1fc9811927fb8237e952a9f5e7906410 lib/libToolsForAnalysis.so  
+eventBuffer : b08a58b47de9dfba3f3e53c1763ac49c (the header on disk; the executable may be older)
+tt+nb dir   : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/DerivedCorr/expandedTtbarId/2017
+== mc (TTbar_Hadronic)
+ERROR input missing or empty: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2017UL_fullNano_v20/TTToHadronic_TuneCP5_13TeV-powheg-pythia8/TTbar_Hadronic/260622_074646/0000/slimmedNtuple_100.root
+== jetht_F (JetHT_Run2017F)
+ERROR input missing or empty: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2017UL_fullNano_v20/JetHT/JetHT_Run2017F/260622_074935/0000/slimmedNtuple_37.root
+== btag_F (BTagCSV_Run2017F)
+ERROR input missing or empty: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2017UL_fullNano_v20/BTagCSV/BTagCSV_Run2017F/260622_074946/0000/slimmedNtuple_66.root
+== jetht_B (JetHT_Run2017B)
+ERROR input missing or empty: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2017UL_fullNano_v20/JetHT/JetHT_Run2017B/260622_074927/0000/slimmedNtuple_4.root
+outputs     : condor/y1/before/
+===========================================================================
+end_utc     : 2026-10-05T09:44:38Z
+wall_s      : 2
+EXIT        : 2
+outputs     : (no file of this repo changed, apart from tmp/ condor/ runlogs/)
+log         : runlogs/run_knu_y1_before_20261005_094436.log
+log_kb      : 2
+=== END ===================================================================

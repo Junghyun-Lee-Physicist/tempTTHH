@@ -1,0 +1,64 @@
+=== RUNLOG ================================================================
+step        : knu_test_stage1
+start_utc   : 2026-10-05T09:41:42Z
+host        : cms01   user: jhlee
+cwd         : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+repo        : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+git_head    : 0a2693ca   modified_tracked_files: 0
+cmd         : python3 tools/stage1/test_stage1.py --treestream ../treestream 
+CMSSW_BASE  : /u/user/jhlee/ttHH/CMSSW_14_2_1
+root        : 6.30.09
+python3     : Python 3.9.14
+===========================================================================
+WORK /tmp/test_stage1_82fzq_0i
+PASS  manifest: exit 0
+PASS  manifest: one input per CRAB task, the readable file
+PASS  manifest: the 0-byte file is skipped with a reason
+PASS  manifest: failed/ is not looked at
+PASS  manifest: unique link names although the files are all forgedNtuple_1.root
+PASS  manifest: HLT_Old_v, HLT_New, L1_SingleMu, L1_Other dropped; 2 HLT kept
+PASS  manifest: keep-list name in no input -> KEEP_ABSENT
+PASS  manifest: analyzer HLT names found, none missing (comments ignored)
+PASS  manifest: type conflict summarized per type
+PASS  manifest: variables block with its md5
+PASS  manifest: block has the v9 and v15 branches (both tasks) and only the kept HLT
+PASS  manifest: header generated (md5 without Created/Author)
+PASS  manifest: RESULT OK
+PASS  manifest: a missing base -> MISSINGBASE, exit 1
+PASS  manifest: a base that matches no file -> EMPTYBASE, exit 1
+PASS  manifest: relative --base works (links point to absolute paths)
+PASS  manifest: an analyzer HLT name not kept -> CODE_MISSING, exit 1
+PASS  manifest: a task without a readable file -> NOINPUT, exit 1
+PASS  record: check-only reproduces the header
+PASS  record: write mode exit 0
+PASS  record: stamp after the include guard, with the variables md5
+PASS  record: Created/Author lines fixed (no time, no user)
+PASS  record: eventBuffer_variables.txt = the record block
+PASS  record: treestream.cc/.h copied from the fork
+PASS  record: an edited block is refused (exit 1)
+PASS  record: the record of a failed manifest run is refused (exit 2)
+PASS  record: a fork with local changes in treestream.cc is refused (exit 1)
+PASS  pu mcprofile: a 0-byte file -> BADFILE, exit 3, profile still made
+PASS  pu mcprofile: counts + under + overflow = events
+PASS  pu mcprofile: a branch the files do not have -> exit 1, no profile
+PASS  pu weights: exit 0, correctionlib read-back within 1e-12
+PASS  pu weights: jsonpog shape (inputs, nominal/up/down, clamp, 101 edges)
+PASS  pu weights: sum m*w = 1 - lost data
+PASS  pu weights: a data histogram in another binning -> exit 1
+PASS  y1: identical histograms, one new only in B -> PASS
+PASS  y1: a changed cutflow bin -> FAIL with both cutflows
+PASS  y1: a histogram gone in B -> FAIL (ONLY_A)
+PASS  y1: a NaN bin in B -> FAIL
+PASS  y1: a file only in B (A wrote no output) -> FAIL
+PASS  y1: a tree value changed, same entries -> FAIL
+PASS  y1: an EXPECTED run absent in both directories -> FAIL
+PASS  y1: every EXPECTED run present and identical -> PASS
+RESULT: 42 PASS, 0 FAIL
+===========================================================================
+end_utc     : 2026-10-05T09:43:39Z
+wall_s      : 115
+EXIT        : 0
+outputs     : (no file of this repo changed, apart from tmp/ condor/ runlogs/)
+log         : runlogs/run_knu_test_stage1_20261005_094141.log
+log_kb      : 3
+=== END ===================================================================

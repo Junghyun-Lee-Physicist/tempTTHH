@@ -1,0 +1,72 @@
+=== RUNLOG ================================================================
+step        : knu_pu_mcprofile
+start_utc   : 2026-10-05T09:44:57Z
+host        : cluster347   user: jhlee
+cwd         : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+repo        : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+git_head    : 0a2693ca   modified_tracked_files: 1
+cmd         : python3 tools/stage2/pu_weights.py mcprofile --glob /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1_pilot/\*/\*/\*/\*/\*.root --binning-from DerivedCorr/PU/2024_Summer24/input/dataPileupHistogram-2024CDEFGHI_Golden-69200ub.root 
+CMSSW_BASE  : /u/user/jhlee/ttHH/CMSSW_14_2_1
+root        : 6.30.09
+python3     : Python 3.9.14
+condor_job  : 2180622.0  slot slot1_6   jobdir: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/runlog/knu_pu_mcprofile_20261005_094433
+===========================================================================
+[condor_run] worker cluster347  scratch /home/condor/dir_2832420
+[condor_run] cmsenv ok: CMSSW_BASE=/u/user/jhlee/ttHH/CMSSW_14_2_1  root 6.30.09  Python 3.9.14  TMPDIR=/home/condor/dir_2832420
+[condor_run] running in /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH: python3 tools/stage2/pu_weights.py mcprofile --glob /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1_pilot/\*/\*/\*/\*/\*.root --binning-from DerivedCorr/PU/2024_Summer24/input/dataPileupHistogram-2024CDEFGHI_Golden-69200ub.root 
+----------------------------------------------------------------------------
+PUMC_FILES good=76 bad=0 events=4800000 branch=Pileup_nTrueInt tree=Events
+PUMC_BINNING nbins=100 first=0 last=100 uniform=yes edges_md5=e1c23e6fbd553f38b60aa4a9bd9ec555 source=DerivedCorr/PU/2024_Summer24/input/dataPileupHistogram-2024CDEFGHI_Golden-69200ub.root:pileup
+PUMC_STATS entries=4800000 underflow=0 overflow=0 mean=45.420374 rms=9.537219
+PUMC_EDGES 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100
+PUMC_COUNTS 53,207,266,318,391,400,428,481,429,449,659,796,550,693,1229,2711,4002,4413,4452,4522,5255,6381,9006,14236,23427,35907,49408,61555,70723,78225,83993,89522,91018,95887,97433,99518,101182,102690,106152,109635,111840,115391,118936,125253,132821,145353,164939,187941,211962,232814,247457,257152,251985,237651,215287,183839,148738,112231,82168,58010,38031,24323,15169,9385,5652,3658,1786,928,440,166,59,23,8,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+RESULT OK
+===========================================================================
+end_utc     : 2026-10-05T09:45:39Z
+wall_s      : 42
+EXIT        : 0
+outputs (files of this repo changed during the run; tmp/ condor/ runlogs/ left out): 93
+       14440  filelistTier3_2024/MANIFEST.tsv
+       24374  filelistTier3_2024/filelist_JetMET0_Run2024C-MINIv6NANOv15-v1.txt
+       22995  filelistTier3_2024/filelist_JetMET0_Run2024D-MINIv6NANOv15-v1.txt
+       35235  filelistTier3_2024/filelist_JetMET0_Run2024E-MINIv6NANOv15-v1.txt
+       55896  filelistTier3_2024/filelist_JetMET0_Run2024F-MINIv6NANOv15-v2.txt
+       66908  filelistTier3_2024/filelist_JetMET0_Run2024G-MINIv6NANOv15-v2.txt
+       12455  filelistTier3_2024/filelist_JetMET0_Run2024H-MINIv6NANOv15-v2.txt
+       22689  filelistTier3_2024/filelist_JetMET0_Run2024I-MINIv6NANOv15-v2.txt
+       27816  filelistTier3_2024/filelist_JetMET0_Run2024I-MINIv6NANOv15_v2-v1.txt
+       16571  filelistTier3_2024/filelist_JetMET1_Run2024C-MINIv6NANOv15-v1.txt
+       23607  filelistTier3_2024/filelist_JetMET1_Run2024D-MINIv6NANOv15-v1.txt
+       34471  filelistTier3_2024/filelist_JetMET1_Run2024E-MINIv6NANOv15-v1.txt
+       58185  filelistTier3_2024/filelist_JetMET1_Run2024F-MINIv6NANOv15-v2.txt
+       68895  filelistTier3_2024/filelist_JetMET1_Run2024G-MINIv6NANOv15-v2.txt
+       11543  filelistTier3_2024/filelist_JetMET1_Run2024H-MINIv6NANOv15-v2.txt
+       12455  filelistTier3_2024/filelist_JetMET1_Run2024I-MINIv6NANOv15-v1.txt
+       17988  filelistTier3_2024/filelist_JetMET1_Run2024I-MINIv6NANOv15_v2-v2.txt
+       15239  filelistTier3_2024/filelist_Muon0_Run2024C-MINIv6NANOv15-v1.txt
+       26712  filelistTier3_2024/filelist_Muon0_Run2024D-MINIv6NANOv15-v1.txt
+       37887  filelistTier3_2024/filelist_Muon0_Run2024E-MINIv6NANOv15-v1.txt
+       88398  filelistTier3_2024/filelist_Muon0_Run2024F-MINIv6NANOv15-v1.txt
+      141144  filelistTier3_2024/filelist_Muon0_Run2024G-MINIv6NANOv15-v1.txt
+       22540  filelistTier3_2024/filelist_Muon0_Run2024H-MINIv6NANOv15-v1.txt
+       25669  filelistTier3_2024/filelist_Muon0_Run2024I-MINIv6NANOv15-v1.txt
+       26340  filelistTier3_2024/filelist_Muon0_Run2024I-MINIv6NANOv15_v2-v1.txt
+       13903  filelistTier3_2024/filelist_Muon1_Run2024C-MINIv6NANOv15-v1.txt
+       24924  filelistTier3_2024/filelist_Muon1_Run2024D-MINIv6NANOv15-v1.txt
+       25371  filelistTier3_2024/filelist_Muon1_Run2024E-MINIv6NANOv15-v1.txt
+       80054  filelistTier3_2024/filelist_Muon1_Run2024F-MINIv6NANOv15-v1.txt
+       84077  filelistTier3_2024/filelist_Muon1_Run2024G-MINIv6NANOv15-v2.txt
+       13755  filelistTier3_2024/filelist_Muon1_Run2024H-MINIv6NANOv15-v2.txt
+       13903  filelistTier3_2024/filelist_Muon1_Run2024I-MINIv6NANOv15-v1.txt
+       20108  filelistTier3_2024/filelist_Muon1_Run2024I-MINIv6NANOv15_v2-v1.txt
+       42452  filelistTier3_2024/filelist_QCD_HT1000to1200.txt
+       43592  filelistTier3_2024/filelist_QCD_HT1200to1500.txt
+       47012  filelistTier3_2024/filelist_QCD_HT1500to2000.txt
+       40335  filelistTier3_2024/filelist_QCD_HT2000toInf.txt
+       30210  filelistTier3_2024/filelist_QCD_HT200to400.txt
+       32070  filelistTier3_2024/filelist_QCD_HT400to600.txt
+       42301  filelistTier3_2024/filelist_QCD_HT600to800.txt
+  ... and 53 more
+log         : runlogs/run_knu_pu_mcprofile_20261005_094457.log
+log_kb      : 5
+=== END ===================================================================
