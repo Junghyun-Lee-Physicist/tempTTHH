@@ -1,0 +1,217 @@
+=== RUNLOG ================================================================
+step        : knu_smoke_2024
+start_utc   : 2026-10-05T12:10:49Z
+host        : cluster337   user: jhlee
+cwd         : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+repo        : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+git_head    : f6bd444d   modified_tracked_files: 1
+cmd         : /bin/bash tools/stage3/smoke_2024.sh 
+CMSSW_BASE  : /u/user/jhlee/ttHH/CMSSW_14_2_1
+root        : 6.30.09
+python3     : Python 3.9.14
+condor_job  : 2180634.0  slot slot1_16   jobdir: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/runlog/knu_smoke_2024_20261005_121041
+===========================================================================
+[condor_run] worker cluster337  scratch /home/condor/dir_2236796
+[condor_run] cmsenv ok: CMSSW_BASE=/u/user/jhlee/ttHH/CMSSW_14_2_1  root 6.30.09  Python 3.9.14  TMPDIR=/home/condor/dir_2236796
+[condor_run] running in /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH: /bin/bash tools/stage3/smoke_2024.sh 
+----------------------------------------------------------------------------
+WORK /home/condor/dir_2236796/tthh_smoke2024.16HCoz
+LOGS /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/smoke_2024_20261005_121052
+EXE  /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/ttHHanalyzer_unified (2026-10-05 02:52:40, md5 30a791b2af7b07e14bee4451b684c18c)
+HEADER stamp: treestream 8be42e8; variables md5 605e8320ea853256035e41068075807e; record run_knu_eventbuffer_manifest_20261005_105905.log
+CONFIG /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/AnalyzerConfig/Tier3_2024_FH_unified_main.yml (prescan: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/AnalyzerConfig/Tier3_2024_FH_unified_prescan.yml)
+[paths] TTHH_JSONPOG_PATH=/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration
+[paths] TTHH_GOLDENJSON_PATH=/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/GoldenJson
+[paths] TTHH_TRIGSF_DIR=__NULL__
+[paths] TTHH_BTAGRW_JSON=__NULL__
+[paths] STITCH_FACTORS_JSON=__NULL__
+[paths] EXPANDED_TTBARID_DIR=__NULL__
+[paths] TTHH_PU_JSON=/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/DerivedCorr/PU/2024_Summer24/puWeights_2024.json
+[files per job] main MC 10, prescan 20
+FILE mc_sig MB=46.6 entries=23245 pnet=y deepjet=y lumis=- golden=- /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTHH-HHto4B_TuneCP5_13p6TeV_madgraph-pythia8/TTHHto4b/260930_162701/0000/forgedNtuple_29.root
+FILE pre_sig MB=46.6 entries=23245 pnet=y deepjet=y lumis=- golden=- /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTHH-HHto4B_TuneCP5_13p6TeV_madgraph-pythia8/TTHHto4b/260930_162701/0000/forgedNtuple_29.root
+FILE mc_tt MB=311.3 entries=216617 pnet=y deepjet=y lumis=- golden=- /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTto4Q_TuneCP5_13p6TeV_powheg-pythia8/TTbar_Hadronic/260930_162708/0000/forgedNtuple_490.root
+FILE dC_pnet MB=7.5 entries=5566 pnet=y deepjet=y lumis=19 golden=19 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET0/JetMET0_Run2024C-MINIv6NANOv15-v1/260930_132643/0000/forgedNtuple_61.root
+FILE dC_nopnet MB=5.1 entries=2802 pnet=n deepjet=y lumis=18 golden=18 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET0/JetMET0_Run2024C-MINIv6NANOv15-v1/260930_132643/0000/forgedNtuple_65.root
+FILE dI MB=17.4 entries=18986 pnet=y deepjet=y lumis=38 golden=37 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET1/JetMET1_Run2024I-MINIv6NANOv15_v2-v2/260930_132751/0000/forgedNtuple_1.root
+PICK filelist_TTHHto4b.txt opened=1 skipped_few_golden_LS=0
+PICK filelist_TTbar_Hadronic.txt opened=1 skipped_few_golden_LS=0
+PICK filelist_JetMET0_Run2024C-MINIv6NANOv15-v1.txt opened=17 skipped_few_golden_LS=0
+PICK filelist_JetMET1_Run2024I-MINIv6NANOv15_v2-v2.txt opened=1 skipped_few_golden_LS=0
+sed: couldn't write 184 items to stdout: Broken pipe
+sed: couldn't write 185 items to stdout: Broken pipe
+FILES mc_multi QCD_HT200to400 job 0: 10 file(s), entries=132053 MB=183.2; pre_multi job 0: 20 file(s), entries=303831 MB=414.7
+RUN mc_sig: main MC TTHHto4b (1 file(s))
+TIMING mc_sig entries=23245 wall_s=0.0 ev_per_s=7013639 kB_per_ev=2.00
+CHECK mc_sig: exit 0 FAIL (exit 127)
+CHECK mc_sig: built from this checkout's header (eventBuffer stamp) FAIL (the log says: )
+CHECK mc_sig: required branches present FAIL 
+CHECK mc_sig: the yml paths were used (jsonpog, PU JSON) FAIL 
+CHECK mc_sig: 2024 payloads (jet ID, veto map, PU, JEC MC, JER, UParTAK4 WPs) FAIL 
+CHECK mc_sig: cutflow HadTrigger > 0 FAIL (count 'none')
+CHECK mc_sig: cutflow njets>=6 > 0 FAIL (count 'none')
+CHECK mc_sig: cutflow HT>500 > 0 FAIL (count 'none')
+CHECK mc_sig: cutflow nbjets>=2 > 0 FAIL (count 'none')
+CUTFLOW mc_sig
+CLEANING mc_sig (no [cleaning] line)
+Error in <TFile::TFile>: file /home/condor/dir_2236796/tthh_smoke2024.16HCoz/mc_sig.root does not exist
+Traceback (most recent call last):
+  File "<stdin>", line 3, in <module>
+  File "/cvmfs/cms.cern.ch/el9_amd64_gcc12/lcg/root/6.30.09-a471e16c07e14e11bdeeaf6baa56e34c/lib/ROOT/_pythonization/_tfile.py", line 103, in _TFileOpen
+    raise OSError('Failed to open file {}'.format(str(args[0])))
+OSError: Failed to open file /home/condor/dir_2236796/tthh_smoke2024.16HCoz/mc_sig.root
+CHECK mc_sig: output complete (end marker cutflow_w_full) FAIL 
+RUN mc_tt: main MC TTbar_Hadronic (1 file(s))
+TIMING mc_tt entries=216617 wall_s=0.0 ev_per_s=72039133 kB_per_ev=1.44
+CHECK mc_tt: exit 0 FAIL (exit 127)
+CHECK mc_tt: built from this checkout's header (eventBuffer stamp) FAIL (the log says: )
+CHECK mc_tt: required branches present FAIL 
+CHECK mc_tt: the yml paths were used (jsonpog, PU JSON) FAIL 
+CHECK mc_tt: 2024 payloads (jet ID, veto map, PU, JEC MC, JER, UParTAK4 WPs) FAIL 
+CHECK mc_tt: cutflow HadTrigger > 0 FAIL (count 'none')
+CHECK mc_tt: cutflow njets>=6 > 0 FAIL (count 'none')
+CHECK mc_tt: cutflow HT>500 > 0 FAIL (count 'none')
+CHECK mc_tt: cutflow nbjets>=2 > 0 FAIL (count 'none')
+CUTFLOW mc_tt
+CLEANING mc_tt (no [cleaning] line)
+Error in <TFile::TFile>: file /home/condor/dir_2236796/tthh_smoke2024.16HCoz/mc_tt.root does not exist
+Traceback (most recent call last):
+  File "<stdin>", line 3, in <module>
+  File "/cvmfs/cms.cern.ch/el9_amd64_gcc12/lcg/root/6.30.09-a471e16c07e14e11bdeeaf6baa56e34c/lib/ROOT/_pythonization/_tfile.py", line 103, in _TFileOpen
+    raise OSError('Failed to open file {}'.format(str(args[0])))
+OSError: Failed to open file /home/condor/dir_2236796/tthh_smoke2024.16HCoz/mc_tt.root
+CHECK mc_tt: output complete (end marker cutflow_w_full) FAIL 
+CHECK mc_tt: the tt+nb split is off in 2024 (D-2026-10-05-C) FAIL 
+RUN pre_sig: prescan MC TTHHto4b (1 file(s))
+TIMING pre_sig entries=23245 wall_s=0.0 ev_per_s=7154663 kB_per_ev=2.00
+CHECK pre_sig: exit 0 FAIL (exit 127)
+CHECK pre_sig: built from this checkout's header (eventBuffer stamp) FAIL (the log says: )
+CHECK pre_sig: required branches present FAIL 
+CHECK pre_sig: the yml paths were used (jsonpog, PU JSON) FAIL 
+Error in <TFile::TFile>: file /home/condor/dir_2236796/tthh_smoke2024.16HCoz/pre_sig.root does not exist
+Traceback (most recent call last):
+  File "<stdin>", line 3, in <module>
+  File "/cvmfs/cms.cern.ch/el9_amd64_gcc12/lcg/root/6.30.09-a471e16c07e14e11bdeeaf6baa56e34c/lib/ROOT/_pythonization/_tfile.py", line 103, in _TFileOpen
+    raise OSError('Failed to open file {}'.format(str(args[0])))
+OSError: Failed to open file /home/condor/dir_2236796/tthh_smoke2024.16HCoz/pre_sig.root
+CHECK pre_sig: output complete (one-row prescan tree) FAIL 
+RUN mc_multi: main MC QCD_HT200to400 (10 file(s))
+TIMING mc_multi entries=132053 wall_s=0.0 ev_per_s=43498816 kB_per_ev=1.39
+CHECK mc_multi: exit 0 FAIL (exit 127)
+CHECK mc_multi: built from this checkout's header (eventBuffer stamp) FAIL (the log says: )
+CHECK mc_multi: required branches present FAIL 
+CHECK mc_multi: the yml paths were used (jsonpog, PU JSON) FAIL 
+CHECK mc_multi: the 10 files of the job have one branch set FAIL 
+Error in <TFile::TFile>: file /home/condor/dir_2236796/tthh_smoke2024.16HCoz/mc_multi.root does not exist
+Traceback (most recent call last):
+  File "<stdin>", line 3, in <module>
+  File "/cvmfs/cms.cern.ch/el9_amd64_gcc12/lcg/root/6.30.09-a471e16c07e14e11bdeeaf6baa56e34c/lib/ROOT/_pythonization/_tfile.py", line 103, in _TFileOpen
+    raise OSError('Failed to open file {}'.format(str(args[0])))
+OSError: Failed to open file /home/condor/dir_2236796/tthh_smoke2024.16HCoz/mc_multi.root
+CHECK mc_multi: output complete (end marker cutflow_w_full) FAIL 
+CUTFLOW mc_multi
+RUN pre_multi: prescan MC QCD_HT200to400 (20 file(s))
+TIMING pre_multi entries=303831 wall_s=0.0 ev_per_s=101680330 kB_per_ev=1.36
+CHECK pre_multi: exit 0 FAIL (exit 127)
+CHECK pre_multi: built from this checkout's header (eventBuffer stamp) FAIL (the log says: )
+CHECK pre_multi: required branches present FAIL 
+CHECK pre_multi: the yml paths were used (jsonpog, PU JSON) FAIL 
+CHECK pre_multi: the 20 files of the job have one branch set FAIL 
+CHECK pre_multi: the Runs tree of all 20 files is read FAIL 
+Error in <TFile::TFile>: file /home/condor/dir_2236796/tthh_smoke2024.16HCoz/pre_multi.root does not exist
+Traceback (most recent call last):
+  File "<stdin>", line 3, in <module>
+  File "/cvmfs/cms.cern.ch/el9_amd64_gcc12/lcg/root/6.30.09-a471e16c07e14e11bdeeaf6baa56e34c/lib/ROOT/_pythonization/_tfile.py", line 103, in _TFileOpen
+    raise OSError('Failed to open file {}'.format(str(args[0])))
+OSError: Failed to open file /home/condor/dir_2236796/tthh_smoke2024.16HCoz/pre_multi.root
+CHECK pre_multi: output complete (one-row prescan tree) FAIL 
+RUN dC_pnet: main Data JetMET0_Run2024C-MINIv6NANOv15-v1 era C (1 file(s))
+TIMING dC_pnet entries=5566 wall_s=0.0 ev_per_s=1869434 kB_per_ev=1.35
+CHECK dC_pnet: exit 0 FAIL (exit 127)
+CHECK dC_pnet: built from this checkout's header (eventBuffer stamp) FAIL (the log says: )
+CHECK dC_pnet: required branches present FAIL 
+CHECK dC_pnet: the yml paths were used (jsonpog, PU JSON) FAIL 
+CHECK dC_pnet: 2024 payloads (jet ID, veto map, PU, JEC DATA, JER, UParTAK4 WPs) FAIL 
+CHECK dC_pnet: cutflow HadTrigger > 0 FAIL (count 'none')
+CHECK dC_pnet: cutflow njets>=6 > 0 FAIL (count 'none')
+CHECK dC_pnet: cutflow HT>500 > 0 FAIL (count 'none')
+CUTFLOW dC_pnet
+CLEANING dC_pnet (no [cleaning] line)
+Error in <TFile::TFile>: file /home/condor/dir_2236796/tthh_smoke2024.16HCoz/dC_pnet.root does not exist
+Traceback (most recent call last):
+  File "<stdin>", line 3, in <module>
+  File "/cvmfs/cms.cern.ch/el9_amd64_gcc12/lcg/root/6.30.09-a471e16c07e14e11bdeeaf6baa56e34c/lib/ROOT/_pythonization/_tfile.py", line 103, in _TFileOpen
+    raise OSError('Failed to open file {}'.format(str(args[0])))
+OSError: Failed to open file /home/condor/dir_2236796/tthh_smoke2024.16HCoz/dC_pnet.root
+CHECK dC_pnet: output complete (end marker cutflow_w_full) FAIL 
+CHECK dC_pnet: the [branches] line says the file has the PNet 4J3T path FAIL 
+RUN dC_nopnet: main Data JetMET0_Run2024C-MINIv6NANOv15-v1 era C (1 file(s))
+TIMING dC_nopnet entries=2802 wall_s=0.0 ev_per_s=911607 kB_per_ev=1.81
+CHECK dC_nopnet: exit 0 FAIL (exit 127)
+CHECK dC_nopnet: built from this checkout's header (eventBuffer stamp) FAIL (the log says: )
+CHECK dC_nopnet: required branches present FAIL 
+CHECK dC_nopnet: the yml paths were used (jsonpog, PU JSON) FAIL 
+CHECK dC_nopnet: 2024 payloads (jet ID, veto map, PU, JEC DATA, JER, UParTAK4 WPs) FAIL 
+CHECK dC_nopnet: cutflow HadTrigger > 0 FAIL (count 'none')
+CHECK dC_nopnet: cutflow njets>=6 > 0 FAIL (count 'none')
+CHECK dC_nopnet: cutflow HT>500 > 0 FAIL (count 'none')
+CUTFLOW dC_nopnet
+CLEANING dC_nopnet (no [cleaning] line)
+Error in <TFile::TFile>: file /home/condor/dir_2236796/tthh_smoke2024.16HCoz/dC_nopnet.root does not exist
+Traceback (most recent call last):
+  File "<stdin>", line 3, in <module>
+  File "/cvmfs/cms.cern.ch/el9_amd64_gcc12/lcg/root/6.30.09-a471e16c07e14e11bdeeaf6baa56e34c/lib/ROOT/_pythonization/_tfile.py", line 103, in _TFileOpen
+    raise OSError('Failed to open file {}'.format(str(args[0])))
+OSError: Failed to open file /home/condor/dir_2236796/tthh_smoke2024.16HCoz/dC_nopnet.root
+CHECK dC_nopnet: output complete (end marker cutflow_w_full) FAIL 
+CHECK dC_nopnet: the [branches] line says the file has no PNet 4J3T path FAIL 
+RUN dC_mix: main Data JetMET0_Run2024C-MINIv6NANOv15-v1 era C (2 file(s))
+CHECK dC_mix: two era-C files with different HLT branches in one job stop (E11) FAIL (exit 127)
+RUN dI: main Data JetMET1_Run2024I-MINIv6NANOv15_v2-v2 era I (1 file(s))
+TIMING dI entries=18986 wall_s=0.0 ev_per_s=5862269 kB_per_ev=0.91
+CHECK dI: exit 0 FAIL (exit 127)
+CHECK dI: built from this checkout's header (eventBuffer stamp) FAIL (the log says: )
+CHECK dI: required branches present FAIL 
+CHECK dI: the yml paths were used (jsonpog, PU JSON) FAIL 
+CHECK dI: 2024 payloads (jet ID, veto map, PU, JEC DATA, JER, UParTAK4 WPs) FAIL 
+CHECK dI: cutflow HadTrigger > 0 FAIL (count 'none')
+CHECK dI: cutflow njets>=6 > 0 FAIL (count 'none')
+CHECK dI: cutflow HT>500 > 0 FAIL (count 'none')
+CUTFLOW dI
+CLEANING dI (no [cleaning] line)
+Error in <TFile::TFile>: file /home/condor/dir_2236796/tthh_smoke2024.16HCoz/dI.root does not exist
+Traceback (most recent call last):
+  File "<stdin>", line 3, in <module>
+  File "/cvmfs/cms.cern.ch/el9_amd64_gcc12/lcg/root/6.30.09-a471e16c07e14e11bdeeaf6baa56e34c/lib/ROOT/_pythonization/_tfile.py", line 103, in _TFileOpen
+    raise OSError('Failed to open file {}'.format(str(args[0])))
+OSError: Failed to open file /home/condor/dir_2236796/tthh_smoke2024.16HCoz/dI.root
+CHECK dI: output complete (end marker cutflow_w_full) FAIL 
+---- last lines of the dC_mix log (/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/smoke_2024_20261005_121052/dC_mix.log) ----
+tools/stage3/smoke_2024.sh: line 263: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/ttHHanalyzer_unified: No such file or directory
+---- last lines of the dC_nopnet log (/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/smoke_2024_20261005_121052/dC_nopnet.log) ----
+tools/stage3/smoke_2024.sh: line 263: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/ttHHanalyzer_unified: No such file or directory
+---- last lines of the dC_pnet log (/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/smoke_2024_20261005_121052/dC_pnet.log) ----
+tools/stage3/smoke_2024.sh: line 263: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/ttHHanalyzer_unified: No such file or directory
+---- last lines of the dI log (/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/smoke_2024_20261005_121052/dI.log) ----
+tools/stage3/smoke_2024.sh: line 263: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/ttHHanalyzer_unified: No such file or directory
+---- last lines of the mc_multi log (/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/smoke_2024_20261005_121052/mc_multi.log) ----
+tools/stage3/smoke_2024.sh: line 263: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/ttHHanalyzer_unified: No such file or directory
+---- last lines of the mc_sig log (/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/smoke_2024_20261005_121052/mc_sig.log) ----
+tools/stage3/smoke_2024.sh: line 263: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/ttHHanalyzer_unified: No such file or directory
+---- last lines of the mc_tt log (/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/smoke_2024_20261005_121052/mc_tt.log) ----
+tools/stage3/smoke_2024.sh: line 263: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/ttHHanalyzer_unified: No such file or directory
+---- last lines of the pre_multi log (/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/smoke_2024_20261005_121052/pre_multi.log) ----
+tools/stage3/smoke_2024.sh: line 263: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/ttHHanalyzer_unified: No such file or directory
+---- last lines of the pre_sig log (/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/smoke_2024_20261005_121052/pre_sig.log) ----
+tools/stage3/smoke_2024.sh: line 263: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/ttHHanalyzer_unified: No such file or directory
+RESULT: 0 PASS, 69 FAIL
+===========================================================================
+end_utc     : 2026-10-05T12:11:18Z
+wall_s      : 29
+EXIT        : 1
+outputs (files of this repo changed during the run; tmp/ condor/ runlogs/ left out): 2
+      213552  src/dictionaryForROOT.cc
+       32840  src/dictionaryForROOT_rdict.pcm
+log         : runlogs/run_knu_smoke_2024_20261005_121049.log
+log_kb      : 15
+=== END ===================================================================

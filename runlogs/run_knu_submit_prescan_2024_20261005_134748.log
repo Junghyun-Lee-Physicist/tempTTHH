@@ -1,0 +1,514 @@
+=== RUNLOG ================================================================
+step        : knu_submit_prescan_2024
+start_utc   : 2026-10-05T13:47:48Z
+host        : cms01   user: jhlee
+cwd         : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+repo        : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+git_head    : f6bd444d   modified_tracked_files: 1
+cmd         : python3 submit_job_FH_Tier3_unified.py --mode prescan --config AnalyzerConfig/Tier3_2024_FH_unified_prescan.yml 
+CMSSW_BASE  : /u/user/jhlee/ttHH/CMSSW_14_2_1
+root        : 6.30.09
+python3     : Python 3.9.14
+===========================================================================
+               total        used        free      shared  buff/cache   available
+Mem:            77Gi       6.9Gi        14Gi       128Mi        57Gi        71Gi
+Swap:           15Gi          0B        15Gi
+Submitting job(s)..
+2 job(s) submitted to cluster 2180636.
+Submitting job(s).................
+17 job(s) submitted to cluster 2180637.
+Submitting job(s)................
+16 job(s) submitted to cluster 2180638.
+Submitting job(s)................
+16 job(s) submitted to cluster 2180639.
+Submitting job(s)...........................
+27 job(s) submitted to cluster 2180640.
+Submitting job(s)..
+2 job(s) submitted to cluster 2180641.
+Submitting job(s)..
+2 job(s) submitted to cluster 2180642.
+Submitting job(s)..................
+18 job(s) submitted to cluster 2180643.
+Submitting job(s)..............
+14 job(s) submitted to cluster 2180644.
+Submitting job(s).......................................
+39 job(s) submitted to cluster 2180645.
+Submitting job(s)........................................
+40 job(s) submitted to cluster 2180646.
+Submitting job(s).......................................
+39 job(s) submitted to cluster 2180647.
+Submitting job(s)..........
+10 job(s) submitted to cluster 2180648.
+Submitting job(s)...............
+15 job(s) submitted to cluster 2180649.
+Submitting job(s)...........
+11 job(s) submitted to cluster 2180650.
+Submitting job(s)..
+2 job(s) submitted to cluster 2180651.
+Submitting job(s)....
+4 job(s) submitted to cluster 2180652.
+Submitting job(s).....
+5 job(s) submitted to cluster 2180653.
+Submitting job(s)...
+3 job(s) submitted to cluster 2180654.
+Submitting job(s)..
+2 job(s) submitted to cluster 2180655.
+Set permissions to 777 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024
+Setted Path of proxy : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/proxy.cert
+  [ProxyChecker] Proxy is valid for 344488 seconds.
+
+--------------------------------------------------------------------------
+  --> Memory Check before submit jobs <--  
+
+System Memory Status:
+
+--------------------------------------------------------------------------
+  [cmd-log] 제출 명령어 기록: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3_unified_prescan_2024/submit_command.txt
+  [weight] TTHHto4b: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTHHto4b/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTHHto4b/
+
+Setting up job for sample: TTHHto4b
+Submitting job for sample: TTHHto4b
+  [weight] ttHTobb_had: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ttHTobb_had/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ttHTobb_had/
+
+Setting up job for sample: ttHTobb_had
+Submitting job for sample: ttHTobb_had
+  [weight] ttHTobb_semilep: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ttHTobb_semilep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ttHTobb_semilep/
+
+Setting up job for sample: ttHTobb_semilep
+Submitting job for sample: ttHTobb_semilep
+  [weight] ttHTobb_dilep: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ttHTobb_dilep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ttHTobb_dilep/
+
+Setting up job for sample: ttHTobb_dilep
+Submitting job for sample: ttHTobb_dilep
+  [weight] ttHToNonbb: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ttHToNonbb/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ttHToNonbb/
+
+Setting up job for sample: ttHToNonbb
+Submitting job for sample: ttHToNonbb
+  [weight] TTZHTo4b: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTZHTo4b/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTZHTo4b/
+
+Setting up job for sample: TTZHTo4b
+Submitting job for sample: TTZHTo4b
+  [weight] TTZZTo4b: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTZZTo4b/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTZZTo4b/
+
+Setting up job for sample: TTZZTo4b
+Submitting job for sample: TTZZTo4b
+  [weight] tHq: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/tHq/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/tHq/
+
+Setting up job for sample: tHq
+Submitting job for sample: tHq
+  [weight] tHW: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/tHW/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/tHW/
+
+Setting up job for sample: tHW
+Submitting job for sample: tHW
+  [weight] TTbar_Hadronic: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTbar_Hadronic/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTbar_Hadronic/
+
+Setting up job for sample: TTbar_Hadronic
+Submitting job for sample: TTbar_Hadronic
+  [weight] TTbar_SemiLep: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTbar_SemiLep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTbar_SemiLep/
+
+Setting up job for sample: TTbar_SemiLep
+Submitting job for sample: TTbar_SemiLep
+  [weight] TTbar_DiLep: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTbar_DiLep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTbar_DiLep/
+
+Setting up job for sample: TTbar_DiLep
+Submitting job for sample: TTbar_DiLep
+  [weight] TTbb_Hadronic: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTbb_Hadronic/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTbb_Hadronic/
+
+Setting up job for sample: TTbb_Hadronic
+Submitting job for sample: TTbb_Hadronic
+  [weight] TTbb_SemiLep: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTbb_SemiLep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTbb_SemiLep/
+
+Setting up job for sample: TTbb_SemiLep
+Submitting job for sample: TTbb_SemiLep
+  [weight] TTbb_DiLep: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTbb_DiLep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTbb_DiLep/
+
+Setting up job for sample: TTbb_DiLep
+Submitting job for sample: TTbb_DiLep
+  [weight] TT4b: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TT4b/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TT4b/
+
+Setting up job for sample: TT4b
+Submitting job for sample: TT4b
+  [weight] TTZToQQ: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTZToQQ/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTZToQQ/
+
+Setting up job for sample: TTZToQQ
+Submitting job for sample: TTZToQQ
+  [weight] TTWJetsToQQ: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTWJetsToQQ/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTWJetsToQQ/
+
+Setting up job for sample: TTWJetsToQQ
+Submitting job for sample: TTWJetsToQQ
+  [weight] TTLL_MLL50: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTLL_MLL50/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTLL_MLL50/
+
+Setting up job for sample: TTLL_MLL50
+Submitting job for sample: TTLL_MLL50
+  [weight] TTLL_MLL4to50: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTLL_MLL4to50/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTLL_MLL4to50/
+
+Setting up job for sample: TTLL_MLL4to50
+Submitting job for sample: TTLL_MLL4to50
+  [weight] TTNuNu: 1.0  (prescan — normalization 불필요)
+Submitting job(s)...
+3 job(s) submitted to cluster 2180656.
+Submitting job(s)...
+3 job(s) submitted to cluster 2180657.
+Submitting job(s).....
+5 job(s) submitted to cluster 2180658.
+Submitting job(s)...
+3 job(s) submitted to cluster 2180659.
+Submitting job(s)..........
+10 job(s) submitted to cluster 2180660.
+Submitting job(s).........
+9 job(s) submitted to cluster 2180661.
+Submitting job(s)......
+6 job(s) submitted to cluster 2180662.
+Submitting job(s).......................................
+39 job(s) submitted to cluster 2180663.
+Submitting job(s)....................
+20 job(s) submitted to cluster 2180664.
+Submitting job(s)..........................................
+42 job(s) submitted to cluster 2180665.
+Submitting job(s).............
+13 job(s) submitted to cluster 2180666.
+Submitting job(s)........
+8 job(s) submitted to cluster 2180667.
+Submitting job(s).............
+13 job(s) submitted to cluster 2180668.
+Submitting job(s).........
+9 job(s) submitted to cluster 2180669.
+Submitting job(s)..........
+10 job(s) submitted to cluster 2180670.
+Submitting job(s).............
+13 job(s) submitted to cluster 2180671.
+Submitting job(s).....
+5 job(s) submitted to cluster 2180672.
+Submitting job(s).....
+5 job(s) submitted to cluster 2180673.
+Submitting job(s)..............
+14 job(s) submitted to cluster 2180674.
+Submitting job(s).....
+5 job(s) submitted to cluster 2180675.
+Submitting job(s)............
+12 job(s) submitted to cluster 2180676.
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTNuNu/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTNuNu/
+
+Setting up job for sample: TTNuNu
+Submitting job for sample: TTNuNu
+  [weight] TTWW: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTWW/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTWW/
+
+Setting up job for sample: TTWW
+Submitting job for sample: TTWW
+  [weight] TTWH: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTWH/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTWH/
+
+Setting up job for sample: TTWH
+Submitting job for sample: TTWH
+  [weight] TTWZ: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTWZ/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTWZ/
+
+Setting up job for sample: TTWZ
+Submitting job for sample: TTWZ
+  [weight] TTTWminus: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTTWminus/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTTWminus/
+
+Setting up job for sample: TTTWminus
+Submitting job for sample: TTTWminus
+  [weight] TTTWplus: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTTWplus/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTTWplus/
+
+Setting up job for sample: TTTWplus
+Submitting job for sample: TTTWplus
+  [weight] TTTT: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTTT/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/TTTT/
+
+Setting up job for sample: TTTT
+Submitting job for sample: TTTT
+  [weight] ST_t_top_had: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_t_top_had/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_t_top_had/
+
+Setting up job for sample: ST_t_top_had
+Submitting job for sample: ST_t_top_had
+  [weight] ST_t_top_lep: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_t_top_lep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_t_top_lep/
+
+Setting up job for sample: ST_t_top_lep
+Submitting job for sample: ST_t_top_lep
+  [weight] ST_t_antitop_had: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_t_antitop_had/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_t_antitop_had/
+
+Setting up job for sample: ST_t_antitop_had
+Submitting job for sample: ST_t_antitop_had
+  [weight] ST_t_antitop_lep: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_t_antitop_lep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_t_antitop_lep/
+
+Setting up job for sample: ST_t_antitop_lep
+Submitting job for sample: ST_t_antitop_lep
+  [weight] ST_tW_top_had: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_tW_top_had/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_tW_top_had/
+
+Setting up job for sample: ST_tW_top_had
+Submitting job for sample: ST_tW_top_had
+  [weight] ST_tW_top_semilep: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_tW_top_semilep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_tW_top_semilep/
+
+Setting up job for sample: ST_tW_top_semilep
+Submitting job for sample: ST_tW_top_semilep
+  [weight] ST_tW_top_dilep: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_tW_top_dilep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_tW_top_dilep/
+
+Setting up job for sample: ST_tW_top_dilep
+Submitting job for sample: ST_tW_top_dilep
+  [weight] ST_tW_antitop_had: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_tW_antitop_had/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_tW_antitop_had/
+
+Setting up job for sample: ST_tW_antitop_had
+Submitting job for sample: ST_tW_antitop_had
+  [weight] ST_tW_antitop_semilep: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_tW_antitop_semilep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_tW_antitop_semilep/
+
+Setting up job for sample: ST_tW_antitop_semilep
+Submitting job for sample: ST_tW_antitop_semilep
+  [weight] ST_tW_antitop_dilep: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_tW_antitop_dilep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_tW_antitop_dilep/
+
+Setting up job for sample: ST_tW_antitop_dilep
+Submitting job for sample: ST_tW_antitop_dilep
+  [weight] ST_s_top_had: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_s_top_had/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_s_top_had/
+
+Setting up job for sample: ST_s_top_had
+Submitting job for sample: ST_s_top_had
+  [weight] ST_s_top_lep: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_s_top_lep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_s_top_lep/
+
+Setting up job for sample: ST_s_top_lep
+Submitting job for sample: ST_s_top_lep
+  [weight] ST_s_antitop_had: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_s_antitop_had/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_s_antitop_had/
+
+Setting up job for sample: ST_s_antitop_had
+Submitting job for sample: ST_s_antitop_had
+  [weight] ST_s_antitop_lep: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_s_antitop_lep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ST_s_antitop_lep/
+
+Setting up job for sample: ST_s_antitop_lep
+Submitting job for sample: ST_s_antitop_lep
+  [weight] WW: 1.0  (prescan — normalization 불필요)
+Submitting job(s)..........................
+26 job(s) submitted to cluster 2180677.
+Submitting job(s)................
+16 job(s) submitted to cluster 2180678.
+Submitting job(s)....
+4 job(s) submitted to cluster 2180679.
+Submitting job(s).........
+9 job(s) submitted to cluster 2180680.
+Submitting job(s).........
+9 job(s) submitted to cluster 2180681.
+Submitting job(s)............
+12 job(s) submitted to cluster 2180682.
+Submitting job(s).............
+13 job(s) submitted to cluster 2180683.
+Submitting job(s)............
+12 job(s) submitted to cluster 2180684.
+Submitting job(s)............
+12 job(s) submitted to cluster 2180685.
+Submitting job(s).............
+13 job(s) submitted to cluster 2180686.
+Submitting job(s)............
+12 job(s) submitted to cluster 2180687.
+Submitting job(s)...............................................................................................................................
+127 job(s) submitted to cluster 2180688.
+Submitting job(s).....................
+21 job(s) submitted to cluster 2180689.
+Submitting job(s)...................
+19 job(s) submitted to cluster 2180690.
+Submitting job(s)......................
+22 job(s) submitted to cluster 2180691.
+Submitting job(s).................................................
+49 job(s) submitted to cluster 2180692.
+Submitting job(s).......................
+23 job(s) submitted to cluster 2180693.
+Submitting job(s)............................
+28 job(s) submitted to cluster 2180694.
+Submitting job(s).........................
+25 job(s) submitted to cluster 2180695.
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/WW/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/WW/
+
+Setting up job for sample: WW
+Submitting job for sample: WW
+  [weight] WZ: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/WZ/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/WZ/
+
+Setting up job for sample: WZ
+Submitting job for sample: WZ
+  [weight] ZZ: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ZZ/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ZZ/
+
+Setting up job for sample: ZZ
+Submitting job for sample: ZZ
+  [weight] QCD_HT200to400: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/QCD_HT200to400/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/QCD_HT200to400/
+
+Setting up job for sample: QCD_HT200to400
+Submitting job for sample: QCD_HT200to400
+  [weight] QCD_HT400to600: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/QCD_HT400to600/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/QCD_HT400to600/
+
+Setting up job for sample: QCD_HT400to600
+Submitting job for sample: QCD_HT400to600
+  [weight] QCD_HT600to800: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/QCD_HT600to800/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/QCD_HT600to800/
+
+Setting up job for sample: QCD_HT600to800
+Submitting job for sample: QCD_HT600to800
+  [weight] QCD_HT800to1000: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/QCD_HT800to1000/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/QCD_HT800to1000/
+
+Setting up job for sample: QCD_HT800to1000
+Submitting job for sample: QCD_HT800to1000
+  [weight] QCD_HT1000to1200: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/QCD_HT1000to1200/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/QCD_HT1000to1200/
+
+Setting up job for sample: QCD_HT1000to1200
+Submitting job for sample: QCD_HT1000to1200
+  [weight] QCD_HT1200to1500: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/QCD_HT1200to1500/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/QCD_HT1200to1500/
+
+Setting up job for sample: QCD_HT1200to1500
+Submitting job for sample: QCD_HT1200to1500
+  [weight] QCD_HT1500to2000: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/QCD_HT1500to2000/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/QCD_HT1500to2000/
+
+Setting up job for sample: QCD_HT1500to2000
+Submitting job for sample: QCD_HT1500to2000
+  [weight] QCD_HT2000toInf: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/QCD_HT2000toInf/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/QCD_HT2000toInf/
+
+Setting up job for sample: QCD_HT2000toInf
+Submitting job for sample: QCD_HT2000toInf
+  [weight] WJetsToQQ_HT400to800: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/WJetsToQQ_HT400to800/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/WJetsToQQ_HT400to800/
+
+Setting up job for sample: WJetsToQQ_HT400to800
+Submitting job for sample: WJetsToQQ_HT400to800
+  [weight] WJetsToQQ_HT800to1500: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/WJetsToQQ_HT800to1500/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/WJetsToQQ_HT800to1500/
+
+Setting up job for sample: WJetsToQQ_HT800to1500
+Submitting job for sample: WJetsToQQ_HT800to1500
+  [weight] WJetsToQQ_HT1500to2500: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/WJetsToQQ_HT1500to2500/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/WJetsToQQ_HT1500to2500/
+
+Setting up job for sample: WJetsToQQ_HT1500to2500
+Submitting job for sample: WJetsToQQ_HT1500to2500
+  [weight] WJetsToQQ_HT2500toInf: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/WJetsToQQ_HT2500toInf/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/WJetsToQQ_HT2500toInf/
+
+Setting up job for sample: WJetsToQQ_HT2500toInf
+Submitting job for sample: WJetsToQQ_HT2500toInf
+  [weight] ZJetsToQQ_HT400to800: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ZJetsToQQ_HT400to800/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ZJetsToQQ_HT400to800/
+
+Setting up job for sample: ZJetsToQQ_HT400to800
+Submitting job for sample: ZJetsToQQ_HT400to800
+  [weight] ZJetsToQQ_HT800to1500: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ZJetsToQQ_HT800to1500/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ZJetsToQQ_HT800to1500/
+
+Setting up job for sample: ZJetsToQQ_HT800to1500
+Submitting job for sample: ZJetsToQQ_HT800to1500
+  [weight] ZJetsToQQ_HT1500to2500: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ZJetsToQQ_HT1500to2500/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ZJetsToQQ_HT1500to2500/
+
+Setting up job for sample: ZJetsToQQ_HT1500to2500
+Submitting job for sample: ZJetsToQQ_HT1500to2500
+  [weight] ZJetsToQQ_HT2500toInf: 1.0  (prescan — normalization 불필요)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ZJetsToQQ_HT2500toInf/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_prescan_2024/ZJetsToQQ_HT2500toInf/
+
+Setting up job for sample: ZJetsToQQ_HT2500toInf
+Submitting job for sample: ZJetsToQQ_HT2500toInf
+===========================================================================
+end_utc     : 2026-10-05T13:48:09Z
+wall_s      : 21
+EXIT        : 0
+outputs     : (no file of this repo changed, apart from tmp/ condor/ runlogs/)
+log         : runlogs/run_knu_submit_prescan_2024_20261005_134748.log
+log_kb      : 28
+=== END ===================================================================

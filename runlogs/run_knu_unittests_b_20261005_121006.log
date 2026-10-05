@@ -1,0 +1,35 @@
+=== RUNLOG ================================================================
+step        : knu_unittests_b
+start_utc   : 2026-10-05T12:10:06Z
+host        : cms01   user: jhlee
+cwd         : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+repo        : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+git_head    : f6bd444d   modified_tracked_files: 0
+cmd         : /bin/bash test/run_unit_tests.sh 
+CMSSW_BASE  : /u/user/jhlee/ttHH/CMSSW_14_2_1
+root        : 6.30.09
+python3     : Python 3.9.14
+===========================================================================
+--- inputs of test_SampleRegistry ---
+1be51ebcd8e68b116e039df4715c7ab4  data/samples_2017UL.json  git:clean
+920d590cc01804019c76df82ef5366e8  prescan_summary/prescan_summary.json  git:clean
+--- test_EraConfig ---
+ALL ERACONFIG ASSERTIONS PASSED
+RESULT test_EraConfig PASS
+--- test_EraConfig_fatal ---
+PASS: unknown year -> exit 11 with a diagnostic
+--- stderr was ---
+
+RESULT test_EraConfig_fatal PASS
+--- test_SampleRegistry ---
+  PASS 47 / FAIL 0
+RESULT test_SampleRegistry PASS
+SUMMARY unit_tests PASS
+===========================================================================
+end_utc     : 2026-10-05T12:10:17Z
+wall_s      : 11
+EXIT        : 0
+outputs     : (no file of this repo changed, apart from tmp/ condor/ runlogs/)
+log         : runlogs/run_knu_unittests_b_20261005_121006.log
+log_kb      : 1
+=== END ===================================================================
