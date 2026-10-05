@@ -1,0 +1,37 @@
+=== RUNLOG ================================================================
+step        : knu_d16_branchsig_mc
+start_utc   : 2026-10-05T07:04:53Z
+host        : cluster310   user: jhlee
+cwd         : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+repo        : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+git_head    : c45304aa   modified_tracked_files: 0
+cmd         : python3 tools/stage0/branch_signature.py --base /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1 
+CMSSW_BASE  : /u/user/jhlee/ttHH/CMSSW_14_2_1
+root        : 6.30.09
+python3     : Python 3.9.14
+condor_job  : 2180529.0  slot slot1_15   jobdir: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/runlog/knu_d16_branchsig_mc_20261005_070438
+===========================================================================
+[condor_run] worker cluster310  scratch /home/condor/dir_1963715
+[condor_run] cmsenv ok: CMSSW_BASE=/u/user/jhlee/ttHH/CMSSW_14_2_1  root 6.30.09  Python 3.9.14  TMPDIR=/home/condor/dir_1963715
+[condor_run] running in /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH: python3 tools/stage0/branch_signature.py --base /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1 
+----------------------------------------------------------------------------
+BASE /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1
+GLOB */*/*/*/forgedNtuple_*.root
+TREE Events  group-level 3
+DS QCD-4Jets_Bin-HT-1000to1200_TuneCP5_13p6TeV_madgraphMLM-pythia8/QCD_HT1000to1200 files=224 unreadable=0 branch_sets=1 differing=0
+DS QCD-4Jets_Bin-HT-1200to1500_TuneCP5_13p6TeV_madgraphMLM-pythia8/QCD_HT1200to1500 files=230 unreadable=0 branch_sets=1 differing=0
+DS QCD-4Jets_Bin-HT-1500to2000_TuneCP5_13p6TeV_madgraphMLM-pythia8/QCD_HT1500to2000 files=248 unreadable=0 branch_sets=1 differing=0
+DS QCD-4Jets_Bin-HT-2000_TuneCP5_13p6TeV_madgraphMLM-pythia8/QCD_HT2000toInf files=221 unreadable=0 branch_sets=1 differing=0
+DS QCD-4Jets_Bin-HT-200to400_TuneCP5_13p6TeV_madgraphMLM-pythia8/QCD_HT200to400 files=163 unreadable=0 branch_sets=1 differing=0
+DS QCD-4Jets_Bin-HT-400to600_TuneCP5_13p6TeV_madgraphMLM-pythia8/QCD_HT400to600 files=173 unreadable=0 branch_sets=1 differing=0
+DS QCD-4Jets_Bin-HT-600to800_TuneCP5_13p6TeV_madgraphMLM-pythia8/QCD_HT600to800 files=228 unreadable=0 branch_sets=1 differing=0
+DS QCD-4Jets_Bin-HT-800to1000_TuneCP5_13p6TeV_madgraphMLM-pythia8/QCD_HT800to1000 files=260 unreadable=0 branch_sets=1 differing=0
+===========================================================================
+end_utc     : 2026-10-05T07:11:01Z
+wall_s      : 368
+stopped     : by SIGTERM (condor_rm, a hold, an eviction, Ctrl-C or a lost ssh session)
+EXIT        : 143
+outputs     : (no file of this repo changed, apart from tmp/ condor/ runlogs/)
+log         : runlogs/run_knu_d16_branchsig_mc_20261005_070450.log
+log_kb      : 2
+=== END ===================================================================
