@@ -160,6 +160,10 @@ D14·D16 스크립트 확인), 그리고 RUNBOOK §20 13 (d) 의 `runlogs/run_kn
 - `test_runlog.sh` **83/83**: root, 일반 사용자(`ubuntu`; T12 가 실제로 돔), symlink 인 `TMPDIR`, 공백이 든 `TMPDIR`, bash 5.1.16(EL9 는
   5.1.8), `nohup` 아래(T26 건너뜀), 8 개의 `yes` 부하 아래 반복. `test_build_check.sh` **18/18**. `test_stage0.py` 19/19,
   `test/run_unit_tests.sh` PASS(바뀐 것 없음, 다시 돌림).
+- KNU(10-05, `f0f390ce`, runlog 기록 `knu_test_runlog`·`knu_test_build_check`): `test_runlog.sh` **83/83**, `test_build_check.sh` **17/18** —
+  B7 은 시험 자신의 결함이었다: 실행 파일을 "20 분 전" 으로 touch 했는데 빌드와 1 초라도 떨어지면 정수 분이 19 가 되어 기대한
+  `2[0-9] min` 과 어긋난다(B5 도 같은 위험; 컨테이너는 빨라서 같은 초 안이었다). md5sum 을 1.2 초 늦춰 재현(옛 시험 B5·B7 FAIL,
+  새 시험 18/18) → 시각을 epoch 로 정확히 30 분 떨어뜨리고, 실패한 check 는 자기가 본 build_check 출력을 보이게 했다.
 - 음성 대조: 배포된 `runlog.sh`(`90feebc0`)로 새 시험 → 6 FAIL(T22 둘, T24, T26, T27, T28); 복사기의 무시를 빼면 T25 둘 FAIL;
   watchdog 을 빼면 T28 FAIL; `pgrep` 만 쓰면 T29 FAIL; 옛 시험·옛 `runlog.sh` + 머리 뒤 0.5 초 → 3 FAIL.
 - 명령 시작 직전 창에 SIGTERM(검토 1 이 0.3 초 창을 넣어 재현한 경우; 부하 아래) 뒤 명령이 끝까지 돈 횟수: 첫 고침 판 50 번 중 9 번
