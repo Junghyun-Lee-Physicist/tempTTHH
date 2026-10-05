@@ -625,7 +625,13 @@ class CondorJobManager:
         # [cmd log] 제출 시 명령어를 condor 디렉토리에 기록 / report·resubmit 시 조회.
         self._handle_command_log()
 
-        for entry in samples:
+        for i_entry, entry in enumerate(samples, 1):
+            if self.report_only:
+                # [STEP 24] progress on stderr: the table only comes at the end (and `| tail` holds stdout until then),
+                #   while every finished output is opened on /pnfs to check it -- minutes for ~1000 outputs
+                _nm = entry.get("sample_name", entry) if isinstance(entry, dict) else entry
+                sys.stderr.write(f"[report] {i_entry}/{len(samples)} {_nm}\n")
+                sys.stderr.flush()
             try:
                 self.parse_config_entry(entry, common)
                 # [STEP20] 조회 모드(report/status)는 read-only — output 디렉토리
@@ -691,9 +697,17 @@ class CondorJobManager:
             _fatal(EXIT["PRESCAN_MISSING"],
                    f"{sample_name}: sumGenW(runs)={sumw} <= 0 (invalid prescan).")
         # runs vs tree 합 불일치 경고 (사용은 runs)
+        # [STEP 24] a skimmed production (2024 6j20): the Events tree holds only the events that passed the skim, the
+        #   Runs tree all generated ones, so tree < runs is expected -- printed as the skim efficiency, not as a warning
+        #   (and not in the --report table output). tree > runs is still a warning.
         if sumw_tree > 0 and abs(sumw - sumw_tree)/sumw > 1e-4:
-            print(f"  [warn] {sample_name}: sumGenW runs={sumw:.6e} vs "
-                  f"tree={sumw_tree:.6e} differ >0.01% (using runs)")
+            if sumw_tree < sumw:
+                if not getattr(self, "report_only", False) or getattr(self, "report_verbose", False):
+                    print(f"  [skim] {sample_name}: sumGenW tree/runs = {sumw_tree/sumw:.4f} "
+                          f"(events that passed the ntuple skim; normalization uses runs)")
+            else:
+                print(f"  [warn] {sample_name}: sumGenW runs={sumw:.6e} vs "
+                      f"tree={sumw_tree:.6e} differ >0.01% (using runs)")
         w = lumi * xsec * br * kfac / sumw
         return w, (f"xsec_fb={xsec}*br={br:.5f}*k={kfac}*lumi={lumi}"
                    f"/sumGenW={sumw:.4e}")

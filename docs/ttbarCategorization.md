@@ -960,10 +960,15 @@ Updated for the expanded scheme, it now:
   categorizer had labelled 1b, an algorithmic (official-vs-ghost-matching)
   difference, not an error;
 - emits `prescan_summary.json` (full) and `prescan_summary.csv` (headline,
-  with `n_id_bbb61/bbb62/4b71/4b72` columns).
+  with `n_id_bbb61/bbb62/4b71/4b72` columns);
+- compares the Events-tree and Runs-tree ΣgenW: equal for unskimmed input
+  (hard); with `--skimmed` (2024: NtupleForge 6j20 skim) the difference is the
+  skim (`skim%`), reported as INFO, and only Events ≤ Runs is checked
+  (added 2026-10-05, tempTTHH STEP 24 §13; the normalization uses the Runs sum).
 
-Run it inside CMSSW (PyROOT); a non-zero exit flags any bad/missing job or
-failed hard check, convenient for chaining a resubmit.
+Run it inside CMSSW (PyROOT); a non-zero exit flags exactly the samples in
+the anomaly report (bad/missing job, failed check, or warning), convenient for
+chaining a resubmit.
 
 ### 10.3 Step 2 — compute the factors: `compute_stitch_factors.py`
 

@@ -417,17 +417,20 @@ static std::string GetFineProcessKey(const std::string& name) {
         {"TT4b", "tt4b"}, {"tt4b", "tt4b"},
         // ttH
         {"ttHTobb", "ttH"}, {"ttHToNonbb", "ttH"},
+        {"ttHTobb_had", "ttH"}, {"ttHTobb_semilep", "ttH"}, {"ttHTobb_dilep", "ttH"},   // [STEP 24] 2024
         // tH
         {"tHq", "tH"}, {"tHW", "tH"},
         // tt + single V (진짜 ttV 만)
         {"TTZToBB", "ttV"}, {"TTZToLLNuNu", "ttV"},
         {"TTWJetsToQQ", "ttV"}, {"TTWJetsToLNu", "ttV"},
+        {"TTZToQQ", "ttV"}, {"TTLL_MLL50", "ttV"}, {"TTLL_MLL4to50", "ttV"}, {"TTNuNu", "ttV"},   // [STEP 24] 2024
         // tt + ZH/ZZ → 4b : signal 유사 배경, 두 모드 모두 별도 줄
         {"TTZHTo4b", "ttZHZZ"}, {"TTZZTo4b", "ttZHZZ"},
         // tt + VV / VH (나머지)
         {"TTWW", "ttVVVH"}, {"TTWZ", "ttVVVH"}, {"TTWH", "ttVVVH"},
         // 3-top / 4-top
         {"TTTT", "tttx"}, {"TTTW", "tttx"},
+        {"TTTWminus", "tttx"}, {"TTTWplus", "tttx"},   // [STEP 24] 2024
         // single top
         {"ST_t_top", "singletop"}, {"ST_t_antitop", "singletop"},
         {"ST_tW_top", "singletop"}, {"ST_tW_antitop", "singletop"},
@@ -445,6 +448,7 @@ static std::string GetFineProcessKey(const std::string& name) {
         {"WJetsToQQ_HT",      "vjets"},
         {"ZJetsToQQ_HT",      "vjets"},
         {"DYJetsToLL_M50_HT", "vjets"},
+        {"ST_",               "singletop"},   // [STEP 24] 2024: ST_t_top_had, ST_tW_antitop_semilep, ST_s_top_lep, ...
     };
     for (const auto& p : kPrefix)
         if (name.rfind(p.first, 0) == 0) return p.second;
@@ -583,7 +587,10 @@ std::string PrettyAxisTitle(const std::string& path) {
 // 3. DRAWING LOGIC
 // ============================================================================
 
-void DrawCMSLabel(double lumi) {
+// [STEP 24] sqrt(s) and a note under the CMS label come from the environment (TTHH_PLOT_SQRTS, TTHH_PLOT_NOTE;
+//   plotter/make_plots.py sets them from the analyzer yml); without them the label is the 2017 one. The note is
+//   drawn as lines split at ';' (keep each line short: the legend starts at x = 0.42).
+void DrawCMSLabel(double lumi, const std::string& sqrts = "13", const std::string& note = "") {
     TLatex latex;
     latex.SetNDC();
     latex.SetTextFont(61); latex.SetTextSize(0.055);
@@ -591,7 +598,35 @@ void DrawCMSLabel(double lumi) {
     latex.SetTextFont(52); latex.SetTextSize(0.045);
     latex.DrawLatex(0.26, 0.93, "Preliminary");
     latex.SetTextFont(42); latex.SetTextSize(0.045); latex.SetTextAlign(31);
-    latex.DrawLatex(0.96, 0.93, Form("%.1f fb^{-1} (13 TeV)", lumi));
+    latex.DrawLatex(0.96, 0.93, Form("%.1f fb^{-1} (%s TeV)", lumi, sqrts.c_str()));
+    if (!note.empty()) {   // ';' separates lines; short lines stay left of the legend (x < 0.42)
+        latex.SetTextFont(42); latex.SetTextSize(0.028); latex.SetTextAlign(13);
+        std::stringstream ss(note);
+        std::string line;
+        double y = 0.885;
+        while (std::getline(ss, line, ';')) {
+            line = trim(line);
+            if (line.empty()) continue;
+            latex.DrawLatex(0.18, y, line.c_str());
+            y -= 0.036;
+        }
+    }
+}
+
+// [STEP 24] each input file is opened ONCE for the whole run (was: once per histogram and sample -- 618 x 72 opens
+//   of the merged /pnfs files per grouping for 2024). A file that does not open is remembered as nullptr.
+static std::map<std::string, TFile*> gFileCache;
+static TFile* OpenCached(const std::string& fname) {
+    auto it = gFileCache.find(fname);
+    if (it != gFileCache.end()) return it->second;
+    TFile* f = TFile::Open(fname.c_str(), "READ");
+    if (f && f->IsZombie()) { delete f; f = nullptr; }
+    gFileCache[fname] = f;
+    return f;
+}
+static void CloseCachedFiles() {
+    for (auto& kv : gFileCache) if (kv.second) { kv.second->Close(); delete kv.second; }
+    gFileCache.clear();
 }
 
 TH1F* GetSummedHist(const SampleInfo& sample, const std::string& histPath) {
@@ -599,8 +634,8 @@ TH1F* GetSummedHist(const SampleInfo& sample, const std::string& histPath) {
     gErrorIgnoreLevel = kError;
 
     for (const auto& fname : sample.files) {
-        TFile* f = TFile::Open(fname.c_str(), "READ");
-        if (!f || f->IsZombie()) { if (f) delete f; continue; }
+        TFile* f = OpenCached(fname);
+        if (!f) continue;
 
         TH1F* h = (TH1F*)f->Get(histPath.c_str());
         if (!h && histPath.front() == '/') h = (TH1F*)f->Get(histPath.substr(1).c_str());
@@ -612,8 +647,8 @@ TH1F* GetSummedHist(const SampleInfo& sample, const std::string& histPath) {
             } else {
                 hTotal->Add(h);
             }
+            delete h;   // [STEP 24] the file stays open: drop the copy it read (TH1 removes itself from the directory)
         }
-        delete f;
     }
 
     if (hTotal) {
@@ -638,6 +673,18 @@ void stack_plotter() {
 
     double LUMI = 42.07;  // Lumi for 2017 UL (label only; 2026-10-02 41.48 -> 42.07, docs/DECISIONS.md D-2026-10-02-D;
                           //   per-year lumi/sqrt(s) labels: docs/PLAN_v15_2018UL_2024.md section 9, Stage 8)
+    // [STEP 24] label from the environment (plotter/make_plots.py: the yml's lumi_fb_inv, 13.6 TeV for 2024, a note on
+    //   the provisional cross sections and the SF state). Unset -> the 2017 label above.
+    std::string SQRTS = "13", NOTE = "";
+    bool MULTIPAGE = false;
+    if (const char* e = std::getenv("TTHH_PLOT_LUMI"))  LUMI = std::atof(e);
+    if (const char* e = std::getenv("TTHH_PLOT_SQRTS")) SQRTS = e;
+    if (const char* e = std::getenv("TTHH_PLOT_NOTE"))  NOTE = e;
+    if (const char* e = std::getenv("TTHH_PLOT_MULTIPAGE")) MULTIPAGE = (std::string(e) == "1");
+    if (!(LUMI > 0.0)) {
+        std::cerr << "[StackPlotter][FATAL] TTHH_PLOT_LUMI must be a positive number" << std::endl;
+        gSystem->Exit(1);
+    }
 
     // ── [STEP21] grouping 모드 선택 ────────────────────────────────────────
     // env TTHH_PLOT_GROUPING = "compact"(기본) | "detailed"
@@ -655,6 +702,10 @@ void stack_plotter() {
     }
     std::string outDir = "plots_" + gGroupingMode;
     Log("Grouping mode: " + gGroupingMode + "  (output -> " + outDir + "/)");
+    Log(Form("Label: %.3f fb^-1 (%s TeV)%s%s", LUMI, SQRTS.c_str(), NOTE.empty() ? "" : "; note: ", NOTE.c_str()));
+    // [STEP 24] all plots also in one multi-page PDF (one file to copy): <outDir>/all_<grouping>.pdf
+    const std::string multiPdf = outDir + "/all_" + gGroupingMode + ".pdf";
+    bool multiOpen = false;
 
     // ── stack ordering policy ──────────────────────────────────────────────
     // The stack is ALWAYS grouped + ordered by yield; this flag only chooses
@@ -878,7 +929,7 @@ void stack_plotter() {
             }
         }
 
-        leg->Draw(); DrawCMSLabel(LUMI);
+        leg->Draw(); DrawCMSLabel(LUMI, SQRTS, NOTE);
 
         // Detect whether this is a cutflow plot — used to widen the ratio
         // range a touch (cutflows can swing more in early bins where stats
@@ -917,6 +968,10 @@ void stack_plotter() {
         }
 
         c->SaveAs(Form("%s/%s.pdf", outDir.c_str(), hInfo.clean_name.c_str()));   // [STEP21] PDF(벡터)
+        if (MULTIPAGE) {   // [STEP 24] "file.pdf(" opens, "file.pdf" adds a page, "file.pdf)" closes (after the loop)
+            c->Print((multiPdf + (multiOpen ? "" : "(")).c_str(), ("Title:" + hInfo.clean_name).c_str());
+            multiOpen = true;
+        }
 
         delete c; delete hMcSum; if(hData) delete hData;
         if (hSigOverlay) delete hSigOverlay;
@@ -925,5 +980,13 @@ void stack_plotter() {
         for (auto& kv : groupMap) delete kv.second.hist;
     }
 
+    CloseCachedFiles();
+    if (MULTIPAGE && multiOpen) {   // [STEP 24] close the multi-page PDF with an empty last canvas
+        TCanvas cEnd("cEnd", "", 800, 800);
+        TLatex t; t.SetNDC(); t.SetTextSize(0.03);
+        t.DrawLatex(0.1, 0.5, Form("end of %s (%d plots)", multiPdf.c_str(), count));
+        cEnd.Print((multiPdf + ")").c_str());
+        Log("Multi-page PDF: " + multiPdf);
+    }
     std::cout << "\n\n[Success] All plots saved to '" << outDir << "' directory." << std::endl;
 }

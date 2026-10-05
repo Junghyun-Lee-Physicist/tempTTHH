@@ -26,6 +26,12 @@
 #   ./consolidate_prescan.py                       # all defaults
 #   ./consolidate_prescan.py --input-base <dir> --outdir <dir>
 #   ./consolidate_prescan.py --only TTbar_SemiLep ttbb   # subset
+#   ./consolidate_prescan.py --input-base <dir> --outdir <dir> --skimmed
+#       # skimmed inputs (2024: NtupleForge 6j20): ΣgenW(Events) < ΣgenW(Runs)
+#       # is expected and only reported; see run_crosschecks() check (4)
+#
+# Exit code: 0 when no sample has an anomaly (the "No anomalies" line),
+# 1 otherwise (bad/missing job, failed cross-check, or a warning).
 #
 # Run inside a CMSSW environment (needs PyROOT).
 ###############################################################################
@@ -306,9 +312,11 @@ def aggregate_sample(ROOT, input_base: str, sample: str,
 # --------------------------------------------------------------------------- #
 # Cross-checks (same logic the analyzer prints, now sample-aggregated)
 # --------------------------------------------------------------------------- #
-def run_crosschecks(summ: SampleSummary, rel_tol: float) -> dict:
-    """Return a dict of named pass/fail checks; append human-readable
-    messages to summ.warnings for any failure."""
+def run_crosschecks(summ: SampleSummary, rel_tol: float,
+                    skimmed: bool = False) -> dict:
+    """Return a dict of named pass/fail checks; append a human-readable
+    message to summ.warnings for EVERY failure, so the anomaly report and
+    the exit code always agree (see has_anomaly())."""
     checks: dict[str, bool] = {}
 
     def close(a: float, b: float) -> bool:
@@ -346,6 +354,10 @@ def run_crosschecks(summ: SampleSummary, rel_tol: float) -> dict:
         summ.warnings.append(
             f"ttCat count partition mismatch: Σn_ttCat={tt_n_sum:,} "
             f"vs nEvents={summ.n_events:,}")
+    if not checks["ttcat_partition_weight"]:
+        summ.warnings.append(
+            f"ttCat weight partition mismatch: "
+            f"ΣsumGenW_ttCat={fixed_str(tt_w_sum)} vs sumGenW={fixed_str(summ.sumGenW)}")
 
     # (3) LF and cc map 1:1 between ttCat and the expanded id partition — tt+nb
     #     never lands in LF/cc, so these stay exact. HARD.
@@ -365,8 +377,38 @@ def run_crosschecks(summ: SampleSummary, rel_tol: float) -> dict:
                 f"ttCat vs id weight mismatch [{cat}]: "
                 f"w_ttCat={fixed_str(summ.ttcat_w[cat])} vs Σw_id={fixed_str(w_id)}")
 
-    # (4) Events-tree vs Runs-tree sum (informational; non-zero = skim).
-    checks["events_vs_runs_match"] = close(summ.sumGenW, summ.runs_sumW)
+    # (4) Events-tree vs Runs-tree genWeight sum.
+    #     Unskimmed input (default): the Events tree holds every generated
+    #     event, so the two sums must agree; a difference means lost events.
+    #     Skimmed input (--skimmed, e.g. the 2024 NtupleForge 6j20 skim): the
+    #     Events tree holds only the events that passed the skim while the Runs
+    #     tree still counts every generated event, so Events < Runs by
+    #     construction (the skim% column) and the normalization uses the Runs
+    #     sum. Then only Events <= Runs is checked: a skim removes events, and
+    #     the removed events of a physical sample carry net positive weight.
+    #     (Before 2026-10-05 the match was gated even for skimmed input with no
+    #     warning text: every 2024 MC sample showed chk FAIL and the exit code
+    #     was 1 under "No anomalies".)
+    skim = summ.skim_attrition_rel
+    skim_s = "n/a" if skim is None else f"{skim * 100:+.4f}"
+    if skimmed:
+        ok = summ.sumGenW <= summ.runs_sumW + rel_tol * max(abs(summ.runs_sumW), 1.0)
+        checks["events_le_runs"] = ok
+        if not ok:
+            summ.warnings.append(
+                f"ΣgenW(Events)={fixed_str(summ.sumGenW)} > "
+                f"ΣgenW(Runs)={fixed_str(summ.runs_sumW)} (skim% {skim_s}) although "
+                f"the input is skimmed (a skim only removes events): a job counted "
+                f"twice, or Runs entries missing?")
+    else:
+        ok = close(summ.sumGenW, summ.runs_sumW)
+        checks["events_vs_runs_match"] = ok
+        if not ok:
+            summ.warnings.append(
+                f"ΣgenW(Events)={fixed_str(summ.sumGenW)} vs "
+                f"ΣgenW(Runs)={fixed_str(summ.runs_sumW)} differ (skim% {skim_s}): "
+                f"unskimmed input must match (events lost?); if this production "
+                f"is skimmed, rerun with --skimmed")
 
     # NOTE: the b-enhanced reconciliation (ttCat 2b+  vs  expanded 2b + tt+nb)
     # is reported by print_expanded_reconciliation() as INFO, not gated here:
@@ -378,7 +420,14 @@ def run_crosschecks(summ: SampleSummary, rel_tol: float) -> dict:
 # --------------------------------------------------------------------------- #
 # Reporting
 # --------------------------------------------------------------------------- #
-def print_headline_table(records: list[tuple[SampleSummary, dict]]) -> None:
+def has_anomaly(summ: SampleSummary, checks: dict) -> bool:
+    """One definition for the anomaly report, the JSON meta and the exit code."""
+    return bool(summ.bad_files or summ.missing_indices or summ.warnings
+                or not all(checks.values()))
+
+
+def print_headline_table(records: list[tuple[SampleSummary, dict]],
+                         skimmed: bool = False) -> None:
     hdr = (f"{'Sample':<24}{'Type':<6}{'Jobs ok/found':<16}"
            f"{'nEvents':>18}{'ΣgenW(Events)':>28}{'ΣgenW(Runs)':>28}"
            f"{'skim%':>10}{'chk':>6}")
@@ -398,6 +447,12 @@ def print_headline_table(records: list[tuple[SampleSummary, dict]]) -> None:
               f"{grouped(summ.sumGenW):>28}{grouped(summ.runs_sumW):>28}"
               f"{skim_s:>10}{chk:>6}")
     print(line)
+    if skimmed:
+        mc = [s for s, _ in records if not s.is_data]
+        n_less = sum(1 for s in mc if s.sumGenW < s.runs_sumW)
+        print(f"  INFO (--skimmed): ΣgenW(Events) < ΣgenW(Runs) for {n_less} of "
+              f"{len(mc)} MC samples = the skim (skim% column); the normalization "
+              f"uses ΣgenW(Runs). Checked: Events <= Runs.")
 
 
 def print_ttbar_category_table(records: list[tuple[SampleSummary, dict]]) -> None:
@@ -460,16 +515,18 @@ def print_expanded_reconciliation(records: list[tuple[SampleSummary, dict]]) -> 
 
 
 def print_anomaly_report(records: list[tuple[SampleSummary, dict]]) -> None:
-    flagged = [(s, c) for s, c in records
-               if s.bad_files or s.missing_indices or s.warnings]
+    flagged = [(s, c) for s, c in records if has_anomaly(s, c)]
     if not flagged:
         print("\n  No anomalies: every job valid, every cross-check passed.\n")
         return
     print("\n" + "═" * 78)
     print("  ANOMALY REPORT — review before using these numbers downstream")
     print("═" * 78)
-    for s, _ in flagged:
+    for s, c in flagged:
         print(f"\n  [{s.sample}]")
+        failed = [k for k, v in c.items() if not v]
+        if failed:
+            print(f"    failed checks: {', '.join(failed)}")
         if s.missing_indices:
             preview = s.missing_indices[:20]
             more = "" if len(s.missing_indices) <= 20 else \
@@ -611,6 +668,11 @@ def parse_args(argv=None) -> argparse.Namespace:
                         "(default: %(default)s)")
     p.add_argument("--only", nargs="+", metavar="SAMPLE",
                    help="restrict to these sample directories")
+    p.add_argument("--skimmed", action="store_true",
+                   help="the analyzer inputs are skimmed (2024: NtupleForge 6j20), "
+                        "so ΣgenW(Events) < ΣgenW(Runs) is expected: report it "
+                        "and check only Events <= Runs (default: unskimmed, "
+                        "Events must equal Runs)")
     return p.parse_args(argv)
 
 
@@ -623,15 +685,17 @@ def main(argv=None) -> int:
         sys.exit("[FATAL] no sample directories to process.")
     print(f"[prescan] input base : {args.input_base}")
     print(f"[prescan] samples    : {len(samples)}")
+    print(f"[prescan] skimmed    : "
+          f"{'yes (Events vs Runs reported; Events <= Runs checked)' if args.skimmed else 'no (Events must equal Runs)'}")
 
     records: list[tuple[SampleSummary, dict]] = []
     for i, sample in enumerate(samples, 1):
         print(f"  [{i:3d}/{len(samples)}] {sample} ...", flush=True)
         summ = aggregate_sample(ROOT, args.input_base, sample, args.tree)
-        checks = run_crosschecks(summ, args.rel_tol)
+        checks = run_crosschecks(summ, args.rel_tol, args.skimmed)
         records.append((summ, checks))
 
-    print_headline_table(records)
+    print_headline_table(records, args.skimmed)
     print_ttbar_category_table(records)
     print_expanded_reconciliation(records)
     print_anomaly_report(records)
@@ -644,21 +708,19 @@ def main(argv=None) -> int:
         "input_base": args.input_base,
         "tree": args.tree,
         "rel_tol": args.rel_tol,
+        "skimmed": args.skimmed,
         "n_samples": len(records),
-        "n_samples_with_anomaly": sum(
-            1 for s, _ in records
-            if s.bad_files or s.missing_indices or s.warnings),
+        "n_samples_with_anomaly": sum(1 for s, c in records if has_anomaly(s, c)),
     }
     write_json(json_path, records, meta)
     write_csv(csv_path, records)
     print(f"  Wrote {json_path}")
     print(f"  Wrote {csv_path}\n")
 
-    # Non-zero exit if any sample has a bad/missing job or a failed check —
-    # convenient for chaining (e.g. trigger a resubmit pass).
-    any_anomaly = any(s.bad_files or s.missing_indices
-                      or not all(c.values())
-                      for s, c in records)
+    # Non-zero exit if any sample has a bad/missing job, a failed check or a
+    # warning — the same samples the anomaly report lists, so "No anomalies"
+    # and exit 0 always go together. Convenient for chaining (resubmit pass).
+    any_anomaly = any(has_anomaly(s, c) for s, c in records)
     return 1 if any_anomaly else 0
 
 

@@ -333,6 +333,9 @@ python3 submit_job_FH_Tier3_unified.py --mode prescan
 python3 consolidate_prescan.py \
     --input-base <prescan output base dir> \
     --outdir ./prescan_summary
+#     skim 된 입력(2024: NtupleForge 6j20)이면 --skimmed 를 붙인다: tree < runs 는 skim 이라
+#     정보(INFO)로만, tree ≤ runs 만 검사. 없으면 tree = runs 를 검사(skim 없는 2017).
+#     exit 0 ⇔ "No anomalies" (빠진/깨진 job, 실패한 검사, 경고가 하나도 없음)
 #     → prescan_summary/prescan_summary.json
 #        samples[X].runs.genEventSumw  (★ weight·stitch 가 사용)
 #        samples[X].events.sumGenW_total (교차검증용; >0.01% 차이 시 경고)

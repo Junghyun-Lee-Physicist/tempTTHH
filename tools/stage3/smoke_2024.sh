@@ -72,6 +72,11 @@ EXE="$REPO/ttHHanalyzer_unified"
 [[ -d "$FLD" ]] || { echo "ERROR no filelist directory $FLD (tools/stage3/make_filelists_v15.py --year 2024)"; exit 2; }
 python3 -c 'import ROOT' > /dev/null 2>&1 || { echo "ERROR no PyROOT (cmsenv first)"; exit 2; }
 STAMP="$(sed -n 's/^#define TTHH_EVENTBUFFER_STAMP "\(.*\)"$/\1/p' "$REPO/include/eventBuffer.h")"
+# [STEP 24] an executable older than the sources was not built from this checkout -- or a build is running right now
+#   (its make clean removes the executable: 10-05 every run ended with exit 127)
+NEWER="$(find "$REPO/ttHHanalyzer_unified.cc" "$REPO/ttHHanalyzer_unified.h" "$REPO/include" "$REPO/src" -maxdepth 1 -type f \
+         \( -name '*.cc' -o -name '*.h' \) ! -name 'dictionaryForROOT*' -newer "$EXE" 2>/dev/null | head -3 | tr '\n' ' ')"
+[[ -z "$NEWER" ]] || { echo "ERROR the executable is older than: $NEWER-- build first (tools/stage0/build_check.sh) and run this after the build has finished"; exit 2; }
 [[ -n "$STAMP" ]] || { echo "ERROR include/eventBuffer.h has no TTHH_EVENTBUFFER_STAMP (not a STEP 24 header)"; exit 2; }
 W="$(mktemp -d "${TMPDIR:-/tmp}/tthh_smoke2024.XXXXXX")" || exit 2
 trap 'rm -rf "$W"' EXIT
@@ -297,7 +302,7 @@ PY
 }
 common_checks() {   # dataOrMC label(analysis code|prescan)
   local dom="$1" label="$2" rc; rc=$(cat "$LAST.rc")
-  check "$LRUN" "exit 0" "$([[ $rc == 0 ]] && echo 1)" "(exit $rc)"
+  check "$LRUN" "exit 0" "$([[ $rc == 0 ]] && echo 1)" "(exit $rc$([[ $rc == 127 ]] && echo ': the executable or a library was missing during the run -- a build at the same time?'))"
   check "$LRUN" "built from this checkout's header (eventBuffer stamp)" "$(grep -qF "[eventBuffer] $STAMP" "$LAST.log" && echo 1)" \
         "(the log says: $(grep -m1 '^\[eventBuffer\]' "$LAST.log"))"
   check "$LRUN" "required branches present" \

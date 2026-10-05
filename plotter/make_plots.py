@@ -1,0 +1,307 @@
+#!/usr/bin/env python3
+"""make_plots.py -- stack plots and a yield table from the merged main outputs of one analyzer yml (STEP 24)
+
+    python3 plotter/make_plots.py --config AnalyzerConfig/Tier3_2024_FH_unified_main.yml
+            --base /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024
+            [--out DIR] [--grouping compact|detailed|both] [--exclude NAME ...] [--no-default-exclude]
+            [--include-hist REGEX ...] [--exclude-hist REGEX ...] [--note TEXT] [--allow-missing] [--check-only]
+
+What it does (in cmsenv: PyROOT and root):
+  1. the samples of the yml (the submitter's own yml reader; Data by the submitter's is_data_name), each as the
+     merged file <base>/<sample>.root (outputMerger/merge_outputs.py). A missing or unreadable file stops (exit 1)
+     unless --allow-missing.
+  2. default exclusions by year: 2024 -> TTbb_Hadronic, TTbb_SemiLep, TTbb_DiLep, TT4b (D-2026-10-05-C: no 2024
+     stitching, so the 4FS tt+bb and tt+4b samples are not stacked on the inclusive ttbar). --exclude adds more,
+     --no-default-exclude drops the defaults.
+  3. YIELDS: the weighted cutflow (Tree/cutflow_w) of every sample: per step the MC sum, the Data sum and
+     Data/MC; per sample the yields at HT>500, nbjets>=2, nbjets>=4 and the last step (a sample with a zero or
+     negative yield at noCut is flagged). Before the skim (the ntuples are skimmed, e.g. 2024 6j20, so the
+     analyzer's noCut is after it): per MC sample 'generated' = weight x Sigma genw(Runs) = lumi x xsec x br (the
+     submitter's own weight and the prescan summary of common.prescan), the skim efficiency Sigma genw(Events) /
+     Sigma genw(Runs), and noCut / (weight x Sigma genw(Events)) -- about the mean PU weight when every main job of
+     the sample is in the merged file, clearly lower when jobs are missing (WARN below 0.7 or above 1.3). Data
+     have no pre-skim row: the production had no lumi mask, so its input counts (NtupleForge ForgeAudit n_in)
+     include non-golden lumisections. --check-only stops here.
+  4. structure_info.yml from one MC file (TTbar_Hadronic if present): every TH1 (no TH2/TProfile), in file order,
+     filtered by --include-hist / --exclude-hist (regex on the key path) -- the format plotter/extract_structure.py
+     writes, made with PyROOT here so uproot is not needed.
+  5. samples_config.yml, a copy of plotter/stack_plotter.C, and `root -l -b -q stack_plotter.C` per grouping with
+     TTHH_PLOT_GROUPING, TTHH_PLOT_LUMI (the yml's lumi_fb_inv), TTHH_PLOT_SQRTS (13.6 for Run 3, else 13),
+     TTHH_PLOT_NOTE (year; 2024: '#sigma: provisional'; the SF state read from the base name) and
+     TTHH_PLOT_MULTIPAGE=1 (all plots also in plots_<grouping>/all_<grouping>.pdf).
+Output: --out (default <repo>/condor/plots/<base name>_<UTC>/; condor/ is gitignored): YIELDS.txt, the two yml,
+plotter_<grouping>.log, plots_<grouping>/*.pdf.
+Lines: SAMPLE / EXCLUDED / MISSING, YIELD ..., HIST n=..., PLOTS <grouping> pdf=<n> multipage=<path>, RESULT OK|FAIL.
+Exit: 0 ok; 1 a check or the plotter failed; 2 bad arguments.
+"""
+from __future__ import print_function
+
+import argparse
+import contextlib
+import datetime
+import importlib.util
+import io
+import os
+import re
+import shutil
+import subprocess
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.dirname(HERE)
+DEFAULT_EXCLUDE = {"2024": ["TTbb_Hadronic", "TTbb_SemiLep", "TTbb_DiLep", "TT4b"]}
+SQRTS = {"2016": "13", "2017": "13", "2018": "13", "2022": "13.6", "2023": "13.6", "2024": "13.6"}
+YEAR_NOTE = {"2024": "2024 C-I;#sigma: provisional (13.6 TeV)"}
+KEY_STEPS = ("HT>500", "nbjets>=2", "nbjets>=4")
+
+
+def submitter():
+    src = os.path.join(REPO, "submit_job_FH_Tier3_unified.py")
+    spec = importlib.util.spec_from_file_location("tthh_submitter", src)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def sf_note(base):
+    """The SF state from the output directory name (the submitter's suffixes: _notrig, _btagsf, _btagrw)."""
+    name = os.path.basename(os.path.normpath(base))
+    trig = "_notrig" not in name
+    btag = "_btagsf" in name
+    off = [x for x, on in (("trigger", trig), ("b-tag", btag)) if not on]
+    return ("no %s SF" % "/".join(off)) if off else "trigger SF applied"
+
+
+def cutflow(ROOT, path):
+    """(labels, weighted values) of Tree/cutflow_w, or None"""
+    f = ROOT.TFile.Open(path)
+    if not f or f.IsZombie():
+        return None
+    try:
+        h = f.Get("Tree/cutflow_w")
+        if not h:
+            return None
+        n = h.GetNbinsX()
+        return ([h.GetXaxis().GetBinLabel(i) for i in range(1, n + 1)],
+                [h.GetBinContent(i) for i in range(1, n + 1)])
+    finally:
+        f.Close()
+
+
+def th1_paths(ROOT, path, inc, exc):
+    """[(key_path, class, title, nbins, xlow, xhigh)] of the TH1s in the file, in key order"""
+    out = []
+    f = ROOT.TFile.Open(path)
+
+    def walk(d, prefix):
+        for k in d.GetListOfKeys():
+            cls = k.GetClassName()
+            name = k.GetName()
+            if cls.startswith("TDirectory"):
+                walk(k.ReadObj(), prefix + name + "/")
+                continue
+            if not cls.startswith("TH1"):
+                continue
+            kp = prefix + name
+            if inc and not any(re.search(r, kp) for r in inc):
+                continue
+            if any(re.search(r, kp) for r in exc):
+                continue
+            h = k.ReadObj()
+            ax = h.GetXaxis()
+            out.append((kp, cls, h.GetTitle(), ax.GetNbins(), ax.GetXmin(), ax.GetXmax()))
+    walk(f, "")
+    f.Close()
+    return out
+
+
+def yq(v):
+    """yaml scalar"""
+    if isinstance(v, (int, float)):
+        return repr(v)
+    s = str(v)
+    if s == "" or any(c in s for c in ":#[]{},&*!|>'\"%@`") or s.lower() in ("yes", "no", "true", "false", "null", "~"):
+        return "'" + s.replace("'", "''") + "'"
+    return s
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--config", required=True)
+    ap.add_argument("--base", required=True)
+    ap.add_argument("--out")
+    ap.add_argument("--grouping", default="both", choices=["compact", "detailed", "both"])
+    ap.add_argument("--exclude", nargs="*", default=[])
+    ap.add_argument("--no-default-exclude", action="store_true")
+    ap.add_argument("--include-hist", nargs="*", default=[])
+    ap.add_argument("--exclude-hist", nargs="*", default=[])
+    ap.add_argument("--note")
+    ap.add_argument("--allow-missing", action="store_true")
+    ap.add_argument("--check-only", action="store_true")
+    a = ap.parse_args(argv)
+
+    cfg = a.config if os.path.isabs(a.config) else os.path.join(REPO, a.config)
+    if not os.path.isfile(cfg) or not os.path.isdir(a.base):
+        print("ERROR no config %s or no base directory %s" % (cfg, a.base))
+        return 2
+    sub = submitter()
+    conf = sub.CondorJobManager.load_yaml_config(None, cfg)
+    common = conf["common"]
+    year = str(common.get("year", "")).strip()
+    try:
+        lumi = float(common["lumi_fb_inv"])
+    except (KeyError, TypeError, ValueError):
+        print("ERROR %s has no numeric common.lumi_fb_inv" % cfg)
+        return 2
+    names = [(s["sample_name"] if isinstance(s, dict) else str(s)) for s in conf["samples"]]
+    excl = set(a.exclude) | (set() if a.no_default_exclude else set(DEFAULT_EXCLUDE.get(year, [])))
+    sqrts = SQRTS.get(year, "13")
+    note = a.note if a.note is not None else ";".join(x for x in (YEAR_NOTE.get(year, year), sf_note(a.base)) if x)
+    print("CONFIG %s year=%s lumi=%.3f sqrt(s)=%s TeV samples=%d" % (cfg, year, lumi, sqrts, len(names)))
+    print("BASE %s" % a.base)
+    print("NOTE %s" % note)
+
+    import ROOT
+    ROOT.gROOT.SetBatch(True)
+    ROOT.gErrorIgnoreLevel = ROOT.kError
+    samples, bad = [], []
+    for n in names:
+        kind = "DATA" if sub.is_data_name(n) else "MC"
+        if n in excl:
+            why = "D-2026-10-05-C: not stacked on the inclusive ttbar in %s" % year if n in DEFAULT_EXCLUDE.get(year, []) \
+                else "--exclude"
+            print("EXCLUDED %s (%s)" % (n, why))
+            continue
+        p = os.path.join(a.base, n + ".root")
+        cf = cutflow(ROOT, p) if os.path.isfile(p) else None
+        if cf is None:
+            print("MISSING %s %s (%s)" % (kind, p, "no file" if not os.path.isfile(p) else "no Tree/cutflow_w"))
+            bad.append(n)
+            continue
+        samples.append((n, kind, p, cf))
+        print("SAMPLE %-4s %-45s %s" % (kind, n, p))
+    if bad and not a.allow_missing:
+        print("RESULT FAIL (%d sample(s) missing: %s; merge them, or --allow-missing)" % (len(bad), " ".join(bad[:8])))
+        return 1
+    mc = [s for s in samples if s[1] == "MC"]
+    data = [s for s in samples if s[1] == "DATA"]
+    if not mc:
+        print("RESULT FAIL (no MC sample)")
+        return 1
+    labels = mc[0][3][0]
+    for s in samples:
+        if s[3][0] != labels:
+            print("RESULT FAIL (%s has other cutflow bins: %s)" % (s[0], s[3][0]))
+            return 1
+
+    # ---- before the skim (MC): the submitter's weight x the prescan sums -------------------------------------
+    gen = {}
+    os.chdir(REPO)     # the submitter's loaders open common.xsec_db and common.prescan relative to the repository
+    calc = object.__new__(sub.CondorJobManager)
+    for n, kind, p, cf in mc:
+        try:
+            with contextlib.redirect_stdout(io.StringIO()):
+                w, _ = calc._compute_base_weight(n, common)
+                rec = calc._load_prescan(common["prescan"])[n]
+            sr, se = float(rec["runs"]["genEventSumw"]), float(rec["events"]["sumGenW_total"])
+            gen[n] = (w * sr, (se / sr) if sr else float("nan"), w * se)
+        except (SystemExit, Exception):     # no prescan summary / sample in it: no pre-skim numbers for it
+            gen[n] = None
+    have_gen = [n for n in gen if gen[n] is not None]
+
+    # ---- yields ---------------------------------------------------------------------------------------------
+    lines = []
+    W = lines.append
+    msum = [sum(s[3][1][i] for s in mc) for i in range(len(labels))]
+    dsum = [sum(s[3][1][i] for s in data) for i in range(len(labels))]
+    W("YIELDS %s (Tree/cutflow_w; MC %d samples, Data %d; lumi %.3f fb-1)" % (os.path.basename(os.path.normpath(a.base)),
+                                                                              len(mc), len(data), lumi))
+    W("YIELD %-16s %14s %14s %8s" % ("step", "MC", "Data", "Data/MC"))
+    if have_gen:
+        W("YIELD %-16s %14.1f %14s %8s   (before the skim; MC samples with a prescan record: %d of %d)"
+          % ("generated", sum(gen[n][0] for n in have_gen), "-", "-", len(have_gen), len(mc)))
+    for i, lab in enumerate(labels):
+        r = (dsum[i] / msum[i]) if msum[i] > 0 else float("nan")
+        W("YIELD %-16s %14.1f %14.0f %8.3f" % (lab, msum[i], dsum[i], r))
+    idx = {lab: i for i, lab in enumerate(labels)}
+    cols = [c for c in KEY_STEPS if c in idx] + [labels[-1]]
+    W("SAMPLEYIELD %-30s %12s %8s %12s %9s " % ("sample (MC, by yield at %s)" % cols[0], "generated", "skimEff", "noCut",
+                                                 "noCut/exp") + " ".join("%12s" % c for c in cols))
+    flagged, warned = [], []
+    for s in sorted(mc, key=lambda s: -s[3][1][idx[cols[0]]]):
+        v = s[3][1]
+        if not v[0] > 0:
+            flagged.append(s[0])
+        g = gen.get(s[0])
+        ratio = (v[0] / g[2]) if (g and g[2] > 0) else float("nan")
+        if g and not (0.7 <= ratio <= 1.3):
+            warned.append((s[0], ratio))
+        W("SAMPLEYIELD %-30s %12s %8s %12.1f %9s " % (s[0], "%.1f" % g[0] if g else "-", "%.3f" % g[1] if g else "-", v[0],
+                                                     "%.3f" % ratio if g else "-") + " ".join("%12.2f" % v[idx[c]] for c in cols))
+    for n in flagged:
+        W("FLAG %s: noCut yield <= 0 (weight, xsec or prescan problem?)" % n)
+    for n, r in warned:
+        W("WARN %s: noCut / (weight x Sigma genw(Events)) = %.3f -- about the mean PU weight when the merged file holds "
+          "every main job once: %s" % (n, r, "jobs missing from the merge?" if r < 1 else "jobs merged twice?"))
+    out = a.out or os.path.join(REPO, "condor", "plots",
+                                "%s_%s" % (os.path.basename(os.path.normpath(a.base)),
+                                           datetime.datetime.utcnow().strftime("%Y%m%d_%H%M%S")))
+    os.makedirs(out, exist_ok=True)
+    with open(os.path.join(out, "YIELDS.txt"), "w") as f:
+        f.write("\n".join(lines) + "\n")
+    print("\n".join(lines))
+    print("OUT %s" % out)
+    if a.check_only:
+        print("RESULT %s (check only)" % ("OK" if not flagged else "FAIL (%d flagged)" % len(flagged)))
+        return 0 if not flagged else 1
+
+    # ---- structure_info.yml and samples_config.yml --------------------------------------------------------------
+    ref = next((s[2] for s in mc if s[0] == "TTbar_Hadronic"), mc[0][2])
+    hists = th1_paths(ROOT, ref, a.include_hist, a.exclude_hist)
+    print("HIST n=%d from %s" % (len(hists), ref))
+    if not hists:
+        print("RESULT FAIL (no histogram selected)")
+        return 1
+    with open(os.path.join(out, "structure_info.yml"), "w") as f:
+        f.write("description: %s\ninput_file: %s\ntotal_count: %d\nhistograms:\n"
+                % (yq("Plottable histograms extracted from %s (plotter/make_plots.py)" % ref), yq(ref), len(hists)))
+        for kp, cls, title, nb, lo, hi in hists:
+            f.write("  - key_path: %s\n    classname: %s\n    title: %s\n    nbins: %d\n    xlow: %s\n    xhigh: %s\n"
+                    % (yq(kp), cls, yq(title), nb, repr(float(lo)), repr(float(hi))))
+    with open(os.path.join(out, "samples_config.yml"), "w") as f:
+        f.write("description: 'plotter/make_plots.py: %s'\nsamples:\n" % os.path.basename(cfg))
+        for n, kind, p, _ in samples:
+            f.write("  %s:\n    type: %s\n    path: %s\n    files:\n      - %s\n    label: %s\n    color: '%s'\n"
+                    % (n, kind, os.path.dirname(p), p, "Data" if kind == "DATA" else n,
+                       "#000000" if kind == "DATA" else "#BDC3C7"))
+    shutil.copy(os.path.join(HERE, "stack_plotter.C"), os.path.join(out, "stack_plotter.C"))
+
+    # ---- the plotter --------------------------------------------------------------------------------------------
+    ok = True
+    for grp in (["compact", "detailed"] if a.grouping == "both" else [a.grouping]):
+        env = dict(os.environ, TTHH_PLOT_GROUPING=grp, TTHH_PLOT_LUMI="%.6g" % lumi, TTHH_PLOT_SQRTS=sqrts,
+                   TTHH_PLOT_NOTE=note, TTHH_PLOT_MULTIPAGE="1")
+        log = os.path.join(out, "plotter_%s.log" % grp)
+        with open(log, "w") as lf:
+            rc = subprocess.call(["root", "-l", "-b", "-q", "stack_plotter.C"], cwd=out, env=env,
+                                 stdout=lf, stderr=subprocess.STDOUT)
+        pdir = os.path.join(out, "plots_" + grp)
+        pdfs = [x for x in os.listdir(pdir) if x.endswith(".pdf")] if os.path.isdir(pdir) else []
+        multi = os.path.join(pdir, "all_%s.pdf" % grp)
+        n_single = len([x for x in pdfs if not x.startswith("all_")])
+        good = rc == 0 and n_single > 0 and os.path.isfile(multi)
+        print("PLOTS %s rc=%d pdf=%d multipage=%s log=%s" % (grp, rc, n_single, multi if os.path.isfile(multi) else "-", log))
+        if not good:
+            ok = False
+            with open(log) as lf:
+                tail = lf.read().splitlines()[-15:]
+            print("\n".join("    " + t for t in tail))
+        warn = [l.strip() for l in open(log) if "not in grouping table" in l]
+        for w in sorted(set(warn)):
+            print("GROUPING_WARN %s" % w)
+    print("RESULT %s" % ("OK" if ok and not flagged else "FAIL" + (" (plotter)" if not ok else " (%d flagged)" % len(flagged))))
+    return 0 if ok and not flagged else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -384,12 +384,13 @@ void ttHHanalyzer_unified::requireTriggerBranches2018_() {
 // ═══════════════════════════════════════════════════════════════════════════
 // [STEP 24] Stage 1 (c), PLAN 9.3 / D-2026-10-02-B: no silent 0 for a branch the analysis reads.
 //   Every branch this year's code reads (below) must be selected by the eventBuffer (choose) AND present
-//   in the input file. Checked once, at the first event. treestream fixes the branch set from the FIRST
-//   file of the chain: a branch absent there reads 0 for every later file too, and one present there but
-//   absent in a later file stops the job (exit 1). So the first file is checked here, and a job with
-//   several files must have the same branch set in all of them (requireSameBranchSet_: 2024 era C Data
-//   files differ in their HLT branches). Counters (nJet, ...) are not in `choose`; their arrays are
-//   checked instead. The 2018 hadronic HLT check above is the same idea for the three 2018 paths.
+//   in the input file. Checked once, at the first event. treestream fixes ONE branch set for the whole
+//   chain (its branch list, taken from the tree the TChain has loaded after GetEntries -- the first file
+//   with ROOT 6.40, another one with ROOT 6.30 at KNU, STEP 24 section 12): a branch absent there reads 0
+//   in every file, one present there but absent in a file stops the job (exit 1). So a job with several
+//   files must have the same branch set in all of them (requireSameBranchSet_, which reads every file
+//   itself: 2024 era C Data files differ in their HLT branches). Counters (nJet, ...) are not in
+//   `choose`; their arrays are checked instead. The 2018 hadronic HLT check above is the same idea.
 // ═══════════════════════════════════════════════════════════════════════════
 bool ttHHanalyzer_unified::branchUsable_(const std::string& b, std::string& why) const {
     const std::string key = "Events/" + b;
@@ -501,39 +502,53 @@ void ttHHanalyzer_unified::requirePrescanBranches_() {
 void ttHHanalyzer_unified::requireSameBranchSet_() {
     const std::vector<std::string> files = _ev->input->filenames();
     if (files.size() < 2) return;
-    // the branches the header selects, and whether the first file has them (what treestream uses)
-    std::vector<std::pair<std::string, bool>> chosen;
-    for (const auto& kv : _ev->choose) {
-        if (!kv.second || kv.first.compare(0, 7, "Events/") != 0) continue;
-        chosen.emplace_back(kv.first.substr(7), _ev->input->present(kv.first));
-    }
-    std::vector<std::string> diffs;
-    for (size_t i = 1; i < files.size(); ++i) {
-        std::unique_ptr<TFile> f(TFile::Open(files[i].c_str(), "READ"));
+    // [STEP 24, KNU smoke 2026-10-05] Every file of the job is compared with the FIRST file, each read here with TFile.
+    //   treestream's own list (present()) is not used for this: it comes from TChain::GetListOfBranches() after
+    //   GetEntries(), i.e. from whichever tree the chain has loaded at that moment. With ROOT 6.30 (KNU) a job of a
+    //   PNet and a no-PNet era C file (in that order) ran through with exit 0, so that list did not hold the first
+    //   file's PNet branch (the bit then reads 0 in the first file); with ROOT 6.40 (container) the same job stopped.
+    std::vector<std::string> names;
+    for (const auto& kv : _ev->choose)
+        if (kv.second && kv.first.compare(0, 7, "Events/") == 0) names.push_back(kv.first.substr(7));
+    auto presence = [&names](const std::string& path, std::vector<char>& has) -> bool {
+        std::unique_ptr<TFile> f(TFile::Open(path.c_str(), "READ"));
         TTree* t = (f && !f->IsZombie()) ? dynamic_cast<TTree*>(f->Get("Events")) : nullptr;
-        if (!t) {
-            diffs.push_back(files[i] + ": cannot read its Events tree");
-            continue;
+        if (!t) return false;
+        has.assign(names.size(), 0);
+        for (size_t j = 0; j < names.size(); ++j) has[j] = (t->GetBranch(names[j].c_str()) != nullptr);
+        return true;
+    };
+    std::vector<std::string> diffs;
+    std::vector<char> first, here;
+    if (!presence(files[0], first)) {
+        diffs.push_back(files[0] + ": cannot read its Events tree");
+    } else {
+        for (size_t i = 1; i < files.size(); ++i) {
+            if (!presence(files[i], here)) {
+                diffs.push_back(files[i] + ": cannot read its Events tree");
+                continue;
+            }
+            int n = 0;
+            for (size_t j = 0; j < names.size(); ++j) {
+                if (here[j] == first[j]) continue;
+                if (n++ < 10)
+                    diffs.push_back(files[i] + ": " + names[j] + (here[j] ? " present (absent in the first file)"
+                                                                            : " absent (present in the first file)"));
+            }
+            if (n > 10) diffs.push_back(files[i] + ": ... " + std::to_string(n - 10) + " more");
         }
-        int n = 0;
-        for (const auto& c : chosen) {
-            const bool here = (t->GetBranch(c.first.c_str()) != nullptr);
-            if (here == c.second) continue;
-            if (n++ < 10)
-                diffs.push_back(files[i] + ": " + c.first + (here ? " present (absent in the first file: read as 0 there)"
-                                                               : " absent (present in the first file: the job would stop)"));
-        }
-        if (n > 10) diffs.push_back(files[i] + ": ... " + std::to_string(n - 10) + " more");
     }
     if (!diffs.empty()) {
         std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO << "] the " << files.size()
                   << " input files of this job do not have the same branches (first file " << files[0] << "):\n";
         for (const auto& d : diffs) std::cerr << "    - " << d << "\n";
-        std::cerr << "  treestream takes the branch set of the first file for the whole job. Run such files one per\n"
-                  << "  job (files_per_job: 1, the 2024 yml), or group them by branch set (tools/stage0/branch_signature.py).\n";
+        std::cerr << "  treestream uses ONE branch set for the whole job (the chain's branch list; which file it comes from\n"
+                  << "  depends on the ROOT version), so a branch missing in some files reads as 0 there or stops the job.\n"
+                  << "  Run such files one per job (files_per_job: 1, the 2024 yml), or group them by branch set\n"
+                  << "  (tools/stage0/branch_signature.py).\n";
         std::exit(tthh::CONFIG_BAD_RUNINFO);
     }
-    std::cout << "[branches] " << files.size() << " input files, the same " << chosen.size()
+    std::cout << "[branches] " << files.size() << " input files, the same " << names.size()
               << " selected branches in each." << std::endl;
 }
 

@@ -16,6 +16,10 @@
 - 커밋 B(§11): `include/eventBuffer.h`(KNU 기록에서), `include/eventBuffer_variables.txt`(신규), `include/treestream.h`, `src/treestream.cc`,
   묶음 2 의 C++·제출기·`test/test_EraConfig.cc`, 로그 줄 셋, 제출기의 `files_per_job_data`, `tools/stage3/smoke_2024.sh`(신규),
   `test/offline_smoke/run_offline_smoke.sh`(+3 check), 2024 yml 의 files per job
+- 커밋 C(§12–13): `ttHHanalyzer_unified.cc`(`requireSameBranchSet_` 이 job 의 파일을 직접 비교), `tools/stage3/smoke_2024.sh`(오래된 실행 파일이면
+  시작하지 않음, exit 127 설명), `plotter/make_plots.py`(신규), `plotter/stack_plotter.C`(표기·여러 쪽 PDF·2024 그룹·파일 한 번 열기),
+  `submit_job_FH_Tier3_unified.py`(`--report` 진행 줄), `consolidate_prescan.py`(`--skimmed`; 경고·anomaly 보고·exit code 가 같은 판정),
+  `test/test_consolidate_prescan.py`(신규), `README.md` §8.1·`docs/ttbarCategorization.md` §10.2(그 옵션)
 - 결정: [`../DECISIONS.md`](../DECISIONS.md) D-2026-10-05-A (사용자 10-05: 첫 plot 의 범위, D14, blinding; D15 의 방법), D-2026-10-05-B
   (2024 MC 의 4J3T 는 PNet 경로만, PROPOSED), D-2026-10-05-C (2024 는 tt+nb lookup 없이, D-2026-10-02-A 의 구현)
 - 배경: 사용자(10-05) "얼른 plot 만들고 싶은데" → 첫 plot 은 2024 FH, trigger·b-tag SF 없이, σ 는 임시값 표시(D-2026-10-05-A). 그
@@ -242,6 +246,72 @@ B 에만 있는 파일 FAIL, tree 값만 바뀜 FAIL, EXPECTED 의 run 이 양�
 - **시험(컨테이너, 마지막 빌드 `cb.HIUj`)**: clean 빌드 `MAKE_RC=0`; `run_unit_tests.sh` PASS; `test_stage1` 48/48; offline smoke **34/34**(+3: JEC/JER·WP 줄,
   Data JEC, 4J3T yes/no), 2017 넷은 옛 빌드와 같다(히스토그램 620 개 + tree, `y1_compare.py` PASS). 2017 의 실제 파일 Y1 은 없다(D-2026-10-05-D).
 
+### 12. KNU: 커밋 B 의 빌드·smoke, prescan 제출; plot 도구; 여러 파일 job 의 검사 고침 (10-05 밤)
+
+- **빌드·단위 시험**: `knu_build_b` EXIT 0(cluster 2180633, 125 s, 실행 파일 21:12 KST), `knu_unittests_b` PASS(셋).
+- **smoke 1 차(EXIT 1, 0/69)**: smoke job 을 빌드 job 과 같은 때에 냈다(12:10:04, 12:10:41 UTC; 둘 다 12:10:49 시작). 빌드의 `make clean` 이
+  실행 파일을 지운 뒤 smoke 가 run 을 시작해 모두 exit 127(`No such file or directory`). 코드 문제가 아니다 — smoke 는 이제 실행 파일이 소스
+  (`ttHHanalyzer_unified.{cc,h}`, `include/*.h`, `src/*.cc`)보다 오래되었으면 시작하지 않고(exit 2, "build first"), exit 127 에는 그 뜻을 붙인다.
+- **smoke 2 차(cluster 2180635, 68/69)**: 진짜 파일·진짜 payload 로 mc_sig·mc_tt·pre_sig·mc_multi(10 파일)·pre_multi(20 파일)·dC_pnet·dC_nopnet·dI
+  모두 PASS — JEC/JER·jet ID·veto map·PU·UParTAK4 이름, stamp, cutflow. 읽은 것: era C 의 HadTrigger 비율 PNet 있는 파일 31 %, 없는 파일 30 %(4J3T
+  OR); TTHH genWeight = 1(Runs Σgenw = count = 24,500); QCD MLM 의 weight ≈ 1.7e7(prescan 이 정규화); **jet veto map 이 event 의 23–25 % 를 뺀다**
+  (TTHH 25 %, TTbar 23 %, Data 23 %: Data·MC 같음 — 6 jet 이상 event 는 jet 이 많아 veto 영역에 걸릴 확률이 크다; AN 에서 따로 볼 수용도 손실).
+  TIMING: main MC 2,000–3,600 event/s, prescan 3,000–5,000 event/s, Data 1,000–3,500(작은 파일, 고정 비용이 큼); 크기 1.4–2.0 kB/event.
+- **FAIL 하나: `dC_mix`**(PNet 있는 era C 파일, 없는 파일 순서의 두 파일 job)가 E11 로 멈추지 않고 exit 0. `requireSameBranchSet_` 은 첫 파일의
+  집합을 treestream 의 `present()` 로 봤는데, 그 목록은 `TChain::GetListOfBranches()` — `GetEntries()` 뒤 chain 이 올려 둔 tree 의 것이다.
+  ROOT 6.30(KNU)에서는 그 목록에 첫 파일의 PNet branch 가 없었고(그러면 첫 파일에서 그 bit 는 0 으로 읽힌다), ROOT 6.40(컨테이너)에서는 첫
+  파일이라 시험이 통과했다. 고침: job 의 모든 파일을 이 함수가 직접 열어 첫 파일과 비교한다(treestream 목록에 기대지 않음). 컨테이너 시험
+  (offline smoke 의 mix, smoke_2024 합성의 dC_mix)은 그대로 E11.
+  **지금 생산에는 영향이 없다**: 2024 Data 는 job 당 1 파일, MC 는 dataset 마다 branch 집합 하나(MC 스캔 기록). 그리고 고친 코드의 KNU 빌드는
+  **prescan·main 이 끝난 뒤**에 한다(빌드의 `make clean` 이 돌고 있는 job 의 실행 파일을 지운다).
+- **prescan 제출**(10-05 22:47 KST): 60 샘플 983 job. job 로그(ttHToNonbb job 1): 20 파일 같은 branch 집합, Runs Σgenw 1.276e6 / Events 1.028e6
+  (skim), 179 만 event. 로그의 `trigSF=ON` 은 prescan 과 무관(SF 를 쓰지 않음, trigger SF 경로 null → SF=1).
+- **`--report` 가 10 분 넘게 아무것도 안 찍음**(사용자): 끝난 output 마다 /pnfs 의 파일을 PyROOT 로 열어 완료를 판정하고(983 개, 파일당 0.5–2 s),
+  표는 끝에 한 번 찍힌다(`| tail` 도 끝까지 모은다). 진행은 `condor_q -totals` 와 출력 파일 수(`ls .../*/*.root | wc -l`)로 보고, `--report` 는
+  큐가 빈 뒤 한 번. 제출기: report/status 모드에서 샘플마다 `[report] i/N <sample>` 을 stderr 로(파이프와 상관없이 보인다).
+- **plot 도구**: `plotter/make_plots.py`(신규) — yml 의 샘플마다 merge 된 `<base>/<sample>.root`; 2024 는 TTbb_*·TT4b 를 기본으로 뺀다
+  (D-2026-10-05-C); `Tree/cutflow_w` 로 단계마다 MC·Data·Data/MC 와 샘플별 수율 표(`YIELDS.txt`, `--check-only` 는 여기까지); PyROOT 로
+  `structure_info.yml`(TH1 618 개, `--include-hist`/`--exclude-hist`); `samples_config.yml`; `stack_plotter.C` 를 compact·detailed 로. 출력
+  `condor/plots/<base 이름>_<UTC>/`(gitignore), 모든 plot 을 한 파일에 `plots_<grouping>/all_<grouping>.pdf`(617 쪽). `plotter/stack_plotter.C`:
+  lumi·√s·메모 줄을 env 로(`TTHH_PLOT_LUMI`, `TTHH_PLOT_SQRTS`, `TTHH_PLOT_NOTE`; 없으면 2017 표기 그대로), 여러 쪽 PDF(`TTHH_PLOT_MULTIPAGE`),
+  입력 파일은 실행 내내 한 번만 연다(예전: 히스토그램 × 샘플마다 열고 닫음 — 2024 는 618 × 72 번; 같은 그림인지 25 개 렌더링 비교로 확인),
+  2024 이름의 그룹(ttHTobb_had/semilep/dilep → ttH, TTZToQQ·TTLL_*·TTNuNu → ttV, TTTWminus/plus → 3t/4t, `ST_` 로 시작 → single t).
+  수율 표에는 skim 전도 있다(사용자 10-05: "정확한 cutflow 를 그리려면 skim 전 event 수도 세야"): MC 샘플마다 'generated' = 제출기의 weight
+  × Σgenw(Runs) = lumi × σ × BR(prescan summary 의 Runs 합은 skim 전 모든 생성 event), skim 효율 Σgenw(Events)/Σgenw(Runs), 그리고
+  noCut/(weight × Σgenw(Events)) — merge 된 파일에 main job 이 다 한 번씩 있으면 평균 PU weight 쯤, 빠졌으면 뚜렷이 작다(0.7–1.3 밖이면 WARN).
+  Data 의 skim 전 수는 넣지 않는다: 생산에 lumi mask 가 없어 NtupleForge `ForgeAudit` 의 `n_in` 은 golden 이 아닌 LS 도 센다. analyzer 의
+  cutflow 히스토그램 자체에 skim 전 bin 을 넣는 것은 C++ 변경이라 첫 look 뒤로.
+  제출기: skim 된 생산에서 Σgenw tree < runs 는 정상이므로 `[warn] ... differ` 대신 `[skim] ... tree/runs = <효율>`(report 표에는 찍지 않음).
+  blinding: 첫 look 의 plot 은 모두 preselection 이라 data 를 숨기지 않는다(D-2026-10-02-E). 컨테이너 시험: 2024 이름 76 개(가짜 입력) 모두
+  그룹에 들어감(경고 0), 616 PDF + 여러 쪽 PDF, 표기 `109.8 fb^-1 (13.6 TeV)`·`2024 C-I`·`#sigma: provisional (13.6 TeV)`·`no trigger/b-tag SF`.
+
+### 13. prescan 끝, consolidate 의 `EXIT : 1`(도구의 판정), main 제출 전 (10-06 0 시 KST)
+
+- **prescan**: 60 샘플 983/983 job 유효, 빠진 job 번호 없음(consolidate 기록 `runlogs/run_knu_consolidate_prescan_2024_20261005_150333.log`,
+  커밋 `ddb65396`; 11 s). skim 통과율 Σgenw(Events)/Σgenw(Runs): TTHHto4b 95.0 %, TTTT 98.8 %, ttHTobb_had 88.0 %, TTbar_Hadronic 52.0 %,
+  TTbar_SemiLep 31.7 %, TTbar_DiLep 16.2 %, QCD_HT200to400 2.3 %, QCD_HT2000toInf 33.0 %, WW 2.0 %. tt+bbb·tt+4b(61/62/71/72)는 모두 0 —
+  D-2026-10-05-C(2024 는 tt+nb lookup 없음) 그대로; 첫 look 은 TTbb_*·TT4b 를 빼고 TTbar inclusive 를 쓰므로 영향 없다.
+- **`EXIT : 1` 인데 "No anomalies"**: 표의 `chk` 가 MC 60 개 모두 `FAIL`. 실패한 검사는 (4) Σgenw(Events) = Σgenw(Runs) 하나다 — Events tree 는
+  6j20 skim 뒤, Runs tree 는 skim 전이라 skim 된 입력에서는 정의상 다르다(`skim%` 열). 코드 주석은 이 검사를 "informational" 이라 했지만 실제로는
+  `chk` 열과 exit code 를 정했고 경고 문구가 없어서, 경고만 보는 anomaly 보고는 "No anomalies" 였다. 07-29 의 2017 prescan(skim 없음)은 61 개
+  모두 이 검사를 통과해 드러나지 않았다. **숫자는 맞다**: 다른 검사(파일 유효, 빠진 번호, genTtbarId·ttCat 분할)는 모두 통과했고, 정규화는
+  Σgenw(Runs)(skim 전, 제출기)를 쓴다.
+- **고침(커밋 C): `consolidate_prescan.py --skimmed`.** 이 옵션이면 (4) 대신 `events_le_runs`(Events ≤ Runs: skim 은 event 를 빼기만 한다)를
+  보고, 표 아래에 INFO 한 줄(`ΣgenW(Events) < ΣgenW(Runs) for n of m MC samples = the skim`). 옵션이 없으면(skim 없는 생산) (4) 가 틀릴 때
+  경고 문구를 남기고 `--skimmed` 를 권한다. 실패한 검사는 모두 경고를 남기고(ttCat weight 분할은 경고가 없었다), anomaly 보고·JSON meta·exit
+  code 가 같은 판정(`has_anomaly`)을 쓴다 — "No anomalies" 이면 exit 0, 그 반대도. JSON meta 에 `skimmed`. skim 없는 입력은 검사도 결과도 그대로
+  (2017 summary: 경고 0, 검사 모두 통과 → exit 0). 시험 `test/test_consolidate_prescan.py`(신규; PyROOT 로 가짜 한 행 prescan 파일, 18 check —
+  skim 된 입력의 옵션 없음/있음, Events > Runs, ttCat weight 분할, 빠진 job 번호, skim 없는 입력): 컨테이너 PASS 18/18; 옛 도구는 KNU 의 증상
+  그대로("No anomalies" 인데 exit 1) FAIL. KNU 의 python 3.9 로 문법과 ROOT 없는 부분의 실행 확인. **consolidate 를 다시 돌릴 필요는 없다**:
+  고침은 summary 의 숫자를 바꾸지 않는다. 다음 skim 된 생산의 prescan 부터 `--skimmed`(워크스페이스 RUNBOOK §23 F).
+- **main preflight**(사용자, 10-06): 33 PASS, 0 WARN, 0 FAIL, `READY TO SUBMIT`(~5,291 job; files per job MC 10·Data 1; prescan coverage 60).
+  커밋 B 의 제출기로 내면 제출 기록에 MC 샘플마다 `[warn] <sample>: sumGenW runs=… vs tree=… differ >0.01% (using runs)` 한 줄(60 줄) — 같은
+  skim 차이다(커밋 C 의 제출기는 `[skim]` 줄).
+- **Data lumi**(10-05 기록 `runlogs/run_knu_data_lumi_2024_20261005_094727.log`, 커밋 `886e87b9`, `RESULT OK`): golden LS 가운데 생산에 없는 것
+  JetMET0 5,859 / 281,662 (2.08 %), JetMET1 1,981 (0.70 %). 두 PD 는 같은 LS 의 event 를 나눠 받으므로 Data 는 109.816 fb⁻¹ 의 1.4 % 쯤(LS 수
+  기준)이 빠진 셈 → 첫 look 의 Data/MC 가 그만큼 낮을 수 있다. 처리된 LS 의 brilcalc 가 다음(빠진 LS 는 KNU 의
+  `condor/lumi_2024/JetMET{0,1}_missing_golden.json`). `GOLDEN_OUTSIDE` 16 run(378985–379355, 5,939 LS)은 era B — C–I lumi 밖이라 상관없다.
+
 ## 확인하지 못한 것
 
 - TTbar_Hadronic 의 `260930_162708/0000/forgedNtuple_443.root` 는 크기 0(10-02 18:48 KST; NtupleForge `docs/05_troubleshooting.md` A29):
@@ -253,6 +323,5 @@ B 에만 있는 파일 FAIL, tree 값만 바뀜 FAIL, EXPECTED 의 run 이 양�
 - `data/samples_2024.json` 의 σ 는 모두 임시. 낮은 신뢰도 다섯(비율로 올린 것)과 TTZHTo4b(XSDB 의 exact-dataset 값이 B(Z→bb) 만 포함한
   것으로 보여 쓰지 않음)는 첫 plot 에 영향이 없거나 작다. XSDB 로 확인할 사람: CERN 로그인이 있는 사용자.
 - D-2026-10-05-B(2024 MC 의 4J3T 는 PNet 만)는 PROPOSED — Stage 6 의 trigger SF 와 함께 정한다.
-- 커밋 B 의 KNU 빌드(ROOT 6.30, correctionlib 의 CMSSW 판)와 `smoke_2024.sh`(진짜 파일·진짜 payload) 결과는 아직(워크스페이스 RUNBOOK §23).
-  진짜 payload 로 JEC·JER·jet ID·veto map·PU 가 실제로 평가되는 것은 그 smoke 가 처음이다(컨테이너는 이름과 입력만 같은 가짜 payload).
-- Data lumi 점검 기록(`runlogs/run_knu_data_lumi_2024_20261005_094727.log`, exit 0)은 KNU 에만 있다 — 커밋 뒤 빠진 LS 를 본다.
+- 커밋 C 의 KNU 빌드와 그 뒤 smoke(`dC_mix` 가 E11 로 멈춰야 함)는 main·merge 뒤(§12). 커밋 B 의 KNU 빌드·smoke 는 §12(68/69).
+- Data 의 처리된 LS 의 lumi(brilcalc): golden LS 의 1.4 % 쯤이 생산에 없다(§13) — 그 전까지 Data/MC 는 109.816 fb⁻¹ 기준.

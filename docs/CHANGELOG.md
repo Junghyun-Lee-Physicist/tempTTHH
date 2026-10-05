@@ -7,6 +7,21 @@
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
 
+## 2026-10-05: [analyzer·plotter·도구] STEP 24 C — 여러 파일 job 의 branch 검사를 파일 직접 비교로, 2024 plot 도구, smoke 의 빌드 순서 검사, consolidate 의 skim 판정
+
+KNU smoke(진짜 파일·payload) 68/69: 남은 `dC_mix` FAIL — `requireSameBranchSet_` 이 첫 파일의 branch 집합을 treestream 의 `present()`(TChain
+목록; ROOT 6.30 에서는 첫 파일의 것이 아님)로 봐서, branch 집합이 다른 두 파일 job 이 E11 없이 돌았다 → job 의 모든 파일을 직접 열어 첫
+파일과 비교(지금 생산은 Data 1 파일/job, MC dataset 마다 집합 하나라 영향 없음; KNU 빌드는 main 뒤). `tools/stage3/smoke_2024.sh`: 실행 파일이
+소스보다 오래되었으면 시작하지 않음(1 차 smoke 가 빌드와 동시에 돌아 exit 127), exit 127 설명. `plotter/make_plots.py`(신규: merge 된 출력의
+수율 표, `structure_info.yml`·`samples_config.yml`, compact/detailed plot, 여러 쪽 PDF; 2024 는 TTbb_*·TT4b 를 쌓지 않음 D-2026-10-05-C),
+`plotter/stack_plotter.C`(lumi·√s·메모 줄 env, 여러 쪽 PDF, 2024 샘플 이름의 그룹, 입력 파일은 한 번만 열기; env 가 없으면 2017 과 같다),
+제출기 `--report`/`--status` 의 샘플별 진행 줄(stderr), skim 된 생산의 Σgenw tree < runs 는 `[skim]` 효율 줄(경고 아님); 수율 표의
+skim 전 열(MC generated = lumi×σ×BR, skim 효율, main job 완결 비율). `consolidate_prescan.py --skimmed`: 2024 prescan 의 consolidate 가
+"No anomalies" 인데 `EXIT : 1`(MC 60 개 모두 `chk FAIL`) — skim 된 입력의 Σgenw(Events) < Σgenw(Runs) 를 경고 없이 실패로 셌다(숫자는 정상) →
+옵션이면 그것은 INFO, Events ≤ Runs 만 검사; 옵션이 없으면 틀릴 때 경고; 실패한 검사는 모두 경고(ttCat weight 분할 포함), anomaly 보고·JSON
+meta·exit code 가 같은 판정; skim 없는 2017 은 그대로. 시험 `test/test_consolidate_prescan.py`(신규, 18 check). 상세
+[`changes/STEP_24_stage1_2_2024.md`](changes/STEP_24_stage1_2_2024.md) §12–13.
+
 ## 2026-10-05: [analyzer·제출기·도구] STEP 24 B — 진짜 eventBuffer.h(KNU 기록)와 2024 analyzer, files_per_job_data, 진짜 파일 smoke
 
 `include/eventBuffer.h`(기록 `run_knu_eventbuffer_manifest_20261005_105905.log` 에서 `eventbuffer_from_record.py`; 764 record, md5 기록과 같음,
