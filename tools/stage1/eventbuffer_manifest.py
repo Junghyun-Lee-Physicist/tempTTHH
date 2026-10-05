@@ -8,11 +8,17 @@ at KNU.
     python3 tools/stage1/eventbuffer_manifest.py --treestream ../treestream
             [--base TAG=DIR ...] [--glob '*/*/*/*/*.root'] [--group-level 2] [--tree Events]
             [--keep tools/stage1/hlt_keep.txt] [--source FILE ...] [--work DIR] [--max-try 5]
+            [--extra-variables FILE ...] [--no-extra-variables]
 
 Without --base the KNU productions are used (under $KNU_STORE, default
 /pnfs/knu.ac.kr/data/cms/store/user/junghyun): 2024MC ttHH2024_v15_had_MC_v1, 2024Data
-ttHH2024_v15_had_Data_v1, 2018MC ttHH2018UL_v15_had_MC_v1, 2018Data ttHH2018UL_v15_had_Data_v1,
-2017 ttHH2017UL_fullNano_v20. A base that does not exist is reported (MISSINGBASE) and skipped.
+ttHH2024_v15_had_Data_v1, 2018MC ttHH2018UL_v15_had_MC_v1, 2018Data ttHH2018UL_v15_had_Data_v1.
+A base that does not exist is reported (MISSINGBASE) and skipped. The 2017 v20 ntuples
+(ttHH2017UL_fullNano_v20) were removed from KNU (user, 2026-10-05, D-2026-10-05-D): their branch set
+comes from --extra-variables (default tools/stage1/variables_v9_2017UL_fullNano_v20.txt, the records of
+the 2026-06-29 header made from those files; tools/stage1/variables_from_header.py). Extra records are
+merged into the union of the files with treestream's mkvariables.py --merge rules (the widest type on a
+type conflict, the largest count, one count per leaf counter); --no-extra-variables leaves them out.
 
 Steps
   1. per base and CRAB task (the directory --group-level above the file; default 2 = <PD>/<request>/
@@ -21,7 +27,8 @@ Steps
      log/ are skipped; at most --max-try files are tried per task
   2. one symlink per file with a unique name: mkvariables.py --merge keys its inputs by basename,
      and CRAB file names (forgedNtuple_1.root, ...) repeat across datasets
-  3. the fork's mkvariables.py --merge -> variables_raw.txt (widest type on type conflicts)
+  3. the fork's mkvariables.py --merge -> variables_raw.txt (widest type on type conflicts), then the
+     --extra-variables records merged in with the same rules (EXTRA lines)
   4. records named HLT_* or L1_* are dropped unless listed in --keep -> variables.txt
   5. checks: every HLT name the analyzer source reads (_ev->HLT_x, "Events/HLT_x") is kept (else
      exit 1: the header would not have it); kept names that no input has are listed as WARN
@@ -53,8 +60,12 @@ DEFAULT_BASES = [
     ("2024Data", "ttHH2024_v15_had_Data_v1"),
     ("2018MC", "ttHH2018UL_v15_had_MC_v1"),
     ("2018Data", "ttHH2018UL_v15_had_Data_v1"),
-    ("2017", "ttHH2017UL_fullNano_v20"),
+    # ("2017", "ttHH2017UL_fullNano_v20") -- removed from KNU (2026-10-05, D-2026-10-05-D): DEFAULT_EXTRA instead
 ]
+DEFAULT_EXTRA = [os.path.join(REPO, "tools", "stage1", "variables_v9_2017UL_fullNano_v20.txt")]
+# treestream bin/mkvariables.py run_merge: the widest type wins a conflict (a type not in the table never wins)
+MERGE_RANK = {'bool': 0, 'uchar': 1, 'char': 1, 'short': 2, 'ushort': 2, 'int32': 3, 'int': 3, 'uint': 3,
+              'long64': 4, 'ulong64': 4, 'float': 5, 'double': 6}
 CODE_HLT_RE = re.compile(r'(?:_ev->|"Events/)(HLT_[A-Za-z0-9_]+)')
 NORMALIZE_RE = re.compile(r"^// (Created|Author):")
 
@@ -129,6 +140,55 @@ def prune(raw_lines, keep):
             kept_menu.add(name)
         out.append(line.rstrip("\n"))
     return out, {"records_in": n_rec, "dropped": dropped, "kept_menu": kept_menu}
+
+
+def split_record(line):
+    """'type/Events/B/B/count counter' -> (type, 'Events/B', 'B', count, counter)"""
+    btype, tb, name, tail = parse_record(line)
+    parts = tail.split()
+    return btype, tb, name, int(parts[0]), (parts[1] if len(parts) > 1 else "")
+
+
+def merge_extra(raw_lines, extra_lines):
+    """Records of the files (raw_lines) + extra records, with mkvariables.py --merge's rules: a new name is
+    added; on a type conflict the higher MERGE_RANK wins (a tie or an unknown type keeps the files' type);
+    the larger count is kept; every record of one leaf counter gets that counter's largest count.
+    Returns (header lines of raw, merged record lines, stats)."""
+    head = [l for l in raw_lines if not is_record(l)]
+    recs = collections.OrderedDict()
+    for l in raw_lines:
+        if is_record(l):
+            r = split_record(l)
+            recs[r[1]] = list(r)
+    added, conflicts = 0, collections.Counter()
+    for l in extra_lines:
+        if not is_record(l):
+            continue
+        t, tb, name, n, lc = split_record(l)
+        if tb not in recs:
+            recs[tb] = [t, tb, name, n, lc]
+            added += 1
+            continue
+        cur = recs[tb]
+        if t != cur[0]:
+            win = t if MERGE_RANK.get(t, -1) > MERGE_RANK.get(cur[0], -1) else cur[0]
+            conflicts["%s (files) / %s (extra) -> %s" % (cur[0], t, win)] += 1
+            cur[0] = win
+        if n > cur[3]:
+            cur[3] = n
+        if not cur[4] and lc:
+            cur[4] = lc
+    lc_max = {}
+    for r in recs.values():
+        if r[4] and r[3] > 1:
+            lc_max[r[4]] = max(lc_max.get(r[4], 0), r[3])
+    unified = 0
+    for r in recs.values():
+        if r[4] in lc_max and r[3] < lc_max[r[4]]:
+            r[3] = lc_max[r[4]]
+            unified += 1
+    lines = ["%s/%s/%s/%d %s\n" % (r[0], r[1], r[2], r[3], r[4]) for r in recs.values()]
+    return head, lines, {"added": added, "conflicts": conflicts, "unified": unified}
 
 
 def variables_text(records, tree, comment_lines):
@@ -251,7 +311,16 @@ def main(argv=None):
                     help="analyzer source to scan for HLT names (default: ttHHanalyzer_unified.cc/.h)")
     ap.add_argument("--work", default="")
     ap.add_argument("--max-try", type=int, default=5)
+    ap.add_argument("--extra-variables", action="append", default=None,
+                    help="records to merge into the union (repeatable; default %s)" % ", ".join(
+                        os.path.relpath(x, REPO) for x in DEFAULT_EXTRA))
+    ap.add_argument("--no-extra-variables", action="store_true")
     a = ap.parse_args(argv)
+    extras = [] if a.no_extra_variables else (a.extra_variables if a.extra_variables is not None else DEFAULT_EXTRA)
+    for x in extras:
+        if not os.path.isfile(x):
+            print("ERROR --extra-variables %s: no such file" % x)
+            return 2
 
     ts = os.path.abspath(a.treestream)
     need = ["bin/mkvariables.py", "bin/mkeventbuffer.py", "bin/mkanalyzer.py", "include/treestream.h"]
@@ -332,6 +401,19 @@ def main(argv=None):
 
     with open(raw) as f:
         raw_lines = f.readlines()
+    extra_notes = []
+    for x in extras:
+        with open(x) as f:
+            xl = f.readlines()
+        n_x = sum(1 for l in xl if is_record(l))
+        head, merged, mst = merge_extra(raw_lines, xl)
+        raw_lines = head + merged
+        print("EXTRA %s md5=%s records=%d new=%d type_conflicts=%d count_unified=%d"
+              % (os.path.relpath(os.path.abspath(x), REPO), md5_file(x), n_x, mst["added"],
+                 sum(mst["conflicts"].values()), mst["unified"]))
+        for k, v in sorted(mst["conflicts"].items()):
+            print("EXTRA_CONFLICT %s x%d" % (k, v))
+        extra_notes.append("%s (md5 %s, %d records, %d new)" % (os.path.basename(x), md5_file(x), n_x, mst["added"]))
     records, st = prune(raw_lines, keep)
     print("PRUNE records_in=%d kept=%d dropped_HLT=%d dropped_L1=%d kept_menu=%d"
           % (st["records_in"], len(records), st["dropped"]["HLT_"], st["dropped"]["L1_"], len(st["kept_menu"])))
@@ -347,6 +429,7 @@ def main(argv=None):
 
     comment = ["tempTTHH tools/stage1/eventbuffer_manifest.py (STEP 24); treestream %s" % commit,
                "inputs: %d files, one per dataset, from %s" % (len(chosen), ", ".join(sorted(set(c[0] for c in chosen)))),
+               "extra records: %s" % ("; ".join(extra_notes) if extra_notes else "none"),
                "union %s records; HLT_/L1_ records kept only from %s (md5 %s): %d of %d"
                % (st["records_in"], os.path.basename(a.keep), md5_file(a.keep), len(st["kept_menu"]),
                   len(st["kept_menu"]) + sum(st["dropped"].values()))]

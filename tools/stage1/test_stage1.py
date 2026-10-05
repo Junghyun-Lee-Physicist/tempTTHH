@@ -7,6 +7,7 @@ also need a BUILT treestream fork: --treestream, default ../treestream next to t
 Small NanoAOD-like files are written into a fresh temporary directory (printed; removed at the end
 unless --keep). Covered: eventbuffer_manifest.py (first readable file per dataset, unique input
 names, HLT/L1 pruning, keep-list WARN, CODE_MISSING exit 1, NOINPUT exit 1, type conflicts),
+eventbuffer_manifest.py --extra-variables and variables_from_header.py (D-2026-10-05-D),
 eventbuffer_from_record.py (check-only, write + stamp, tampered record), pu_weights.py (mcprofile with
 a bad file, weights + correctionlib read-back, binning mismatch), y1_compare.py (identical, changed
 cutflow, histogram only in B, histogram gone, NaN bin, file only in B, tree value, EXPECTED run absent
@@ -125,7 +126,7 @@ def test_manifest(ROOT, ts, W):
     with open(keep, "w") as f:
         f.write("# test\nHLT_PFHT1050\nHLT_IsoMu27  # ref\nHLT_Absent\n")
     base_args = [sys.executable, os.path.join(REPO, "tools", "stage1", "eventbuffer_manifest.py"), "--treestream", ts,
-                 "--keep", keep, "--source", src]
+                 "--keep", keep, "--source", src, "--no-extra-variables"]
     # a second, older CRAB task of the v15 dataset with one more branch: group level 2 takes a file of each task
     f2old = os.path.join(b2, "PDb", "reqB", "250101_000000", "0000", "forgedNtuple_1.root")
     os.makedirs(os.path.dirname(f2old), exist_ok=True)
@@ -185,6 +186,56 @@ def test_manifest(ROOT, ts, W):
     log3 = os.path.join(W, "manifest3.log")
     with open(log3, "w") as f:
         f.write(out3)
+
+    # --extra-variables (D-2026-10-05-D): records merged with mkvariables --merge's rules
+    extra = os.path.join(W, "extra.txt")
+    with open(extra, "w") as f:
+        f.write("Tree Events\n\n# test extra records\n"
+                "float/Events/Extra_new/Extra_new/1 \n"
+                "int/Events/Jet_chMultiplicity/Jet_chMultiplicity/50 nJet\n"
+                "bool/Events/HLT_Absent/HLT_Absent/1 \n"
+                "bool/Events/HLT_NotKept/HLT_NotKept/1 \n")
+    xargs = [a for a in base_args if a != "--no-extra-variables"]
+    rc, outx = run(xargs + ["--base", "v9=" + b1, "--base", "v15=" + b2, "--extra-variables", extra, "--work", os.path.join(W, "w7")])
+    blk = re.search(r"^BEGIN VARIABLES ([0-9a-f]{32})\n(.*?)^END VARIABLES$", outx, re.M | re.S)
+    recs = blk.group(2).splitlines() if blk else []
+    check("manifest --extra-variables: exit 0, EXTRA line (3 new, 1 type conflict), conflict summarized",
+          rc == 0 and re.search(r"^EXTRA \S*extra.txt md5=[0-9a-f]{32} records=4 new=3 type_conflicts=1 ", outx, re.M) is not None
+          and "EXTRA_CONFLICT uchar (files) / int (extra) -> int x1" in outx, outx[-2000:])
+    check("manifest --extra-variables: the widest type and the largest count win, one count per counter",
+          "int/Events/Jet_chMultiplicity/Jet_chMultiplicity/50 nJet" in recs and "float/Events/Jet_pt/Jet_pt/50 nJet" in recs
+          and "float/Events/Extra_new/Extra_new/1 " in recs, [r for r in recs if "Jet_" in r or "Extra" in r][:12])
+    check("manifest --extra-variables: an extra HLT name is kept only if in the keep list",
+          "bool/Events/HLT_Absent/HLT_Absent/1 " in recs and not any("HLT_NotKept" in r for r in recs)
+          and "KEEP_ABSENT HLT_Absent" not in outx, [r for r in recs if "HLT" in r])
+    rc, outn = run(xargs + ["--base", "v9=" + b1, "--extra-variables", os.path.join(W, "nope.txt"), "--work", os.path.join(W, "w8")])
+    check("manifest --extra-variables: a missing file -> exit 2", rc == 2 and "no such file" in outn, outn[-400:])
+
+    # variables_from_header.py on a small header in mkanalyzer.py v2.0.3 form
+    hdr = os.path.join(W, "old_eventBuffer.h")
+    with open(hdr, "w") as f:
+        f.write("// Created:     Mon Jun 29 00:04:15 2026 by mkanalyzer.py v2.0.3 14-Oct-2020\n"
+                "  std::vector<int>\tJet_jetId;\n  std::vector<float>\tJet_pt;\n  float\tMET_pt;\n"
+                "  long\tevent;\n  unsigned int\trun;\n  bool\tHLT_PFHT1050;\n  int\tnJet;\n"
+                '      if (input->present("Events/Jet_jetId")) { Jet_jetId.resize(62); input->select("Events/Jet_jetId", Jet_jetId); }\n'
+                '      if (input->present("Events/Jet_pt")) { Jet_pt.resize(62); input->select("Events/Jet_pt", Jet_pt); }\n'
+                '      if (input->present("Events/MET_pt")) { input->select("Events/MET_pt", MET_pt); }\n'
+                '      if (input->present("Events/event")) { input->select("Events/event", event); }\n'
+                '      if (input->present("Events/run")) { input->select("Events/run", run); }\n'
+                '      if (input->present("Events/HLT_PFHT1050")) { input->select("Events/HLT_PFHT1050", HLT_PFHT1050); }\n'
+                '    output->add("nJet", \tnJet);\n    output->add("Events/Jet_jetId[nJet]", \tJet_jetId);\n'
+                '    output->add("Events/Jet_pt[nJet]", \tJet_pt);\n    output->add("Events/MET_pt", \tMET_pt);\n')
+    vtool = [sys.executable, os.path.join(REPO, "tools", "stage1", "variables_from_header.py")]
+    rc, outv = run(vtool + [hdr])
+    want = ["int/Events/Jet_jetId/Jet_jetId/62 nJet", "float/Events/Jet_pt/Jet_pt/62 nJet", "float/Events/MET_pt/MET_pt/1 ",
+            "long64/Events/event/event/1 ", "uint/Events/run/run/1 ", "bool/Events/HLT_PFHT1050/HLT_PFHT1050/1 "]
+    got = [l for l in outv.splitlines() if "/Events/" in l]
+    check("variables_from_header: types, counts and counters of the old header", rc == 0 and got == want, got)
+    with open(hdr, "a") as f:
+        f.write("  std::complex<float>\tOdd_x;\n"
+                '      if (input->present("Events/Odd_x")) { input->select("Events/Odd_x", Odd_x); }\n')
+    rc, outv2 = run(vtool + [hdr])
+    check("variables_from_header: an unknown C++ type -> exit 1 with the branch", rc == 1 and "Odd_x" in outv2, outv2[-400:])
     return log1, log3
 
 

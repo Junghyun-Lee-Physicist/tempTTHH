@@ -63,7 +63,10 @@ RUNBOOK §21. MC branch 스캔 끝(`406fa531`): 60 dataset 19,111 파일 모두 
 `test_stage1` 42/42, 새 오프라인 smoke 31/31(2017 은 옛 빌드와 출력 동일); 독립 검토 11 건 반영. C++·제출기·`test_EraConfig.cc` 는 KNU 기록으로
 만들 진짜 `eventBuffer.h`·PU JSON 과 **함께** 커밋한다(그 전에 KNU 에서 빌드하지 말 것: Y1 `before` 는 지금 실행 파일로) — STEP 24 §6–9.
 Y1 스크립트 수정: TTbar_Hadronic 은 2017 tt+nb lookup 이 있어야 돈다(없으면 E11 로 MC 가 비교에서 빠졌을 것).
-다음: KNU 의 기록 job(RUNBOOK §21 C·D) → 맥에서 header·PU JSON → 묶음 2 커밋 → KNU 빌드·Y1 비교·2024 smoke → prescan → main → plot.
+**10-05 (KNU 첫 기록, `595b4676`):** PU MC 분포 OK → `DerivedCorr/PU/2024_Summer24/puWeights_2024.json`; 2024 filelist 92 key OK; **2017 v20 은
+KNU 에서 지워짐**(manifest `MISSINGBASE`, Y1 입력 없음; 사용자 확인) → D-2026-10-05-D: v9 branch 는 2026-06-29 header 에서
+(`tools/stage1/variables_v9_2017UL_fullNano_v20.txt`, manifest 의 `--extra-variables`), 실제 2017 Y1 은 지금은 없음(컨테이너 비교로 대신).
+다음: manifest 다시(RUNBOOK §22) → 맥에서 header → 커밋 B → KNU 빌드·2024 smoke → prescan → main → plot.
 
 ## What is ready (DECIDED)
 

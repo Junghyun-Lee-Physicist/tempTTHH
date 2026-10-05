@@ -7,6 +7,13 @@
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
 
+## 2026-10-05: [도구] STEP 24 A2 — 2017 v20 이 KNU 에서 지워져 v9 branch 집합을 지금 header 에서 (D-2026-10-05-D); 2024 PU weight
+
+`tools/stage1/variables_from_header.py`(mkanalyzer 판 header → record), `tools/stage1/variables_v9_2017UL_fullNano_v20.txt`(1782 record,
+2026-06-29 header `b08a58b4` 에서), `eventbuffer_manifest.py`(`--extra-variables`, 기본 base 에서 2017 뺌), `make_filelists_v15.py`
+(`--forge-dir`: 명령에서 `crab` 을 빼 기록이 커밋되게), 시험 48. `DerivedCorr/PU/2024_Summer24/puWeights_2024.json`(KNU 의 MC 분포
+기록 `run_knu_pu_mcprofile_20261005_094457.log` 에서; data 평균 50.0, MC 45.4). 상세 [`changes/STEP_24_stage1_2_2024.md`](changes/STEP_24_stage1_2_2024.md) §10.
+
 ## 2026-10-05: [analyzer·제출기·도구] STEP 24 묶음 2 — 2024 지원(코드는 진짜 header 와 함께 커밋), Stage 3 도구·yml·임시 σ, 오프라인 smoke
 
 이번 커밋: `tools/stage3/make_filelists_v15.py`(v15 CRAB 배치 → `filelistTier3_2024/`, 크기 0 제외, task 중복·config 누락 FAIL),

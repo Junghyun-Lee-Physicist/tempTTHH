@@ -180,6 +180,23 @@ B 에만 있는 파일 FAIL, tree 값만 바뀜 FAIL, EXPECTED 의 run 이 양�
   JSON 을 기록에서 만들고 B 를 놓는다 → B 커밋 → KNU: clean 빌드, 시험, Y1 `after` 와 비교, 2024 파일 하나씩 smoke → prescan → main →
   merge → plot (RUNBOOK §21).
 
+### 10. KNU 첫 기록 (10-05 18:44 KST, 커밋 `595b4676`)과 그 뒤
+
+- `test_stage1` 42/42(ROOT 6.30). PU MC 분포: ZZ 파일럿 76 파일 4,800,000 event, 평균 45.42(rms 9.54), `RESULT OK` → 이 기록으로
+  `DerivedCorr/PU/2024_Summer24/puWeights_2024.json`(md5 `6d805b4d216783ff4e275071685957d9`): data 평균 50.03(nominal; up 52.35,
+  down 47.72), 잃는 data 0.004 %, 가장 큰 weight 83.5(nominal, PU ≈ 70 의 꼬리: MC 가 거의 없는 곳), read-back 1.8e-15.
+- filelist: exit 0 — key 92 개(MC 60, Data 32) 모두 파일, task 하나씩. 기록은 명령의 `crabConfig` 경로 때문에 `runlogs/nocommit/` 로
+  갔다(runlog.sh 의 규칙: 명령에 `crab` 이 있으면) → `--forge-dir ../NtupleForge` 를 더해 명령에서 그 단어를 뺐다.
+- **manifest: `MISSINGBASE 2017`, Y1 `before`: 네 입력 모두 없음** — 2017 v20 이 KNU 에서 지워졌다(사용자 확인) →
+  D-2026-10-05-D. 이 기록의 합집합(142 파일, 302 record)으로 header 를 만들면 v9 이름(`Jet_jetId`, `Jet_puId`, `MET_pt`,
+  `fixedGridRhoFastjetAll`, `Electron_mvaFall17V2Iso_WP90`, 2017 HLT 넷)이 없어 analyzer 가 컴파일되지 않는다(컨테이너에서 확인).
+  그래서: `tools/stage1/variables_from_header.py`(지금 header 의 select·선언·resize·`output->add` 에서 record 를 다시 씀; 1782 개, 문제 0)
+  → `tools/stage1/variables_v9_2017UL_fullNano_v20.txt`, manifest 는 기본으로 이것을 `--extra-variables` 로 합친다(mkvariables 의
+  규칙; 2017 base 는 기본 목록에서 뺐다). 컨테이너 모의(기록의 302 + v9 1782): 새 이름 1561, 형 충돌 41(v15 의 short/uchar/ushort 대
+  v9 int → int, `event` 는 ulong64 그대로), record 764, keep 27 개 모두, 새 코드가 읽는 HLT 16 개 모두 있음. 시험 48(+6: 병합 넷,
+  변환기 둘).
+- P8 둘과 Data lumi 점검은 도는 중(P8 기록도 명령의 `crabConfig` 로 `nocommit/`).
+
 ## 확인하지 못한 것
 
 - TTbar_Hadronic 의 `260930_162708/0000/forgedNtuple_443.root` 는 크기 0(10-02 18:48 KST; NtupleForge `docs/05_troubleshooting.md` A29):

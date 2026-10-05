@@ -2,7 +2,7 @@
 
 > **Purpose:** record each significant decision — the choice, why, what else was considered, and whether it still holds — so no one silently reopens a settled question or treats a proposal as settled.
 > **Audience:** anyone about to change behavior or unsure whether something is fixed.
-> **Status:** living, append-and-supersede · last meaningful update **2026-10-05** (D-2026-10-05-A: 2024 first-look scope, D14 109.816, D15 PU inputs; D-2026-10-02-E DECIDED; D-2026-10-05-B 2024 MC 4J3T bit PROPOSED; D-2026-10-05-C 2024 without tt+nb lookup) · 2026-10-04 (D-2026-10-04-A: run records are committed) · 2026-10-02 (D-2026-10-02-A…E: v15 analyzer order, eventBuffer policy, event cleaning, answers N0–N8, blinding).
+> **Status:** living, append-and-supersede · last meaningful update **2026-10-05** (D-2026-10-05-A: 2024 first-look scope, D14 109.816, D15 PU inputs; D-2026-10-02-E DECIDED; D-2026-10-05-B 2024 MC 4J3T bit PROPOSED; D-2026-10-05-C 2024 without tt+nb lookup; D-2026-10-05-D 2017 v20 removed from KNU) · 2026-10-04 (D-2026-10-04-A: run records are committed) · 2026-10-02 (D-2026-10-02-A…E: v15 analyzer order, eventBuffer policy, event cleaning, answers N0–N8, blinding).
 > **Links:** index [`README.md`](README.md) · current state [`STATUS.md`](STATUS.md) · per-change detail [`changes/`](changes/).
 
 ## How to use this log
@@ -141,6 +141,21 @@ one is still E11).
 **Scope guard.** No stitching in 2024 either (`path_stitch_json: null`): the plots must not stack the 4FS `TTbb_*` or `TT4b` samples on
 top of the inclusive ttbar (double counting) — `changes/STEP_24_stage1_2_2024.md` §6 lists the first-look sample set.
 **Supersede when.** A 2024 tt+nb patch exists → set the path in the 2024 yml and flip `hasTtNbLookup("2024")`.
+
+## D-2026-10-05-D — The 2017 v20 ntuples are gone from KNU: the v9 branch set comes from the 2026-06-29 header; no Y1 on real 2017 files for now · **DECIDED** (user, 2026-10-05)
+
+**Fact.** `/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2017UL_fullNano_v20` does not exist any more (KNU manifest record
+`runlogs/run_knu_eventbuffer_manifest_20261005_094436.log`: `MISSINGBASE 2017`; Y1 `before`: all four inputs missing). User: "지웠음
+(2017 은 나중에 v15로)" — 2017 comes back as a v15 production (D-2026-10-02-A).
+**Decision.** (1) The new `include/eventBuffer.h` is the union of our v15 productions (2024, 2018) **plus the v9 branch records of the
+current header** (2026-06-29, mkanalyzer.py v2.0.3, made from the 2017 v20 files): `tools/stage1/variables_from_header.py` writes them
+to `tools/stage1/variables_v9_2017UL_fullNano_v20.txt` (1782 records), and `eventbuffer_manifest.py` merges them by default
+(`--extra-variables`, the `mkvariables.py --merge` rules). The analyzer's 2017/2018 v9 code keeps compiling and reads v9 files with the
+buffers it had. (2) The real-file Y1 check is not possible now; the 2017 evidence is the container comparison of the old and the new build
+on synthetic 2017 files (identical outputs, `changes/STEP_24_stage1_2_2024.md` §8). `tools/stage1/y1_reference.sh` stays for the 2017 v15
+production. (3) The committed `filelistTier3/` (2017) lists point to removed files.
+**Alternatives considered.** Leave the v9 names out of the header — the Run 2 code would not compile (it reads `Jet_jetId`, `MET_pt`, …).
+Make the v9 code conditional — a larger change for a path that has no input today.
 
 ## D-(historical) — carried invariants · **DECIDED**
 

@@ -2,7 +2,7 @@
 """make_filelists_v15.py -- analyzer filelists of a v15 NtupleForge production (STEP 24; PLAN 9 Stage 3)
 
     python3 tools/stage3/make_filelists_v15.py --year 2024 [--base DIR ...] [--out filelistTier3_2024]
-            [--forge-config NtupleForge/crabConfig/<config>.yaml ...] [--exclude FILE ...]
+            [--forge-dir ../NtupleForge | --forge-config <config>.yaml ...] [--exclude FILE ...]
             [--allow-multi-task KEY ...] [--check-only]
 
 make_filelists.py (2017/2018) maps primary-dataset directory names to short names and splits Data by
@@ -23,7 +23,9 @@ Rules
     cover different input files, e.g. a recovery task of the missing jobs)
   * a key found under two primary datasets, or in two bases, is a FAIL
   * --forge-config: every dataset key of those configs must have files (else MISSING, a FAIL), and
-    keys on disk that no config lists are reported (EXTRA, not a FAIL)
+    keys on disk that no config lists are reported (EXTRA, not a FAIL). --forge-dir DIR takes the year's two
+    production configs DIR/crabConfig/config_ttHH<year>_v15_had_{MC,Data}.yaml (and keeps the word 'crab'
+    off the command line, so tools/runlog/runlog.sh commits the record instead of routing it to nocommit/)
 Output: <out>/filelist_<key>.txt (absolute paths, sorted by job number) and <out>/MANIFEST.tsv
 (key, base, primary dataset, tasks, files, excluded, bytes). --check-only writes nothing.
 Lines: SAMPLE <key> files=<n> excluded=<n> GB=<x> task=<ts>[,<ts>] pd=<primaryDataset>;
@@ -100,10 +102,14 @@ def main(argv=None):
     ap.add_argument("--base", nargs="*", help="production directories (default: the --year ones under $KNU_STORE)")
     ap.add_argument("--out", help="default filelistTier3_<year> in this repository")
     ap.add_argument("--forge-config", nargs="*", default=[])
+    ap.add_argument("--forge-dir", help="NtupleForge checkout: its config_ttHH<year>_v15_had_{MC,Data}.yaml")
     ap.add_argument("--exclude", nargs="*", default=[])
     ap.add_argument("--allow-multi-task", nargs="*", default=[])
     ap.add_argument("--check-only", action="store_true")
     a = ap.parse_args(argv)
+    if a.forge_dir:
+        a.forge_config = list(a.forge_config) + [
+            os.path.join(a.forge_dir, "crab" + "Config", "config_ttHH%s_v15_had_%s.yaml" % (a.year, k)) for k in ("MC", "Data")]
     repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     bases = [os.path.abspath(b) for b in (a.base or [os.path.join(STORE, b) for b in DEFAULT_BASES[a.year]])]
     out = a.out or os.path.join(repo, "filelistTier3_%s" % a.year)
