@@ -29,6 +29,11 @@
 #   ./consolidate_prescan.py --input-base <dir> --outdir <dir> --skimmed
 #       # skimmed inputs (2024: NtupleForge 6j20): ΣgenW(Events) < ΣgenW(Runs)
 #       # is expected and only reported; see run_crosschecks() check (4)
+#   ./consolidate_prescan.py ... --filelist-dir filelistTier3_2024
+#       # [2026-10-06] MC: the files whose Runs tree the jobs read (Σ nFiles) must
+#       # be every line of <dir>/filelist_<sample>.txt -- a prescan job that could
+#       # not open a file only warns in its .err and the sample's Σgenw(Runs), so
+#       # its MC weight, would be wrong (check_filelist())
 #
 # Exit code: 0 when no sample has an anomaly (the "No anomalies" line),
 # 1 otherwise (bad/missing job, failed cross-check, or a warning).
@@ -417,6 +422,28 @@ def run_crosschecks(summ: SampleSummary, rel_tol: float,
     return checks
 
 
+def check_filelist(summ: SampleSummary, checks: dict, filelist_dir: str) -> None:
+    """MC: Σ nFiles (files whose Runs tree the prescan jobs read) == lines of <dir>/filelist_<sample>.txt.
+    The analyzer's prescan skips a file it cannot open with only a warning (readRunsTreeSums), so a shorter
+    sum means a Runs sum, and the MC weight of the sample, without that file. (2026-10-06)"""
+    if summ.is_data:
+        return
+    path = os.path.join(filelist_dir, f"filelist_{summ.sample}.txt")
+    try:
+        with open(path) as fh:
+            n_list = sum(1 for line in fh if line.strip() and not line.startswith("#"))
+    except OSError:
+        checks["files_match_filelist"] = False
+        summ.warnings.append(f"no filelist {path} to compare the {summ.n_input_files} files read with")
+        return
+    ok = (summ.n_input_files == n_list)
+    checks["files_match_filelist"] = ok
+    if not ok:
+        summ.warnings.append(
+            f"Runs read in {summ.n_input_files} files, the filelist has {n_list} ({path}): a job skipped "
+            f"files it could not open (its .err), or the filelist changed after the prescan")
+
+
 # --------------------------------------------------------------------------- #
 # Reporting
 # --------------------------------------------------------------------------- #
@@ -668,6 +695,9 @@ def parse_args(argv=None) -> argparse.Namespace:
                         "(default: %(default)s)")
     p.add_argument("--only", nargs="+", metavar="SAMPLE",
                    help="restrict to these sample directories")
+    p.add_argument("--filelist-dir", default=None, metavar="DIR",
+                   help="MC: compare the files read (Σ nFiles) with DIR/filelist_<sample>.txt "
+                        "(e.g. filelistTier3_2024); a difference is an anomaly")
     p.add_argument("--skimmed", action="store_true",
                    help="the analyzer inputs are skimmed (2024: NtupleForge 6j20), "
                         "so ΣgenW(Events) < ΣgenW(Runs) is expected: report it "
@@ -687,12 +717,16 @@ def main(argv=None) -> int:
     print(f"[prescan] samples    : {len(samples)}")
     print(f"[prescan] skimmed    : "
           f"{'yes (Events vs Runs reported; Events <= Runs checked)' if args.skimmed else 'no (Events must equal Runs)'}")
+    print(f"[prescan] filelists  : "
+          f"{args.filelist_dir + ' (MC: files read = filelist lines)' if args.filelist_dir else 'not compared (--filelist-dir)'}")
 
     records: list[tuple[SampleSummary, dict]] = []
     for i, sample in enumerate(samples, 1):
         print(f"  [{i:3d}/{len(samples)}] {sample} ...", flush=True)
         summ = aggregate_sample(ROOT, args.input_base, sample, args.tree)
         checks = run_crosschecks(summ, args.rel_tol, args.skimmed)
+        if args.filelist_dir:
+            check_filelist(summ, checks, args.filelist_dir)
         records.append((summ, checks))
 
     print_headline_table(records, args.skimmed)
@@ -709,6 +743,7 @@ def main(argv=None) -> int:
         "tree": args.tree,
         "rel_tol": args.rel_tol,
         "skimmed": args.skimmed,
+        "filelist_dir": args.filelist_dir,
         "n_samples": len(records),
         "n_samples_with_anomaly": sum(1 for s, c in records if has_anomaly(s, c)),
     }

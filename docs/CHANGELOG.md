@@ -2,10 +2,24 @@
 
 > **Purpose:** one chronological line per change, newest first, linking to the full record. The detail lives in [`changes/STEP_*.md`](changes/); this file is the index, not a copy.
 > **Audience:** anyone tracing when and why something changed.
-> **Status:** append-only · last meaningful update **2026-10-05**.
+> **Status:** append-only · last meaningful update **2026-10-06**.
 > **Links:** decisions [`DECISIONS.md`](DECISIONS.md) · state [`STATUS.md`](STATUS.md).
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
+
+## 2026-10-06: [analyzer·도구] STEP 24 D·E — 실패 확인: 못 여는 입력 파일과 entry 합(E30), merge 의 job 수 대조와 --report/--resubmit, make_plots 의 MC 정확 개수, 제출기 --report 의 fail/wait
+
+사용자(10-06): "job 이 fail 난 것을 어디서 확인 가능하며 모든 작업 플로우에서 확인 후 resubmit 이 가능한가, 코드가 잘
+짜여져 있나" → 단계마다 점검. 빈틈: exit 0 인데 입력 파일을 건너뛴 job(TChain 은 못 여는 파일을 오류만 찍고 건너뜀,
+prescan Runs 도 경고만), merge 는 job 수를 대조하지 않음, make_plots 의 완결성 검사가 거침, `--report` 의 miss 가 실패와
+대기를 구분 못 함. 이번 2024 생산은 사후 확인으로 빠짐 없음(KNU 10-06). 더한 것(Python, 빌드 없음): `plotter/make_plots.py`
+의 `EVENTS`(MC: merge 된 noCut = prescan event 수, 아니면 FLAG), `outputMerger/merge_outputs.py --config`(job 번호 대조,
+`--report`, `--resubmit`)와 `run_one_hadd.sh` 의 입력 수 대조(exit 7), `consolidate_prescan.py --filelist-dir`, 제출기
+`--report` 의 fail/wait 열과 `--status` 의 원인(return value·이름·`.err`), `docs/reference/ERROR_CODES.md` 의 도구 코드.
+시험 `test/test_failure_checks.py` 24, `test/test_consolidate_prescan.py` 24. E(C++, 다시 빌드로 들어감): job 의 모든 입력
+파일을 시작에 직접 열어 못 여는 파일은 E30(예전 E11), 파일별 `Events` entry 합 ≠ chain 이면 E30, 새 `[inputs]` 줄; MC prescan
+의 Runs 를 못 읽으면 E30; offline smoke 38(+4). 정정: treestream `read()` 의 LoadTree < 0 은 `eventBuffer::read` 가 이미 exit 1 로
+멈춘다(고치지 않음). 상세 [`changes/STEP_24_stage1_2_2024.md`](changes/STEP_24_stage1_2_2024.md) §14.
 
 ## 2026-10-05: [analyzer·plotter·도구] STEP 24 C — 여러 파일 job 의 branch 검사를 파일 직접 비교로, 2024 plot 도구, smoke 의 빌드 순서 검사, consolidate 의 skim 판정
 

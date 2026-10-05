@@ -2,7 +2,7 @@
 
 > **Purpose:** the single, authoritative list of every numbered exit code the analyzer (and submitter) can terminate with, so a failed Condor job is diagnosable from its log alone.
 > **Audience:** anyone debugging a failed job; anyone adding a new fail-fast check.
-> **Status:** DECIDED · last meaningful update **2026-06-30**.
+> **Status:** DECIDED · last meaningful update **2026-10-06** (codes of the tools around the analyzer, last section; the submitter's `--report`/`--status` read this table) · 2026-06-30 (the banded table).
 > **Links:** code source of truth `include/ExitCodes.h` · path policy `CONFIG_PATHS.md` · workflow `../README.md`.
 
 ## Bottom line
@@ -41,7 +41,7 @@ grep -nE '\[FATAL\]\[E[0-9]+\]' <condor_job>.log     # message + code
 | 13 | `CONFIG_PATH_NULL_REQUIRED` | a **required** correction path was set to `null` | `include/ConfigPath.h`; submitter |
 | 20 | `XSEC_DB_MISSING` | sample absent from `xsec_db` | submitter (`_compute_base_weight`) |
 | 21 | `PRESCAN_MISSING` | sample absent from / invalid in `prescan_summary` | submitter (`_compute_base_weight`) |
-| 30 | `INPUT_OPEN_FAIL` | cannot read input ntuple / `Events` tree | `ttHHanalyzer_unified.cc` |
+| 30 | `INPUT_OPEN_FAIL` | cannot read input ntuple / `Events` tree; since 2026-10-06 also: any file of the job unreadable, the files' `Events` entries ≠ the chain's, an MC prescan file without its `Runs` tree / `genEventSumw` | `ttHHanalyzer_unified.cc` |
 | 40 | `CENTRAL_CORR_LOAD_FAIL` | JME/PU/b-tag-SF correctionlib load failed | `src/CorrectionsManager.cc` |
 | 41 | `GOLDENJSON_DATA_MISSING` | Data lumi-mask (golden JSON) missing | `src/CorrectionsManager.cc` |
 | 50 | `TRIGSF_LOAD_FAIL` | trigger SF JSON missing/corrupt while required | `src/CorrectionsManager.cc` |
@@ -67,3 +67,22 @@ Before 2026-06-30 the analyzer used an ad-hoc set of codes (40–49) with two **
 2. Add the row to the table above with the same name, meaning, and emitter.
 3. Emit it as `std::exit(tthh::<NAME>)` with a message starting `\n[FATAL][E<code>] …`.
 4. Never reuse or renumber an existing code.
+
+## Codes of the tools around the analyzer (2026-10-06)
+
+Not in `include/ExitCodes.h`; listed so a failed job or step is readable from its return value. The submitter's
+`--report` counts a missing job as `fail` from the condor log and `--status` prints the name from the table above, or
+from this list:
+
+| Code | Where | Meaning |
+|---|---|---|
+| 1 | analyzer (treestream `fatal()`, `eventBuffer::read`) | treestream stopped: a read error (`GetEntry < 0`, `readbranch - I/O error`), a missing branch, the first input file unreadable, or `** eventBuffer::read - cannot load entry` (the chain could not load an entry) — the reason is the last lines of the job's `.err` / `.out` |
+| 127 | shell / condor | the executable was not found (e.g. a job started while a rebuild had removed it) |
+| 134 / 137 / 139 / 143 | shell / condor | SIGABRT / SIGKILL (often memory) / SIGSEGV / SIGTERM (stopped) |
+| 2 / 3 / 4 / 5 / 6 / 7 | `outputMerger/run_one_hadd.sh` | bad arguments / no `hadd` / no input directory / no `<proc>_*.root` / empty output / **number of inputs is not the expected number of jobs** (`merge_outputs.py --config`) |
+| 0 / 1 / 2 | `outputMerger/merge_outputs.py` | ok / a merge failed (local) or `--report` found a process not merged / bad arguments or environment |
+| 0 / 1 / 2 | `plotter/make_plots.py` | ok / a check (`MISSING`, `FLAG` incl. the `EVENTS` count) or the plotter failed / bad arguments |
+| 0 / 1 | `consolidate_prescan.py` | no anomaly / at least one (bad or missing job, failed check, warning) — the same samples as its anomaly report |
+| 1 | `submit_job_FH_Tier3_unified.py --preflight` | at least one FAIL row |
+| any | `tools/runlog/runlog.sh` (`EXIT :` line) | the command's own code; 143 / 130 / 129 when the run was stopped (TERM / INT / HUP) |
+

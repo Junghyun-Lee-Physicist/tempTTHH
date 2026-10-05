@@ -20,6 +20,13 @@
   시작하지 않음, exit 127 설명), `plotter/make_plots.py`(신규), `plotter/stack_plotter.C`(표기·여러 쪽 PDF·2024 그룹·파일 한 번 열기),
   `submit_job_FH_Tier3_unified.py`(`--report` 진행 줄), `consolidate_prescan.py`(`--skimmed`; 경고·anomaly 보고·exit code 가 같은 판정),
   `test/test_consolidate_prescan.py`(신규), `README.md` §8.1·`docs/ttbarCategorization.md` §10.2(그 옵션)
+- 커밋 D·E(§14, 실패 확인; D = Python, 빌드 없음, E = C++ 둘): `ttHHanalyzer_unified.cc`(E: 못 여는 입력 파일 E30, 파일별
+  `Events` entry 합 = chain, MC prescan 의 Runs 없음 E30), `test/offline_smoke/run_offline_smoke.sh`(E: +4 check),
+  `plotter/make_plots.py`(MC 정확 개수 `EVENTS`/FLAG, RESULT 에 WARN 수),
+  `outputMerger/merge_outputs.py`(`--config` job 수 대조, `--report`/`--resubmit`), `outputMerger/run_one_hadd.sh`(입력 수 대조
+  exit 7, `<proc>_*.root` 만), `consolidate_prescan.py`(`--filelist-dir`), `submit_job_FH_Tier3_unified.py`(`--report` 의
+  fail/wait, `--status` 의 원인), `docs/reference/ERROR_CODES.md`(도구의 코드), `README.md` §7.5·§8.1·§8.3b,
+  `test/test_failure_checks.py`(신규), `test/test_consolidate_prescan.py`(+6)
 - 결정: [`../DECISIONS.md`](../DECISIONS.md) D-2026-10-05-A (사용자 10-05: 첫 plot 의 범위, D14, blinding; D15 의 방법), D-2026-10-05-B
   (2024 MC 의 4J3T 는 PNet 경로만, PROPOSED), D-2026-10-05-C (2024 는 tt+nb lookup 없이, D-2026-10-02-A 의 구현)
 - 배경: 사용자(10-05) "얼른 plot 만들고 싶은데" → 첫 plot 은 2024 FH, trigger·b-tag SF 없이, σ 는 임시값 표시(D-2026-10-05-A). 그
@@ -311,6 +318,59 @@ B 에만 있는 파일 FAIL, tree 값만 바뀜 FAIL, EXPECTED 의 run 이 양�
   JetMET0 5,859 / 281,662 (2.08 %), JetMET1 1,981 (0.70 %). 두 PD 는 같은 LS 의 event 를 나눠 받으므로 Data 는 109.816 fb⁻¹ 의 1.4 % 쯤(LS 수
   기준)이 빠진 셈 → 첫 look 의 Data/MC 가 그만큼 낮을 수 있다. 처리된 LS 의 brilcalc 가 다음(빠진 LS 는 KNU 의
   `condor/lumi_2024/JetMET{0,1}_missing_golden.json`). `GOLDEN_OUTSIDE` 16 run(378985–379355, 5,939 LS)은 era B — C–I lumi 밖이라 상관없다.
+
+### 14. 실패 확인 장치의 점검과 보강 (10-06; 커밋 D)
+
+- **물음**(사용자 10-06): "job 이 fail 난 것을 어디서 확인 가능하며 모든 작업 플로우에서 확인 후 resubmit 이 가능하게 했는가?
+  에러나 fail 을 제대로 체크할 수 있도록 코드가 잘 짜여져 있나?"
+- **점검(코드를 다시 읽음)**: analyzer job(prescan·main)은 갖춰져 있다 — 번호 붙은 exit code(`docs/reference/ERROR_CODES.md`)로
+  fail-fast, condor 로그의 return value, 제출기 `--report`/`--status`(끝 표시로 완료 판정)와 `--resubmit`(빠진 job 만 같은
+  번호로). consolidate 는 빠진 job 번호·열리지 않는 출력·교차 검사, merge 는 hadd 의 실패(못 여는 입력이면 실패)와
+  `[hadd] OK`, make_plots 는 `MISSING`·`FLAG`, 빌드·smoke·plot 은 `tools/runlog/status.sh` 와 기록의 `EXIT`.
+  **빈틈**: (1) exit 0·끝 표시가 있는데 입력 파일을 건너뛴 job — treestream 은 첫 파일만 직접 열고(못 열면 exit 1) 나머지는
+  TChain 에 맡기며, TChain 은 못 여는 파일을 `.err` 에 오류만 남기고 0 event 로 친다; prescan 의 Runs 읽기도 못 연 파일은
+  경고만(`[Prescan][WARN] cannot open`) — Runs 합이 줄면 MC weight 가 커진다. 커밋 C 의 analyzer(여러 파일 job 의 모든 파일을
+  시작에 직접 엶, 못 열면 E11)가 대부분 막지만 이번 생산은 커밋 B 실행 파일. Data 는 job 당 1 파일이라 해당 없음.
+  (2) merge 는 디렉터리의 `.root` 를 모두 합침 — job 수 대조 없음(빠지면 적게, 예전 제출의 파일이 남으면 두 번).
+  (3) make_plots 의 noCut/기대값은 평균 PU weight 라 0.7–1.3 밖만 — job 하나(1–2 %)는 안 보임; RUNBOOK §23 J 의 grep 이
+  `WARN` 을 빠뜨렸다. (4) `--report` 의 miss 는 실패·대기·실행 중을 구분 못 함; treestream `read()` 는 LoadTree < 0 이면 멈추지
+  않고 돌아와 직전 event 값이 남는다(드묾).
+- **이번 생산의 사후 확인**(10-06 4 시 KNU, 사용자): main 5,291 job 모두 return value 0, `--report` 100 %; merge 76/76
+  return value 0·`[hadd] OK`, 입력 5,291 개 = job 수; job `.err` 의 ROOT 입출력 오류(prescan·main) 0; MC 60 샘플 모두 merge 된
+  noCut(가중치 없음) = prescan event 수, prescan 이 Runs 를 읽은 파일 수 = filelist 줄 수; make_plots WARN 없음, 샘플별
+  noCut/기대값 0.995–1.010 → **이번 생산은 job·파일 빠짐 없음**.
+- **보강(커밋 D, Python — 빌드 없이 이번 생산에도 쓴다)**:
+  `plotter/make_plots.py` — MC 정확 개수 검사: merge 된 `Tree/cutflow` 1 번 bin(가중치 없음) = prescan `nEvents_total`(같은
+  filelist; MC 는 모든 event 가 noCut 에 닿는다). TH1F 를 hadd 가 float 로 더하는 반올림을 고려해 max(2, 1e-5 N) 넘게 다르면
+  FLAG(RESULT FAIL); `EVENTS MC n of m ...` 줄; RESULT 에 WARN 수. `outputMerger/merge_outputs.py` — `--config <분석 yml>`
+  (+`--filelist-dir`): 제출기와 같은 나눔으로 프로세스마다 job 수 N 을 구해 `<proc>_0..N-1` 과 대조, 빠진 번호·남는 파일이
+  있으면 합치지 않음(`--allow-incomplete` 로만), yml 에 없는 디렉터리·디렉터리가 없는 샘플(ABSENT) 표시, worker 에 N 을 넘김;
+  `--report`: `_merge_workdir/<base>_<stamp>/` 의 기록(arguments 줄 = ProcId, condor 로그, `.out` 의 `[hadd] OK`, 합친 파일)으로
+  프로세스마다 가장 최근 시도의 상태(ok/failed/held/pending/not-merged), 정상 아니면 exit 1; `--resubmit`: failed·not-merged
+  ·removed 만 다시(pending·held 는 그대로; `--skip-existing` 은 반쪽 파일도 건너뛰므로 재시도에 쓰지 않는다).
+  `outputMerger/run_one_hadd.sh` — `<indir 이름>_*.root` 만 합치고, 4 번째 인자 N 과 입력 수가 다르면 exit 7(3 번째 인자 `-` =
+  cmsenv 없음). `consolidate_prescan.py --filelist-dir DIR` — MC: Σ nFiles = `DIR/filelist_<sample>.txt` 줄 수(다르면 경고 →
+  anomaly). `submit_job_FH_Tier3_unified.py` — `--report` 표에 `fail`(가장 최근 시도가 0 아닌 return value·signal·condor_rm,
+  또는 rc 0 인데 끝 표시 없음)·`wait`(idle/running/held), `--status` 는 빠진 job 마다 cluster.proc·return value 와 이름·`.err`
+  경로(샘플의 condor 로그, job `.out` 의 `[ output file name ] -->`, 마지막 제출의 arguments 파일로 job 번호를 찾는다).
+  `docs/reference/ERROR_CODES.md` 끝에 도구의 코드(treestream 1, 127/137/143, run_one_hadd 2–7 등).
+  시험: `test/test_failure_checks.py`(신규, 24: make_plots 개수 FLAG·float 여유, merge 의 대조·local merge·worker exit 7·
+  `--report`·`--resubmit` 선택, 제출기 진단 여섯 경우·표), `test/test_consolidate_prescan.py`(24, `--filelist-dir` 셋 더함);
+  컨테이너 PASS, python 3.9 문법.
+- **보강(커밋 E, C++ — KNU 다시 빌드 `knu_build_c` 로 들어간다)**: `requireSameBranchSet_`(main 은 첫 event, prescan 은
+  시작)이 job 의 모든 파일을 직접 열 때, 못 여는 파일(파일 없음·`Events` 없음)은 E30(`INPUT_OPEN_FAIL`, 예전 E11)으로 멈추고,
+  파일별 `Events` entry 의 합이 chain 의 entry 수(`_ev->size()`)와 다르면 E30; 1 파일 job 도 센다. 새 줄
+  `[inputs] <n> input file(s), Events entries <N> = the chain's.`(여러 파일 job 의 `[branches] ... in each.` 줄은 그대로 — smoke 가
+  읽는다). prescan 의 `readRunsTreeSums`: MC 에서 파일을 못 열거나 `Runs` tree·`genEventSumw` 가 없으면 E30(Data 는 경고 그대로),
+  읽은 파일 수 = job 의 파일 수. 확인(컨테이너, ROOT 6.40): TChain 이 못 여는 파일·0 바이트·없는 파일을 오류 줄만 남기고
+  건너뛰어 GetEntries 가 좋은 파일의 합만 낸다(5 + 7 = 12); 빌드 OK; offline smoke 38/38(새 넷: 두 파일 job 의 `[inputs]`,
+  1 파일 job 의 `[inputs]`, 둘째 파일을 못 여는 job → E30, Runs 없는 MC prescan → E30; 2017 출력은 옛 빌드와 같음); unit PASS.
+  **정정**: 점검의 (4) 뒷부분 — "treestream `read()` 가 LoadTree < 0 이면 직전 event 값이 남는다" — 는 analyzer 경로에서는 틀렸다.
+  analyzer 는 `eventBuffer::read` 를 거치고, 그것이 `input->read(entry) < 0` 이면 `** eventBuffer::read - cannot load entry` 를
+  찍고 exit 1 로 멈춘다(fork `8be42e8` 의 생성기, 2026-10-03 패치). 그래서 treestream 은 고치지 않았다.
+- **첫 look 의 수율**(위 확인 뒤 다시 낸 `--check-only`): QCD 가 HT>500 에서 MC 의 90 %, nTotal 에서 78 %. 다른 MC 를 그대로
+  두고 Data 에 맞추려면 QCD 에 HT>500 0.55, nb≥2 0.49, nTotal 0.46, nb≥4 1.27 — LO QCD 가 전체로 2 배쯤 많고 b-jet 이 많은 쪽
+  비율은 낮다(trigger·b-tag SF 없음). 장부 문제는 아니고, 분석에서 QCD 를 데이터로 정규화해야 한다는 신호.
 
 ## 확인하지 못한 것
 

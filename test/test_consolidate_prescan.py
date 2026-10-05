@@ -151,6 +151,24 @@ with tempfile.TemporaryDirectory(prefix="tthh_cons_") as tmp:
     rc, out = run(e, os.path.join(tmp, "outE"))
     check("E unskimmed: exit 0, No anomalies", rc == 0 and "No anomalies" in out, out[-1500:])
 
+    # F: --filelist-dir (2026-10-06): MC files read (sum of nFiles, 1 per fake job) vs filelist lines; Data skipped.
+    fl = os.path.join(tmp, "filelists")
+    os.makedirs(fl)
+    with open(os.path.join(fl, "filelist_MC_full.txt"), "w") as fh:
+        fh.write("# comment\nfile_a.root\nfile_b.root\n\n")
+    rc, out = run(e, os.path.join(tmp, "outF1"), "--filelist-dir", fl)
+    check("F filelist 2 lines = 2 files read: exit 0", rc == 0 and "No anomalies" in out, out[-1500:])
+    with open(os.path.join(fl, "filelist_MC_full.txt"), "a") as fh:
+        fh.write("file_c.root\n")
+    rc, out = run(e, os.path.join(tmp, "outF2"), "--filelist-dir", fl)
+    check("F filelist 3 lines, 2 read: exit 1 with files_match_filelist",
+          rc == 1 and "failed checks: files_match_filelist" in out and "Runs read in 2 files, the filelist has 3" in out)
+    check("F Data sample not compared", "[Data_X]" not in out)
+    consistent("F", rc, out)
+    rc, out = run(a, os.path.join(tmp, "outF3"), "--skimmed", "--filelist-dir", fl)
+    check("F no filelist for MC_skim: exit 1 with a warning", rc == 1 and "no filelist" in out)
+    consistent("F no filelist", rc, out)
+
 n_fail = RESULTS.count(False)
 print(f"SUMMARY test_consolidate_prescan {'PASS' if n_fail == 0 else 'FAIL'} "
       f"({len(RESULTS) - n_fail}/{len(RESULTS)} checks)")

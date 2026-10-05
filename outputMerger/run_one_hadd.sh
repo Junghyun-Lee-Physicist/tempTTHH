@@ -3,18 +3,25 @@
 # run_one_hadd.sh
 # -----------------------------------------------------------------------------
 # Single-job hadd runner used by submit_hadd_validation.py.
-# Invocation:        run_one_hadd.sh <indir> <outfile> [cmssw_src]
+# Invocation:        run_one_hadd.sh <indir> <outfile> [cmssw_src|-] [expected]
 #
 # <indir>    : directory containing the per-file split outputs to merge
 #              (e.g.  <base>/baseline/TTToHadronic/  )
 # <outfile>  : full path of the merged target ROOT file
 #              (e.g.  <base>/baseline/TTToHadronic.root  )
+# cmssw_src  : CMSSW src to cmsenv from on the worker; '-' = none
+# expected   : [2026-10-06] the number of analyzer jobs of this process
+#              (merge_outputs.py --config); a different number of inputs
+#              stops the merge (exit 7) instead of merging a short or
+#              doubled set
 #
 # Behaviour:
 #   * sources cmsenv (worker node has CVMFS)
-#   * collects all *.root in <indir> EXCEPT the outfile itself
+#   * collects <indir>/<name>_*.root (<name> = basename of <indir>, the
+#     analyzer's <sample>_<N>.root) EXCEPT the outfile itself
 #   * runs `hadd -f -j 1` (single-thread; outer parallelism is via condor)
-#   * exits non-zero if hadd fails or if no input files were found
+#   * exits non-zero if hadd fails, if no input files were found, or if
+#     their number is not <expected>
 # =============================================================================
 set -e
 
@@ -28,14 +35,16 @@ echo "  date          : $(date)"
 echo "  argv          : $@"
 echo "==============================================================="
 
-if [ $# -lt 2 ] || [ $# -gt 3 ]; then
-    echo "[fatal] expected 2-3 args (indir, outfile, [cmssw_src]), got $#"
+if [ $# -lt 2 ] || [ $# -gt 4 ]; then
+    echo "[fatal] expected 2-4 args (indir, outfile, [cmssw_src|-], [expected]), got $#"
     exit 2
 fi
 
 INDIR="$1"
 OUTFILE="$2"
 CMSSW_SRC="${3:-}"
+if [ "${CMSSW_SRC}" = "-" ]; then CMSSW_SRC=""; fi
+EXPECTED="${4:-}"
 
 # ── ROOT/hadd environment ───────────────────────────────────────────────────
 # 정책 [STEP22.1 — 2026-07-12]: 이 스크립트는 환경을 만들지 않는다.
@@ -69,12 +78,14 @@ if [ ! -d "${INDIR}" ]; then
     exit 4
 fi
 
-# Build file list — skip the outfile so re-runs don't try to feed the merged
-# file back into itself.
+# Build file list — only <name>_*.root (the analyzer's <sample>_<N>.root),
+# and skip the outfile so re-runs don't try to feed the merged file back into
+# itself.
+NAME=$(basename "${INDIR}")
 TMPLIST=$(mktemp)
 trap 'rm -f "${TMPLIST}"' EXIT
 
-for f in "${INDIR}"/*.root; do
+for f in "${INDIR}"/"${NAME}"_*.root; do
     [ -e "$f" ] || continue
     case "$f" in
         "${OUTFILE}")
@@ -88,11 +99,16 @@ done
 
 NFILES=$(wc -l < "${TMPLIST}")
 if [ "${NFILES}" -eq 0 ]; then
-    echo "[fatal] no input .root files in ${INDIR}"
+    echo "[fatal] no input ${NAME}_*.root files in ${INDIR}"
     exit 5
 fi
+if [ -n "${EXPECTED}" ] && [ "${NFILES}" -ne "${EXPECTED}" ]; then
+    echo "[fatal] ${NFILES} input files, ${EXPECTED} expected (the analyzer jobs of this process):"
+    echo "        a job output is missing, or files of another submission are in ${INDIR}"
+    exit 7
+fi
 
-echo "[hadd] inputs: ${NFILES} files"
+echo "[hadd] inputs: ${NFILES} files${EXPECTED:+ (= ${EXPECTED} expected)}"
 echo "[hadd] target: ${OUTFILE}"
 echo "[hadd] first few inputs:"
 head -3 "${TMPLIST}"

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 ================================================================================
-SCRIPT: merge_outputs.py   [STEP22]
+SCRIPT: merge_outputs.py   [STEP22, STEP 24 checks 2026-10-06]
 ================================================================================
 
 [ Purpose ]
@@ -28,18 +28,37 @@ AnalyzerOutput 의 flat 레이아웃을 **자동 발견**해서 프로세스별�
     # condor 제출 (프로세스당 1 job)
     python3 merge_outputs.py --base .../AnalyzerOutput_main --mode condor
 
+    # [2026-10-06] job 수 대조: analyzer 제출에 쓴 yml 을 주면, 프로세스마다
+    # <proc>_0 .. <proc>_<N-1>.root 가 정확히 있는지 본다 (N = 제출기와 같은
+    # 나눔: filelist 줄 수 / files_per_job, Data 는 files_per_job_data).
+    # 빠진 번호나 남는 파일(예전 제출의 것)이 있으면 그 프로세스는 합치지 않고,
+    # worker 도 입력 파일 수가 N 이 아니면 exit 7 로 멈춘다.
+    ... --config AnalyzerConfig/Tier3_2024_FH_unified_main.yml [--filelist-dir DIR]
+    ... --allow-incomplete              # 그래도 합친다 (권하지 않음)
+
+    # [2026-10-06] condor merge 의 결과: 프로세스마다 가장 최근 시도의 상태
+    # (condor 로그의 return value, job .out 의 [hadd] OK, 합친 파일)
+    python3 merge_outputs.py --base ... --report [--config yml]
+    # 실패했거나 아직 합치지 않은 프로세스만 다시 (대기·실행 중인 것은 그대로)
+    python3 merge_outputs.py --base ... --resubmit --mode condor [--config yml]
+
     # 필터 / 재실행 제어
     ... --only 'QCD_*' 'TTbar_*'        # glob, 여러 개 가능
     ... --exclude 'SingleMuon_*'
     ... --skip-existing                 # <proc>.root 이미 있으면 건너뜀
+                                        #   (실패한 hadd 가 남긴 반쪽 파일도 건너뛰므로
+                                        #    재시도에는 --resubmit 을 쓴다)
     ... --dry-run                       # 실행/제출 직전까지만
 
 [ Notes ]
-- 실행 단위는 양 모드 모두 run_one_hadd.sh <indir> <outfile>
-  (cmsenv bootstrap, @filelist 로 argv 한계 회피, 결과 sanity 내장).
+- 실행 단위는 양 모드 모두 run_one_hadd.sh <indir> <outfile> [cmssw_src|-] [N]
+  (cmsenv bootstrap, @filelist 로 argv 한계 회피, 결과 sanity 내장; N 이 있으면
+  입력 파일 수 대조).
 - condor 템플릿은 submit_hadd_validation.py 와 동일 컨벤션
   (x509userproxy, getenv, MY.WantOS, request_memory).
 - 로그/제출 파일: <script_dir>/_merge_workdir/<base명>_<timestamp>/
+  (arguments.txt 의 줄 번호 = condor ProcId; --report 가 이것을 읽는다)
+- 종료 코드: 0 정상; 1 실패한 merge 가 있음(local, --report); 2 잘못된 인자·환경.
 ================================================================================
 """
 
@@ -47,7 +66,10 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
+import importlib.util
+import math
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -56,10 +78,62 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 SCRIPT_DIR         = Path(__file__).resolve().parent
+REPO               = SCRIPT_DIR.parent
+WORKROOT           = Path(os.environ.get("TTHH_MERGE_WORKROOT", str(SCRIPT_DIR / "_merge_workdir")))  # env: tests
 DEFAULT_RUNNER     = SCRIPT_DIR / "run_one_hadd.sh"
 DEFAULT_PROXY_PATH = SCRIPT_DIR / "proxy.cert"
 DEFAULT_OS_VERSION = "el9"
 DEFAULT_MEMORY     = "4GB"
+STAMP_RE           = r"\d{8}-\d{6}"
+
+
+# -----------------------------------------------------------------------------
+# Expected job counts from the analyzer yml (the submitter's own reader)
+# -----------------------------------------------------------------------------
+def expected_jobs(cfg: Path, filelist_dir: str | None) -> dict:
+    """{output dir name: (n_jobs, files_per_job, filelist path)} for every sample of the analyzer yml, chunked as
+    submit_job_FH_Tier3_unified.py does: lines of <filelist dir>/<filelist> / files_per_job (Data:
+    files_per_job_data), the filelist dir defaulting to filelistTier3[_<year>] like the submitter."""
+    spec = importlib.util.spec_from_file_location("tthh_submitter", str(REPO / "submit_job_FH_Tier3_unified.py"))
+    sub = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(sub)
+    conf = sub.CondorJobManager.load_yaml_config(None, str(cfg))
+    common = conf["common"]
+    year = str(common.get("year", "")).strip()
+    fl_dir = Path(filelist_dir or ("filelistTier3" + (f"_{year}" if year and year != "2017" else "")))
+    if not fl_dir.is_absolute():
+        fl_dir = REPO / fl_dir
+    out = {}
+    for s in conf["samples"]:
+        entry = s if isinstance(s, dict) else {"sample_name": str(s)}
+        name = entry["sample_name"]
+        outdir = str(entry.get("output_dir", name))       # <base>/<outdir>/<outdir>_<N>.root (submitter)
+        fl = fl_dir / entry.get("filelist", f"filelist_{name}.txt")
+        if sub.is_data_name(name) and common.get("files_per_job_data") not in (None, ""):
+            n = int(common["files_per_job_data"])
+        else:
+            n = int(common.get("files_per_job", 1) or 1)
+        with open(fl) as f:
+            lines = [l.strip() for l in f if l.strip() and not l.startswith("#")]
+        out[outdir] = (math.ceil(len(lines) / n), n, str(fl))
+    return out
+
+
+def job_indices(d: Path, proc: str):
+    """(sorted job indices of <proc>_<N>.root, other names matching <proc>_*.root)"""
+    idx, odd = [], []
+    pat = re.compile(rf"^{re.escape(proc)}_(\d+)\.root$")
+    for f in sorted(d.glob(f"{proc}_*.root")):
+        m = pat.match(f.name)
+        if m:
+            idx.append(int(m.group(1)))
+        else:
+            odd.append(f.name)
+    return sorted(idx), odd
+
+
+def _short(xs, n=8):
+    return f"{xs[:n]}{' ...' if len(xs) > n else ''}"
 
 
 # -----------------------------------------------------------------------------
@@ -68,20 +142,25 @@ DEFAULT_MEMORY     = "4GB"
 def discover(base: Path,
              only: list[str] | None,
              exclude: list[str] | None,
-             skip_existing: bool):
-    """Return (jobs, skipped, unmatched).
+             skip_existing: bool,
+             expected: dict | None = None,
+             allow_incomplete: bool = False):
+    """Return (jobs, skipped, unmatched, absent).
 
-    jobs      : [{proc, indir, outfile, nfiles}] — hadd 대상
-    skipped   : [(proc, reason)]                 — 필터/기존 output 으로 제외
+    jobs      : [{proc, indir, outfile, nfiles, expected}] — hadd 대상
+    skipped   : [(proc, reason)]                 — 필터/기존 output/job 수 불일치로 제외
     unmatched : [dirname]                        — 패턴 미매칭 하위 디렉토리
+    absent    : [proc]                           — yml(--config)에는 있는데 디렉토리가 없음
     """
     jobs, skipped, unmatched = [], [], []
+    seen = set()
     for d in sorted(p for p in base.iterdir() if p.is_dir()):
         proc = d.name
         files = sorted(d.glob(f"{proc}_*.root"))
         if not files:
             unmatched.append(proc)
             continue
+        seen.add(proc)
         if only and not any(fnmatch.fnmatch(proc, pat) for pat in only):
             skipped.append((proc, "--only 필터"))
             continue
@@ -92,15 +171,44 @@ def discover(base: Path,
         if skip_existing and outfile.exists():
             skipped.append((proc, "output 존재 (--skip-existing)"))
             continue
+        n_exp = None
+        if expected is not None:
+            if proc not in expected:
+                skipped.append((proc, "--config 의 yml 에 없는 프로세스"))
+                continue
+            n_exp = expected[proc][0]
+            idx, odd = job_indices(d, proc)
+            missing = sorted(set(range(n_exp)) - set(idx))
+            extra = [f"{proc}_{i}.root" for i in sorted(set(idx) - set(range(n_exp)))] + odd
+            if (missing or extra) and not allow_incomplete:
+                why = []
+                if missing:
+                    why.append(f"job {len(missing)}/{n_exp} 개 없음 {_short(missing)}")
+                if extra:
+                    why.append(f"남는 파일 {len(extra)} 개 {_short(extra, 4)} (예전 제출?)")
+                skipped.append((proc, "INCOMPLETE: " + "; ".join(why)))
+                continue
+            if missing or extra:
+                n_exp = None        # --allow-incomplete: merge what is there, no count check in the worker
         jobs.append({"proc": proc, "indir": str(d),
-                     "outfile": str(outfile), "nfiles": len(files)})
-    return jobs, skipped, unmatched
+                     "outfile": str(outfile), "nfiles": len(files), "expected": n_exp})
+    absent = []
+    if expected is not None:
+        for proc in sorted(expected):
+            if proc in seen:
+                continue
+            if only and not any(fnmatch.fnmatch(proc, pat) for pat in only):
+                continue
+            if exclude and any(fnmatch.fnmatch(proc, pat) for pat in exclude):
+                continue
+            absent.append(proc)
+    return jobs, skipped, unmatched, absent
 
 
-def print_discovery(base: Path, jobs, skipped, unmatched):
+def print_discovery(base: Path, jobs, skipped, unmatched, absent=()):
     name_w = max([len("process")]
                  + [len(j["proc"]) for j in jobs]
-                 + [len(p) for p, _ in skipped] + [7])
+                 + [len(p) for p, _ in skipped] + [len(p) for p in absent] + [7])
     bar = "=" * (name_w + 30)
     print("\n" + bar)
     print(f"merge discovery under: {base}")
@@ -108,16 +216,35 @@ def print_discovery(base: Path, jobs, skipped, unmatched):
     print(f"{'process':<{name_w}}  {'files':>6}  action")
     print("-" * (name_w + 30))
     for j in jobs:
-        print(f"{j['proc']:<{name_w}}  {j['nfiles']:>6}  MERGE -> {Path(j['outfile']).name}")
+        chk = f" (= {j['expected']} jobs)" if j.get("expected") is not None else ""
+        print(f"{j['proc']:<{name_w}}  {j['nfiles']:>6}  MERGE -> {Path(j['outfile']).name}{chk}")
     for p, why in skipped:
         print(f"{p:<{name_w}}  {'-':>6}  skip ({why})")
+    for p in absent:
+        print(f"{p:<{name_w}}  {'-':>6}  ABSENT (yml 의 샘플인데 출력 디렉토리가 없음)")
     print("-" * (name_w + 30))
+    n_inc = sum(1 for _, why in skipped if why.startswith("INCOMPLETE"))
     print(f"total: merge={len(jobs)}  skip={len(skipped)}  "
-          f"unmatched-dirs={len(unmatched)}")
+          f"unmatched-dirs={len(unmatched)}"
+          + (f"  incomplete={n_inc}" if n_inc else "")
+          + (f"  absent={len(absent)}" if absent else ""))
     if unmatched:
         print(f"  [note] '<이름>_*.root' 패턴 미매칭 디렉토리 (미대상): "
               f"{unmatched[:8]}{' ...' if len(unmatched) > 8 else ''}")
+    if n_inc or absent:
+        print("  [check] job 수가 맞지 않는 프로세스는 합치지 않았다: 분석 job 을 --report/--resubmit "
+              "으로 채운 뒤 다시 (또는 --allow-incomplete)")
     print(bar)
+
+
+def runner_args(j, cmssw_src) -> list[str]:
+    """run_one_hadd.sh arguments: indir outfile [cmssw_src|-] [expected]"""
+    a = [j["indir"], j["outfile"]]
+    if cmssw_src or j.get("expected") is not None:
+        a.append(str(cmssw_src) if cmssw_src else "-")
+    if j.get("expected") is not None:
+        a.append(str(j["expected"]))
+    return a
 
 
 # -----------------------------------------------------------------------------
@@ -125,12 +252,15 @@ def print_discovery(base: Path, jobs, skipped, unmatched):
 # -----------------------------------------------------------------------------
 def run_local(jobs, runner: Path, n_workers: int, log_dir: Path) -> int:
     log_dir.mkdir(parents=True, exist_ok=True)
+    with (log_dir.parent / "arguments.txt").open("w") as f:      # the record --report reads
+        for j in jobs:
+            f.write(" ".join(runner_args(j, None)) + "\n")
 
     def one(j):
         t0 = time.time()
         log_path = log_dir / f"{j['proc']}.log"
         with log_path.open("w") as lf:
-            proc = subprocess.run([str(runner), j["indir"], j["outfile"]],
+            proc = subprocess.run([str(runner)] + runner_args(j, None),
                                   stdout=lf, stderr=subprocess.STDOUT)
         dt = time.time() - t0
         out = Path(j["outfile"])
@@ -155,7 +285,7 @@ def run_local(jobs, runner: Path, n_workers: int, log_dir: Path) -> int:
           f"   (logs: {log_dir}/<proc>.log)")
     if n_fail:
         print("[local] FAILED:", [r[0] for r in results if r[1] != 0])
-        print("        재시도: 같은 명령 + --skip-existing (성공분 자동 제외)")
+        print("        재시도: 같은 명령 + --resubmit (실패한 것만; --skip-existing 은 반쪽 파일도 건너뛴다)")
     return 1 if n_fail else 0
 
 
@@ -169,11 +299,10 @@ def write_condor(jobs, runner: Path, workdir: Path, proxy: Path,
     log_dir.mkdir(parents=True, exist_ok=True)
     args_file = workdir / "arguments.txt"
     # [STEP22.1] cmssw_src 가 있으면 3번째 인자로 — run_one_hadd.sh 가 worker
-    # 에서 cmsenv. 없으면 2-인자 (getenv=True 전파에 의존).
-    tail = f" {cmssw_src}" if cmssw_src else ""
+    # 에서 cmsenv. 없으면 '-' (getenv=True 전파에 의존). 4번째 = 기대 입력 수.
     with args_file.open("w") as f:
         for j in jobs:
-            f.write(f"{j['indir']} {j['outfile']}{tail}\n")
+            f.write(" ".join(runner_args(j, cmssw_src)) + "\n")
     sub = workdir / "merge.sub"
     with sub.open("w") as f:
         f.write(f"x509userproxy           = {proxy}\n")
@@ -191,6 +320,168 @@ def write_condor(jobs, runner: Path, workdir: Path, proxy: Path,
 
 
 # -----------------------------------------------------------------------------
+# Report — the newest attempt of every process, from the work directories
+# -----------------------------------------------------------------------------
+_EV_RE = re.compile(r"^(\d{3}) \((\d+)\.(\d+)\.\d+\) ")
+
+
+def parse_condor_log(path: Path) -> dict:
+    """{(cluster, proc): (state, detail)} from an HTCondor user log; state is queued / running / done / removed /
+    held, detail the return value ("rc=N") or the signal of a finished job."""
+    st = {}
+    cur = None
+    try:
+        lines = path.read_text(errors="replace").splitlines()
+    except OSError:
+        return st
+    for line in lines:
+        m = _EV_RE.match(line)
+        if m:
+            code, key = m.group(1), (int(m.group(2)), int(m.group(3)))
+            cur = None
+            if code == "000":
+                st[key] = ("queued", "")
+            elif code == "001":
+                st[key] = ("running", "")
+            elif code in ("004", "013"):
+                st[key] = ("queued", "")
+            elif code == "005":
+                st[key] = ("done", "")
+                cur = key
+            elif code == "009":
+                st[key] = ("removed", "")
+            elif code == "012":
+                st[key] = ("held", "")
+                cur = key
+            continue
+        if cur is None:
+            continue
+        if line.strip() == "...":
+            cur = None
+            continue
+        state = st[cur][0]
+        if state == "done":
+            r = re.search(r"return value (-?\d+)", line)
+            s = re.search(r"Abnormal termination \(signal (\d+)\)", line)
+            if r:
+                st[cur] = ("done", f"rc={r.group(1)}")
+            elif s:
+                st[cur] = ("done", f"signal={s.group(1)}")
+        elif state == "held" and not st[cur][1] and line.strip():
+            st[cur] = ("held", line.strip()[:80])
+    return st
+
+
+def merge_attempts(base: Path) -> dict:
+    """{proc: (stamp, kind, state, detail, record path)} -- the newest attempt per process over all work
+    directories of this base (_merge_workdir/<base name>_<YYYYmmdd-HHMMSS>/)."""
+    best = {}
+    if not WORKROOT.is_dir():
+        return best
+    pat = re.compile(rf"^{re.escape(base.name)}_({STAMP_RE})$")
+    wds = []
+    for d in WORKROOT.iterdir():
+        m = pat.match(d.name)
+        if m and d.is_dir():
+            wds.append((m.group(1), d))
+    for stamp, wd in sorted(wds):
+        args = wd / "arguments.txt"
+        if not args.is_file():
+            continue
+        rows = [l.split() for l in args.read_text().splitlines() if l.strip()]
+        rows = [r for r in rows if len(r) >= 2 and Path(r[0]).parent.resolve() == base.resolve()]
+        if (wd / "merge.sub").is_file():                       # condor: line number = ProcId
+            ev = {}
+            for lg in sorted((wd / "logs").glob("log.*.log")):
+                ev.update(parse_condor_log(lg))
+            clusters = sorted({c for c, _ in ev})
+            for pid, r in enumerate(rows):
+                proc = Path(r[0]).name
+                # the cluster of this work directory (one submission per directory)
+                key = next(((c, pid) for c in reversed(clusters) if (c, pid) in ev), None)
+                if key is None:
+                    best[proc] = (stamp, "condor", "queued", "no event in the log yet", str(wd))
+                    continue
+                state, detail = ev[key]
+                out = wd / "logs" / f"job.{key[0]}.{key[1]}.out"
+                if state == "done" and detail == "rc=0":
+                    try:
+                        ok_line = "[hadd] OK" in out.read_text(errors="replace")
+                    except OSError:
+                        ok_line = True                         # no .out (transfer): trust rc + the file below
+                    state = "ok" if ok_line else "failed"
+                    detail = f"{key[0]}.{key[1]} rc=0" + ("" if ok_line else " but no '[hadd] OK' in the .out")
+                elif state == "done":
+                    state, detail = "failed", f"{key[0]}.{key[1]} {detail}  ({out})"
+                else:
+                    detail = f"{key[0]}.{key[1]} {detail}".strip()
+                best[proc] = (stamp, "condor", state, detail, str(wd))
+        else:                                                  # local: logs/<proc>.log
+            for r in rows:
+                proc = Path(r[0]).name
+                lg = wd / "logs" / f"{proc}.log"
+                try:
+                    ok = "[hadd] OK" in lg.read_text(errors="replace")
+                except OSError:
+                    ok = False
+                best[proc] = (stamp, "local", "ok" if ok else "failed", f"local log {lg}", str(wd))
+    return best
+
+
+def merge_report(base: Path, expected: dict | None, only=None, exclude=None):
+    """[(proc, state, detail)]; state ok / failed / held / pending / not-merged / removed"""
+    att = merge_attempts(base)
+    procs = set(expected) if expected is not None else set(att)
+    if expected is None:
+        procs |= {d.name for d in base.iterdir() if d.is_dir() and any(d.glob(f"{d.name}_*.root"))}
+    rows = []
+    for proc in sorted(procs):
+        if only and not any(fnmatch.fnmatch(proc, pat) for pat in only):
+            continue
+        if exclude and any(fnmatch.fnmatch(proc, pat) for pat in exclude):
+            continue
+        outfile = base / f"{proc}.root"
+        a = att.get(proc)
+        if a is None:
+            rows.append((proc, "not-merged" if not outfile.exists() else "ok?",
+                         "no merge record" + (" (the merged file exists)" if outfile.exists() else "")))
+            continue
+        stamp, kind, state, detail, wd = a
+        if state == "ok" and not (outfile.is_file() and outfile.stat().st_size > 0):
+            state, detail = "failed", detail + "; merged file missing or empty"
+        if state in ("queued", "running"):
+            state = "pending"
+        rows.append((proc, state, f"[{stamp}] {detail}"))
+    return rows
+
+
+def print_report(base: Path, rows) -> int:
+    name_w = max([len("process")] + [len(r[0]) for r in rows])
+    bar = "=" * (name_w + 60)
+    print("\n" + bar)
+    print(f"merge report: {base}   (records: {WORKROOT}/{base.name}_<stamp>/)")
+    print(bar)
+    for proc, state, detail in rows:
+        if state != "ok":
+            print(f"{proc:<{name_w}}  {state.upper():<11} {detail}")
+    counts = {}
+    for _, s, _ in rows:
+        counts[s] = counts.get(s, 0) + 1
+    print("-" * (name_w + 60))
+    print("TOTAL " + "  ".join(f"{k}={v}" for k, v in sorted(counts.items())) + f"  (of {len(rows)})")
+    bad = [r for r in rows if r[1] != "ok"]
+    if not bad:
+        print("  -> every process merged (newest attempt rc=0, '[hadd] OK', file present).")
+    else:
+        if any(r[1] in ("failed", "not-merged", "removed", "ok?") for r in bad):
+            print("  -> 다시: 같은 명령에 --resubmit --mode condor (failed / not-merged / removed 만)")
+        if any(r[1] in ("pending", "held") for r in bad):
+            print("  -> pending / held 은 condor_q 로 본다 (held: condor_release 또는 condor_rm 뒤 --resubmit)")
+    print(bar)
+    return 0 if not bad else 1
+
+
+# -----------------------------------------------------------------------------
 def main(argv: list[str]) -> int:
     p = argparse.ArgumentParser(
         description="AnalyzerOutput flat 레이아웃 자동 발견 + hadd (local/condor)")
@@ -205,7 +496,20 @@ def main(argv: list[str]) -> int:
     p.add_argument("--exclude", nargs="*", default=None,
                    help="glob 필터 — 매칭되는 프로세스 제외")
     p.add_argument("--skip-existing", action="store_true",
-                   help="<proc>.root 가 이미 있으면 건너뜀 (재시도용)")
+                   help="<proc>.root 가 이미 있으면 건너뜀 (실패한 hadd 의 반쪽 파일도 건너뛴다: "
+                        "재시도는 --resubmit)")
+    p.add_argument("--config", type=Path, default=None,
+                   help="analyzer 제출에 쓴 yml: 프로세스마다 job 수(<proc>_0..N-1)를 대조하고, "
+                        "맞지 않으면 합치지 않는다 (worker 도 입력 수 대조)")
+    p.add_argument("--filelist-dir", default=None,
+                   help="--config 의 filelist 디렉토리 (기본: 제출기와 같이 filelistTier3[_<year>])")
+    p.add_argument("--allow-incomplete", action="store_true",
+                   help="--config 대조가 맞지 않아도 있는 파일을 합친다 (권하지 않음)")
+    p.add_argument("--report", action="store_true",
+                   help="합치기 결과: 프로세스마다 가장 최근 시도의 상태 (exit 1 = 정상 아닌 것이 있음)")
+    p.add_argument("--resubmit", action="store_true",
+                   help="--report 에서 failed / not-merged / removed 인 프로세스만 다시 합친다 "
+                        "(--mode 필요; pending·held 는 건드리지 않음)")
     p.add_argument("--list", action="store_true",
                    help="발견 결과 표만 출력하고 종료")
     p.add_argument("--dry-run", action="store_true",
@@ -231,10 +535,37 @@ def main(argv: list[str]) -> int:
     if not args.runner.is_file():
         print(f"[fatal] runner 없음: {args.runner}")
         return 2
+    if args.report and args.resubmit:
+        print("[fatal] --report 와 --resubmit 은 따로 쓴다")
+        return 2
 
-    jobs, skipped, unmatched = discover(
-        args.base, args.only, args.exclude, args.skip_existing)
-    print_discovery(args.base, jobs, skipped, unmatched)
+    expected = None
+    if args.config is not None:
+        cfg = args.config if args.config.is_file() else REPO / args.config    # as given, or relative to the repo
+        try:
+            expected = expected_jobs(cfg, args.filelist_dir)
+        except (OSError, KeyError, ValueError) as e:
+            print(f"[fatal] --config {args.config}: {e}")
+            return 2
+        print(f"[config] {cfg}: {len(expected)} samples, "
+              f"{sum(v[0] for v in expected.values())} analyzer jobs expected")
+
+    if args.report or args.resubmit:
+        rows = merge_report(args.base, expected, args.only, args.exclude)
+        rc = print_report(args.base, rows)
+        if args.report:
+            return rc
+        redo = sorted(r[0] for r in rows if r[1] in ("failed", "not-merged", "removed", "ok?"))
+        if not redo:
+            print("[resubmit] 다시 합칠 프로세스 없음.")
+            return 0
+        print(f"[resubmit] {len(redo)} process(es): {_short(redo)}")
+        args.only = redo
+        args.skip_existing = False
+
+    jobs, skipped, unmatched, absent = discover(
+        args.base, args.only, args.exclude, args.skip_existing, expected, args.allow_incomplete)
+    print_discovery(args.base, jobs, skipped, unmatched, absent)
 
     if args.list:
         return 0
@@ -246,7 +577,7 @@ def main(argv: list[str]) -> int:
         return 2
 
     stamp = time.strftime("%Y%m%d-%H%M%S")
-    workdir = SCRIPT_DIR / "_merge_workdir" / f"{args.base.name}_{stamp}"
+    workdir = WORKROOT / f"{args.base.name}_{stamp}"
 
     if args.mode == "local":
         # [STEP22.1] preflight: local 모드의 ROOT/hadd 환경은 사용자 책임 —
@@ -282,7 +613,7 @@ def main(argv: list[str]) -> int:
         print("[dry-run] condor_submit 생략.")
         return 0
     subprocess.run(["condor_submit", str(sub)], check=True)
-    print("[condor] submitted. 상태: condor_q / 로그:", sub.parent / "logs")
+    print("[condor] submitted. 상태: --report (또는 condor_q) / 로그:", sub.parent / "logs")
     return 0
 
 

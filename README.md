@@ -280,10 +280,18 @@ trigger 가 아니다.
 제출됨' 을 출력하므로, 나중에 어떤 `--files-per-job`/`--region`/SF 로 제출했는지
 헷갈릴 때 확인할 수 있다.
 
-### 7.5 완료판정(report)의 한계
-files-per-job/filelist 를 맞춰도 거짓 양성/음성이 가능하다(특히 half-written:
-job 이 죽어도 entry>0 이면 complete 로 봄 — entry 수 미검사). 상세는
-`docs/changes/STEP_15_resubmit_treecheck_region_output.md` §6 참조.
+### 7.5 완료판정(report)과 실패 원인 (2026-10-06 갱신)
+`--report`/`--status`/`--resubmit` 의 완료 = output 에 끝 표시가 있음(main: `cutflow_w_full`, STEP19; prescan: 한 행
+`prescan` tree). half-written(job 이 쓰다 죽음)은 끝 표시가 없어 miss 로 잡힌다. 2026-10-06 부터 miss 를 둘로 나눈다:
+`fail` = 그 job 의 가장 최근 시도가 0 이 아닌 return value(또는 signal, condor_rm, rc 0 인데 끝 표시 없음)로 끝남,
+`wait` = 아직 큐에 있음(idle/running/held). `--status` 는 빠진 job 마다 cluster.proc, return value 와 이름
+(`docs/reference/ERROR_CODES.md`), `.err` 경로를 찍는다. 근거: 샘플의 condor 로그 `log_<sample>.<cluster>.log`, job 의
+`.out`(analyzer 가 `[ output file name ] -->` 를 찍음), 마지막 제출의 `arguments_<sample>.txt`.
+**입력 파일을 건너뛴 job**(ROOT TChain 은 못 여는 파일을 오류만 찍고 건너뛰어 exit 0 이 된다): 2026-10-06(커밋 E) 부터
+analyzer 가 시작할 때 job 의 모든 파일을 열고 entry 를 세어, 못 여는 파일·합이 다른 경우 E30 으로 멈춘다(`[inputs]` 줄). 그 전
+빌드의 출력은 merge 뒤 `plotter/make_plots.py --check-only` 의 `EVENTS` 줄(MC: merge 된 noCut = prescan event 수)과
+`consolidate_prescan.py --filelist-dir`(prescan 이 읽은 파일 수 = filelist 줄 수)로 확인한다. 옛 기록:
+`docs/changes/STEP_15_resubmit_treecheck_region_output.md` §6, 2026-10-06 점검 `docs/changes/STEP_24_stage1_2_2024.md` §14.
 - `AnalyzerConfig/*.yml` + `proxy.cert` 필요. 경로 통제는 §4.
 - `proxy.cert`: `voms-proxy-init --voms cms --valid 96:00 --out proxy.cert`
   후 `export X509_USER_PROXY=proxy.cert`.
@@ -336,6 +344,7 @@ python3 consolidate_prescan.py \
 #     skim 된 입력(2024: NtupleForge 6j20)이면 --skimmed 를 붙인다: tree < runs 는 skim 이라
 #     정보(INFO)로만, tree ≤ runs 만 검사. 없으면 tree = runs 를 검사(skim 없는 2017).
 #     exit 0 ⇔ "No anomalies" (빠진/깨진 job, 실패한 검사, 경고가 하나도 없음)
+#     MC 의 읽은 파일 수 대조: --filelist-dir filelistTier3_<year> (prescan 이 못 연 파일을 잡는다)
 #     → prescan_summary/prescan_summary.json
 #        samples[X].runs.genEventSumw  (★ weight·stitch 가 사용)
 #        samples[X].events.sumGenW_total (교차검증용; >0.01% 차이 시 경고)
@@ -368,6 +377,21 @@ python3 submit_job_FH_Tier3_unified.py --mode main --report
 python3 submit_job_FH_Tier3_unified.py --mode main --files-per-job 5 \
     --resubmit --resubmit-to retry1
 ```
+
+### 8.3b merge 와 수율 표·plot (STEP 24)
+```bash
+# merge: 분석 yml 을 주면 프로세스마다 job 번호 <proc>_0..N-1 을 대조(빠짐·남는 파일이면 합치지 않음)
+python3 outputMerger/merge_outputs.py --base <AnalyzerOutput_...> --config <분석 yml> --list
+python3 outputMerger/merge_outputs.py --base <AnalyzerOutput_...> --config <분석 yml> --mode condor --proxy proxy.cert
+python3 outputMerger/merge_outputs.py --base <AnalyzerOutput_...> --config <분석 yml> --report     # 프로세스마다 최근 시도
+python3 outputMerger/merge_outputs.py --base <AnalyzerOutput_...> --config <분석 yml> --resubmit --mode condor --proxy proxy.cert
+# 수율 표와 완결성 (WARN·EVENTS·FLAG 줄까지 본다), 그다음 plot
+python3 plotter/make_plots.py --config <분석 yml> --base <AnalyzerOutput_...> --check-only
+python3 plotter/make_plots.py --config <분석 yml> --base <AnalyzerOutput_...>
+```
+`merge_outputs.py` 종료: 0 정상, 1 실패한 merge 가 있음(local, `--report`), 2 인자·환경. worker(`run_one_hadd.sh`)의
+종료 코드는 `docs/reference/ERROR_CODES.md` 끝. 시험: `python3 test/test_failure_checks.py`(24),
+`python3 test/test_consolidate_prescan.py`(24).
 
 ### 8.4 cross section 확인 (The Barn)
 ```

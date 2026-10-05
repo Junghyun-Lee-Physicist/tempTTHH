@@ -2,7 +2,7 @@
 
 > **Purpose:** the single place that answers "where are we right now?" — current state, what is ready, what is pending, and what is OPEN.
 > **Audience:** anyone starting a session.
-> **Status:** living · last meaningful update **2026-10-06** (STEP 24: prescan 983/983, consolidate 의 `EXIT 1` 은 도구 — 커밋 C 에 `--skimmed`; main preflight READY; Data 는 golden LS 의 1.4 % 쯤 없음) · 2026-10-05 (STEP 24 커밋 C: KNU smoke 68/69, plot 도구, 여러 파일 job 검사 고침 · 커밋 B: 진짜 eventBuffer.h 와 2024 analyzer·제출기, smoke_2024 · 묶음 1: 2024 eventBuffer·PU 도구와 입력, Y1 도구; D-2026-10-05-A · 묶음 2: analyzer 의 2024 코드는 진짜 header 와 함께 커밋 대기, Stage 3 도구·yml·임시 σ, 오프라인 smoke 31/31; D-2026-10-05-B·C) · 2026-10-04 (KNU 의 긴 단계는 condor job, 실행 기록은 `runlogs/` 에 커밋 — STEP 23) · 2026-10-03 (Stage 0 의 payload·lumi 실측 반영, eventBuffer 생성기 = 사용자 fork treestream 점검, 그 패치 커밋 `8be42e8`; KNU 의 pull 과 clean 빌드) · 2026-10-02 (2024 먼저 결정, 단계별 계획 [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) §9, 2017 lumi 42.07 반영) · 그 전 2026-10-01 (v15 계획 PROPOSED) · 2026-07-26 (2018UL 준비: samples_2018UL.json, --preflight, OPEN #5).
+> **Status:** living · last meaningful update **2026-10-06** (STEP 24: main 5,291/5,291·merge 76/76, 사후 확인으로 빠짐 없음, 첫 수율표; 커밋 D·E 실패 확인 · prescan 983/983, consolidate 의 `EXIT 1` 은 도구 — 커밋 C 에 `--skimmed`; Data 는 golden LS 의 1.4 % 쯤 없음) · 2026-10-05 (STEP 24 커밋 C: KNU smoke 68/69, plot 도구, 여러 파일 job 검사 고침 · 커밋 B: 진짜 eventBuffer.h 와 2024 analyzer·제출기, smoke_2024 · 묶음 1: 2024 eventBuffer·PU 도구와 입력, Y1 도구; D-2026-10-05-A · 묶음 2: analyzer 의 2024 코드는 진짜 header 와 함께 커밋 대기, Stage 3 도구·yml·임시 σ, 오프라인 smoke 31/31; D-2026-10-05-B·C) · 2026-10-04 (KNU 의 긴 단계는 condor job, 실행 기록은 `runlogs/` 에 커밋 — STEP 23) · 2026-10-03 (Stage 0 의 payload·lumi 실측 반영, eventBuffer 생성기 = 사용자 fork treestream 점검, 그 패치 커밋 `8be42e8`; KNU 의 pull 과 clean 빌드) · 2026-10-02 (2024 먼저 결정, 단계별 계획 [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) §9, 2017 lumi 42.07 반영) · 그 전 2026-10-01 (v15 계획 PROPOSED) · 2026-07-26 (2018UL 준비: samples_2018UL.json, --preflight, OPEN #5).
 > **Links:** decisions [`DECISIONS.md`](DECISIONS.md) · history [`CHANGELOG.md`](CHANGELOG.md) · exit codes [`reference/ERROR_CODES.md`](reference/ERROR_CODES.md) · path policy [`reference/CONFIG_PATHS.md`](reference/CONFIG_PATHS.md).
 
 ## Bottom line
@@ -81,6 +81,13 @@ event 의 23–25 %(Data·MC 같음). prescan 983 job 제출(22:47 KST). plot �
 `consolidate_prescan.py --skimmed` 와 시험 18(다시 돌릴 필요 없음). main preflight 33 PASS·`READY TO SUBMIT`. Data 는 golden LS 의 1.4 % 쯤이 생산에
 없다(JetMET0 2.08 %, JetMET1 0.70 %; 10-05 기록) → 첫 look 의 Data/MC 에 감안, 처리된 LS 의 brilcalc 는 다음 — STEP 24 §13. 다음: main 제출
 (5,291 job) → merge → `make_plots.py`(RUNBOOK §23 G–J).
+**10-06 4 시 (KNU):** main 5,291 job 모두 return value 0, merge 76/76, 사후 확인(merge 입력 = job 수, `.err` 입출력 오류 0, MC
+60 샘플 merge 된 noCut = prescan event 수, prescan 이 읽은 파일 = filelist) — 빠짐 없음. 첫 수율: trigger 뒤 Data/MC 0.44,
+HT>500 0.60, nb≥3 0.98, nb≥4 1.2 — QCD 가 MC 의 78–90 %, 맞추려면 QCD ×0.46–0.55(nb≥4 는 ×1.27): LO QCD 와 SF 없음, 장부
+문제 아님. 실패 확인 점검(사용자 물음)과 보강 커밋 D·E(Python: make_plots `EVENTS`, merge `--config`/`--report`/`--resubmit`,
+consolidate `--filelist-dir`, 제출기 fail/wait; C++: 못 여는 입력 파일·entry 합·MC prescan Runs → E30) — STEP 24 §14. plot job
+(`knu_plots_2024`) 진행 중. 다음: plot 보기, KNU 다시 빌드(`knu_build_c`, D·E 포함) → smoke(`dC_mix` E11, `[inputs]` 줄), 한글
+설명서 PDF 두 권(사용자 요청 10-06).
 
 ## What is ready (DECIDED)
 

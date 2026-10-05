@@ -74,6 +74,75 @@ def era_from_name(name):
     return None
 
 
+# ============================================================================
+# [2026-10-06] Why a job is missing (--report / --status): the condor files of the sample.
+#   condor user log  condor/<...>/log_<sample>.<cluster>.log : state and return value per (cluster, proc)
+#   job stdout       condor/<...>/tmp_<sample>_<time>/job_<sample>.<cluster>.<proc>.out : the analyzer prints
+#                    "[ output file name ] --> <path>", so a started job maps to its output index
+#   arguments file   condor/<...>/arguments_<sample>.txt : the last (re)submission, line = ProcId of the newest
+#                    cluster, so a job that has not started yet maps too
+# ============================================================================
+_EV_RE = re.compile(r"^(\d{3}) \((\d+)\.(\d+)\.\d+\) ")
+_EXTRA_RC = {1: "treestream fatal or generic failure (.err)", 127: "executable not found",
+             134: "abort (SIGABRT)", 137: "killed (SIGKILL; memory?)", 139: "segfault (SIGSEGV)",
+             143: "terminated (SIGTERM)"}
+
+
+def parse_condor_log(path):
+    """{(cluster, proc): (state, detail)} from an HTCondor user log. state: queued / running / done / removed /
+    held; detail: 'rc=N' or 'signal=N' for done, the hold reason for held."""
+    st, cur = {}, None
+    try:
+        with open(path, errors="replace") as fh:
+            lines = fh.read().splitlines()
+    except OSError:
+        return st
+    for line in lines:
+        m = _EV_RE.match(line)
+        if m:
+            code, key, cur = m.group(1), (int(m.group(2)), int(m.group(3))), None
+            if code == "000" or code in ("004", "013"):
+                st[key] = ("queued", "")
+            elif code == "001":
+                st[key] = ("running", "")
+            elif code == "005":
+                st[key], cur = ("done", ""), key
+            elif code == "009":
+                st[key] = ("removed", "")
+            elif code == "012":
+                st[key], cur = ("held", ""), key
+            continue
+        if cur is None:
+            continue
+        if line.strip() == "...":
+            cur = None
+            continue
+        if st[cur][0] == "done":
+            r = re.search(r"return value (-?\d+)", line)
+            s = re.search(r"Abnormal termination \(signal (\d+)\)", line)
+            if r:
+                st[cur] = ("done", "rc=" + r.group(1))
+            elif s:
+                st[cur] = ("done", "signal=" + s.group(1))
+        elif st[cur][0] == "held" and not st[cur][1] and line.strip():
+            st[cur] = ("held", line.strip()[:100])
+    return st
+
+
+def exit_code_names(repo):
+    """{code: name} from docs/reference/ERROR_CODES.md ('| 30 | `INPUT_OPEN_FAIL` | ...'), plus a few shell codes"""
+    names = dict(_EXTRA_RC)
+    try:
+        with open(os.path.join(repo, "docs", "reference", "ERROR_CODES.md"), errors="replace") as fh:
+            for line in fh:
+                m = re.match(r"^\|\s*(\d+)\s*\|\s*`([A-Z0-9_]+)`", line)
+                if m:
+                    names[int(m.group(1))] = m.group(2)
+    except OSError:
+        pass
+    return names
+
+
 class CondorJobManager:
 
     def __init__(self):
@@ -158,7 +227,7 @@ class CondorJobManager:
             raise ValueError("[FATAL] --report 와 --status 는 동시 사용 불가")
         if self.report_only and self.resubmit_only:
             raise ValueError("[FATAL] --report/--status 는 --resubmit 과 동시 사용 불가")
-        self._report_rows = []   # [STEP20] (sample, jobs, done, miss) 누적 → 테이블
+        self._report_rows = []   # [STEP20] (sample, jobs, done, miss, fail, wait) 누적 → 테이블
         self.cli_files_per_job = args.files_per_job
         if self.resubmit_to and not self.resubmit_only:
             raise ValueError("[FATAL] --resubmit-to 는 --resubmit 과 함께만 사용 가능")
@@ -1097,6 +1166,90 @@ class CondorJobManager:
             f.Close()
 
     # -------------------------------------------------------------------------
+    def _diagnose_missing(self, missing):
+        """[2026-10-06] {job idx: (state, detail)} for the missing jobs of this sample, from its condor files
+        (module comment above parse_condor_log). state:
+          failed  : the newest attempt ended with a non-zero return value / a signal / was removed, or returned 0
+                    without the end marker in its output
+          held    : held in the queue (condor_release or condor_rm, then --resubmit)
+          pending : queued or running
+          notrun  : no attempt found (never submitted, or the condor files were removed)"""
+        if not missing:
+            return {}
+        sanitized = self.output_dir.replace("/", "_")
+        cdir = self.condor_files_path
+        want = {f"{self.path_output}{self.sample_output_dir}_{i}.root": i for i in missing}
+        attempt = {}                    # idx -> (cluster, proc, tmp folder)
+        # 1) started jobs: the analyzer's stdout names its output file
+        out_re = re.compile(rf"job_{re.escape(sanitized)}\.(\d+)\.(\d+)\.out$")
+        outs = []
+        for d in (os.listdir(cdir) if os.path.isdir(cdir) else []):
+            if not d.startswith(f"tmp_{sanitized}_"):
+                continue
+            dd = os.path.join(cdir, d)
+            for fn in (os.listdir(dd) if os.path.isdir(dd) else []):
+                m = out_re.search(fn)
+                if m:
+                    outs.append((int(m.group(1)), int(m.group(2)), dd, os.path.join(dd, fn)))
+        for c, p, dd, path in sorted(outs):            # ascending cluster: the newest attempt wins
+            try:
+                with open(path, errors="replace") as fh:
+                    for _, line in zip(range(80), fh):
+                        if "[ output file name ] -->" in line:
+                            i = want.get(line.split("-->", 1)[1].strip())
+                            if i is not None:
+                                attempt[i] = (c, p, dd)
+                            break
+            except OSError:
+                pass
+        # 2) the last (re)submission: arguments line = ProcId of the newest cluster (jobs that have not started)
+        clusters = []
+        for fn in (os.listdir(cdir) if os.path.isdir(cdir) else []):
+            m = re.match(rf"log_{re.escape(sanitized)}\.(\d+)\.log$", fn)
+            if m:
+                clusters.append(int(m.group(1)))
+        events = {}
+        for c in sorted(clusters):
+            events.update(parse_condor_log(os.path.join(cdir, f"log_{sanitized}.{c}.log")))
+        if clusters and os.path.isfile(self.arg_list_file):
+            newest = max(clusters)
+            with open(self.arg_list_file, errors="replace") as fh:
+                for p, line in enumerate(fh):
+                    m = re.search(r"--output (\S+)", line)
+                    i = want.get(m.group(1)) if m else None
+                    if i is not None and (i not in attempt or attempt[i][0] < newest):
+                        fl = re.search(r"--filelist (\S+)", line)
+                        attempt[i] = (newest, p, os.path.dirname(fl.group(1)) if fl else cdir)
+        names = getattr(self, "_rc_names", None)
+        if names is None:
+            names = self._rc_names = exit_code_names(self.analyzer_path)
+        res = {}
+        for i in missing:
+            if i not in attempt:
+                res[i] = ("notrun", "no attempt in the condor files of this sample")
+                continue
+            c, p, dd = attempt[i]
+            state, detail = events.get((c, p), ("queued", "no event in the condor log yet"))
+            err = os.path.join(dd, f"error_{sanitized}.{c}.{p}.err")
+            if state == "done":
+                rc = detail[3:] if detail.startswith("rc=") else None
+                if rc == "0":
+                    res[i] = ("failed", f"{c}.{p} return value 0 but no end marker in the output "
+                                        f"(killed while writing?)  err: {err}")
+                elif rc is not None:
+                    nm = names.get(int(rc), "")
+                    res[i] = ("failed", f"{c}.{p} return value {rc}{' ' + nm if nm else ''}  err: {err}")
+                else:
+                    res[i] = ("failed", f"{c}.{p} {detail}  err: {err}")
+            elif state == "removed":
+                res[i] = ("failed", f"{c}.{p} removed from the queue (condor_rm)")
+            elif state == "held":
+                res[i] = ("held", f"{c}.{p} {detail}".strip())
+            else:
+                res[i] = ("pending", f"{c}.{p} {state}{(' (' + detail + ')') if detail else ''}")
+        return res
+
+    # -------------------------------------------------------------------------
     def generate_argument_list(self):
         """Write the per-job argument file. Returns the number of jobs queued.
 
@@ -1197,9 +1350,13 @@ class CondorJobManager:
                     argout.write(a + "\n")
 
         if self.report_only:
+            # [2026-10-06] why each missing job is missing (condor files of this sample; only when some are missing)
+            diag = self._diagnose_missing(missing)
+            n_fail = sum(1 for v in diag.values() if v[0] == "failed")
+            n_wait = sum(1 for v in diag.values() if v[0] in ("pending", "held"))
             # [STEP20] 테이블용 누적 (report/status 공통)
             self._report_rows.append(
-                (self.sample_name, len(chunks), n_complete, len(missing)))
+                (self.sample_name, len(chunks), n_complete, len(missing), n_fail, n_wait))
             # 샘플별 상세 라인은 --status 에서만
             if self.report_verbose:
                 print(f"  [report] {self.sample_name}: files={len(lines)} "
@@ -1207,6 +1364,11 @@ class CondorJobManager:
                       f"complete={n_complete} missing={len(missing)}"
                       + (f" -> idx {missing[:20]}{' ...' if len(missing) > 20 else ''}"
                          if missing else ""))
+                for i in missing[:50]:
+                    st, det = diag.get(i, ("?", ""))
+                    print(f"      idx {i}: {st.upper()}  {det}")
+                if len(missing) > 50:
+                    print(f"      ... (+{len(missing) - 50} more)")
             return 0
         if self.resubmit_only:
             print(f"  [resubmit] {self.sample_name}: {n_written} job(s) to "
@@ -1297,30 +1459,35 @@ class CondorJobManager:
             return
         name_w = max([len("sample")] + [len(r[0]) for r in rows])
         header = (f"{'sample':<{name_w}}  {'jobs':>6}  {'done':>6}  "
-                  f"{'miss':>6}  {'done%':>7}")
+                  f"{'miss':>6}  {'fail':>5}  {'wait':>5}  {'done%':>7}")
         bar = "=" * len(header)
         mode_tag = f"mode={self.AnalyzerMode}{self._dir_suffix or ''}"
         print("\n" + bar)
         print(f"Condor output report ({mode_tag})  "
-              f"[done = end-marker complete (STEP19)]")
+              f"[done = end-marker complete (STEP19); of miss: fail = the newest attempt failed, "
+              f"wait = queued/running/held]")
         print(bar)
         print(header)
         print("-" * len(header))
-        t_jobs = t_done = t_miss = 0
-        for name, jobs, done, miss in rows:
+        t_jobs = t_done = t_miss = t_fail = t_wait = 0
+        for name, jobs, done, miss, fail, wait in rows:
             pct = (100.0 * done / jobs) if jobs else 0.0
-            flag = "" if miss == 0 else "  <-- missing"
+            flag = "" if miss == 0 else ("  <-- failed" if fail else "  <-- missing")
             print(f"{name:<{name_w}}  {jobs:>6}  {done:>6}  "
-                  f"{miss:>6}  {pct:>6.1f}%{flag}")
-            t_jobs += jobs; t_done += done; t_miss += miss
+                  f"{miss:>6}  {fail:>5}  {wait:>5}  {pct:>6.1f}%{flag}")
+            t_jobs += jobs; t_done += done; t_miss += miss; t_fail += fail; t_wait += wait
         print("-" * len(header))
         t_pct = (100.0 * t_done / t_jobs) if t_jobs else 0.0
         print(f"{'TOTAL':<{name_w}}  {t_jobs:>6}  {t_done:>6}  "
-              f"{t_miss:>6}  {t_pct:>6.1f}%")
+              f"{t_miss:>6}  {t_fail:>5}  {t_wait:>5}  {t_pct:>6.1f}%")
         print(bar)
         if t_miss:
-            print("  -> missing idx 목록: --status  |  재큐: --resubmit "
-                  "(같은 --files-per-job/--region/SF 인자로)")
+            print("  -> idx 마다 원인(return value, 이름, .err): --status  |  재큐: --resubmit "
+                  "(같은 --files-per-job/--region/SF 인자로; wait 이 0 이 된 뒤)")
+            if t_wait:
+                print(f"  -> wait {t_wait}: 아직 큐에 있다 (condor_q). held 는 condor_release 또는 condor_rm")
+            if t_miss - t_fail - t_wait:
+                print(f"  -> {t_miss - t_fail - t_wait}: 시도 기록 없음 (제출되지 않았거나 condor 파일이 지워짐)")
         else:
             print("  -> all outputs complete.")
 

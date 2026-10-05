@@ -1,0 +1,259 @@
+#!/usr/bin/env python3
+"""Synthetic test of the failure checks added 2026-10-06 (no /pnfs, no condor; a few KB in a temp dir).
+
+  A  plotter/make_plots.py --check-only: the merged unweighted noCut must equal the prescan event count (MC);
+     a difference is a FLAG and RESULT FAIL
+  B  outputMerger/merge_outputs.py --config: job indices <proc>_0..N-1 against the yml (missing / extra / not in
+     the yml / absent), a local merge with the worker's input-count check (exit 7 on a wrong count), --report over a
+     local and a condor work directory, the --resubmit selection
+  C  submit_job_FH_Tier3_unified.py: why a job is missing (condor user log + job .out + arguments file):
+     failed with the return value and its name, rc 0 without the end marker, pending, held, not started, no
+     attempt; the report table with the fail / wait columns
+
+Run from the repo top after cmsenv (needs PyROOT; part B's merge needs hadd):
+    python3 test/test_failure_checks.py
+Last line: SUMMARY test_failure_checks PASS|FAIL (<n>/<m> checks).
+"""
+import contextlib
+import importlib.util
+import io
+import json
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+from array import array
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.dirname(HERE)
+sys.dont_write_bytecode = True
+
+try:
+    import ROOT  # noqa: E402
+except Exception as exc:  # pragma: no cover
+    sys.exit(f"[FATAL] PyROOT import failed ({exc}); run after cmsenv.")
+ROOT.gROOT.SetBatch(True)
+ROOT.gErrorIgnoreLevel = ROOT.kError
+
+RESULTS = []
+LABELS = ["noCut", "HadTrigger", "nTotal"]
+
+
+def check(name, cond, detail=""):
+    RESULTS.append(bool(cond))
+    print(f"CHECK {name}: {'PASS' if cond else 'FAIL'}" + (f"\n{detail}" if detail and not cond else ""))
+
+
+def load(mod_name, rel):
+    spec = importlib.util.spec_from_file_location(mod_name, os.path.join(REPO, rel))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def write_out(path, n_raw, w_nocut, end_marker=True):
+    """A fake analyzer/merged output: Tree/cutflow (unweighted), Tree/cutflow_w, Tree/cutflow_w_full."""
+    f = ROOT.TFile(path, "RECREATE")
+    d = f.mkdir("Tree")
+    d.cd()
+    raw = ROOT.TH1F("cutflow", "", len(LABELS), 0, len(LABELS))
+    w = ROOT.TH1F("cutflow_w", "", len(LABELS), 0, len(LABELS))
+    for i, lab in enumerate(LABELS, 1):
+        for h in (raw, w):
+            h.GetXaxis().SetBinLabel(i, lab)
+    raw.SetBinContent(1, n_raw)
+    raw.SetBinContent(2, n_raw * 0.5)
+    raw.SetBinContent(3, n_raw * 0.1)
+    w.SetBinContent(1, w_nocut)
+    w.SetBinContent(2, w_nocut * 0.5)
+    w.SetBinContent(3, w_nocut * 0.1)
+    raw.Write()
+    w.Write()
+    if end_marker:
+        w.Clone("cutflow_w_full").Write()
+    f.Close()
+
+
+def run(cmd, env=None):
+    p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True,
+                       cwd=REPO, env=env)
+    return p.returncode, p.stdout
+
+
+def hadd_env():
+    env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
+    if shutil.which("hadd") is None:
+        cand = os.path.join(os.path.dirname(ROOT.__file__), "bin")
+        if os.path.isfile(os.path.join(cand, "hadd")):
+            env["PATH"] = cand + os.pathsep + env.get("PATH", "")
+    return env
+
+
+DATA = "JetMET0_Run2024C-MINIv6NANOv15-v1"
+
+with tempfile.TemporaryDirectory(prefix="tthh_fail_") as T:
+    # ---------------- common fixtures: yml, xsec db, prescan summary, filelists ----------------
+    fl = os.path.join(T, "fl")
+    os.makedirs(fl)
+    for name, n in (("SampleA", 5), ("SampleB", 4), ("SampleC", 2), (DATA, 3)):
+        with open(os.path.join(fl, f"filelist_{name}.txt"), "w") as fh:
+            fh.write("# list\n" + "".join(f"/store/x/{name}_{i}.root\n" for i in range(n)))
+    with open(os.path.join(T, "xsec.json"), "w") as fh:
+        json.dump({"_meta": {"lumi_fb_inv": 10.0},
+                   "SampleA": {"cross_section_fb": 100.0, "br": 1.0, "kfactor": 1.0},
+                   "SampleB": {"cross_section_fb": 60.0, "br": 1.0, "kfactor": 1.0},
+                   "SampleC": {"cross_section_fb": 10.0, "br": 1.0, "kfactor": 1.0},
+                   DATA: {"cross_section_fb": None}}, fh)
+    with open(os.path.join(T, "prescan.json"), "w") as fh:
+        json.dump({"samples": {
+            "SampleA": {"runs": {"genEventSumw": 1000.0}, "events": {"sumGenW_total": 500.0, "nEvents_total": 500}},
+            "SampleB": {"runs": {"genEventSumw": 600.0}, "events": {"sumGenW_total": 300.0, "nEvents_total": 300}},
+            "SampleC": {"runs": {"genEventSumw": 100.0}, "events": {"sumGenW_total": 50.0, "nEvents_total": 50}}}},
+            fh)
+
+    def write_cfg(path, samples):
+        with open(path, "w") as fh:
+            fh.write('common:\n  year: "2024"\n  analysis_mode: main\n  lumi_fb_inv: 10.0\n'
+                     f'  xsec_db: "{T}/xsec.json"\n  prescan: "{T}/prescan.json"\n'
+                     "  files_per_job: 2\n  files_per_job_data: 1\nsamples:\n"
+                     + "".join(f"  - {s}\n" for s in samples))
+
+    cfg = os.path.join(T, "cfg.yml")
+    write_cfg(cfg, ["SampleA", "SampleB", DATA])
+    cfg_c = os.path.join(T, "cfg_c.yml")
+    write_cfg(cfg_c, ["SampleA", "SampleB", "SampleC", DATA])
+
+    # ---------------- A: make_plots --check-only, exact MC event count ----------------
+    base = os.path.join(T, "merged")
+    os.makedirs(base)
+    # weight = lumi x xsec / sumw(Runs): A 10*100/1000 = 1.0, B 10*60/600 = 1.0 -> expected noCut = sumGenW(Events)
+    write_out(os.path.join(base, "SampleA.root"), 500, 500.0)
+    write_out(os.path.join(base, "SampleB.root"), 290, 300.0)        # 10 events short of the prescan
+    write_out(os.path.join(base, DATA + ".root"), 1000, 1000.0)
+    mp = [sys.executable, os.path.join(REPO, "plotter", "make_plots.py"), "--config", cfg, "--base", base,
+          "--out", os.path.join(T, "plots"), "--check-only"]
+    rc, out = run(mp)
+    check("A short sample: RESULT FAIL, exit 1", rc == 1 and "RESULT FAIL (1 flagged" in out, out[-2500:])
+    check("A FLAG names SampleB 290 vs 300", "FLAG SampleB: merged noCut 290 events, prescan 300" in out, out[-2500:])
+    check("A EVENTS line: 2 of 2, 1 differ", "EVENTS MC 2 of 2 samples" in out and "1 differ (FLAG)" in out)
+    write_out(os.path.join(base, "SampleB.root"), 300, 300.0)
+    rc, out = run(mp)
+    check("A complete: RESULT OK, all equal", rc == 0 and "RESULT OK (check only)" in out and "all equal" in out,
+          out[-2500:])
+    mpm = load("tthh_make_plots", "plotter/make_plots.py")
+    check("A float tolerance: 2.4e8 +- 500 equal, -1 file differs",
+          not mpm.count_differs(243825725.0 + 500, 243825725) and mpm.count_differs(243825725.0 - 316000, 243825725))
+
+    # ---------------- B: merge_outputs.py ----------------
+    mb = os.path.join(T, "mbase")
+    for name, idxs in (("SampleA", [0, 1, 2]), ("SampleB", [0]), (DATA, [0, 1, 2, 3]), ("Other", [0])):
+        os.makedirs(os.path.join(mb, name))
+        for i in idxs:
+            write_out(os.path.join(mb, name, f"{name}_{i}.root"), 10 * (i + 1), 10.0 * (i + 1))
+    env = hadd_env()
+    env["TTHH_MERGE_WORKROOT"] = os.path.join(T, "workroot")
+    mo = [sys.executable, os.path.join(REPO, "outputMerger", "merge_outputs.py"), "--base", mb,
+          "--config", cfg_c, "--filelist-dir", fl]
+    rc, out = run(mo + ["--list"], env)
+    check("B --list: SampleA 3 = 3 expected", "MERGE -> SampleA.root (= 3 jobs)" in out, out)
+    check("B --list: SampleB missing job 1", "INCOMPLETE: job 1/2 개 없음 [1]" in out, out)
+    check("B --list: data extra file idx 3", f"{DATA}_3.root" in out and "남는 파일 1 개" in out, out)
+    check("B --list: Other not in the yml", "--config 의 yml 에 없는 프로세스" in out, out)
+    check("B --list: SampleC absent", "ABSENT" in out and "SampleC" in out, out)
+    if shutil.which("hadd", path=env.get("PATH")):
+        rc, out = run(mo + ["--mode", "local", "--only", "SampleA"], env)
+        merged = os.path.join(mb, "SampleA.root")
+        ok = rc == 0 and os.path.isfile(merged)
+        n = -1
+        if ok:
+            f = ROOT.TFile.Open(merged)
+            n = f.Get("Tree/cutflow").GetBinContent(1)
+            f.Close()
+        check("B local merge of SampleA: exit 0, noCut 10+20+30 = 60", ok and n == 60, out[-2000:])
+        rc2, out2 = run(["/bin/bash", os.path.join(REPO, "outputMerger", "run_one_hadd.sh"),
+                         os.path.join(mb, "SampleA"), os.path.join(T, "x.root"), "-", "4"], env)
+        check("B worker: 3 inputs, 4 expected -> exit 7", rc2 == 7 and "3 input files, 4 expected" in out2, out2[-800:])
+    else:
+        print("NOTE hadd not on PATH: the local merge checks of B are skipped")
+    # a condor work directory written after the local one: SampleB merged ok, the data merge failed with rc 7
+    wd = os.path.join(T, "workroot", "mbase_20991231-235959")
+    os.makedirs(os.path.join(wd, "logs"))
+    open(os.path.join(wd, "merge.sub"), "w").close()
+    with open(os.path.join(wd, "arguments.txt"), "w") as fh:
+        fh.write(f"{mb}/SampleB {mb}/SampleB.root /cms/src 2\n{mb}/{DATA} {mb}/{DATA}.root /cms/src 3\n")
+    with open(os.path.join(wd, "logs", "log.777.log"), "w") as fh:
+        fh.write("000 (777.000.000) 2099-12-31 23:59:59 Job submitted from host: <1.2.3.4>\n...\n"
+                 "000 (777.001.000) 2099-12-31 23:59:59 Job submitted from host: <1.2.3.4>\n...\n"
+                 "001 (777.000.000) 2099-12-31 23:59:59 Job executing on host: <1.2.3.5>\n...\n"
+                 "005 (777.000.000) 2099-12-31 23:59:59 Job terminated.\n"
+                 "\t(1) Normal termination (return value 0)\n\t\tUsr 0 00:00:01, Sys 0 00:00:00\n...\n"
+                 "001 (777.001.000) 2099-12-31 23:59:59 Job executing on host: <1.2.3.5>\n...\n"
+                 "005 (777.001.000) 2099-12-31 23:59:59 Job terminated.\n"
+                 "\t(1) Normal termination (return value 7)\n...\n")
+    with open(os.path.join(wd, "logs", "job.777.0.out"), "w") as fh:
+        fh.write("[hadd] OK\n")
+    write_out(os.path.join(mb, "SampleB.root"), 10, 10.0)
+    rc, out = run(mo + ["--report"], env)
+    check("B --report: exit 1 (not all ok)", rc == 1, out)
+    check("B --report: data merge FAILED rc=7", f"{DATA}" in out and "FAILED" in out and "777.1 rc=7" in out, out)
+    check("B --report: SampleC NOT-MERGED", "NOT-MERGED" in out and "SampleC" in out, out)
+    check("B --report: SampleB not listed as a problem", "SampleB " not in out.split("TOTAL")[0], out)
+    rc, out = run(mo + ["--resubmit", "--mode", "local", "--dry-run"], env)
+    check("B --resubmit: the failed data merge and SampleC", "[resubmit] 2 process(es)" in out, out)
+
+    # ---------------- C: submitter, why a job is missing ----------------
+    sub = load("tthh_submitter", "submit_job_FH_Tier3_unified.py")
+    cd = os.path.join(T, "condor")
+    tmp1 = os.path.join(cd, "tmp_SampleA_20261006-000000")
+    tmp2 = os.path.join(cd, "tmp_SampleA_20261006-010000")
+    os.makedirs(tmp1)
+    os.makedirs(tmp2)
+    outp = os.path.join(T, "out", "SampleA") + "/"
+    for p, idx in ((1, 1), (2, 2), (3, 3), (6, 6)):
+        with open(os.path.join(tmp1, f"job_SampleA.100.{p}.out"), "w") as fh:
+            fh.write("\n--------- Check arguments ----\n\n"
+                     f"  - [ output file name ] --> {outp}SampleA_{idx}.root\n")
+    ev = ["000 (100.{p:03d}.000) 10/06 00:00:00 Job submitted from host: <h>\n...\n".format(p=p) for p in (1, 2, 3, 6)]
+    ev += ["001 (100.001.000) 10/06 00:01:00 Job executing on host: <h>\n...\n",
+           "005 (100.001.000) 10/06 00:02:00 Job terminated.\n\t(1) Normal termination (return value 30)\n...\n",
+           "001 (100.002.000) 10/06 00:01:00 Job executing on host: <h>\n...\n",
+           "001 (100.003.000) 10/06 00:01:00 Job executing on host: <h>\n...\n",
+           "012 (100.003.000) 10/06 00:03:00 Job was held.\n\tError from slot1: memory limit\n\tCode 34 Subcode 0\n...\n",
+           "001 (100.006.000) 10/06 00:01:00 Job executing on host: <h>\n...\n",
+           "005 (100.006.000) 10/06 00:02:00 Job terminated.\n\t(1) Normal termination (return value 0)\n...\n"]
+    with open(os.path.join(cd, "log_SampleA.100.log"), "w") as fh:
+        fh.write("".join(ev))
+    with open(os.path.join(cd, "log_SampleA.200.log"), "w") as fh:          # the last resubmission: idx 4, not started
+        fh.write("000 (200.000.000) 10/06 01:00:00 Job submitted from host: <h>\n...\n")
+    with open(os.path.join(cd, "arguments_SampleA.txt"), "w") as fh:
+        fh.write(f"--filelist {tmp2}/filelist_SampleA_4.txt --output {outp}SampleA_4.root --weight 1 --year 2024 \n")
+    obj = object.__new__(sub.CondorJobManager)
+    obj.output_dir = obj.sample_output_dir = "SampleA"
+    obj.path_output = outp
+    obj.condor_files_path = cd
+    obj.arg_list_file = os.path.join(cd, "arguments_SampleA.txt")
+    obj.analyzer_path = REPO
+    d = obj._diagnose_missing([1, 2, 3, 4, 5, 6])
+    check("C idx 1: failed, return value 30 INPUT_OPEN_FAIL, .err path",
+          d[1][0] == "failed" and "return value 30 INPUT_OPEN_FAIL" in d[1][1]
+          and "error_SampleA.100.1.err" in d[1][1], str(d[1]))
+    check("C idx 2: pending (running)", d[2][0] == "pending" and "running" in d[2][1], str(d[2]))
+    check("C idx 3: held with the reason", d[3][0] == "held" and "memory limit" in d[3][1], str(d[3]))
+    check("C idx 4: pending from the arguments file (newest cluster 200, proc 0)",
+          d[4][0] == "pending" and d[4][1].startswith("200.0"), str(d[4]))
+    check("C idx 5: notrun", d[5][0] == "notrun", str(d[5]))
+    check("C idx 6: rc 0 without the end marker -> failed", d[6][0] == "failed" and "no end marker" in d[6][1],
+          str(d[6]))
+    obj._report_rows = [("SampleA", 7, 1, 6, 2, 3), ("SampleB", 2, 2, 0, 0, 0)]
+    obj.AnalyzerMode, obj._dir_suffix = "main", "_notrig"
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        obj._print_report_table()
+    t = buf.getvalue()
+    check("C table: fail / wait columns and totals",
+          "fail" in t and "wait" in t and "<-- failed" in t and "wait 3" in t, t)
+
+n_fail = RESULTS.count(False)
+print(f"SUMMARY test_failure_checks {'PASS' if n_fail == 0 else 'FAIL'} ({len(RESULTS) - n_fail}/{len(RESULTS)} checks)")
+sys.exit(0 if n_fail == 0 else 1)

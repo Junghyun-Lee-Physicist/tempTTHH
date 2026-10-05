@@ -21,7 +21,13 @@ What it does (in cmsenv: PyROOT and root):
      Sigma genw(Runs), and noCut / (weight x Sigma genw(Events)) -- about the mean PU weight when every main job of
      the sample is in the merged file, clearly lower when jobs are missing (WARN below 0.7 or above 1.3). Data
      have no pre-skim row: the production had no lumi mask, so its input counts (NtupleForge ForgeAudit n_in)
-     include non-golden lumisections. --check-only stops here.
+     include non-golden lumisections.
+     Exact completeness (MC, 2026-10-06): the unweighted noCut (Tree/cutflow bin 1) of the merged file must equal
+     the prescan's event count of the sample (nEvents_total) -- the same filelists, and every MC event reaches noCut.
+     A difference (beyond the float rounding of the TH1F summed by hadd: max(2, 1e-5 x N)) is a FLAG, so RESULT
+     FAIL: a job or an input file is missing from the merge, a job skipped an input file it could not open (ROOT's
+     TChain only prints an error), or the filelists changed between prescan and main. Data have no such reference.
+     --check-only stops here.
   4. structure_info.yml from one MC file (TTbar_Hadronic if present): every TH1 (no TH2/TProfile), in file order,
      filtered by --include-hist / --exclude-hist (regex on the key path) -- the format plotter/extract_structure.py
      writes, made with PyROOT here so uproot is not needed.
@@ -73,7 +79,7 @@ def sf_note(base):
 
 
 def cutflow(ROOT, path):
-    """(labels, weighted values) of Tree/cutflow_w, or None"""
+    """(labels, weighted values of Tree/cutflow_w, unweighted noCut of Tree/cutflow or None), or None"""
     f = ROOT.TFile.Open(path)
     if not f or f.IsZombie():
         return None
@@ -82,10 +88,19 @@ def cutflow(ROOT, path):
         if not h:
             return None
         n = h.GetNbinsX()
+        raw = f.Get("Tree/cutflow")
         return ([h.GetXaxis().GetBinLabel(i) for i in range(1, n + 1)],
-                [h.GetBinContent(i) for i in range(1, n + 1)])
+                [h.GetBinContent(i) for i in range(1, n + 1)],
+                raw.GetBinContent(1) if raw else None)
     finally:
         f.Close()
+
+
+def count_differs(main_n, pre_n):
+    """True when the merged unweighted noCut and the prescan event count differ by more than the float rounding of a
+    TH1F summed by hadd (each job's count is exact below 2^24; the sum of up to a few hundred jobs is rounded to the
+    float spacing, a few hundred events at 1e8) -- one input file is always far more than that."""
+    return abs(main_n - pre_n) > max(2.0, 1e-5 * pre_n)
 
 
 def th1_paths(ROOT, path, inc, exc):
@@ -196,6 +211,7 @@ def main(argv=None):
 
     # ---- before the skim (MC): the submitter's weight x the prescan sums -------------------------------------
     gen = {}
+    pre_events = {}
     os.chdir(REPO)     # the submitter's loaders open common.xsec_db and common.prescan relative to the repository
     calc = object.__new__(sub.CondorJobManager)
     for n, kind, p, cf in mc:
@@ -205,6 +221,7 @@ def main(argv=None):
                 rec = calc._load_prescan(common["prescan"])[n]
             sr, se = float(rec["runs"]["genEventSumw"]), float(rec["events"]["sumGenW_total"])
             gen[n] = (w * sr, (se / sr) if sr else float("nan"), w * se)
+            pre_events[n] = int(rec["events"]["nEvents_total"])
         except (SystemExit, Exception):     # no prescan summary / sample in it: no pre-skim numbers for it
             gen[n] = None
     have_gen = [n for n in gen if gen[n] is not None]
@@ -240,6 +257,17 @@ def main(argv=None):
                                                      "%.3f" % ratio if g else "-") + " ".join("%12.2f" % v[idx[c]] for c in cols))
     for n in flagged:
         W("FLAG %s: noCut yield <= 0 (weight, xsec or prescan problem?)" % n)
+    # exact completeness (MC): merged unweighted noCut == the prescan's event count (docstring 3)
+    evchk = [(s[0], s[3][2], pre_events[s[0]]) for s in mc if s[0] in pre_events and s[3][2] is not None]
+    evbad = [(n, m, pr) for n, m, pr in evchk if count_differs(m, pr)]
+    W("EVENTS MC %d of %d samples: merged noCut (unweighted) vs the prescan event count -- %s"
+      % (len(evchk), len(mc), "all equal" if not evbad else "%d differ (FLAG)" % len(evbad)))
+    for n, m, pr in evbad:
+        W("FLAG %s: merged noCut %d events, prescan %d (%+.3f%%): a job or input file missing from the merge, a job "
+          "that skipped an input file it could not open, or other filelists than at prescan"
+          % (n, m, pr, 100.0 * (m - pr) / pr if pr else float("nan")))
+        if n not in flagged:
+            flagged.append(n)
     for n, r in warned:
         W("WARN %s: noCut / (weight x Sigma genw(Events)) = %.3f -- about the mean PU weight when the merged file holds "
           "every main job once: %s" % (n, r, "jobs missing from the merge?" if r < 1 else "jobs merged twice?"))
@@ -251,8 +279,9 @@ def main(argv=None):
         f.write("\n".join(lines) + "\n")
     print("\n".join(lines))
     print("OUT %s" % out)
+    wtag = (", %d WARN" % len(warned)) if warned else ""
     if a.check_only:
-        print("RESULT %s (check only)" % ("OK" if not flagged else "FAIL (%d flagged)" % len(flagged)))
+        print("RESULT %s (check only%s)" % ("OK" if not flagged else "FAIL (%d flagged)" % len(flagged), wtag))
         return 0 if not flagged else 1
 
     # ---- structure_info.yml and samples_config.yml --------------------------------------------------------------
@@ -299,7 +328,8 @@ def main(argv=None):
         warn = [l.strip() for l in open(log) if "not in grouping table" in l]
         for w in sorted(set(warn)):
             print("GROUPING_WARN %s" % w)
-    print("RESULT %s" % ("OK" if ok and not flagged else "FAIL" + (" (plotter)" if not ok else " (%d flagged)" % len(flagged))))
+    print("RESULT %s%s" % ("OK" if ok and not flagged else "FAIL" + (" (plotter)" if not ok else " (%d flagged)" % len(flagged)),
+                           (" (%d WARN)" % len(warned)) if warned else ""))
     return 0 if ok and not flagged else 1
 
 
