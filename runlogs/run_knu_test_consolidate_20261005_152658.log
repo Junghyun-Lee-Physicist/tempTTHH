@@ -1,0 +1,39 @@
+=== RUNLOG ================================================================
+step        : knu_test_consolidate
+start_utc   : 2026-10-05T15:26:58Z
+host        : cms01   user: jhlee
+cwd         : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+repo        : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+git_head    : 559c7f42   modified_tracked_files: 1
+cmd         : python3 test/test_consolidate_prescan.py 
+CMSSW_BASE  : /u/user/jhlee/ttHH/CMSSW_14_2_1
+root        : 6.30.09
+python3     : Python 3.9.14
+===========================================================================
+CHECK A no flag: exit 1: PASS
+CHECK A no flag: MC_skim flagged with events_vs_runs_match: PASS
+CHECK A no flag: warning names --skimmed: PASS
+CHECK A no flag: MC_full not flagged: PASS
+CHECK A no flag: 'No anomalies' iff exit 0: PASS
+CHECK A --skimmed: exit 0: PASS
+CHECK A --skimmed: INFO line 1 of 2 MC: PASS
+CHECK A --skimmed: 'No anomalies' iff exit 0: PASS
+CHECK A --skimmed: JSON meta skimmed true, 0 anomalies: PASS
+CHECK A --skimmed: MC_skim events_le_runs true, no events_vs_runs_match: PASS
+CHECK A --skimmed: Runs sum kept (2000), skim -0.6: PASS
+CHECK B --skimmed Events>Runs: exit 1 with events_le_runs: PASS
+CHECK B: 'No anomalies' iff exit 0: PASS
+CHECK C ttCat weight mismatch: exit 1 with warning: PASS
+CHECK C: 'No anomalies' iff exit 0: PASS
+CHECK D missing job index: exit 1: PASS
+CHECK D: 'No anomalies' iff exit 0: PASS
+CHECK E unskimmed: exit 0, No anomalies: PASS
+SUMMARY test_consolidate_prescan PASS (18/18 checks)
+===========================================================================
+end_utc     : 2026-10-05T15:27:27Z
+wall_s      : 28
+EXIT        : 0
+outputs     : (no file of this repo changed, apart from tmp/ condor/ runlogs/)
+log         : runlogs/run_knu_test_consolidate_20261005_152658.log
+log_kb      : 1
+=== END ===================================================================
