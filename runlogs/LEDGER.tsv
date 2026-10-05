@@ -24,3 +24,4 @@ utc_start	step	exit	wall_s	host	git_head	log	outputs
 2026-10-05T12:10:49Z	knu_build_b	0	125	cluster318	f6bd444d	runlogs/run_knu_build_b_20261005_121049.log	lib/libEventShape.a;lib/libToolsForAnalysis.so;src/dictionaryForROOT.cc;src/dictionaryForROOT_rdict.pcm;ttHHanalyzer_unified
 2026-10-05T13:31:10Z	knu_smoke_2024	1	232	dm02	f6bd444d	runlogs/run_knu_smoke_2024_20261005_133110.log	none
 2026-10-05T13:47:48Z	knu_submit_prescan_2024	0	21	cms01	f6bd444d	runlogs/run_knu_submit_prescan_2024_20261005_134748.log	none
+2026-10-05T15:03:33Z	knu_consolidate_prescan_2024	1	11	cms01	886e87b9	runlogs/run_knu_consolidate_prescan_2024_20261005_150333.log	prescan_summary_2024/prescan_summary.csv;prescan_summary_2024/prescan_summary.json
