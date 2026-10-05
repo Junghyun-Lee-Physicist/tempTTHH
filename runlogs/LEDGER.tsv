@@ -3,3 +3,9 @@ utc_start	step	exit	wall_s	host	git_head	log	outputs
 2026-10-04T17:15:05Z	knu_unittests	0	16	cluster291	90feebc0	runlogs/run_knu_unittests_20261004_171504.log	none
 2026-10-04T17:15:25Z	knu_d14_runs	0	613	cluster298	90feebc0	runlogs/run_knu_d14_runs_20261004_171524.log	none
 2026-10-04T17:32:29Z	knu_build	0	1211	cluster300	90feebc0	runlogs/run_knu_build_20261004_173229.log	lib/libEventShape.a;lib/libToolsForAnalysis.so;src/dictionaryForROOT.cc;src/dictionaryForROOT_rdict.pcm;ttHHanalyzer_unified
+2026-10-04T18:54:27Z	knu_treestream_v15check	0	374	dm02	39936117	runlogs/run_knu_treestream_v15check_20261004_185426.log	none
+2026-10-04T17:15:25Z	knu_d16_branchsig	0	10374	cluster313	90feebc0	runlogs/run_knu_d16_branchsig_20261004_171525.log	lib/libEventShape.a;lib/libToolsForAnalysis.so;src/dictionaryForROOT.cc;src/dictionaryForROOT_rdict.pcm;ttHHanalyzer_unified
+2026-10-05T04:57:58Z	knu_test_runlog	0	33	cms01	2a17186e	runlogs/run_knu_test_runlog_20261005_045757.log	none
+2026-10-05T04:58:37Z	knu_test_build_check	1	2	cms01	2a17186e	runlogs/run_knu_test_build_check_20261005_045836.log	none
+2026-10-05T05:55:40Z	knu_test_build_check	0	3	cms01	5900904d	runlogs/run_knu_test_build_check_20261005_055540.log	none
+2026-10-05T05:55:25Z	knu_treestream_v15check	0	289	cluster300	2a17186e	runlogs/run_knu_treestream_v15check_20261005_055524.log	docs/changes/STEP_23_runlog_condor.md;tools/stage0/test_build_check.sh

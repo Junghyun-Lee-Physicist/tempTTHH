@@ -60,3 +60,41 @@ DS Muon0/Muon0_Run2024C-MINIv6NANOv15-v1         files=103 unreadable=0 branch_s
    HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8_CaloJet30     in 31 of 103 files
    HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_2p0     in 31 of 103 files
    HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_4p3     in 31 of 103 files
+DS Muon0/Muon0_Run2024D-MINIv6NANOv15-v1         files=180 unreadable=0 branch_sets=1 differing=0
+DS Muon0/Muon0_Run2024E-MINIv6NANOv15-v1         files=255 unreadable=0 branch_sets=1 differing=0
+DS Muon0/Muon0_Run2024F-MINIv6NANOv15-v1         files=594 unreadable=0 branch_sets=1 differing=0
+DS Muon0/Muon0_Run2024G-MINIv6NANOv15-v1         files=948 unreadable=0 branch_sets=1 differing=0
+DS Muon0/Muon0_Run2024H-MINIv6NANOv15-v1         files=152 unreadable=0 branch_sets=1 differing=0
+DS Muon0/Muon0_Run2024I-MINIv6NANOv15-v1         files=173 unreadable=0 branch_sets=1 differing=0
+DS Muon0/Muon0_Run2024I-MINIv6NANOv15_v2-v1      files=174 unreadable=0 branch_sets=1 differing=0
+DS Muon1/Muon1_Run2024C-MINIv6NANOv15-v1         files=94 unreadable=0 branch_sets=2 differing=7
+   HLT_Ele14_eta2p5_IsoVVVL_Gsf_PFHT200_PNetBTag0p53       in 26 of 94 files
+   HLT_Mu12_IsoVVL_PFHT150_PNetBTag0p53                    in 26 of 94 files
+   HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8_AK8CaloJet30  in 26 of 94 files
+   HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8_AK8PFJet30    in 26 of 94 files
+   HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8_CaloJet30     in 26 of 94 files
+   HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_2p0     in 26 of 94 files
+   HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_4p3     in 26 of 94 files
+DS Muon1/Muon1_Run2024D-MINIv6NANOv15-v1         files=168 unreadable=0 branch_sets=1 differing=0
+DS Muon1/Muon1_Run2024E-MINIv6NANOv15-v1         files=171 unreadable=0 branch_sets=1 differing=0
+DS Muon1/Muon1_Run2024F-MINIv6NANOv15-v1         files=538 unreadable=0 branch_sets=1 differing=0
+DS Muon1/Muon1_Run2024G-MINIv6NANOv15-v2         files=565 unreadable=0 branch_sets=1 differing=0
+DS Muon1/Muon1_Run2024H-MINIv6NANOv15-v2         files=93 unreadable=0 branch_sets=1 differing=0
+DS Muon1/Muon1_Run2024I-MINIv6NANOv15-v1         files=94 unreadable=0 branch_sets=2 differing=2
+   HLT_PFJet40_ZeroBiasCopy                                in 89 of 94 files
+   HLT_PFJet80_L1SingleJet60                               in 89 of 94 files
+DS Muon1/Muon1_Run2024I-MINIv6NANOv15_v2-v1      files=133 unreadable=0 branch_sets=1 differing=0
+SUMMARY groups=32 with_differences=7 files=7787 unreadable=0
+===========================================================================
+end_utc     : 2026-10-04T20:08:20Z
+wall_s      : 10374
+EXIT        : 0
+outputs (files of this repo changed during the run; tmp/ condor/ runlogs/ left out): 5
+      216780  lib/libEventShape.a
+    15118512  lib/libToolsForAnalysis.so
+      213554  src/dictionaryForROOT.cc
+       51527  src/dictionaryForROOT_rdict.pcm
+    11689864  ttHHanalyzer_unified
+log         : runlogs/run_knu_d16_branchsig_20261004_171525.log
+log_kb      : 7
+=== END ===================================================================

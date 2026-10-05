@@ -1,0 +1,128 @@
+=== RUNLOG ================================================================
+step        : knu_treestream_v15check
+start_utc   : 2026-10-05T05:55:25Z
+host        : cluster300   user: jhlee
+cwd         : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+repo        : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+git_head    : 2a17186e   modified_tracked_files: 2
+cmd         : /bin/bash tools/stage0/treestream_v15check.sh ../treestream ../NtupleForge 
+CMSSW_BASE  : /u/user/jhlee/ttHH/CMSSW_14_2_1
+root        : 6.30.09
+python3     : Python 3.9.14
+condor_job  : 2180527.0  slot slot1_2   jobdir: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/runlog/knu_treestream_v15check_20261005_055511
+===========================================================================
+[condor_run] worker cluster300  scratch /home/condor/dir_2431136
+[condor_run] cmsenv ok: CMSSW_BASE=/u/user/jhlee/ttHH/CMSSW_14_2_1  root 6.30.09  Python 3.9.14  TMPDIR=/home/condor/dir_2431136
+[condor_run] running in /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH: /bin/bash tools/stage0/treestream_v15check.sh ../treestream ../NtupleForge 
+----------------------------------------------------------------------------
+treestream  : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/treestream @ 8be42e8 v15 review: object size from the longest bound field, counters read, no ghost structs, read errors stop the job, varlist and single-mode tree fixed, merge type conflicts; test/v15check (troubleshooting A11-A17)
+NtupleForge : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/NtupleForge @ 40d0734 ledger V57: lxplus tests 27/27 and 24/24 on lxplus914 (5af9fbe)
+WORK        : /home/condor/dir_2431136/tsv15check
+== 1. build (fresh dictionaries)
+make lib rc=0
+libtreestream.so
+pdg_dict_rdict.pcm
+testme_dict_rdict.pcm
+treestream_dict_rdict.pcm
+== 2. synthetic files (test/v15check/run_tests.sh)
+== files (real 2024 v15 Events schema after the NtupleForge slim lists)
+mc24.root: 524 branches (9 counters), 30 events
+data24C.root: 484 branches (3 counters), 30 events
+data24E.root: 488 branches (3 counters), 30 events
+data24F.root: 492 branches (3 counters), 30 events
+data24Iv2.root: 494 branches (3 counters), 30 events
+data24C_noPNetReg.root: 483 branches (3 counters), 30 events
+== generate (Super-Set of MC, C, Iv2)
+  Total unique branches (union): 545
+[mkeventbuffer] wrote /home/condor/dir_2431136/tsv15check/tscheck/eventBuffer.h  (5114 lines)
+    size_t nobj_ = 0;
+    size_t nobj_ = 0;
+harness: 554 members, 9 counters, 137 struct fields in 5 structs
+== T1 single files: every member, every event
+-- mc24 exit=0
+events 30  values ok 16350  wrong 0  silent_zero 0  nonzero_for_absent 0
+struct checks: 150, mismatches 0
+counter checks: ok 270, mismatches 0
+PRE_STRUCT Jet 0 PRE_COUNTER nJet 0 
+-- data24C exit=0
+events 30  values ok 16350  wrong 0  silent_zero 0  nonzero_for_absent 0
+struct checks: 150, mismatches 0
+counter checks: ok 270, mismatches 0
+PRE_STRUCT Jet 0 PRE_COUNTER nJet 0 
+-- data24E exit=0
+events 30  values ok 16350  wrong 0  silent_zero 0  nonzero_for_absent 0
+struct checks: 150, mismatches 0
+counter checks: ok 270, mismatches 0
+PRE_STRUCT Jet 0 PRE_COUNTER nJet 0 
+-- data24F exit=0
+events 30  values ok 16350  wrong 0  silent_zero 0  nonzero_for_absent 0
+struct checks: 150, mismatches 0
+counter checks: ok 270, mismatches 0
+PRE_STRUCT Jet 0 PRE_COUNTER nJet 0 
+-- data24Iv2 exit=0
+events 30  values ok 16350  wrong 0  silent_zero 0  nonzero_for_absent 0
+struct checks: 150, mismatches 0
+counter checks: ok 270, mismatches 0
+PRE_STRUCT Jet 0 PRE_COUNTER nJet 0 
+== T2 the field that sizes Jet is absent
+exit=0
+struct checks: 150, mismatches 0
+== T3 chains (the first file decides)
+-- data24C -> data24Iv2 exit=1
+** Error ** update - pointer is zero for tree/branch (Events/HLT_Mu0_Barrel_L1HP6)
+events 0  values ok 0  wrong 0  silent_zero 0  nonzero_for_absent 0
+-- data24Iv2 -> data24C exit=0
+events 60  values ok 32550  wrong 150  silent_zero 0  nonzero_for_absent 0
+== T4 corrupted basket
+exit=1
+** Error ** readbranch - I/O error reading Events/Jet_pt at local entry 200 in file c_bad.root
+== T5 varlist
+  [OK]      5 branches connected RESULT varlist='Jet_pt PuppiMET_pt run' Jet_pt.size()=9 PuppiMET_pt=-3603.11 run=293826800 
+  [OK]      5 branches connected RESULT varlist='Events/Jet_pt Events/PuppiMET_pt Events/run' Jet_pt.size()=9 PuppiMET_pt=-3603.11 run=293826800 
+== T6 single-mode tree name and header
+Tree Events	Mon Oct  5 14:58:37 2026
+481
+== T7 varlist leaves out an object whose counter is absent in a later file
+exit=0
+RESULT varlist='Jet_ run' entries=40 wrong=0 nJet(last)=3; exit 0
+== T8 a chain file becomes unreadable after the buffer is built
+exit=1
+** eventBuffer::read - cannot load entry 20; stopping
+== T9 skeleton tree when the manifest header lists Runs first (old mkvariables)
+  itreestream stream(filenames, "Events");
+run_tests.sh rc=0   (2 = WORK not usable, 3 = the harness did not compile; 0/1 = it ran, read the blocks)
+== 3. real files (test/v15check/run_realfiles.sh)
+MC : /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTto4Q_TuneCP5_13p6TeV_powheg-pythia8/TTbar_Hadronic/260930_162708/0000/forgedNtuple_44.root
+DC : /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET0/JetMET0_Run2024C-MINIv6NANOv15-v1/260930_132643/0000/forgedNtuple_8.root
+DI : /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET0/JetMET0_Run2024I-MINIv6NANOv15_v2-v1/260930_132727/0000/forgedNtuple_33.root
+  Total unique branches (union): 545
+  Common to ALL files:           446
+  Unique to [forgedNtuple_44.root]:  69
+  Unique to [forgedNtuple_8.root]:  28
+  Unique to [forgedNtuple_33.root]:  45
+[mkeventbuffer] wrote /home/condor/dir_2431136/tsv15check/tsreal/eventBuffer.h  (5114 lines)
+harness: 554 members, 9 counters, 137 struct fields in 5 structs
+-- /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTto4Q_TuneCP5_13p6TeV_powheg-pythia8/TTbar_Hadronic/260930_162708/0000/forgedNtuple_44.root
+ [OK] 515 branches connected  [MISSING] 30 branches not found in file 
+events 50  values equal 26200  differ 0  absent-but-nonzero 0  struct problems 0
+RESULT PASS
+-- /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET0/JetMET0_Run2024C-MINIv6NANOv15-v1/260930_132643/0000/forgedNtuple_8.root
+ [OK] 474 branches connected  [MISSING] 71 branches not found in file 
+events 50  values equal 23850  differ 0  absent-but-nonzero 0  struct problems 0
+RESULT PASS
+-- /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET0/JetMET0_Run2024I-MINIv6NANOv15_v2-v1/260930_132727/0000/forgedNtuple_33.root
+ [OK] 491 branches connected  [MISSING] 54 branches not found in file 
+events 50  values equal 24700  differ 0  absent-but-nonzero 0  struct problems 0
+RESULT PASS
+run_realfiles.sh rc=0
+SUMMARY build_rc=0 run_tests_rc=0 realfiles_rc=0 -> PASS
+===========================================================================
+end_utc     : 2026-10-05T06:00:14Z
+wall_s      : 289
+EXIT        : 0
+outputs (files of this repo changed during the run; tmp/ condor/ runlogs/ left out): 2
+       22233  docs/changes/STEP_23_runlog_condor.md
+        9974  tools/stage0/test_build_check.sh
+log         : runlogs/run_knu_treestream_v15check_20261005_055524.log
+log_kb      : 7
+=== END ===================================================================

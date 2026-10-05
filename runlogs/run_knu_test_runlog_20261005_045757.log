@@ -1,0 +1,104 @@
+=== RUNLOG ================================================================
+step        : knu_test_runlog
+start_utc   : 2026-10-05T04:57:58Z
+host        : cms01   user: jhlee
+cwd         : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+repo        : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+git_head    : 2a17186e   modified_tracked_files: 2
+cmd         : /bin/bash tools/runlog/test_runlog.sh 
+CMSSW_BASE  : /u/user/jhlee/ttHH/CMSSW_14_2_1
+root        : 6.30.09
+python3     : Python 3.9.14
+===========================================================================
+PASS T0 throw-away repo has a commit
+PASS T1 exit 0
+PASS T1 log written
+PASS T1 header step/cwd/git
+PASS T1 body has stdout and stderr
+PASS T1 footer EXIT 0
+PASS T1 ledger header + line
+PASS T1 terminal copy
+PASS T2 wrapper exit = 7
+PASS T2 footer EXIT 7, ledger 7
+PASS T3 crab log under nocommit
+PASS T3 no ledger line
+PASS T3 nocommit is ignored by git
+PASS T4 made.txt listed
+PASS T4 tmp/ and condor/ not listed
+PASS T4 log line is the relative path
+PASS T4 no mark file left
+PASS T5 runlog bad step -> 2
+PASS T5 runlog missing -- -> 2
+PASS T5 condor_run no command -> 2
+PASS T5 condor_run no cmsenv -> 2 + hint
+PASS T5 condor_run bad workdir -> 2
+PASS T5 condor_run --cpus 0 -> 2
+PASS T6 dry run exit 0
+PASS T6 job files
+PASS T6 submit file: KNU conventions
+PASS T6 no proxy attached
+PASS T6 not submitted
+PASS T6 condor/ is gitignored
+PASS T7 submit exit 0, cluster recorded
+PASS T7 condor_submit got job.sub
+PASS T7 worker exit 0
+PASS T7 record written
+PASS T7 argv kept exactly
+PASS T7 cwd = submit dir
+PASS T7 TMPDIR = job scratch
+PASS T7 cmsenv done on worker
+PASS T7 header shows real command
+PASS T7 header condor id
+PASS T7 ledger line
+PASS T8 missing cmsset -> exit 90 in the record
+PASS T8 scram failure -> exit 92
+PASS T9 valid proxy attached
+PASS T9 expired proxy not attached
+PASS T9 --no-proxy
+PASS T9 explicit expired --proxy -> 2
+PASS T10 done job shows exit
+PASS T10 held job + HoldReason
+PASS T10 dry run = not-submitted
+PASS T10 left the queue without exit = gone
+PASS T11 12 parallel runs -> 12 ledger lines
+PASS T11 every ledger line has 8 fields
+PASS T12 exit 3, output on stdout, warning
+PASS T13 exit 143 after SIGTERM
+PASS T13 footer: stopped + EXIT 143
+PASS T13 ledger line written
+PASS T13 no mark file left
+PASS T14 job record = the outer log
+PASS T14 exit code = outer (4 passed up)
+PASS T14 inner log shows its own command
+PASS T15 log moved to nocommit, no ledger line
+PASS T16 newest 3 by time (old aaa/zzz left out)
+PASS T16 oldest first
+PASS T17 exit 0, cluster '?', warning
+PASS T18 condor_q failure -> unknown
+PASS T19 all 600 arguments reached the command
+PASS T19 header command truncated with a pointer
+PASS T20 --source applied
+PASS T20 --source missing file -> 2
+PASS T20 --source failing -> exit 94 in the record
+PASS T21 log_kb line and large-record note
+PASS T21 small record has no note
+PASS T22 exit 143, command not started
+PASS T22 footer says before the command started
+PASS T22 ledger line, no mark file
+PASS T23 job under the physical repo, cd to the physical workdir
+PASS T24 the command's child is stopped too
+PASS T25 inner record: footer and EXIT 143
+PASS T25 outer record: has the inner footer, EXIT 143
+PASS T26 SIGHUP: footer, EXIT 129, ledger
+PASS T27 signal in the footer phase: footer, ledger, the command's exit 5
+PASS T28 SIGTERM ignored by the command: SIGKILL, footer, EXIT 143 within seconds
+PASS T29 without pgrep/ps: stopped through /proc, EXIT 143
+RESULT: 83 PASS, 0 FAIL
+===========================================================================
+end_utc     : 2026-10-05T04:58:32Z
+wall_s      : 33
+EXIT        : 0
+outputs     : (no file of this repo changed, apart from tmp/ condor/ runlogs/)
+log         : runlogs/run_knu_test_runlog_20261005_045757.log
+log_kb      : 3
+=== END ===================================================================

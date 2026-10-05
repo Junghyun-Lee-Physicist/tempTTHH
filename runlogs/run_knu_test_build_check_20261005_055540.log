@@ -1,0 +1,39 @@
+=== RUNLOG ================================================================
+step        : knu_test_build_check
+start_utc   : 2026-10-05T05:55:40Z
+host        : cms01   user: jhlee
+cwd         : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+repo        : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+git_head    : 5900904d   modified_tracked_files: 2
+cmd         : /bin/bash tools/stage0/test_build_check.sh 
+CMSSW_BASE  : /u/user/jhlee/ttHH/CMSSW_14_2_1
+root        : 6.30.09
+python3     : Python 3.9.14
+===========================================================================
+PASS B1 complete build -> exit 0, result OK
+PASS B1 make log in condor/build/, VERBOSE=1 lines in the last lines
+PASS B2 link failure -> make's exit code, FAIL
+PASS B3 make 0 without executable -> exit 1
+PASS B4 from-log, 0 errors, no executable -> exit 1
+PASS B5 quiet log, executable from a later build -> exit 1
+PASS B6 from-log of a complete (VERBOSE) build -> exit 0
+PASS B7 from-log, executable 30 min older than the log -> exit 1
+PASS B8 error lines -> exit 1, first error shown
+PASS B8 make's Interrupt / Stop lines count as errors
+PASS B8 empty log -> exit 1
+PASS B9 bad arguments -> exit 2
+PASS B9 --from-log '' -> exit 2, no build
+PASS B10 -h from another directory
+PASS B10 relative --from-log path
+PASS B11 echoed source line with '***'/'error:' is not counted
+PASS B12 VERBOSE log without [Done] -> exit 1
+PASS B12 VERBOSE log with [Done], later executable -> exit 0
+RESULT: 18 PASS, 0 FAIL
+===========================================================================
+end_utc     : 2026-10-05T05:55:43Z
+wall_s      : 3
+EXIT        : 0
+outputs     : (no file of this repo changed, apart from tmp/ condor/ runlogs/)
+log         : runlogs/run_knu_test_build_check_20261005_055540.log
+log_kb      : 1
+=== END ===================================================================
