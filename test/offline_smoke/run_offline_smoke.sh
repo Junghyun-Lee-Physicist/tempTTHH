@@ -30,14 +30,19 @@
 #  and so does a two-file job with one branch set (the [inputs] line: Events
 #  entries = the chain's); 2017 runs (and matches the older
 #  build); tools/stage3/data_lumi_check.py: missing LS, eras not produced,
-#  split LS inside one sample (fine), an LS in two samples (duplicate, exit 1).
+#  split LS inside one sample (fine), an LS in two samples (duplicate, exit 1);
+#  [2026-10-06, D-2026-10-06-A] the 2024 trigger rule per PD: the [trigger]
+#  counts = the file's own HLT bits (PyROOT; Data on golden LS, 4J3T PNet or
+#  DeepJet); MC and Muon0 take the whole OR, JetMET HLT_PFHT1050, ParkingHH
+#  the b-tag paths without it (HadTrigger step = taken); the JetMET and
+#  ParkingHH output trees are disjoint and together the Muon0 (whole OR) one.
 #  Exit: 0 all checks pass; 1 a check failed; 2 bad usage.
 #  The values are random: the checks are about running and stopping, never physics.
 # =============================================================================
 set -u
 KEEP=0; ARGS=()
 for x in "$@"; do [[ "$x" == "--keep" ]] && KEEP=1 || ARGS+=("$x"); done
-[[ ${#ARGS[@]} -ge 1 && ${#ARGS[@]} -le 2 ]] || { sed -n '3,35p' "$0" | sed 's/^# \{0,2\}//'; exit 2; }
+[[ ${#ARGS[@]} -ge 1 && ${#ARGS[@]} -le 2 ]] || { sed -n '3,40p' "$0" | sed 's/^# \{0,2\}//'; exit 2; }
 NEW="$(cd "${ARGS[0]}" && pwd -P)" || exit 2
 OLD=""; [[ ${#ARGS[@]} -eq 2 ]] && { OLD="$(cd "${ARGS[1]}" && pwd -P)" || exit 2; }
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
@@ -143,6 +148,71 @@ runa d24I "$NEW" Data JetMET1_Run2024I-MINIv6NANOv15_v2-v2 I 2024 "$IN/jetmet24I
 runa noDJ "$NEW" Data JetMET0_Run2024I-MINIv6NANOv15-v2 I 2024 "$IN/noDeepJet.root"; ok_run "2024 Data without the DeepJet 4J3T branch runs"
 check "2024 Data says which 4J3T path the file has" \
       "$(grep -q 'one of {HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_4p3: yes, HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepJet_4p5: no}' "$LAST.log" && echo 1)"
+# ---- [D-2026-10-06-A] the 2024 hadronic trigger per PD (b-tag paths in ParkingHH, HLT_PFHT1050 in JetMET0/1) ----
+tcount() {   # log -> "events HT btag both btag_without_HT taken" of the end-of-job [trigger] line
+  sed -nE 's/^\[trigger\] events ([0-9]+): HLT_PFHT1050 ([0-9]+), b-tag paths ([0-9]+), both ([0-9]+), b-tag without HLT_PFHT1050 ([0-9]+); taken ([0-9]+) .*/\1 \2 \3 \4 \5 \6/p' "$1"
+}
+cfstep() {   # log label -> the unweighted count of that step in the CutFlow Summary
+  awk -v s="$2" -F' : ' '$1 == s {split($2, a, " "); print a[1] + 0; exit}' "$1"
+}
+fbits() {    # file MC|Data -> "events HT btag both OR" from the file's own HLT bits (Data: golden LS only, the 4J3T
+             #   PNet or DeepJet; MC: the PNet 4J3T) -- what the analyzer must find. Run in $W (no stray modules).
+  ( cd "$W" && python3 - "$1" "$2" "$G24" 2>> "$W/synth.log" <<'PY'
+import json, sys, ROOT
+fn, kind, gj = sys.argv[1:4]
+gold = {int(r): v for r, v in json.load(open(gj)).items()}
+f = ROOT.TFile.Open(fn); t = f.Get("Events")
+n = ht = b = both = orr = 0
+for i in range(t.GetEntries()):
+    t.GetEntry(i)
+    if kind == "Data" and not any(a <= int(t.luminosityBlock) <= z for a, z in gold.get(int(t.run), [])):
+        continue
+    h = bool(t.HLT_PFHT1050)
+    bb = bool(t.HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_4p3 or t.HLT_PFHT450_SixPFJet36_PNetBTag0p35
+              or t.HLT_PFHT400_SixPFJet32_PNet2BTagMean0p50
+              or (kind == "Data" and t.HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepJet_4p5))
+    n += 1; ht += h; b += bb; both += (h and bb); orr += (h or bb)
+print(n, ht, b, both, orr)
+PY
+  )
+}
+read -r f_n f_ht f_b f_both f_or <<< "$(fbits "$IN/mc24.root" MC)"
+read -r m_n m_ht m_b m_both m_nob m_taken <<< "$(tcount "$W/out/new_sig24.log")"
+check "2024 MC [trigger] counts = the file's own bits (HLT_PFHT1050 ${f_ht:-?}, b-tag ${f_b:-?}, both ${f_both:-?} of ${f_n:-?}); MC takes the OR (${f_or:-?})" \
+      "$([[ -n "${m_taken:-}" && -n "${f_or:-}" && "$m_n" == "$f_n" && "$m_ht" == "$f_ht" && "$m_b" == "$f_b" && "$m_both" == "$f_both" \
+            && "$m_taken" == "$f_or" && "$(cfstep "$W/out/new_sig24.log" HadTrigger)" == "$m_taken" ]] && echo 1)" \
+      "(analyzer: ${m_n:-?} ${m_ht:-?} ${m_b:-?} ${m_both:-?} taken ${m_taken:-?}; file: ${f_n:-?} ${f_ht:-?} ${f_b:-?} ${f_both:-?} OR ${f_or:-?})"
+read -r g_n g_ht g_b g_both g_or <<< "$(fbits "$IN/jetmet24I.root" Data)"
+read -r j_n j_ht j_b j_both j_nob j_taken <<< "$(tcount "$W/out/new_d24I.log")"
+check "2024 Data [trigger] counts = the file's own bits on golden LS (${g_n:-?} events: HLT_PFHT1050 ${g_ht:-?}, b-tag incl. DeepJet 4J3T ${g_b:-?}, both ${g_both:-?})" \
+      "$([[ -n "${j_n:-}" && -n "${g_n:-}" && "$j_n" == "$g_n" && "$j_ht" == "$g_ht" && "$j_b" == "$g_b" && "$j_both" == "$g_both" ]] && echo 1)" \
+      "(analyzer: ${j_n:-?} ${j_ht:-?} ${j_b:-?} ${j_both:-?}; file: ${g_n:-?} ${g_ht:-?} ${g_b:-?} ${g_both:-?})"
+check "2024 Data JetMET takes HLT_PFHT1050 only (HadTrigger = taken = ${g_ht:-?})" \
+      "$([[ -n "${j_taken:-}" && "$j_taken" == "${g_ht:-x}" && "$(cfstep "$W/out/new_d24I.log" HadTrigger)" == "$j_taken" ]] \
+            && grep -q '^\[trigger\] 2024 Data JetMET takes: HLT_PFHT1050 ' "$W/out/new_d24I.log" && echo 1)"
+runa pk24I "$NEW" Data ParkingHH_Run2024I-MINIv6NANOv15-v1 I 2024 "$IN/jetmet24I.root"; ok_run "2024 Data ParkingHH runs"
+read -r p_n p_ht p_b p_both p_nob p_taken <<< "$(tcount "$LAST.log")"
+check "2024 Data ParkingHH takes the b-tag paths without HLT_PFHT1050 (HadTrigger = taken = $(( ${g_b:-0} - ${g_both:-0} )))" \
+      "$([[ -n "${p_taken:-}" && -n "${g_b:-}" && "$p_taken" == "$(( g_b - g_both ))" && "$(cfstep "$LAST.log" HadTrigger)" == "$p_taken" ]] \
+            && grep -q '^\[trigger\] 2024 Data ParkingHH takes: ' "$LAST.log" && echo 1)"
+runa mu24I "$NEW" Data Muon0_Run2024I-MINIv6NANOv15-v1 I 2024 "$IN/jetmet24I.root"
+read -r u_n u_ht u_b u_both u_nob u_taken <<< "$(tcount "$LAST.log")"
+check "2024 Data Muon0 takes the whole OR (trigger-SF sample; ${g_or:-?})" \
+      "$([[ $(cat "$LAST.rc") == 0 && -n "${u_taken:-}" && "$u_taken" == "${g_or:-x}" ]] && echo 1)" "(exit $(cat "$LAST.rc"), taken ${u_taken:-?})"
+read -r e_j e_p e_m e_jp e_union <<< "$( cd "$W" && python3 - "$W/out/new_d24I.root" "$W/out/new_pk24I.root" "$W/out/new_mu24I.root" 2>> "$W/synth.log" <<'PY'
+import sys, ROOT
+def events(fn):      # the selected events of a main output: (run, event) of Tree/Tree
+    f = ROOT.TFile.Open(fn); t = f.Get("Tree/Tree"); s = set()
+    for i in range(t.GetEntries()):
+        t.GetEntry(i); s.add((int(t.runNumber), int(t.eventNumber)))
+    f.Close()
+    return s
+J, P, M = (events(x) for x in sys.argv[1:4])
+print(len(J), len(P), len(M), len(J & P), int((J | P) == M))
+PY
+)"
+check "2024 JetMET and ParkingHH select disjoint events whose union is the whole-OR selection (Tree/Tree: ${e_j:-?} + ${e_p:-?} = ${e_m:-?})" \
+      "$([[ -n "${e_union:-}" && "$e_jp" == 0 && "$e_union" == 1 && "${e_m:-0}" -gt 0 ]] && echo 1)" "(overlap ${e_jp:-?}, union = Muon0's: ${e_union:-?})"
 BTAGSF=on runa btag "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root"; stops "2024 --btagsf on stops (E11)" 11 "btagsf on for runYear=2024"
 runa nopu "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root" TTHH_PU_JSON=; stops "2024 without TTHH_PU_JSON stops (E12)" 12 "TTHH_PU_JSON"
 runa pd "$NEW" Data EGamma0_Run2024C-MINIv6NANOv15-v1 C 2024 "$IN/jetmet24C.root"; stops "2024 unknown Data PD stops (E11)" 11 "PD not recognised"

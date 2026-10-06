@@ -280,6 +280,12 @@ void ttHHanalyzer_unified::loop(sysName sysType, bool up){
     std::cout << "[cleaning] events " << _nCleanAll << ": MET filters fail " << _nCleanMETFail
               << ", jet veto map " << (_useJetVetoMap ? std::to_string(_nCleanVetoFail) : std::string("not used"))
               << " (before the trigger; the two can overlap)" << std::endl;
+    // [D-2026-10-06-A] the hadronic trigger, per path group (the b-tag group = 4J3T, 6J1T, 6J2T as the year uses
+    //   them) and what the Data/MC rule took (in main/debug = the HadTrigger step of the cutflow, where the trigger
+    //   is enforced; btagtrig only records the step, so its HadTrigger count is every event)
+    std::cout << "[trigger] events " << _nTrigAll << ": HLT_PFHT1050 " << _nTrigHT << ", b-tag paths " << _nTrigBtag
+              << ", both " << _nTrigBoth << ", b-tag without HLT_PFHT1050 " << (_nTrigBtag - _nTrigBoth)
+              << "; taken " << _nTrigTaken << " (" << _DataOrMC << " " << _sampleName << ")" << std::endl;
     std::cout << "=== CutFlow Summary ===" << std::endl;
     for (size_t i = 0; i < _cutStepLabels.size(); ++i) {
         std::cout << _cutStepLabels[i] 
@@ -655,6 +661,9 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
     //          -> 모든 경로가 한 PD 안에 있으므로 veto 하면 안 된다.
     //             (veto 를 남겨두면 4J3T 가 터진 이벤트를 아무도 안 가져가
     //              통째로 사라진다.)
+    //   2024 : JetMET0/1(HT1050) + **ParkingHH**(4J3T, 6J1T, 6J2T) -> veto 필요 (D-2026-10-06-A;
+    //          HLT 메뉴 run 380115·382913·386604 의 process.datasets, tempTTHH STEP 24 §17). 2017 과 같은
+    //          구조이고 겹치는 event 는 JetMET 이 가져간다(아래 2024 Data 분기).
     // ─────────────────────────────────────────────────────────────────
     bool fired_4J3T = false, fired_6J1T = false, fired_6J2T = false;
     bool fired_HT   = _ev->HLT_PFHT1050;   // 2017/2018/2024 공통
@@ -716,19 +725,47 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
         passHadTrig = (group_4J3T || group_JetHT);
     }
     else if (_runYear == "2024") {
-        // [STEP 24] 2024 Data: JetMET0 / JetMET1 each carry every hadronic path (the two PDs split the
-        //   events, they do not split the paths) -> plain OR, no PD veto (as 2018 JetHT). Muon0 / Muon1:
-        //   the trigger-SF measurement sample, same OR (as SingleMuon in 2017/2018).
-        if (_sampleName.find("JetMET") != std::string::npos ||
-            _sampleName.find("Muon0") != std::string::npos ||
-            _sampleName.find("Muon1") != std::string::npos) {
+        // [D-2026-10-06-A] 2024 Data: each PD takes the paths it records (STEP 24 §17). The HLT menus of runs
+        //   380115 (C), 382913 (F) and 386604 (I) put HLT_PFHT1050 in JetMET0 and JetMET1 (the two split the
+        //   events, not the paths) and the four b-tag paths (4J3T PNet and DeepJet, 6J1T, 6J2T) in ParkingHH
+        //   only. An event can be in both, so it is taken once, from JetMET -- the 2017 BTagCSV/JetHT rule with
+        //   the roles swapped:
+        //     JetMET0/1 : HLT_PFHT1050
+        //     ParkingHH : (4J3T || 6J1T || 6J2T) && !HLT_PFHT1050
+        //     Muon0/1   : the whole OR (the trigger-SF measurement sample, as SingleMuon in 2017/2018)
+        //   Before 2026-10-06 JetMET took the whole OR on the belief that it recorded every hadronic path; it
+        //   then also kept the b-tag events that had come in through some other JetMET path, a fraction only.
+        //   Without ParkingHH the 2024 Data hold the HLT_PFHT1050 part of the OR, nothing below its turn-on.
+        const bool isJetMET  = (_sampleName.find("JetMET") != std::string::npos);
+        const bool isParking = (_sampleName.find("ParkingHH") != std::string::npos);
+        const bool isMuonPD  = (_sampleName.find("Muon0") != std::string::npos ||
+                                _sampleName.find("Muon1") != std::string::npos);
+        const bool groupBtag = (fired_4J3T || fired_6J1T || fired_6J2T);
+        if (isJetMET && !isParking) {
+            passHadTrig = fired_HT;
+        }
+        else if (isParking && !isJetMET) {
+            passHadTrig = groupBtag && !fired_HT;
+        }
+        else if (isMuonPD && !isJetMET && !isParking) {
             passHadTrig = (group_4J3T || group_JetHT);
         }
         else {
             std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO
-                      << "] 2024 Data PD not recognised (expected JetMET0/1 or Muon0/1): "
+                      << "] 2024 Data PD not recognised (expected JetMET0/1, ParkingHH or Muon0/1): "
                       << _sampleName << std::endl;
             tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
+        }
+        static bool ruleShown = false;
+        if (!ruleShown) {
+            ruleShown = true;
+            std::cout << "[trigger] 2024 Data " << (isJetMET ? "JetMET" : isParking ? "ParkingHH" : "Muon0/1")
+                      << " takes: "
+                      << (isJetMET ? "HLT_PFHT1050 (the b-tag paths are recorded in ParkingHH)"
+                          : isParking ? "(4J3T PNet|DeepJet || 6J1T || 6J2T) && !HLT_PFHT1050 (HLT_PFHT1050 events "
+                                        "come from JetMET)"
+                          : "the whole OR (trigger-SF sample)")
+                      << " [D-2026-10-06-A]" << std::endl;
         }
     }
     else if (_runYear == "2018") {
@@ -768,6 +805,16 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
                        << _sampleName << std::endl;
              tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
         }
+    }
+
+    // [D-2026-10-06-A] counts for the end-of-job [trigger] line (which paths fired, what the rule took)
+    {
+        const bool anyBtag = (fired_4J3T || fired_6J1T || fired_6J2T);
+        ++_nTrigAll;
+        if (fired_HT) ++_nTrigHT;
+        if (anyBtag) ++_nTrigBtag;
+        if (fired_HT && anyBtag) ++_nTrigBoth;
+        if (passHadTrig) ++_nTrigTaken;
     }
 
     // 최종 결과 적용

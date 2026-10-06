@@ -32,8 +32,13 @@
   FATAL 줄의 번호), `src/{CorrectionsManager,ExpandedTtbarId,StitchFactors,tnm}.cc`, `include/{EraConfig,ConfigPath,ExpandedTtbarId}.h`,
   `test/test_EraConfig.cc`(주석), `test/offline_smoke/run_offline_smoke.sh`(+5 check), `submit_job_FH_Tier3_unified.py`(139 의 설명),
   `docs/reference/ERROR_CODES.md`, `README.md`·`docs/RUNBOOK_2017_SF_rederive.md`(옛 exit 45/46)
+- 커밋 G(§17; C++ 와 Python): `ttHHanalyzer_unified.{cc,h}`(2024 Data 의 PD 규칙, `[trigger]` 줄), `include/ExitCodes.h`(주석),
+  `plotter/make_plots.py`(`--tree-cut`), `plotter/stack_plotter.C`(`Control/` 의 축 제목), `submit_job_FH_Tier3_unified.py`(`ParkingHH_*`,
+  era 별 WARN), `tools/stage3/smoke_2024.sh`(+12 check), `test/offline_smoke/run_offline_smoke.sh`(+7), `test/test_failure_checks.py`(+9),
+  `docs/DECISIONS.md`(D-2026-10-06-A), `docs/PLAN_v15_2018UL_2024.md`(trigger 행, D4)
 - 결정: [`../DECISIONS.md`](../DECISIONS.md) D-2026-10-05-A (사용자 10-05: 첫 plot 의 범위, D14, blinding; D15 의 방법), D-2026-10-05-B
-  (2024 MC 의 4J3T 는 PNet 경로만, PROPOSED), D-2026-10-05-C (2024 는 tt+nb lookup 없이, D-2026-10-02-A 의 구현)
+  (2024 MC 의 4J3T 는 PNet 경로만, PROPOSED), D-2026-10-05-C (2024 는 tt+nb lookup 없이, D-2026-10-02-A 의 구현),
+  D-2026-10-06-A (2024 의 b-tag 경로는 ParkingHH: PD 규칙, ParkingHH 생산, 그 전의 control plot 은 event tree 에서; 사용자 10-06)
 - 배경: 사용자(10-05) "얼른 plot 만들고 싶은데" → 첫 plot 은 2024 FH, trigger·b-tag SF 없이, σ 는 임시값 표시(D-2026-10-05-A). 그
   전에 PLAN §9 Stage 1(eventBuffer 와 무음 0)과 Stage 2(2024 연도 설정)가 있어야 analyzer 가 2024 파일을 읽는다.
 
@@ -441,6 +446,64 @@ B 에만 있는 파일 FAIL, tree 값만 바뀜 FAIL, EXPECTED 의 run 이 양�
   점은 안 보임, cutflow 의 끝 label 이 축 제목과 겹침, `TtCatValidation` 쪽은 MC 만(Data 0), raw cutflow 쪽(`cut step`, MC 6.17e7)의 비율은
   뜻 없음. 고칠지는 사용자 결정.
 
+### 17. 2024 의 b-tag 경로는 ParkingHH PD 에 있다 — PD 규칙과 event tree 로 그리는 control plot (10-06; 커밋 G)
+
+- **확인**(lxplus962, 사용자 10-06; RUNBOOK §23 N 3): `hltGetConfiguration run:<N> --full` 의 `process.datasets`(rc 0, 88,446 / 90,790 /
+  91,884 줄, dataset 79 / 79 / 129 개; `.err` 는 사용자 `~/.local` 의 requests 버전 경고 한 줄뿐):
+
+| 경로 | run 380115 (C) | 382913 (F) | 386604 (I) |
+|---|---|---|---|
+| `HLT_PFHT1050` | JetMET0 JetMET1 ScoutingPFMonitor | 같음 | 같음 |
+| 4J3T PNet `..._PNet3BTag_4p3` | (없음) | ParkingHH | ParkingHH |
+| 4J3T DeepJet `..._TriplePFBTagDeepJet_4p5` | ParkingHH | ParkingHH | ParkingHH |
+| 6J2T `HLT_PFHT400_SixPFJet32_PNet2BTagMean0p50` | ParkingHH | ParkingHH | ParkingHH |
+| 6J1T `HLT_PFHT450_SixPFJet36_PNetBTag0p35` | ParkingHH | ParkingHH | ParkingHH |
+| (참고) HH→4b `HLT_PFHT280_QuadPFJet30_PNet2BTagMean0p55` | ParkingHH | ParkingHH | ParkingHH |
+| `HLT_IsoMu24` | ExpressPhysics Muon0 Muon1 | 같음 | 같음 |
+
+  run 380115 의 PNet 4J3T 는 어느 PD 에도 없다: 그 기간에는 DeepJet 판이 돌았다(LUMI_SOURCES §6.3 와 맞다). ParkingHH 는 Run 3 의 parking
+  PD 다(HH→4b 등을 위해 2022 에 시작; 높은 rate 를 쓰고 reconstruction 이 늦을 수 있다).
+- **뜻**: 우리 OR 가운데 JetMET 에 있는 것은 `HLT_PFHT1050` 하나다. 2024 Data(JetMET0/1 만 생산)에는 b-tag 경로의 event 가 다른 JetMET
+  경로도 함께 터진 것만 있고, MC 에는 모든 HLT bit 가 있다 → §16 의 HT < 1000 GeV 모자람이 이것이다. 커밋 B 의 analyzer 주석("JetMET0 /
+  JetMET1 each carry every hadronic path")은 확인 없이 쓴 가정이었다(AI; 2018 의 JetHT 처럼 여김).
+- **결정** D-2026-10-06-A(사용자 "둘 다", AI 권고): (1) PD 마다 그 PD 가 기록한 경로를, 두 PD 에 다 있는 event 는 JetMET 에서 한 번 —
+  2017 BTagCSV/JetHT 규칙의 역할을 바꾼 것. (2) ParkingHH 2024 C–I 를 생산(DAS 로 NanoAOD v15 가 있는지 먼저). (3) 그 전의 control
+  plot 은 생산된 Data 가 온전히 가진 trigger 로: `HLT_PFHT1050` && offline HT > 1200 GeV(plateau 쪽; 임시 값, Stage 6 에서 잰다)를 Data 와
+  MC 에 똑같이, **이미 있는 main 출력의 event tree 에서**(analyzer 를 다시 돌리지 않는다). (4) 분석의 HT > 500 은 그대로(ttH(bb) FH 와
+  같다; b-tag 경로의 HT 다리 PFHT330/400/450 의 plateau, `include/SelectionCuts.h` 의 주석); OR 의 turn-on 은 Stage 6 의 trigger SF(Muon0/1).
+- **고침(커밋 G)**:
+  - `ttHHanalyzer_unified.{cc,h}`: 2024 Data — JetMET0/1 → `HLT_PFHT1050`; ParkingHH → (4J3T PNet‖DeepJet ‖ 6J1T ‖ 6J2T) && !`HLT_PFHT1050`;
+    Muon0/1 → OR(trigger SF 용); 그 밖의 PD → E11. MC 는 OR 그대로. 첫 event 에 규칙 한 줄(`[trigger] 2024 Data <PD> takes: ...`), job 끝에
+    `[trigger] events N: HLT_PFHT1050 a, b-tag paths b, both c, b-tag without HLT_PFHT1050 d; taken e (<Data|MC> <sample>)` — main/debug 에서
+    `taken` 은 cutflow 의 `HadTrigger` 와 같다(btagtrig 는 그 단계를 기록만 한다). 2017·2018 은 바뀌지 않았다(Y1: 2017 출력이 이전 빌드와 같음).
+  - `plotter/make_plots.py --tree-cut EXPR [--tree-label TEXT]`(docstring 6): merge 된 파일마다 `Tree/Tree` 에서 EXPR(RDataFrame 식; tree 의
+    branch 와 `jet_pt_<i>`, `btag_<i>` 같은 파생 열)를 통과한 event 로 control 히스토그램 26 개(HT, nJets, nbJets, MET, jet 1–6 의 pT·η,
+    b-tag 점수 큰 순 넷, event shape 여섯; TH1F)를 `<out>/tree/<sample>.root` 의 `Control/` 에 만들어 그린다. MC 의 weight 는 `evtWeight`(저장된
+    jet·b-tag 히스토그램과 같은 것), Data 는 1. YIELDS 와 완결성 검사는 merge 된 파일 그대로이고 `TREECUT`·`TREEYIELD`(sample 마다 event 수와
+    weight 합, MC·Data·Data/MC) 줄이 붙는다. 출력 디렉터리 이름에 `_tree`.
+  - `plotter/stack_plotter.C`: `Control/` 히스토그램의 x 축 제목은 히스토그램의 것.
+  - `submit_job_FH_Tier3_unified.py`: `ParkingHH_*` 는 Data; 2024 preflight 의 PD 검사가 ParkingHH 를 받고, era 마다 JetMET 과 ParkingHH 가
+    둘 다 있지 않으면 WARN(지금 2024 yml: "JetMET without ParkingHH: C D E F G H I" — 사실 그대로, 제출은 막지 않는다).
+  - `include/ExitCodes.h`: §15 의 남은 주석("still to be checked")을 확인 결과로.
+- **시험**(컨테이너, 깨끗한 빌드): offline smoke **50/50**(+7: MC 의 `[trigger]` 수 = 파일의 bit(PyROOT), Data 의 수 = golden LS 위의
+  bit(DeepJet 4J3T 포함), JetMET = `HLT_PFHT1050`, ParkingHH = b-tag 가운데 `HLT_PFHT1050` 아님, Muon0 = OR, JetMET 과 ParkingHH 의 출력
+  tree 가 서로소이고 합이 Muon0 의 것과 같음; 2017 Y1 PASS), `test_failure_checks.py` **33/33**(+9: `--tree-cut` 의 수율·파일·그림·잘못된 식·
+  상대 `--out`), 단위 시험 PASS, `test_consolidate_prescan.py` 24/24, Python 3.9 문법. `tools/stage3/smoke_2024.sh`: main run 마다 trigger 규칙
+  check, `dI_pk`(dI 파일을 ParkingHH 이름으로: 실제 bit 에서 그 규칙) → **81 check**(69 + 12; era C 의 PNet 없는 파일이 있을 때).
+  독립 검토 1 회: 상대 `--out` 에서 `--tree-cut` 의 그림이 안 나오던 것, 파생 열을 식에 못 쓰던 것, Data 의 수를 파일과 대조하지 않던 것,
+  `python3 -I` 가 cmsenv 의 PyROOT 를 못 찾을 수 있던 것, era 를 보지 않던 WARN — 모두 반영.
+- **지금 낼 수 있는 control plot**: KNU 에서 `make_plots.py --tree-cut 'passTrigger_HLT_PFHT1050 && HT > 1200'` 를
+  `AnalyzerOutput_main_notrig_2024` 에(RUNBOOK §23 O). Data 의 `HLT_PFHT1050` event 는 예전 규칙(OR)에서도 모두 받았으므로 그 tree 에
+  다 있다.
+- **ParkingHH 의 DAS**(10-06 저녁, lxplus993, NtupleForge `script/runlogs/run_das_parkinghh_2024_20261006_144016.log`): `MINIv6NANOv15` 이
+  C–I 에 모두 있다 — C·D·E `-v1`, F `-v4`, G·H·I `-v3`, era I 의 둘째 `_v2-v2`(JetMET 처럼 둘) — 2,771 파일, 1,913,189,591 event, 4.56 TB
+  (F·G 가 63 %). 그 밖에 PromptReco(A–I)와 `2024CDEReprocessing`(C–E)은 쓰지 않는다(JetMET·MC 와 다른 처리). NtupleForge
+  D-2026-10-06-parkinghh: `crabConfig/config_ttHH2024_v15_had_ParkingHH.yaml`(Data 설정 그대로, 따로 된 CRAB work area, 출력은 Data 의
+  `output_base` 안 `ParkingHH/<key>/`), 2,771 job, 출력 예상 0.5–1.3 TB(6j20 통과율 미측정).
+- **다음**: lxplus 에서 DAS 사이트(디스크 사본), ParkingHH branch inventory 비교, preflight, 제출(워크스페이스 RUNBOOK §24) → KNU 에서
+  filelist·lumi 검사 → main 의 Data(JetMET 은 새 규칙으로 다시, ParkingHH 새로; MC 출력은 규칙이 그대로라 다시 돌리지 않는다) → merge →
+  plot(전체 OR); Stage 6 trigger SF(OR 의 turn-on, `HLT_PFHT1050` 의 plateau).
+
 ## 확인하지 못한 것
 
 - TTbar_Hadronic 의 `260930_162708/0000/forgedNtuple_443.root` 는 크기 0(10-02 18:48 KST; NtupleForge `docs/05_troubleshooting.md` A29):
@@ -452,6 +515,9 @@ B 에만 있는 파일 FAIL, tree 값만 바뀜 FAIL, EXPECTED 의 run 이 양�
 - `data/samples_2024.json` 의 σ 는 모두 임시. 낮은 신뢰도 다섯(비율로 올린 것)과 TTZHTo4b(XSDB 의 exact-dataset 값이 B(Z→bb) 만 포함한
   것으로 보여 쓰지 않음)는 첫 plot 에 영향이 없거나 작다. XSDB 로 확인할 사람: CERN 로그인이 있는 사용자.
 - D-2026-10-05-B(2024 MC 의 4J3T 는 PNet 만)는 PROPOSED — Stage 6 의 trigger SF 와 함께 정한다.
-- 커밋 E·F 의 KNU smoke: 69/69(10-06, §15). 남은 것: KNU 의 실행 기록(`knu_plots_2024`, `knu_build_c`·`smoke_2024_c`, `knu_build_f`·`unittests_f`·`smoke_2024_f`)의 커밋,
-  첫 look 의 Data/MC 모자람의 원인(4J3T·6J PNet 경로가 JetMET PD 에 있는지, Stage 6 trigger SF; §16).
+- 커밋 E·F 의 KNU smoke 69/69 와 실행 기록 커밋(`13bf65e7`, 10-06)은 끝. 첫 look 의 모자람의 원인은 §17(b-tag 경로가 ParkingHH 에).
+- ParkingHH 2024 의 NanoAOD v15: DAS 에 C–I 모두 있다(§17, 10-06). 남은 것: 디스크 사본(테이프만인 dataset 이 없는지), branch 가 JetMET 과 같은지,
+  `6j20` 통과율과 출력 크기 — 제출 전후(RUNBOOK §24).
+- `HLT_PFHT1050` 의 offline plateau: control plot 의 HT > 1200 GeV 는 임시 값(Run 2 경험) — Stage 6 에서 Muon0/1 로 잰다.
+- 커밋 G 의 KNU 빌드와 smoke(81 check)는 아직.
 - Data 의 처리된 LS 의 lumi(brilcalc): golden LS 의 1.4 % 쯤이 생산에 없다(§13) — 그 전까지 Data/MC 는 109.816 fb⁻¹ 기준.

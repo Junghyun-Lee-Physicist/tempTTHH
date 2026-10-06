@@ -57,7 +57,8 @@ def _fatal(code, msg):
 
 # [STEP 24] Data sample names: the Run 2 PDs anywhere in the name (as before) or a 2024 PD at the start
 #   (JetMET0/1, Muon0/1, EGamma0/1: NtupleForge keys like JetMET0_Run2024C-MINIv6NANOv15-v1).
-DATA_PD_RE = re.compile(r"(JetHT|BTagCSV|SingleMuon|EGamma|MuonEG|DoubleMuon)|^(JetMET|Muon)\d")
+#   [D-2026-10-06-A] ParkingHH (the 2024 b-tag multijet paths; a key like ParkingHH_Run2024C-...).
+DATA_PD_RE = re.compile(r"(JetHT|BTagCSV|SingleMuon|EGamma|MuonEG|DoubleMuon)|^(JetMET|Muon)\d|^ParkingHH_")
 # era letter: '..._Run2017F', '..._Run2024C-MINIv6NANOv15-v1' (2024 keys go on after the era), or '..._F'
 ERA_RE = (re.compile(r"Run\d{4}([A-Z])(?=$|-)"), re.compile(r"_([A-Z])$"))
 
@@ -548,11 +549,27 @@ class CondorJobManager:
                 ok("2024 --btagsf", "off")
             pd_bad = [str(s["sample_name"] if isinstance(s, dict) else s) for s in samples
                       if is_data_name(s["sample_name"] if isinstance(s, dict) else s)
-                      and not re.match(r"^(JetMET|Muon)[01]_", str(s["sample_name"] if isinstance(s, dict) else s))]
+                      and not re.match(r"^((JetMET|Muon)[01]|ParkingHH)_",
+                                       str(s["sample_name"] if isinstance(s, dict) else s))]
             if pd_bad:
-                bad("2024 Data PDs", f"not JetMET0/1 or Muon0/1 (the analyzer has no trigger logic for them): {pd_bad[:4]}")
+                bad("2024 Data PDs", f"not JetMET0/1, ParkingHH or Muon0/1 (the analyzer has no trigger logic for "
+                                     f"them): {pd_bad[:4]}")
             elif n_data:
-                ok("2024 Data PDs", "JetMET0/1, Muon0/1 only")
+                ok("2024 Data PDs", "JetMET0/1, ParkingHH, Muon0/1 only (D-2026-10-06-A: JetMET takes HLT_PFHT1050, "
+                                    "ParkingHH the b-tag paths without it)")
+                # per era: JetMET (HLT_PFHT1050) and ParkingHH (the b-tag paths without it) are the two halves of
+                #   the OR in Data; an era with one of them only has a part of the OR, while MC has all of it
+                names_d = [str(s["sample_name"] if isinstance(s, dict) else s) for s in samples]
+                eras_jm = {era_from_name(n) for n in names_d if n.startswith("JetMET")} - {None}
+                eras_pk = {era_from_name(n) for n in names_d if n.startswith("ParkingHH_")} - {None}
+                only_jm, only_pk = sorted(eras_jm - eras_pk), sorted(eras_pk - eras_jm)
+                if self.AnalyzerMode in ("main", "debug") and (only_jm or only_pk):
+                    warn("2024 Data JetMET / ParkingHH by era",
+                         f"JetMET without ParkingHH: {' '.join(only_jm) or '-'}; ParkingHH without JetMET: "
+                         f"{' '.join(only_pk) or '-'} -- there the Data hold one part of the trigger OR only (JetMET: "
+                         "HLT_PFHT1050; ParkingHH: the b-tag paths without it; D-2026-10-06-A) while MC has all of it: "
+                         "Data/MC is not meaningful where the missing part matters (JetMET only: below the "
+                         "HLT_PFHT1050 turn-on)")
             if n_data and fpj_data > 1:
                 bad("2024 Data files per job", f"{fpj_data} > 1: 2024 era C files differ in their HLT branches; a job "
                                                "with several files stops (E11, requireSameBranchSet_) -> "

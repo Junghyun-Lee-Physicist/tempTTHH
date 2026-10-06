@@ -17,6 +17,7 @@
 #    dC_nopnet main     JetMET0_Run2024C-MINIv6NANOv15-v1     Data era C, a file WITHOUT it (if one exists)
 #    dI        main     JetMET1_Run2024I-MINIv6NANOv15_v2-v2  Data era I (the second era-I dataset)
 #    dC_mix    main     the two era-C files in one job        must stop: E11, different branch sets
+#    dI_pk     main     the dI file as ParkingHH_Run2024I-... the ParkingHH trigger rule on real bits (D-2026-10-06-A)
 #    pre_sig   prescan  TTHHto4b (the mc_sig file)            the prescan path
 #    mc_multi  main     QCD_HT200to400, job 0 of the main yml's chunks     several files in one MC job
 #    pre_multi prescan  QCD_HT200to400, job 0 of the prescan yml's chunks  the same for the prescan
@@ -41,11 +42,16 @@
 #  cutflow_w_full; TTbar_Hadronic says the tt+nb split is off; the era-C runs
 #  name the 4J3T path of their file; dC_mix stops with E11; prescan: the
 #  output has the one-row prescan tree; mc_multi/pre_multi: the job's files
-#  have one branch set ([branches] N input files, the same ...).
+#  have one branch set ([branches] N input files, the same ...);
+#  [2026-10-06, D-2026-10-06-A] every main run: the trigger rule from the
+#  end-of-job [trigger] line -- MC the whole OR, JetMET HLT_PFHT1050, ParkingHH
+#  (dI_pk) the b-tag paths without HLT_PFHT1050 -- and the HadTrigger step = the
+#  events taken.
 #  Prints: FILE <run> MB=<size> entries=<Events entries> pnet=<y/n> deepjet=<y/n>
 #               lumis=<LS> golden=<golden LS> <path>   (lumis/golden '-' for MC)
 #          TIMING <run> entries=<n> wall_s=<s> ev_per_s=<x> kB_per_ev=<y>
 #          CUTFLOW <run> <label>=<count> ...;  CLEANING <run> <the [cleaning] line>
+#          TRIGGER <run> <the [trigger] counts line>
 #  Exit: 0 all checks pass; 1 a check failed; 2 bad usage or a missing input.
 # =============================================================================
 set -u
@@ -57,7 +63,7 @@ while [[ $# -gt 0 ]]; do
     --config)       [[ $# -ge 2 ]] || exit 2; CFG="$2"; shift 2 ;;
     --prescan-config) [[ $# -ge 2 ]] || exit 2; PCFG="$2"; shift 2 ;;
     --filelist-dir) [[ $# -ge 2 ]] || exit 2; FLD="$2"; shift 2 ;;
-    -h|--help)      sed -n '3,49p' "$0" | sed 's/^# \{0,2\}//'; exit 0 ;;
+    -h|--help)      sed -n '3,55p' "$0" | sed 's/^# \{0,2\}//'; exit 0 ;;
     *)              echo "smoke_2024.sh: unknown argument $1 (see --help)"; exit 2 ;;
   esac
 done
@@ -310,9 +316,26 @@ common_checks() {   # dataOrMC label(analysis code|prescan)
   check "$LRUN" "the yml paths were used (jsonpog, PU JSON)" \
         "$(grep -qF "[cfgpath] jsonpog-integration = $TTHH_JSONPOG_PATH " "$LAST.log" && grep -qF "[cfgpath] 2024 PU weight JSON = $TTHH_PU_JSON " "$LAST.log" && echo 1)"
 }
-main_checks() {   # dataOrMC
+trig_check() {   # rule (OR | JetMET | ParkingHH): the end-of-job [trigger] line (D-2026-10-06-A) and the HadTrigger step
+  local rule="$1" line n ht b both nob taken want hv
+  line="$(grep -m1 '^\[trigger\] events ' "$LAST.log")"
+  read -r n ht b both nob taken <<< "$(sed -nE 's/^\[trigger\] events ([0-9]+): HLT_PFHT1050 ([0-9]+), b-tag paths ([0-9]+), both ([0-9]+), b-tag without HLT_PFHT1050 ([0-9]+); taken ([0-9]+) .*/\1 \2 \3 \4 \5 \6/p' <<< "$line")"
+  case "$rule" in
+    JetMET)    want="${ht:-}" ;;                                # JetMET0/1: HLT_PFHT1050
+    ParkingHH) want="${nob:-}" ;;                               # ParkingHH: the b-tag paths without HLT_PFHT1050
+    *)         want=$(( ${ht:-0} + ${b:-0} - ${both:-0} )) ;;   # MC (and Muon0/1): the whole OR
+  esac
+  hv="$(cutval HadTrigger)"
+  check "$LRUN" "trigger rule $rule (D-2026-10-06-A): taken = ${want:-?} = the HadTrigger step" \
+        "$([[ -n "${taken:-}" && -n "${want:-}" ]] && awk -v t="$taken" -v w="$want" -v h="${hv:-x}" 'BEGIN{exit !(t == w && h != "x" && h + 0 == t)}' && echo 1)" \
+        "(${line:-no [trigger] line}; HadTrigger '${hv:-none}')"
+  echo "TRIGGER $LRUN ${line#\[trigger\] }"
+}
+main_checks() {   # dataOrMC [trigger rule: default MC -> OR, Data -> JetMET]
   local dom="$1" jec=MC; [[ "$dom" == Data ]] && jec=DATA
+  local rule="${2:-}"; [[ -z "$rule" ]] && { [[ "$dom" == MC ]] && rule=OR || rule=JetMET; }
   common_checks "$dom" "analysis code"
+  trig_check "$rule"
   check "$LRUN" "2024 payloads (jet ID, veto map, PU, JEC $jec, JER, UParTAK4 WPs)" "$(
     grep -q 'jet ID (2024_Summer24): .* -> AK4PUPPI_Tight, AK4PUPPI_TightLeptonVeto' "$LAST.log" &&
     grep -q 'jet veto map (2024_Summer24): .* -> Summer24Prompt24_RunBCDEFGHI_V1 type jetvetomap' "$LAST.log" &&
@@ -346,6 +369,7 @@ multi_line() {   # n: the requireSameBranchSet_ line of a job of n files
 }
 runa mc_multi main MC "$SM" "" "$CH_MAIN"
 common_checks MC "analysis code"
+trig_check OR
 multi_line "$N_MAIN"
 check mc_multi "output complete (end marker cutflow_w_full)" "$(complete main && echo 1)"
 echo "CUTFLOW $LRUN$(awk '/^=== CutFlow Summary ===/{f=1;next} f&&/ : /{split($0,a," : "); split(a[2],b," "); printf " %s=%s", a[1], b[1]; next} f{exit}' "$LAST.log")"
@@ -368,6 +392,13 @@ if [[ $HAVE_NOPNET == 1 ]]; then
         "$([[ $(cat "$LAST.rc") == 11 ]] && grep -q 'do not have the same branches' "$LAST.log" && echo 1)" "(exit $(cat "$LAST.rc"))"
 fi
 runa dI main Data "$SI" I "${FPATH[dI]}"; main_checks Data
+# [D-2026-10-06-A] the ParkingHH rule on real 2024 bits, before any ParkingHH file exists: the dI file under a ParkingHH
+#   name takes the events with a b-tag path and without HLT_PFHT1050 (in a JetMET file: those that came in through
+#   another JetMET path -- the part the rule before 10-06 kept). Not a physics run: only the rule and exit 0.
+runa dI_pk main Data "ParkingHH_Run2024I-MINIv6NANOv15-v1" I "${FPATH[dI]}"
+common_checks Data "analysis code"
+trig_check ParkingHH
+check dI_pk "the [trigger] rule line names ParkingHH" "$(grep -q '^\[trigger\] 2024 Data ParkingHH takes: ' "$LAST.log" && echo 1)"
 
 # ---- the end ------------------------------------------------------------------------------------------
 if [[ ${#FAILED_RUNS[@]} -gt 0 ]]; then

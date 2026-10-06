@@ -9,6 +9,9 @@
   C  submit_job_FH_Tier3_unified.py: why a job is missing (condor user log + job .out + arguments file):
      failed with the return value and its name, rc 0 without the end marker, pending, held, not started, no
      attempt; the report table with the fail / wait columns
+  D  plotter/make_plots.py --tree-cut (D-2026-10-06-A): control histograms from Tree/Tree -- the yields after the
+     cut (MC by evtWeight, Data by 1), the Control/ histograms in <out>/tree/, only those plotted, a cut on a
+     missing branch fails, --tree-label needs --tree-cut
 
 Run from the repo top after cmsenv (needs PyROOT; part B's merge needs hadd):
     python3 test/test_failure_checks.py
@@ -253,6 +256,93 @@ with tempfile.TemporaryDirectory(prefix="tthh_fail_") as T:
     t = buf.getvalue()
     check("C table: fail / wait columns and totals",
           "fail" in t and "wait" in t and "<-- failed" in t and "wait 3" in t, t)
+
+    # ---------------- D: make_plots --tree-cut, control plots from Tree/Tree [D-2026-10-06-A] ----------------
+    def write_tree_out(path, n_raw, w_nocut, events):
+        """write_out plus Tree/Tree (the analyzer's columns that --tree-cut reads): events = [(HLT_PFHT1050, HT, w)]"""
+        write_out(path, n_raw, w_nocut)
+        f = ROOT.TFile(path, "UPDATE")
+        f.cd("Tree")
+        t = ROOT.TTree("Tree", "tree for dnn inputs")
+        c_trig = array("b", [0])
+        cf = {c: array("f", [0.0]) for c in ("HT", "evtWeight", "MET_pt", "aplanarity", "sphericity", "eventC",
+                                               "eventD", "bjetAplanarity", "bjetSphericity")}
+        ci = {c: array("i", [0]) for c in ("nJets", "nbJets")}
+        vec = {c: ROOT.std.vector("float")() for c in ("jetPt", "jetEta", "bTagScore")}
+        t.Branch("passTrigger_HLT_PFHT1050", c_trig, "passTrigger_HLT_PFHT1050/O")
+        for c, a_ in cf.items():
+            t.Branch(c, a_, c + "/F")
+        for c, a_ in ci.items():
+            t.Branch(c, a_, c + "/I")
+        for c, v in vec.items():
+            t.Branch(c, v)
+        for trig, ht, w in events:
+            c_trig[0] = 1 if trig else 0
+            for c, a_ in cf.items():
+                a_[0] = {"HT": ht, "evtWeight": w, "MET_pt": 50.0}.get(c, 0.2)
+            ci["nJets"][0], ci["nbJets"][0] = 6, 2
+            for v in vec.values():
+                v.clear()
+            for i in range(6):
+                vec["jetPt"].push_back(ht / 6.0 * (1.5 - 0.2 * i))
+                vec["jetEta"].push_back(0.1 * i)
+                vec["bTagScore"].push_back(0.1 * (i + 1))
+            t.Fill()
+        t.Write()
+        f.Close()
+
+    tb = os.path.join(T, "tbase")
+    os.makedirs(tb)
+    write_tree_out(os.path.join(tb, "SampleA.root"), 500, 500.0,
+                   [(True, 1300.0, 2.0), (True, 1100.0, 2.0), (False, 1500.0, 2.0), (True, 2000.0, 2.0)])
+    write_tree_out(os.path.join(tb, "SampleB.root"), 300, 300.0,
+                   [(True, 1250.0, 0.5), (True, 1201.0, 0.5), (True, 1200.0, 0.5)])
+    write_tree_out(os.path.join(tb, DATA + ".root"), 1000, 1000.0,          # Data: weight 1, not the 7 stored
+                   [(True, 1500.0, 1.0), (True, 900.0, 1.0), (False, 1300.0, 1.0), (True, 1210.0, 7.0)])
+    tout = os.path.join(T, "tplots")
+    mt = [sys.executable, os.path.join(REPO, "plotter", "make_plots.py"), "--config", cfg, "--base", tb, "--out", tout,
+          "--grouping", "compact", "--tree-cut", "passTrigger_HLT_PFHT1050 && HT > 1200",
+          "--tree-label", "HLT_PFHT1050, H_{T} > 1200 GeV"]
+    rc, out = run(mt, hadd_env())
+    check("D TREEYIELD per sample (MC weighted by evtWeight, Data by 1)",
+          "TREEYIELD MC   SampleA" in out and "events=2 sumw=4.00" in out.split("TREEYIELD MC   SampleA")[1].split("\n")[0]
+          and "events=2 sumw=1.00" in out.split("TREEYIELD MC   SampleB")[1].split("\n")[0]
+          and "events=2 sumw=2.00" in out.split("TREEYIELD DATA " + DATA)[1].split("\n")[0], out[-3000:])
+    check("D TREEYIELD total MC 5.0, Data 2, Data/MC 0.400",
+          "TREEYIELD total MC=5.0 Data=2 Data/MC=0.400" in out, out[-3000:])
+    hf = ROOT.TFile.Open(os.path.join(tout, "tree", "SampleA.root"))
+    hht = hf.Get("Control/HT") if hf else None
+    check("D tree/SampleA.root: Control/HT, TH1F, 2 entries, integral 4, x title",
+          bool(hht) and hht.InheritsFrom("TH1F") and int(hht.GetEntries()) == 2 and abs(hht.Integral() - 4.0) < 1e-6
+          and hht.GetXaxis().GetTitle() == "H_{T} [GeV]",
+          str((bool(hht), hht.GetEntries() if hht else None, hht.Integral() if hht else None)))
+    if hf:
+        hf.Close()
+    with open(os.path.join(tout, "YIELDS.txt")) as fh:
+        ytxt = fh.read()
+    check("D YIELDS.txt keeps the merged cutflow and adds TREECUT / TREEYIELD",
+          "YIELD noCut" in ytxt and "TREECUT passTrigger_HLT_PFHT1050 && HT > 1200" in ytxt and "TREEYIELD total" in ytxt)
+    with open(os.path.join(tout, "structure_info.yml")) as fh:
+        sinfo = fh.read()
+    check("D structure_info: only the Control/ histograms (%d), from the tree files" % len(mpm.TREE_HISTS),
+          sinfo.count("- key_path: Control/") == len(mpm.TREE_HISTS) and "Tree/cutflow" not in sinfo
+          and os.path.join(tout, "tree") in sinfo)
+    if shutil.which("root") is not None:
+        check("D the plotter ran on them (PLOTS compact rc=0, RESULT OK)",
+              rc == 0 and "PLOTS compact rc=0" in out and "RESULT OK" in out, out[-3000:])
+    if shutil.which("root") is not None:      # a relative --out (resolved before make_plots' chdir; review 10-06)
+        rel = os.path.relpath(os.path.join(T, "tplots_rel"), REPO)
+        mtr = [x if x != tout else rel for x in mt]
+        rcr, outr = run(mtr[:mtr.index("--tree-cut")] + ["--tree-cut", "passTrigger_HLT_PFHT1050 && btag_1 > 0.5"],
+                        hadd_env())
+        check("D a relative --out and a cut on a derived column (btag_1): plots made, RESULT OK",
+              rcr == 0 and "PLOTS compact rc=0" in outr and "RESULT OK" in outr
+              and "TREEYIELD total MC=7.5 Data=3 Data/MC=0.400" in outr, outr[-3000:])
+    rc2, out2 = run(mt[:mt.index("--tree-cut")] + ["--tree-cut", "noSuchBranch > 1"], hadd_env())
+    check("D a cut on a branch the tree does not have: TREE FAIL, exit 1",
+          rc2 == 1 and "TREE FAIL SampleA" in out2 and "RESULT FAIL (--tree-cut)" in out2, out2[-2000:])
+    rc3, out3 = run(mt[:mt.index("--tree-cut")] + ["--tree-label", "x"], hadd_env())
+    check("D --tree-label without --tree-cut: exit 2", rc3 == 2 and "needs --tree-cut" in out3, out3[-500:])
 
 n_fail = RESULTS.count(False)
 print(f"SUMMARY test_failure_checks {'PASS' if n_fail == 0 else 'FAIL'} ({len(RESULTS) - n_fail}/{len(RESULTS)} checks)")

@@ -81,8 +81,9 @@ enum ExitCode {
 //  KNU) it can crash after a fatal exit: the job then ends with 139 (SIGSEGV)
 //  instead of its code: the era check of Data jobs (2026-07-06, CHANGELOG;
 //  those two exits got std::_Exit then), and the E11 of requireSameBranchSet_
-//  at KNU ended with 139 (smoke_2024 dC_mix, 2026-10-06; this teardown crash
-//  is the explanation, the job log is still to be checked). Nothing of the
+//  at KNU ended with 139 (smoke_2024 dC_mix, 2026-10-06: the log has the
+//  [FATAL][E11] line, then ROOT's "*** Break *** segmentation violation";
+//  with this function the same run ends with 11, smoke 69/69). Nothing of the
 //  teardown is needed after a fatal error: the job is sent again (its output
 //  file is left unfinished; it has no end marker cutflow_w_full either way).
 //  exit() calls in code that does not use this (treestream, eventBuffer.h,

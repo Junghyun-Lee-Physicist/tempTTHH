@@ -2,7 +2,7 @@
 
 > **Purpose:** record each significant decision — the choice, why, what else was considered, and whether it still holds — so no one silently reopens a settled question or treats a proposal as settled.
 > **Audience:** anyone about to change behavior or unsure whether something is fixed.
-> **Status:** living, append-and-supersede · last meaningful update **2026-10-05** (D-2026-10-05-A: 2024 first-look scope, D14 109.816, D15 PU inputs; D-2026-10-02-E DECIDED; D-2026-10-05-B 2024 MC 4J3T bit PROPOSED; D-2026-10-05-C 2024 without tt+nb lookup; D-2026-10-05-D 2017 v20 removed from KNU) · 2026-10-04 (D-2026-10-04-A: run records are committed) · 2026-10-02 (D-2026-10-02-A…E: v15 analyzer order, eventBuffer policy, event cleaning, answers N0–N8, blinding).
+> **Status:** living, append-and-supersede · last meaningful update **2026-10-06** (D-2026-10-06-A: 2024 b-tag paths in ParkingHH, the PD rule, tree control plots) · 2026-10-05 (D-2026-10-05-A: 2024 first-look scope, D14 109.816, D15 PU inputs; D-2026-10-02-E DECIDED; D-2026-10-05-B 2024 MC 4J3T bit PROPOSED; D-2026-10-05-C 2024 without tt+nb lookup; D-2026-10-05-D 2017 v20 removed from KNU) · 2026-10-04 (D-2026-10-04-A: run records are committed) · 2026-10-02 (D-2026-10-02-A…E: v15 analyzer order, eventBuffer policy, event cleaning, answers N0–N8, blinding).
 > **Links:** index [`README.md`](README.md) · current state [`STATUS.md`](STATUS.md) · per-change detail [`changes/`](changes/).
 
 ## How to use this log
@@ -156,6 +156,35 @@ on synthetic 2017 files (identical outputs, `changes/STEP_24_stage1_2_2024.md` �
 production. (3) The committed `filelistTier3/` (2017) lists point to removed files.
 **Alternatives considered.** Leave the v9 names out of the header — the Run 2 code would not compile (it reads `Jet_jetId`, `MET_pt`, …).
 Make the v9 code conditional — a larger change for a path that has no input today.
+
+## D-2026-10-06-A — 2024 Data: the b-tag paths are in ParkingHH; each PD takes its own paths (JetMET: HLT_PFHT1050, ParkingHH: the b-tag paths without it); control plots from the event tree until ParkingHH is produced · **DECIDED** (user, 2026-10-06: "둘 다", the AI's recommendation)
+
+**Fact.** The 2024 HLT menus of runs 380115 (C), 382913 (F) and 386604 (I) (`hltGetConfiguration run:<N> --full`, `process.datasets`,
+lxplus 10-06; tempTTHH `changes/STEP_24_stage1_2_2024.md` §17) record `HLT_PFHT1050` in `JetMET0` and `JetMET1` (and
+`ScoutingPFMonitor`) and the four b-tag paths of our OR — 4J3T PNet (`(none)` in run 380115, before it ran) and DeepJet, 6J1T, 6J2T —
+**only in `ParkingHH`**, together with the HH→4b path. 2024 Data was produced from JetMET0/1 only, on the belief (AI, STEP 24 code
+comment) that JetMET recorded every hadronic path as JetHT did in 2018. So the Data held the b-tag events only when another JetMET path
+had fired too, while MC has every HLT bit: the first-look Data/MC deficit below HT ≈ 1000 GeV (§16) is this.
+**Decision.** (1) The analyzer takes, per 2024 Data PD, the paths that PD records, and an event in both PDs once, from JetMET — the 2017
+BTagCSV/JetHT rule with the roles swapped: JetMET0/1 → `HLT_PFHT1050`; ParkingHH → (4J3T ‖ 6J1T ‖ 6J2T) && !`HLT_PFHT1050`; Muon0/1
+(trigger-SF sample) → the whole OR; MC → the whole OR (unchanged; PNet 4J3T, D-2026-10-05-B). The submitter knows `ParkingHH_*` as
+Data and its preflight WARNs per era when JetMET and ParkingHH are not both there. (2) **ParkingHH 2024 C–I is to be produced** like
+JetMET (NtupleForge, the same skim/slim), after a DAS check that its NanoAOD v15 (`MINIv6NANOv15`) exists — it does (DAS 10-06:
+C–I, eight datasets, 2,771 files, 1.91 G events; NtupleForge D-2026-10-06-parkinghh, `config_ttHH2024_v15_had_ParkingHH.yaml`). (3) Until then the control
+plots use the trigger the produced Data hold in full: `HLT_PFHT1050` with offline HT > 1200 GeV (its plateau side; provisional value
+until Stage 6 measures the turn-on), applied to Data and MC alike **from the event tree of the existing main outputs**
+(`plotter/make_plots.py --tree-cut`; the tree holds every selected event with its trigger bits, HT, jets, b-tag scores, weights) — no
+new analyzer run. (4) HT > 500 stays the analysis cut (ttH(bb) FH; it sits on the plateau of the HT legs of the b-tag paths,
+`include/SelectionCuts.h`); the turn-on of the OR is handled by the trigger SF of Stage 6, measured with Muon0/1.
+**Why.** The paths and the offline selection are the ttH ones; what changed in Run 3 is where CMS records them (ParkingHH, a parking PD
+with its own rate budget, 2022–). Without the PD rule, adding ParkingHH would double count every event that fired `HLT_PFHT1050` and a
+b-tag path.
+**Alternatives considered.** Restrict the analysis OR to `HLT_PFHT1050` (JetMET only) — rejected for the analysis: it removes the region
+HT 500–1100 GeV, a large part of the signal; kept only for the control plots of (3). Take ParkingHH alone (the b-tag paths) — loses the
+high-HT events that fail the online b-tag. A new analyzer mode `--hadtrig ht1050` for the control run — dropped: the tree gives the same
+events without a rerun.
+**Supersede when.** The ParkingHH production is in: the 2024 main runs again with JetMET + ParkingHH (the full OR), and the control plots
+move back to the stored histograms; the 1200 GeV plateau value is replaced by the Stage 6 measurement.
 
 ## D-(historical) — carried invariants · **DECIDED**
 

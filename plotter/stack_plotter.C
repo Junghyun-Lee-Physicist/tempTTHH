@@ -951,7 +951,11 @@ void stack_plotter() {
             if (isCutflow) hRatio->GetYaxis()->SetRangeUser(0.0, 2.5);
             else           hRatio->GetYaxis()->SetRangeUser(0.0, 2.0);
 
-            hRatio->GetXaxis()->SetTitle(PrettyAxisTitle(hInfo.key_path).c_str());
+            // [D-2026-10-06-A] the tree-made control histograms (make_plots.py --tree-cut, Control/...) carry their
+            //   own x-axis title; every other histogram keeps the path-based one
+            const std::string ownTitle = hData->GetXaxis()->GetTitle();
+            const bool useOwn = (hInfo.key_path.rfind("Control/", 0) == 0 && !ownTitle.empty());
+            hRatio->GetXaxis()->SetTitle(useOwn ? ownTitle.c_str() : PrettyAxisTitle(hInfo.key_path).c_str());
             hRatio->GetXaxis()->SetTitleSize(0.14); hRatio->GetXaxis()->SetTitleOffset(1.0); hRatio->GetXaxis()->SetLabelSize(0.10);
 
             // Cutflow histograms have per-bin labels assigned by the analyzer

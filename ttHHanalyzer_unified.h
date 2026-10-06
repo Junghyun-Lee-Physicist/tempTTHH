@@ -1346,6 +1346,9 @@ class ttHHanalyzer_unified {
     bool _jetVetoed      = false;
     std::vector<const bool*> _metFilterPtrs;
     long long _nCleanAll = 0, _nCleanMETFail = 0, _nCleanVetoFail = 0;
+    // [D-2026-10-06-A] hadronic trigger counts (every event that reaches the trigger decision): HLT_PFHT1050,
+    //   the b-tag group (4J3T, 6J1T, 6J2T), both, and the events the PD rule takes (printed at the end)
+    long long _nTrigAll = 0, _nTrigHT = 0, _nTrigBtag = 0, _nTrigBoth = 0, _nTrigTaken = 0;
 
     // ── [tt+nb] extended ttbar-Id ────────────────────────────────────────
     ExpandedTtbarId _expTtbarId;        // per-sample lookup; inactive until load()

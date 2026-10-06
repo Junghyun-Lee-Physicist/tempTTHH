@@ -389,10 +389,15 @@ python3 outputMerger/merge_outputs.py --base <AnalyzerOutput_...> --config <분�
 # 수율 표와 완결성 (WARN·EVENTS·FLAG 줄까지 본다), 그다음 plot
 python3 plotter/make_plots.py --config <분석 yml> --base <AnalyzerOutput_...> --check-only
 python3 plotter/make_plots.py --config <분석 yml> --base <AnalyzerOutput_...>
+# [D-2026-10-06-A] event tree(Tree/Tree)에서 다시 고른 control plot: 저장된 히스토그램 대신 고른 event 로 26 개를 만든다
+python3 plotter/make_plots.py --config <분석 yml> --base <AnalyzerOutput_...> \
+    --tree-cut 'passTrigger_HLT_PFHT1050 && HT > 1200' --tree-label 'HLT PFHT1050, H_{T} > 1200 GeV'
 ```
 `merge_outputs.py` 종료: 0 정상, 1 실패한 merge 가 있음(local, `--report`), 2 인자·환경. worker(`run_one_hadd.sh`)의
-종료 코드는 `docs/reference/ERROR_CODES.md` 끝. 시험: `python3 test/test_failure_checks.py`(24),
-`python3 test/test_consolidate_prescan.py`(24).
+종료 코드는 `docs/reference/ERROR_CODES.md` 끝. `--tree-cut` 의 식은 tree 의 branch 와 파생 열(`jet_pt_<i>`, `btag_<i>` …)의
+RDataFrame 식이고, tree 는 그 run 의 selection(trigger OR 포함)을 통과한 event 라 더 좁히는 것만 된다(make_plots docstring 6).
+2024 Data 의 trigger 는 PD 마다 다르다: JetMET0/1 은 `HLT_PFHT1050`, ParkingHH 는 b-tag 경로 가운데 `HLT_PFHT1050` 이 아닌 것
+(D-2026-10-06-A). 시험: `python3 test/test_failure_checks.py`(33), `python3 test/test_consolidate_prescan.py`(24).
 
 ### 8.4 cross section 확인 (The Barn)
 ```

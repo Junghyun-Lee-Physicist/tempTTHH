@@ -7,6 +7,18 @@
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
 
+## 2026-10-06: [analyzer][plotter][제출기] STEP 24 G — 2024 의 b-tag 경로는 ParkingHH: PD 규칙, event tree 의 control plot (D-2026-10-06-A)
+
+lxplus 의 HLT 메뉴(run 380115·382913·386604, 사용자): 우리 OR 의 b-tag 경로 넷(4J3T PNet·DeepJet, 6J1T, 6J2T)은 `ParkingHH` 에만,
+`HLT_PFHT1050` 은 JetMET0/1 에 → 2024 Data(JetMET 만)에 b-tag 경로로만 들어온 event 가 없어 첫 look 의 HT < 1000 GeV 가 모자랐다.
+`ttHHanalyzer_unified.{cc,h}`: 2024 Data 의 PD 규칙 — JetMET0/1 → `HLT_PFHT1050`, ParkingHH → b-tag 경로 && !`HLT_PFHT1050`, Muon0/1·MC →
+OR(그대로) — 와 `[trigger]` 줄 둘(규칙, job 끝의 경로별 수; main 에서 taken = cutflow 의 HadTrigger). `plotter/make_plots.py --tree-cut EXPR`:
+merge 된 main 출력의 `Tree/Tree` 에서 고른 event 로 control 히스토그램 26 개를 만들어 그린다(MC `evtWeight`, Data 1; `TREEYIELD` 줄) —
+`HLT_PFHT1050` && HT > 1200 GeV 의 control plot 을 analyzer 를 다시 돌리지 않고. `plotter/stack_plotter.C`: `Control/` 의 축 제목.
+제출기: `ParkingHH_*` 는 Data, 2024 preflight 가 era 별로 JetMET·ParkingHH 짝을 본다(WARN). `include/ExitCodes.h` 주석.
+시험: offline smoke 50/50(+7), `test_failure_checks.py` 33/33(+9), `smoke_2024.sh` +12(81). 상세
+[`changes/STEP_24_stage1_2_2024.md`](changes/STEP_24_stage1_2_2024.md) §17, 결정 [`DECISIONS.md`](DECISIONS.md) D-2026-10-06-A.
+
 ## 2026-10-06: [문서] STEP 24 F 의 KNU 결과, 옛 문서 정리
 
 KNU(사용자): E·F 커밋 `b29856eb` → `knu_build_f` exit 0, 단위 시험 PASS, `knu_smoke_2024_f` 69/69(`dC_mix` 가 E11 로 PASS, E 의

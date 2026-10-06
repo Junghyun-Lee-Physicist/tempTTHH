@@ -5,6 +5,7 @@
             --base /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024
             [--out DIR] [--grouping compact|detailed|both] [--exclude NAME ...] [--no-default-exclude]
             [--include-hist REGEX ...] [--exclude-hist REGEX ...] [--note TEXT] [--allow-missing] [--check-only]
+            [--tree-cut EXPR [--tree-label TEXT]]
 
 What it does (in cmsenv: PyROOT and root):
   1. the samples of the yml (the submitter's own yml reader; Data by the submitter's is_data_name), each as the
@@ -35,9 +36,23 @@ What it does (in cmsenv: PyROOT and root):
      TTHH_PLOT_GROUPING, TTHH_PLOT_LUMI (the yml's lumi_fb_inv), TTHH_PLOT_SQRTS (13.6 for Run 3, else 13),
      TTHH_PLOT_NOTE (year; 2024: '#sigma: provisional'; the SF state read from the base name) and
      TTHH_PLOT_MULTIPAGE=1 (all plots also in plots_<grouping>/all_<grouping>.pdf).
-Output: --out (default <repo>/condor/plots/<base name>_<UTC>/; condor/ is gitignored): YIELDS.txt, the two yml,
-plotter_<grouping>.log, plots_<grouping>/*.pdf.
-Lines: SAMPLE / EXCLUDED / MISSING, YIELD ..., HIST n=..., PLOTS <grouping> pdf=<n> multipage=<path>, RESULT OK|FAIL.
+  6. --tree-cut EXPR (D-2026-10-06-A): control plots from the event tree instead of the stored histograms. The main
+     output keeps every selected event in Tree/Tree with its trigger bits, HT, jets, b-tag scores, event shapes and
+     evtWeight, so another trigger or HT requirement on top of the selection needs no new analyzer run. Per sample:
+     the events of Tree/Tree passing EXPR (an RDataFrame filter on the tree branches and on the columns of TREE_HISTS,
+     e.g. 'passTrigger_HLT_PFHT1050 && HT > 1200'), MC weighted by evtWeight (the run's production weight: base x PU
+     x L1 x genW x stitch x the SFs switched on -- what the stored jet / b-tag histograms use; a few stored cut-step
+     histograms (cutStep_*_ht, *_njets_raw, *_nbjets_raw) use it without the SFs, the same when the SFs are off as in
+     the 2024 first look), Data by 1, fill TREE_HISTS into <out>/tree/<sample>.root (directory Control/); steps 4-5
+     then plot those (the YIELDS and checks of 3 stay those of the merged files). TREEYIELD lines (also in
+     YIELDS.txt): per sample the events and the weighted sum after EXPR, then MC, Data and Data/MC. --tree-label: a
+     line added to the plot note (TLatex; default 'event-tree cut: see YIELDS.txt', also after --note).
+     The tree holds the events after the whole selection of the run (its trigger OR included), so EXPR can only
+     narrow it: a path of that OR, a higher HT, more b-tags ...
+Output: --out (default <repo>/condor/plots/<base name>[_tree]_<UTC>/; condor/ is gitignored): YIELDS.txt, the two
+yml, plotter_<grouping>.log, plots_<grouping>/*.pdf (and tree/*.root with --tree-cut).
+Lines: SAMPLE / EXCLUDED / MISSING, YIELD ..., [TREECUT, TREEYIELD ...,] HIST n=..., PLOTS <grouping> pdf=<n>
+multipage=<path>, RESULT OK|FAIL.
 Exit: 0 ok; 1 a check or the plotter failed; 2 bad arguments.
 """
 from __future__ import print_function
@@ -59,6 +74,24 @@ DEFAULT_EXCLUDE = {"2024": ["TTbb_Hadronic", "TTbb_SemiLep", "TTbb_DiLep", "TT4b
 SQRTS = {"2016": "13", "2017": "13", "2018": "13", "2022": "13.6", "2023": "13.6", "2024": "13.6"}
 YEAR_NOTE = {"2024": "2024 C-I;#sigma: provisional (13.6 TeV)"}
 KEY_STEPS = ("HT>500", "nbjets>=2", "nbjets>=4")
+
+# [D-2026-10-06-A] --tree-cut: (name, x-axis title, column, nbins, low, high). The jets are the selected jets in pT
+#   order (Tree/Tree jetPt, jetEta); btag_<i> is the i-th highest b-tag score of them (bTagScore: UParTAK4B in 2024,
+#   DeepJet in Run 2); a missing entry is -999 (underflow).
+TREE_HISTS = (
+    [("HT", "H_{T} [GeV]", "HT", 60, 0.0, 3000.0),
+     ("nJets", "number of jets", "nJets", 10, 5.5, 15.5),
+     ("nbJets", "number of b-tagged jets", "nbJets", 8, -0.5, 7.5),
+     ("MET", "p_{T}^{miss} [GeV]", "MET_pt", 30, 0.0, 300.0)]
+    + [("jet%d_pt" % i, "jet %d p_{T} [GeV]" % i, "jet_pt_%d" % i, n, 0.0, hi)
+       for i, n, hi in ((1, 30, 1500.0), (2, 30, 1200.0), (3, 40, 800.0), (4, 30, 600.0), (5, 25, 500.0), (6, 20, 400.0))]
+    + [("jet%d_eta" % i, "jet %d #eta" % i, "jet_eta_%d" % i, 25, -2.5, 2.5) for i in range(1, 7)]
+    + [("btag%d" % i, "b-tag score, %s highest" % w, "btag_%d" % i, 20, 0.0, 1.0)
+       for i, w in ((1, "1st"), (2, "2nd"), (3, "3rd"), (4, "4th"))]
+    + [(c, t, c, 25, 0.0, hi) for c, t, hi in (("aplanarity", "aplanarity (jets)", 0.5), ("sphericity", "sphericity (jets)", 1.0),
+                                               ("eventC", "C (jets)", 1.0), ("eventD", "D (jets)", 1.0),
+                                               ("bjetAplanarity", "aplanarity (b jets)", 0.5),
+                                               ("bjetSphericity", "sphericity (b jets)", 1.0))])
 
 
 def submitter():
@@ -130,6 +163,50 @@ def th1_paths(ROOT, path, inc, exc):
     return out
 
 
+def tree_hists(ROOT, path, out_path, cut, is_data):
+    """[D-2026-10-06-A] TREE_HISTS from Tree/Tree of path for the events passing cut, into out_path (directory
+    Control/, TH1F like the analyzer's histograms). Returns (events, weighted sum) or the reason it could not."""
+    f = ROOT.TFile.Open(path)
+    if not f or f.IsZombie():
+        return "cannot open %s" % path
+    t = f.Get("Tree/Tree")
+    ok = bool(t) and t.InheritsFrom("TTree")
+    f.Close()
+    if not ok:
+        return "no Tree/Tree in %s" % path
+    try:
+        # the derived columns first (lazy), so that the cut may use them too (e.g. 'btag_3 > 0.5')
+        d = ROOT.RDataFrame("Tree/Tree", path).Define("w_tree_", "1.0" if is_data else "(double)evtWeight")
+        for i in range(1, 7):
+            d = d.Define("jet_pt_%d" % i, "jetPt.size() >= %d ? (double)jetPt[%d] : -999." % (i, i - 1))
+            d = d.Define("jet_eta_%d" % i, "jetEta.size() >= %d ? (double)jetEta[%d] : -999." % (i, i - 1))
+        d = d.Define("btag_desc_", "ROOT::VecOps::Reverse(ROOT::VecOps::Sort(bTagScore))")
+        for i in range(1, 5):
+            d = d.Define("btag_%d" % i, "btag_desc_.size() >= %d ? (double)btag_desc_[%d] : -999." % (i, i - 1))
+        d = d.Filter(cut, "tree_cut")
+        booked = [(name, title, d.Histo1D(ROOT.RDF.TH1DModel("tree_" + name, "", nb, lo, hi), col, "w_tree_"))
+                  for name, title, col, nb, lo, hi in TREE_HISTS]
+        n_ev, sumw = d.Count(), d.Sum("w_tree_")
+        n_ev, sumw = int(n_ev.GetValue()), float(sumw.GetValue())   # one event loop for everything booked
+    except Exception as e:      # a bad expression (cling; its own error lines are on stderr) or a missing branch
+        lines = [x.strip() for x in str(e).strip().splitlines() if x.strip()]
+        return "cut '%s' or the tree columns: %s" % (cut, " | ".join(lines[:3] + lines[-1:]) if lines else repr(e))
+    o = ROOT.TFile(out_path, "RECREATE")
+    o.mkdir("Control").cd()
+    for name, title, h in booked:
+        hd = h.GetValue()
+        hf = ROOT.TH1F(name, title, hd.GetNbinsX(), hd.GetXaxis().GetXmin(), hd.GetXaxis().GetXmax())
+        hf.Sumw2()
+        for b in range(hd.GetNbinsX() + 2):
+            hf.SetBinContent(b, hd.GetBinContent(b))
+            hf.SetBinError(b, hd.GetBinError(b))
+        hf.SetEntries(hd.GetEntries())
+        hf.GetXaxis().SetTitle(title)
+        hf.Write()
+    o.Close()
+    return n_ev, sumw
+
+
 def yq(v):
     """yaml scalar"""
     if isinstance(v, (int, float)):
@@ -153,7 +230,17 @@ def main(argv=None):
     ap.add_argument("--note")
     ap.add_argument("--allow-missing", action="store_true")
     ap.add_argument("--check-only", action="store_true")
+    ap.add_argument("--tree-cut", help="control plots from Tree/Tree: the events passing this RDataFrame expression "
+                                       "(docstring 6)")
+    ap.add_argument("--tree-label", help="with --tree-cut: one more line of the plot note (TLatex)")
     a = ap.parse_args(argv)
+    if a.tree_label and not a.tree_cut:
+        print("ERROR --tree-label needs --tree-cut")
+        return 2
+    if a.out:
+        a.out = os.path.abspath(a.out)     # before the chdir below; the plotter runs in it and reads the tree/ files
+    if a.tree_cut and not a.tree_label:
+        a.tree_label = "event-tree cut: see YIELDS.txt"   # the expression itself is not TLatex-safe (its '_')
 
     cfg = a.config if os.path.isabs(a.config) else os.path.join(REPO, a.config)
     if not os.path.isfile(cfg) or not os.path.isdir(a.base):
@@ -171,7 +258,8 @@ def main(argv=None):
     names = [(s["sample_name"] if isinstance(s, dict) else str(s)) for s in conf["samples"]]
     excl = set(a.exclude) | (set() if a.no_default_exclude else set(DEFAULT_EXCLUDE.get(year, [])))
     sqrts = SQRTS.get(year, "13")
-    note = a.note if a.note is not None else ";".join(x for x in (YEAR_NOTE.get(year, year), sf_note(a.base)) if x)
+    note = ";".join(x for x in ((a.note,) if a.note is not None else (YEAR_NOTE.get(year, year), sf_note(a.base)))
+                    + ((a.tree_label,) if a.tree_cut else ()) if x)
     print("CONFIG %s year=%s lumi=%.3f sqrt(s)=%s TeV samples=%d" % (cfg, year, lumi, sqrts, len(names)))
     print("BASE %s" % a.base)
     print("NOTE %s" % note)
@@ -272,8 +360,8 @@ def main(argv=None):
         W("WARN %s: noCut / (weight x Sigma genw(Events)) = %.3f -- about the mean PU weight when the merged file holds "
           "every main job once: %s" % (n, r, "jobs missing from the merge?" if r < 1 else "jobs merged twice?"))
     out = a.out or os.path.join(REPO, "condor", "plots",
-                                "%s_%s" % (os.path.basename(os.path.normpath(a.base)),
-                                           datetime.datetime.utcnow().strftime("%Y%m%d_%H%M%S")))
+                                "%s%s_%s" % (os.path.basename(os.path.normpath(a.base)), "_tree" if a.tree_cut else "",
+                                             datetime.datetime.utcnow().strftime("%Y%m%d_%H%M%S")))
     os.makedirs(out, exist_ok=True)
     with open(os.path.join(out, "YIELDS.txt"), "w") as f:
         f.write("\n".join(lines) + "\n")
@@ -284,8 +372,33 @@ def main(argv=None):
         print("RESULT %s (check only%s)" % ("OK" if not flagged else "FAIL (%d flagged)" % len(flagged), wtag))
         return 0 if not flagged else 1
 
+    # ---- [D-2026-10-06-A] --tree-cut: control histograms from Tree/Tree (docstring 6) --------------------------------
+    plot_samples = samples
+    if a.tree_cut:
+        tdir = os.path.join(out, "tree")
+        os.makedirs(tdir, exist_ok=True)
+        tl = ["TREECUT %s (Tree/Tree of each merged file; MC weighted by evtWeight, Data by 1)" % a.tree_cut]
+        plot_samples, tot = [], {"MC": 0.0, "DATA": 0.0}
+        for n, kind, p, cf in samples:
+            tp = os.path.join(tdir, n + ".root")
+            r = tree_hists(ROOT, p, tp, a.tree_cut, kind == "DATA")
+            if isinstance(r, str):
+                print("\n".join(tl))
+                print("TREE FAIL %s: %s" % (n, r))
+                print("RESULT FAIL (--tree-cut)")
+                return 1
+            tl.append("TREEYIELD %-4s %-45s events=%d sumw=%.2f" % (kind, n, r[0], r[1]))
+            tot[kind] += r[1]
+            plot_samples.append((n, kind, tp, cf))
+        tl.append("TREEYIELD total MC=%.1f Data=%.0f Data/MC=%s" % (
+            tot["MC"], tot["DATA"], "%.3f" % (tot["DATA"] / tot["MC"]) if tot["MC"] > 0 else "nan"))
+        print("\n".join(tl))
+        with open(os.path.join(out, "YIELDS.txt"), "a") as f:
+            f.write("\n".join(tl) + "\n")
+
     # ---- structure_info.yml and samples_config.yml --------------------------------------------------------------
-    ref = next((s[2] for s in mc if s[0] == "TTbar_Hadronic"), mc[0][2])
+    pmc = [s for s in plot_samples if s[1] == "MC"]
+    ref = next((s[2] for s in pmc if s[0] == "TTbar_Hadronic"), pmc[0][2])
     hists = th1_paths(ROOT, ref, a.include_hist, a.exclude_hist)
     print("HIST n=%d from %s" % (len(hists), ref))
     if not hists:
@@ -299,7 +412,7 @@ def main(argv=None):
                     % (yq(kp), cls, yq(title), nb, repr(float(lo)), repr(float(hi))))
     with open(os.path.join(out, "samples_config.yml"), "w") as f:
         f.write("description: 'plotter/make_plots.py: %s'\nsamples:\n" % os.path.basename(cfg))
-        for n, kind, p, _ in samples:
+        for n, kind, p, _ in plot_samples:
             f.write("  %s:\n    type: %s\n    path: %s\n    files:\n      - %s\n    label: %s\n    color: '%s'\n"
                     % (n, kind, os.path.dirname(p), p, "Data" if kind == "DATA" else n,
                        "#000000" if kind == "DATA" else "#BDC3C7"))
