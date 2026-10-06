@@ -22,8 +22,13 @@
 #  the 2024 guards stop with their exit code (--btagsf on, no
 #  TTHH_PU_JSON, an unknown PD, no 4J3T branch, a missing jet branch, no
 #  HLT_IsoMu24, a prescan without genWeight, a two-file job whose files differ
-#  in their branches); a Data file without the DeepJet 4J3T branch runs, and so
-#  does a two-file job with one branch set; 2017 runs (and matches the older
+#  in their branches, [2026-10-06] a job with an unreadable second file (E30),
+#  an MC prescan of a file without a Runs tree (E30), a filelist that cannot be
+#  opened (exit 1)); [2026-10-06] a stop keeps its exit code when an exit-time
+#  handler crashes (crash_teardown.so, with a control: the KNU 139 of smoke_2024
+#  dC_mix); a Data file without the DeepJet 4J3T branch runs,
+#  and so does a two-file job with one branch set (the [inputs] line: Events
+#  entries = the chain's); 2017 runs (and matches the older
 #  build); tools/stage3/data_lumi_check.py: missing LS, eras not produced,
 #  split LS inside one sample (fine), an LS in two samples (duplicate, exit 1).
 #  Exit: 0 all checks pass; 1 a check failed; 2 bad usage.
@@ -32,7 +37,7 @@
 set -u
 KEEP=0; ARGS=()
 for x in "$@"; do [[ "$x" == "--keep" ]] && KEEP=1 || ARGS+=("$x"); done
-[[ ${#ARGS[@]} -ge 1 && ${#ARGS[@]} -le 2 ]] || { sed -n '3,30p' "$0" | sed 's/^# \{0,2\}//'; exit 2; }
+[[ ${#ARGS[@]} -ge 1 && ${#ARGS[@]} -le 2 ]] || { sed -n '3,35p' "$0" | sed 's/^# \{0,2\}//'; exit 2; }
 NEW="$(cd "${ARGS[0]}" && pwd -P)" || exit 2
 OLD=""; [[ ${#ARGS[@]} -eq 2 ]] && { OLD="$(cd "${ARGS[1]}" && pwd -P)" || exit 2; }
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
@@ -151,6 +156,67 @@ runa mix "$NEW" Data JetMET0_Run2024I-MINIv6NANOv15-v2 I 2024 "$IN/jetmet24I.roo
 stops "2024 job of two files with different HLT branches stops (E11)" 11 "do not have the same branches"
 runa same "$NEW" Data JetMET0_Run2024C-MINIv6NANOv15-v1 C 2024 "$IN/jetmet24C.root,$IN/jetmet24I.root"; ok_run "2024 job of two files with the same branches runs"
 check "2024 two-file job says the branch sets agree" "$(grep -q '^\[branches\] 2 input files, the same' "$LAST.log" && echo 1)"
+# [2026-10-06] input completeness: ROOT's TChain skips a file it cannot open with only an error line
+check "2024 two-file job: Events entries of the files = the chain's ([inputs])" \
+      "$(grep -q '^\[inputs\] 2 input files, Events entries [0-9]* = the chain' "$LAST.log" && echo 1)"
+check "2024 one-file job counts its Events entries too ([inputs])" \
+      "$(grep -q '^\[inputs\] 1 input file, Events entries [0-9]* = the chain' "$W/out/new_sig24.log" && echo 1)"
+printf 'this is not a ROOT file' > "$IN/broken.root"
+runa unread "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root,$IN/broken.root"
+stops "2024 job with an unreadable second file stops (E30), not exit 0 on fewer events" 30 "cannot be read"
+python3 - "$IN/mc24.root" "$IN/noRuns.root" >> "$W/synth.log" 2>&1 <<'PY'
+import sys, ROOT
+f = ROOT.TFile.Open(sys.argv[1]); t = f.Get("Events")
+o = ROOT.TFile(sys.argv[2], "RECREATE"); c = t.CloneTree(-1, "fast"); c.Write(); o.Close()
+PY
+MODE=prescan runa noruns "$NEW" MC TTHHto4b "" 2024 "$IN/noRuns.root"
+stops "2024 MC prescan of a file without a Runs tree stops (E30), not a smaller Sigma genw" 30 "no Runs tree"
+
+# [2026-10-06] a stop keeps its exit code when the exit-time teardown crashes. crash_teardown.so, loaded before
+#   main (LD_PRELOAD), raises SIGSEGV in an exit-time handler when the exit status is non-zero: what ROOT 6.30's
+#   end-of-process cleanup did at KNU after std::exit (smoke_2024 dC_mix ended with 139, not 11). The analyzer
+#   ends its fatal paths with tthh::fatalExit (no exit-time handlers at all); any other exit() goes through the
+#   on_exit handler of main(), which runs before the handlers registered before it (this library's among them).
+#   Tested here: two fatal paths, and tnm.cc's argument check for the on_exit path (eventBuffer::read's exit 1
+#   in the event loop is not made to happen here). A control first: a plain `return 3` under the library -> 139.
+cat > "$W/crash_teardown.c" <<'C'
+#define _GNU_SOURCE
+#include <signal.h>
+#include <stdlib.h>
+static void crash(int status, void* arg) { (void)arg; if (status != 0) raise(SIGSEGV); }
+__attribute__((constructor)) static void reg(void) { on_exit(crash, 0); }
+C
+printf 'int main(void) { return 3; }\n' > "$W/ct_control.c"
+rawrun() {   # name repo [ENV=VAL ...] -- args: the executable with exactly these arguments (no runa defaults)
+  local name="$1" repo="$2"; shift 2
+  local envs=(); while [[ $# -gt 0 && "$1" != "--" ]]; do envs+=("$1"); shift; done; shift
+  { ( ulimit -c 0; cd "$repo" && env LD_LIBRARY_PATH="$repo/lib:${RLIB}:${CLIB}:${LD_LIBRARY_PATH:-}" TNM_PATH="$repo" \
+        ${envs[@]+"${envs[@]}"} "$repo/ttHHanalyzer_unified" "$@" ) > "$W/out/$name.log" 2>&1; } 2>/dev/null
+  echo $? > "$W/out/$name.rc"; LAST="$W/out/$name"
+}
+if ${CC:-gcc} -shared -fPIC -o "$W/crash_teardown.so" "$W/crash_teardown.c" > "$W/crash_teardown.log" 2>&1 &&
+   ${CC:-gcc} -o "$W/ct_control" "$W/ct_control.c" >> "$W/crash_teardown.log" 2>&1; then
+  CT="LD_PRELOAD=$W/crash_teardown.so"
+  { ( ulimit -c 0; env "$CT" "$W/ct_control" ); } 2>/dev/null; rc=$?
+  check "crash_teardown.so works: a plain 'return 3' under it ends with 139 (control)" "$([[ $rc == 139 ]] && echo 1)" "(exit $rc)"
+  BTAGSF=on runa ctfatal "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root" "$CT"
+  stops "a stop keeps its exit code when the exit-time teardown crashes (E11 --btagsf on; not 139)" 11 "btagsf on for runYear=2024"
+  runa ctmix "$NEW" Data JetMET0_Run2024I-MINIv6NANOv15-v2 I 2024 "$IN/jetmet24I.root,$IN/noDeepJet.root" "$CT"
+  stops "the same for the two-file E11 (smoke_2024 dC_mix at KNU)" 11 "do not have the same branches"
+  ARGS_NOSAMPLE=(--filelist "$W/out/new_sig24.filelist" --output "$W/out/ctarg.root" --weight 1 --year 2024 --dataOrMC MC --mode main)
+  rawrun new_ctarg "$NEW" "$CT" -- "${ARGS_NOSAMPLE[@]}"
+  stops "an exit() outside them too (tnm.cc, no --sample: exit 1 through the on_exit handler of main())" 1 "Missing mandatory arguments"
+  if [[ -n "$OLD" ]]; then
+    rawrun old_ctarg "$OLD" "$CT" -- "${ARGS_NOSAMPLE[@]}"
+    echo "NOTE the older build ends with $(cat "$LAST.rc") there (139 = the crash in the teardown reached the exit code)"
+  fi
+else
+  check "crash_teardown.so and its control compile (${CC:-gcc})" "" "($W/crash_teardown.log)"
+fi
+# [2026-10-06] a filelist that cannot be opened: tnm.cc's error() ended with exit 0 (a failed job looked done)
+rawrun new_nolist "$NEW" -- --filelist "$W/no_such_filelist.txt" --output "$W/out/nolist.root" --weight 1 --year 2024 \
+       --dataOrMC MC --sample TTHHto4b --mode main
+stops "a filelist that cannot be opened stops with exit 1 (was 0)" 1 "unable to open file"
 
 # ---- 2017 ---------------------------------------------------------------------
 Y1=("mc|MC|TTbar_Hadronic||$IN/mc17.root" "jetht_F|Data|JetHT_Run2017F|F|$IN/jetht17F.root"

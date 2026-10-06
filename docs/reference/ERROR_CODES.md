@@ -2,12 +2,12 @@
 
 > **Purpose:** the single, authoritative list of every numbered exit code the analyzer (and submitter) can terminate with, so a failed Condor job is diagnosable from its log alone.
 > **Audience:** anyone debugging a failed job; anyone adding a new fail-fast check.
-> **Status:** DECIDED · last meaningful update **2026-10-06** (codes of the tools around the analyzer, last section; the submitter's `--report`/`--status` read this table) · 2026-06-30 (the banded table).
+> **Status:** DECIDED · last meaningful update **2026-10-06** (a fatal path ends with `tthh::fatalExit`, not `std::exit` — a 139 after a `[FATAL]` line; codes of the tools around the analyzer, last section; the submitter's `--report`/`--status` read this table) · 2026-06-30 (the banded table).
 > **Links:** code source of truth `include/ExitCodes.h` · path policy `CONFIG_PATHS.md` · workflow `../README.md`.
 
 ## Bottom line
 
-Every essential-logic failure calls `std::exit(<code>)` (C++) or `_fatal(<code>, …)` (Python submitter) and prints a line beginning `[FATAL][E<code>]`. To find why a job died:
+Every essential-logic failure calls `tthh::fatalExit(<code>)` (C++; it was `std::exit` before 2026-10-06, see below) or `_fatal(<code>, …)` (Python submitter) and prints a line beginning `[FATAL][E<code>]`. To find why a job died:
 
 ```bash
 grep -nE '\[FATAL\]\[E[0-9]+\]' <condor_job>.log     # message + code
@@ -65,8 +65,23 @@ Before 2026-06-30 the analyzer used an ad-hoc set of codes (40–49) with two **
 
 1. Pick the next free number in the correct band in `include/ExitCodes.h`.
 2. Add the row to the table above with the same name, meaning, and emitter.
-3. Emit it as `std::exit(tthh::<NAME>)` with a message starting `\n[FATAL][E<code>] …`.
+3. Emit it as `tthh::fatalExit(tthh::<NAME>)` with a message starting `\n[FATAL][E<code>] …` (not `std::exit`: next section).
 4. Never reuse or renumber an existing code.
+
+## A `[FATAL]` line, then 139 (2026-10-06)
+
+`std::exit(code)` runs the exit-time teardown (ROOT's end-of-process cleanup, which closes the open files and deletes
+their objects, and the static destructors). With ROOT 6.30 (CMSSW_14_2_1, KNU) that teardown can crash after a fatal
+exit, and the job then ends with **139** (SIGSEGV) instead of its code: the era check of Data jobs on 2026-07-06, and the
+E11 of the KNU smoke `dC_mix` on 2026-10-06 (two era-C files with different branches; tempTTHH STEP 24 section 15 — the
+teardown crash is the explanation, the job log is still to be checked). Since commit F every fatal path ends with
+`tthh::fatalExit(code)` (`include/ExitCodes.h`: flush the output, then `std::_Exit(code)` — no exit-time handler runs).
+An `exit()` outside them (treestream, `eventBuffer.h`, `tnm.cc`) goes through the `on_exit` handler of `main()` (registered
+first thing and again before the event loop), which ends a non-zero status the same way; it runs before the exit-time
+handlers registered before it (ROOT's among them) but not before later ones or the thread_local destructors, so it is a
+best effort (glibc only). A 139 right after a `[FATAL][E<code>]` line therefore means an executable built before that
+commit: the cause is the `[FATAL]` line, the code is `<code>`. The offline smoke checks this with an exit-time handler
+that crashes (`crash_teardown.so`, with a control).
 
 ## Codes of the tools around the analyzer (2026-10-06)
 
@@ -76,9 +91,9 @@ from this list:
 
 | Code | Where | Meaning |
 |---|---|---|
-| 1 | analyzer (treestream `fatal()`, `eventBuffer::read`) | treestream stopped: a read error (`GetEntry < 0`, `readbranch - I/O error`), a missing branch, the first input file unreadable, or `** eventBuffer::read - cannot load entry` (the chain could not load an entry) — the reason is the last lines of the job's `.err` / `.out` |
+| 1 | analyzer (treestream `fatal()`, `eventBuffer::read`, `tnm.cc`) | `tnm.cc`: a missing argument (`[Error] Missing mandatory arguments`) or a filelist that cannot be opened (`** error ** unable to open file`; exit 0 before 2026-10-06). treestream stopped: a read error (`GetEntry < 0`, `readbranch - I/O error`), a missing branch, the first input file unreadable, or `** eventBuffer::read - cannot load entry` (the chain could not load an entry) — the reason is the last lines of the job's `.err` / `.out` |
 | 127 | shell / condor | the executable was not found (e.g. a job started while a rebuild had removed it) |
-| 134 / 137 / 139 / 143 | shell / condor | SIGABRT / SIGKILL (often memory) / SIGSEGV / SIGTERM (stopped) |
+| 134 / 137 / 139 / 143 | shell / condor | SIGABRT / SIGKILL (often memory) / SIGSEGV (after a `[FATAL]` line: an executable older than commit F, section above) / SIGTERM (stopped) |
 | 2 / 3 / 4 / 5 / 6 / 7 | `outputMerger/run_one_hadd.sh` | bad arguments / no `hadd` / no input directory / no `<proc>_*.root` / empty output / **number of inputs is not the expected number of jobs** (`merge_outputs.py --config`) |
 | 0 / 1 / 2 | `outputMerger/merge_outputs.py` | ok / a merge failed (local) or `--report` found a process not merged / bad arguments or environment |
 | 0 / 1 / 2 | `plotter/make_plots.py` | ok / a check (`MISSING`, `FLAG` incl. the `EVENTS` count) or the plotter failed / bad arguments |

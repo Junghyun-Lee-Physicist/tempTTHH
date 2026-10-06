@@ -61,7 +61,7 @@ inline bool isValidYear(const std::string& y) {
         "  analysis fails SILENTLY when the year is unknown (MC weight 0,\n"
         "  wrong b-tag WP, zero triggered events). Refusing to continue.\n",
         y.c_str(), where);
-    std::exit(tthh::CONFIG_BAD_RUNINFO);
+    tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
 }
 
 // -----------------------------------------------------------------------------

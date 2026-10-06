@@ -276,7 +276,7 @@ class objectJet:public objectPhysics {
                   << "] objectJet b-tag WP used before configureBtagWP() (at "
                   << where << ").\n"
                   << "  Refusing to classify jets with unset working points.\n";
-        std::exit(tthh::CONFIG_BAD_RUNINFO);
+        tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
     }
 
 	bool matchedtoHiggs = false;
@@ -1108,7 +1108,7 @@ class ttHHanalyzer_unified {
 		          << "  (예: /path/to/TTbb_DiLep_0.root).\n"
 		          << "  상위 디렉토리가 존재하는지, 쓰기 권한이 있는지 확인할 것.\n"
 		          << std::endl;
-		std::exit(tthh::OUTPUT_OPEN_FAIL);
+		tthh::fatalExit(tthh::OUTPUT_OPEN_FAIL);
 	}
 	_runYear = runYear;
 	_DataOrMC = DataOrMC;
@@ -1176,7 +1176,7 @@ class ttHHanalyzer_unified {
         if (!_era.empty()) {
             std::cerr << "[FATAL][E" << tthh::CONFIG_BAD_RUNINFO
                       << "] MC samples must not define an eraName. Provided eraName: " << _era << std::endl;
-            std::_Exit(tthh::CONFIG_BAD_RUNINFO);  // _Exit: skip ROOT teardown (std::exit segfaults here)
+            tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);  // no ROOT teardown (std::exit segfaulted here: ExitCodes.h)
         }
     } else if (_DataOrMC == "Data") {
         if (_era.empty() || sampleEra.empty() || sampleEra != _era) {
@@ -1184,7 +1184,7 @@ class ttHHanalyzer_unified {
                       << "] eraName mismatch between config and sampleName. "
                       << "eraName: " << _era << ", sampleName: " << _sampleName
                       << ", extracted: '" << sampleEra << "'" << std::endl;
-            std::_Exit(tthh::CONFIG_BAD_RUNINFO);
+            tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
         }
     }
 
@@ -1519,7 +1519,7 @@ public:
             // [STEP 24] 2024: no b-tag shape SF in the BTV payload (PLAN 9.6 D10) -> refuse, not SF=1 silently
             std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO << "] --btagsf on for runYear=" << _runYear
                       << ": this year has no b-tag shape SF (PLAN 9.6 D10). Use --btagsf off.\n" << std::endl;
-            std::exit(tthh::CONFIG_BAD_RUNINFO);
+            tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
         }
         _skipBtagReweight = !_applyBtagRW;   // 동기화 (skip == !apply)
         std::cout << "[SF toggle] production evtWeight: "

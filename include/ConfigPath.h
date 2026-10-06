@@ -20,7 +20,7 @@
 //  is fatal. resolve() returns "" ONLY for the optional+disabled case, which the
 //  caller must treat as "do not load this correction".
 // ============================================================================
-#include <cstdlib>   // std::getenv, std::exit
+#include <cstdlib>   // std::getenv (fatal exits: tthh::fatalExit, ExitCodes.h)
 #include <cstring>
 #include <string>
 #include <iostream>
@@ -53,7 +53,7 @@ inline std::string resolve(const char* envName, const char* what, bool required)
                   << "  or \"" << kNullSentinel << "\" to disable an optional correction).\n"
                   << "  Blank is no longer a 'use default' signal. Aborting (exit "
                   << tthh::CONFIG_PATH_ENV_MISSING << ").\n" << std::endl;
-        std::exit(tthh::CONFIG_PATH_ENV_MISSING);
+        tthh::fatalExit(tthh::CONFIG_PATH_ENV_MISSING);
     }
 
     if (v == kNullSentinel) {
@@ -64,7 +64,7 @@ inline std::string resolve(const char* envName, const char* what, bool required)
                       << ").\n  Provide a real path, or change the mode/SF toggle. "
                       << "Aborting (exit " << tthh::CONFIG_PATH_NULL_REQUIRED << ").\n"
                       << std::endl;
-            std::exit(tthh::CONFIG_PATH_NULL_REQUIRED);
+            tthh::fatalExit(tthh::CONFIG_PATH_NULL_REQUIRED);
         }
         std::cout << "[cfgpath] " << what << " = (disabled; config null via " << envName
                   << ")" << std::endl;

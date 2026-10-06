@@ -27,6 +27,11 @@
   exit 7, `<proc>_*.root` 만), `consolidate_prescan.py`(`--filelist-dir`), `submit_job_FH_Tier3_unified.py`(`--report` 의
   fail/wait, `--status` 의 원인), `docs/reference/ERROR_CODES.md`(도구의 코드), `README.md` §7.5·§8.1·§8.3b,
   `test/test_failure_checks.py`(신규), `test/test_consolidate_prescan.py`(+6)
+- 커밋 E·F(§15, C++; E 는 D 와 함께 커밋되지 않고 맥에 남아 있었다 → F 와 한 커밋): E 는 위 D·E 줄의 `ttHHanalyzer_unified.cc`·
+  `run_offline_smoke.sh`(+4); F 는 `include/ExitCodes.h`(`tthh::fatalExit`), `ttHHanalyzer_unified.{cc,h}`(fatal 경로, `main()` 의 `on_exit`,
+  FATAL 줄의 번호), `src/{CorrectionsManager,ExpandedTtbarId,StitchFactors,tnm}.cc`, `include/{EraConfig,ConfigPath,ExpandedTtbarId}.h`,
+  `test/test_EraConfig.cc`(주석), `test/offline_smoke/run_offline_smoke.sh`(+5 check), `submit_job_FH_Tier3_unified.py`(139 의 설명),
+  `docs/reference/ERROR_CODES.md`, `README.md`·`docs/RUNBOOK_2017_SF_rederive.md`(옛 exit 45/46)
 - 결정: [`../DECISIONS.md`](../DECISIONS.md) D-2026-10-05-A (사용자 10-05: 첫 plot 의 범위, D14, blinding; D15 의 방법), D-2026-10-05-B
   (2024 MC 의 4J3T 는 PNet 경로만, PROPOSED), D-2026-10-05-C (2024 는 tt+nb lookup 없이, D-2026-10-02-A 의 구현)
 - 배경: 사용자(10-05) "얼른 plot 만들고 싶은데" → 첫 plot 은 2024 FH, trigger·b-tag SF 없이, σ 는 임시값 표시(D-2026-10-05-A). 그
@@ -372,6 +377,64 @@ B 에만 있는 파일 FAIL, tree 값만 바뀜 FAIL, EXPECTED 의 run 이 양�
   두고 Data 에 맞추려면 QCD 에 HT>500 0.55, nb≥2 0.49, nTotal 0.46, nb≥4 1.27 — LO QCD 가 전체로 2 배쯤 많고 b-jet 이 많은 쪽
   비율은 낮다(trigger·b-tag SF 없음). 장부 문제는 아니고, 분석에서 QCD 를 데이터로 정규화해야 한다는 신호.
 
+### 15. KNU smoke 의 `dC_mix` exit 139 — 멈춘 job 이 제 exit code 로 끝나게 (10-06; 커밋 F)
+
+- **본 것**(10-06, KNU, 사용자): 커밋 D(`ef4c87a0`, Python 만 — E 의 C++ 는 맥에 커밋되지 않은 채 남았다)를 받아 `knu_build_c`(exit 0;
+  실행 파일은 커밋 C 의 analyzer) 다음 `knu_smoke_2024_c`: `RESULT: 68 PASS, 1 FAIL`, `EXIT : 1` —
+  `CHECK dC_mix: two era-C files with different HLT branches in one job stop (E11) FAIL (exit 139)`. 같은 때 plot `knu_plots_2024` 는 exit 0.
+- **원인(판단)**: 커밋 C 의 `requireSameBranchSet_`(E 도 끝내는 길은 같다)은 job 의 두 파일을 직접 열어 다름을 찾고 `[FATAL][E11] ... do not have the same
+  branches` 를 찍은 뒤 `std::exit(11)` 을 불렀다. `std::exit` 는 exit 때 정리 — ROOT 의 end-of-process cleanup(열린 파일을 닫고 그 안의
+  객체를 지운다)과 static 소멸자 — 를 돌리고, ROOT 6.30(CMSSW_14_2_1, KNU)에서 이것이 segfault 하면 job 은 11 대신 139(SIGSEGV)로
+  끝난다. 2026-07-06 Data job 의 era 검사 두 exit 에서 같은 일이 있었다(CHANGELOG; 그때는 그 두 곳만 `std::_Exit`). 컨테이너(ROOT 6.40)는
+  정리에서 죽지 않아 offline smoke 의 같은 경우가 11 이었다. (확인 필요: KNU `condor/smoke_2024_<UTC>/dC_mix.log` 의 끝에
+  `[FATAL][E11]` 줄이 있는지 — 있으면 판정은 했고 끝내는 길만 틀렸다.)
+- **고침(커밋 F, C++ — E 와 함께 KNU 다시 빌드)**: `include/ExitCodes.h` 의 `tthh::fatalExit(code)` — 출력(`std::cout`·`clog`·`cerr`, stdio)을
+  flush 하고 `std::_Exit(code)`: exit 때 정리를 건너뛴다. analyzer 의 fatal 경로는 모두 이것으로 끝난다: `std::exit` 42 곳
+  (`ttHHanalyzer_unified.cc` 18, `ttHHanalyzer_unified.h` 3, `src/CorrectionsManager.cc` 12, `src/ExpandedTtbarId.cc` 5,
+  `src/StitchFactors.cc` 1, `include/EraConfig.h` 1, `include/ConfigPath.h` 2)과 헤더의 `std::_Exit` 2 곳(flush 가 더해짐).
+  우리 코드 밖의 `exit()` — treestream, `include/eventBuffer.h`(생성된 것; 읽기 실패 `** eventBuffer::read - cannot load entry N;
+  stopping` 의 exit 1), `src/tnm.cc`(인자 검사, 못 여는 filelist) — 는 `main()` 이 등록하는 `on_exit` handler 가 받는다: 맨 먼저
+  (`(void)gROOT` 뒤 — 이 줄이 ROOT 의 `InitInterpreter` 를 불러 TROOT 를 지우는 handler 를 먼저 등록시킨다, 지우면 안 됨)와 event loop
+  바로 전, 두 번. glibc 는 exit 때 handler 를 나중 등록부터 부르므로, 이 handler 는 그 전에 등록된 것(ROOT 의 end-of-process cleanup,
+  라이브러리의 static 소멸자) 앞에서 돌고, status 가 0 이 아니면 `tthh::fatalExit(status)`. 그 뒤에 등록된 것(함수 안 static, 도중에
+  읽는 dictionary 의 것)과 thread_local 소멸자는 그보다 먼저 돈다 — 그래서 이 길은 최선의 노력이고 확실한 길은 `fatalExit` 이다.
+  status 0(정상 끝)은 정리를 그대로 한다. `on_exit` 는 glibc 의 것이라 그 밖에서는 등록하지 않는다(KNU·lxplus·컨테이너는 glibc).
+  멈춘 job 의 출력 파일은 닫히지 않은 채 남는다(ROOT 가 복구해 열 수는 있다). 끝 표시 `cutflow_w_full` 이 없으므로 제출기
+  `--report` 는 예전과 같이 미완료로 센다(offline smoke 의 멈춘 출력으로 확인). 정상 job 의 경로·출력은 같다. 제출기의 exit code
+  이름표(`_EXTRA_RC`)의 139 에 "`[FATAL]` 줄 바로 뒤면 `fatalExit` 전 빌드" 를 더했다; `docs/reference/ERROR_CODES.md` 에 절 하나.
+- **독립 검토(subagent, 10-06)로 더한 것**: (1) `src/tnm.cc` 의 `error()` 가 `exit(0)` 이었다 — `fileNames()` 가 filelist 를 못 열면
+  `** error ** unable to open file` 을 찍고 **exit 0**(제출기는 끝 표시 없음으로만 잡았다) → exit 1. (2) `on_exit` 의 범위를 위처럼 바로 적고
+  event loop 전에 한 번 더 등록. (3) b-tag reweight 의 FATAL 두 줄이 옛 번호 "exit 45"/"exit 46" 을 찍었다(실제 80/81, STEP 18 의 번호) →
+  `[FATAL][E80]`·`[FATAL][E81]` 과 실제 번호, stitch 의 `[FATAL][stitch]` 를 `[FATAL][E63][stitch]` 로(`[FATAL]\[E[0-9]+\]` grep 에 걸리게);
+  `README.md`·`docs/RUNBOOK_2017_SF_rederive.md` 의 45/46 도 80/51/81 로. (4) 시험에 대조(`return 3` 이 `crash_teardown.so` 아래 139)를 더해
+  라이브러리가 안 실린 채 PASS 하지 않게. 그대로 둔 것: CorrectionsManager·ExpandedTtbarId·StitchFactors·EraConfig 의 FATAL 줄은
+  `[FATAL][E<code>]` 꼴이 아니다(번호는 맞다; 꼴은 다음에).
+- **시험(컨테이너, clean 빌드)**: 빌드 OK(경고 27, 전과 같음). offline smoke 43/43 — F 의 다섯: 대조(`return 3` 만 하는 프로그램이
+  `crash_teardown.so` 아래 139), 그 라이브러리(`LD_PRELOAD`; exit status 가 0 이 아니면 exit 때 handler 에서 SIGSEGV — KNU 의 증상을 흉내)를
+  건 `--btagsf on`(E11)·두 파일 E11·`--sample` 없는 실행(`tnm.cc` 의 exit 1, `on_exit` 경로)이 각각 11, 11, 1, 못 여는 filelist → exit 1.
+  같은 스크립트로 F 없는 빌드(E)는 대조만 PASS, 넷은 FAIL(139, 139, 139, 0) — 증상 재현; 옛 빌드도 139(`NOTE` 줄). 2017 출력은 옛 빌드와
+  같음; unit PASS; `test/test_failure_checks.py` 24/24, `test/test_consolidate_prescan.py` 24/24.
+- **KNU 에서 볼 것**: 맥에서 E·F 커밋 → KNU pull → `knu_build_f` → `knu_smoke_2024_f` 에서 `RESULT: 69 PASS, 0 FAIL`(`dC_mix` exit 11),
+  analyzer 로그(`condor/smoke_2024_<UTC>/*.log`)에 E 의 `[inputs] ... = the chain's.` 줄(RUNBOOK §23 M).
+
+### 16. 첫 plot 보기 (10-06; `knu_plots_2024`, 맥 `~/claude/NtuplizerDev/plots_2024/all_{compact,detailed}.pdf`)
+
+- **출력**: PDF 둘, 각 619 쪽(그림 618 + 끝 쪽; ROOT 6.30/09, 2026-10-05 19:18 UTC): `jet/` 의 JEC 검증 24, cut step 0–13 마다 변수 42
+  (jet1–6 의 pT·η·φ·b-tag, HT, had W 질량, Higgs 후보 질량, `ht`/`hadW`/`nbjets`/`njets` 의 raw·btagSF·full) = 588, `TtCatValidation` 2,
+  cutflow 4. detailed 는 그룹을 더 나눈다(V+jets 와 VV, ttH 와 tH, 3t/4t, tt+VV/VH).
+- **수율**(마지막 단계 `nTotal` = HT>500·nb≥2·30<HadW<250; `nbjets>=3`·`>=4` 는 관찰 전용, `HiggsMassWindow` 는 비활성 — 코드의 표 그대로):
+  Data 5.02e6, MC 8.70e6(QCD 6.76e6 = 78 %, tt 1.74e6), ttHH 9.2. cutflow 의 Data/MC: trigger 뒤 0.43–0.44, HT>500 0.60, nb≥3 0.98, nb≥4 1.21.
+- **HT 에 따른 Data/MC**(trigger 뒤, step 1): HT 500 GeV 에서 0.1 쯤, 700 에서 0.45, 900 에서 0.9, 1000 에서 1 에 닿고 1150–1500 에서
+  1.05, 그 위로 천천히 내려가 4000 에서 0.82. HT>500 뒤(step 7)도 같은 모양. 곧 모자람은 HT < 1000 GeV — 오프라인 HT 가
+  `HLT_PFHT1050` 의 plateau 아래라 b-tag multijet 경로(4J3T, 6J PNet)로만 들어오는 곳 — 에 몰려 있고 그 위는 Data ≈ MC. 그러므로 §14 의
+  "QCD ×0.46–0.55" 는 고른 정규화가 아니라 그 경로들의 Data/MC 차이로 보인다: trigger SF 가 없으니 MC 의 online b-tag 효율이 높거나,
+  그 경로로만 들어온 event 가 JetMET PD 에 다 있지 않거나(확인 필요: Stage 6 의 경로별 효율, 2024 HLT 메뉴의 PD 배정).
+- **b-jet 많은 쪽**: nb≥4(step 10)에서 HT > 900 GeV 의 Data/MC 가 2 쯤(ratio 칸 [0, 2] 밖이라 점이 안 보이는 bin 이 있다), 낮은 HT 는
+  위와 같은 turn-on. b-tag SF 없음과 QCD 의 b 많은 쪽 모델링 몫. njets(step 6)는 6 에서 0.45, 13 이상에서 1.6(HT 와 상관).
+- **그림 꼴**(물리 아님): 쪽마다 왼쪽 ~27 % 가 빈칸(쪽 = A4 를 자른 550×567 pt 에 90° 회전), `Total MC` 글이 그림과 겹침, ratio 칸 밖의
+  점은 안 보임, cutflow 의 끝 label 이 축 제목과 겹침, `TtCatValidation` 쪽은 MC 만(Data 0), raw cutflow 쪽(`cut step`, MC 6.17e7)의 비율은
+  뜻 없음. 고칠지는 사용자 결정.
+
 ## 확인하지 못한 것
 
 - TTbar_Hadronic 의 `260930_162708/0000/forgedNtuple_443.root` 는 크기 0(10-02 18:48 KST; NtupleForge `docs/05_troubleshooting.md` A29):
@@ -383,5 +446,7 @@ B 에만 있는 파일 FAIL, tree 값만 바뀜 FAIL, EXPECTED 의 run 이 양�
 - `data/samples_2024.json` 의 σ 는 모두 임시. 낮은 신뢰도 다섯(비율로 올린 것)과 TTZHTo4b(XSDB 의 exact-dataset 값이 B(Z→bb) 만 포함한
   것으로 보여 쓰지 않음)는 첫 plot 에 영향이 없거나 작다. XSDB 로 확인할 사람: CERN 로그인이 있는 사용자.
 - D-2026-10-05-B(2024 MC 의 4J3T 는 PNet 만)는 PROPOSED — Stage 6 의 trigger SF 와 함께 정한다.
-- 커밋 C 의 KNU 빌드와 그 뒤 smoke(`dC_mix` 가 E11 로 멈춰야 함)는 main·merge 뒤(§12). 커밋 B 의 KNU 빌드·smoke 는 §12(68/69).
+- 커밋 E·F 의 KNU 빌드와 smoke(`dC_mix` 가 11 로 끝나야 함, 69/69): 아직(§15). `dC_mix` 의 139 가 exit 때 정리의 segfault 라는 판단은
+  KNU 의 `condor/smoke_2024_<UTC>/dC_mix.log`(그 끝에 `[FATAL][E11]` 줄이 있는지)로 확인할 것(RUNBOOK §23 M 의 첫 명령). 커밋 C 의 analyzer(+D) 빌드의 smoke 는 68/69(`dC_mix` 139, §15),
+  커밋 B 의 것은 §12(68/69).
 - Data 의 처리된 LS 의 lumi(brilcalc): golden LS 의 1.4 % 쯤이 생산에 없다(§13) — 그 전까지 Data/MC 는 109.816 fb⁻¹ 기준.

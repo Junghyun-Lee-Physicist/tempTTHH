@@ -83,7 +83,7 @@ void ExpandedTtbarId::loadFromDir(const std::string& dir,
       "  Fix: point path_expanded_ttbarid_dir at the lookup dir\n"
       "       (2017: TTHHGenCategoryTools/Validation/lookup,\n"
       "        2018: TTHHGenCategoryTools/Validation/lookup2018).\n\n");
-    std::exit(tthh::CONFIG_BAD_RUNINFO);
+    tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
   }
 
   _active = false;
@@ -123,7 +123,7 @@ void ExpandedTtbarId::load(const std::string& path,
     std::fprintf(stderr,
                  "[ExpandedTtbarId] FATAL: cannot add '%s' (tree '%s') to chain.\n",
                  path.c_str(), treeName.c_str());
-    std::exit(tthh::EXPTTID_CHAIN_FAIL);
+    tthh::fatalExit(tthh::EXPTTID_CHAIN_FAIL);
   }
 
   UInt_t    run = 0, lumi = 0;
@@ -148,7 +148,7 @@ void ExpandedTtbarId::load(const std::string& path,
     std::fprintf(stderr,
                  "[ExpandedTtbarId] FATAL: tree '%s' in '%s' has %lld entries.\n",
                  treeName.c_str(), path.c_str(), (long long)nIn);
-    std::exit(tthh::EXPTTID_TREE_EMPTY);
+    tthh::fatalExit(tthh::EXPTTID_TREE_EMPTY);
   }
   std::printf("[ExpandedTtbarId]   entries in lookup = %lld\n", (long long)nIn);
   std::fflush(stdout);
@@ -185,7 +185,7 @@ void ExpandedTtbarId::load(const std::string& path,
         std::fprintf(stderr,
             "[ExpandedTtbarId] FATAL: conflicting duplicate key in lookup '%s'.\n",
             path.c_str());
-        std::exit(tthh::EXPTTID_DUP_KEY);
+        tthh::fatalExit(tthh::EXPTTID_DUP_KEY);
       }
       continue;  // keep the first
     }
@@ -256,7 +256,7 @@ int ExpandedTtbarId::resolve(unsigned int run, unsigned int lumi,
       std::fprintf(stderr,
           "[ExpandedTtbarId] FATAL: lookup '%s' does not correspond to this "
           "sample (genTtbarId mismatch on a matched key).\n", _path.c_str());
-      std::exit(tthh::EXPTTID_SAMPLE_MISMATCH);
+      tthh::fatalExit(tthh::EXPTTID_SAMPLE_MISMATCH);
     }
   }
 

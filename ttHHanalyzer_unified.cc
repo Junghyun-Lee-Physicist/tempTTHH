@@ -205,7 +205,7 @@ void ttHHanalyzer_unified::loop(sysName sysType, bool up){
     }
     print("--------------------------------------------------------------------------", "b");
     cout<<endl;
-    if(exitFlag) std::exit(tthh::CONFIG_BAD_RUNINFO);
+    if(exitFlag) tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
 
     // ── [stitch] setup report + Condor-catchable prerequisite check ──────────
     // Only when the stitch JSON was loaded (main / btagtrig). trigsf, validation
@@ -213,13 +213,13 @@ void ttHHanalyzer_unified::loop(sysName sysType, bool up){
     if (_stitch.loaded()) {
         _stitch.printConfigSummary();
         if (_stitch.inPlan() && !_expTtbarId.active()) {
-            std::cerr << "\n[FATAL][stitch] sample '" << _sampleName << "' is in the stitch "
-                      << "plan (role " << _stitch.role() << ") but the Expanded_genTtbarId "
+            std::cerr << "\n[FATAL][E" << tthh::STITCH_EXPTTID_INACTIVE << "][stitch] sample '" << _sampleName
+                      << "' is in the stitch plan (role " << _stitch.role() << ") but the Expanded_genTtbarId "
                       << "lookup is INACTIVE (no ttnb_<sample>.root loaded).\n"
                       << "  tt+nb (61/62/71/72) would never be tagged -> wrong stitch.\n"
                       << "  Provide the lookup (DerivedCorr/expandedTtbarId or "
                       << "$EXPANDED_TTBARID_DIR). Aborting (exit 63).\n" << std::endl;
-            std::exit(tthh::STITCH_EXPTTID_INACTIVE);
+            tthh::fatalExit(tthh::STITCH_EXPTTID_INACTIVE);
         }
     }
 
@@ -374,7 +374,7 @@ void ttHHanalyzer_unified::requireTriggerBranches2018_() {
             << "  back as 0 (= 'did not fire'), so continuing would silently select\n"
             << "  zero events instead of failing. Check the NanoAOD version and the\n"
             << "  branch list in include/eventBuffer.h.\n";
-        std::exit(tthh::CONFIG_BAD_RUNINFO);
+        tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
     }
 
     std::cout << "[trigger] 2018 hadronic HLT branches: all "
@@ -423,7 +423,7 @@ void ttHHanalyzer_unified::requireUsable_(const std::vector<std::string>& req,
         std::cerr << "  A branch the code reads that is not there reads back as 0, i.e. a silent wrong result\n"
                   << "  (D-2026-10-02-B). Check the NanoAOD version of the input (2018 v15 is not supported yet:\n"
                   << "  PLAN 9 Y3) and that include/eventBuffer.h was made from inputs that have these branches.\n";
-        std::exit(tthh::CONFIG_BAD_RUNINFO);
+        tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
     }
     // which members of each any-of group the file has (2024 Data: the 4J3T path(s) of this file's runs)
     std::string groups;
@@ -501,42 +501,56 @@ void ttHHanalyzer_unified::requirePrescanBranches_() {
 
 void ttHHanalyzer_unified::requireSameBranchSet_() {
     const std::vector<std::string> files = _ev->input->filenames();
-    if (files.size() < 2) return;
     // [STEP 24, KNU smoke 2026-10-05] Every file of the job is compared with the FIRST file, each read here with TFile.
     //   treestream's own list (present()) is not used for this: it comes from TChain::GetListOfBranches() after
     //   GetEntries(), i.e. from whichever tree the chain has loaded at that moment. With ROOT 6.30 (KNU) a job of a
     //   PNet and a no-PNet era C file (in that order) ran through with exit 0, so that list did not hold the first
     //   file's PNet branch (the bit then reads 0 in the first file); with ROOT 6.40 (container) the same job stopped.
+    // [2026-10-06] Every file is also counted, one-file jobs too. ROOT's TChain skips a file it cannot open (or one
+    //   without the tree) with only an error line and counts it as 0 entries, so the job would end with exit 0 on
+    //   fewer events (tempTTHH STEP 24 section 14). Here: a file that cannot be read stops the job (E30), and the
+    //   Events entries of the files must add up to the chain's (_ev->size()).
     std::vector<std::string> names;
     for (const auto& kv : _ev->choose)
         if (kv.second && kv.first.compare(0, 7, "Events/") == 0) names.push_back(kv.first.substr(7));
-    auto presence = [&names](const std::string& path, std::vector<char>& has) -> bool {
+    auto presence = [&names](const std::string& path, std::vector<char>& has, Long64_t& n) -> bool {
         std::unique_ptr<TFile> f(TFile::Open(path.c_str(), "READ"));
         TTree* t = (f && !f->IsZombie()) ? dynamic_cast<TTree*>(f->Get("Events")) : nullptr;
         if (!t) return false;
+        n = t->GetEntries();
         has.assign(names.size(), 0);
         for (size_t j = 0; j < names.size(); ++j) has[j] = (t->GetBranch(names[j].c_str()) != nullptr);
         return true;
     };
-    std::vector<std::string> diffs;
+    std::vector<std::string> unreadable, diffs;
     std::vector<char> first, here;
-    if (!presence(files[0], first)) {
-        diffs.push_back(files[0] + ": cannot read its Events tree");
-    } else {
-        for (size_t i = 1; i < files.size(); ++i) {
-            if (!presence(files[i], here)) {
-                diffs.push_back(files[i] + ": cannot read its Events tree");
-                continue;
-            }
-            int n = 0;
-            for (size_t j = 0; j < names.size(); ++j) {
-                if (here[j] == first[j]) continue;
-                if (n++ < 10)
-                    diffs.push_back(files[i] + ": " + names[j] + (here[j] ? " present (absent in the first file)"
-                                                                            : " absent (present in the first file)"));
-            }
-            if (n > 10) diffs.push_back(files[i] + ": ... " + std::to_string(n - 10) + " more");
+    Long64_t sum = 0;
+    for (size_t i = 0; i < files.size(); ++i) {
+        std::vector<char>& has = (i == 0) ? first : here;
+        Long64_t n = 0;
+        if (!presence(files[i], has, n)) {
+            unreadable.push_back(files[i]);
+            continue;
         }
+        sum += n;
+        if (i == 0 || first.empty()) continue;      // first.empty(): the first file is unreadable (reported below)
+        int nd = 0;
+        for (size_t j = 0; j < names.size(); ++j) {
+            if (here[j] == first[j]) continue;
+            if (nd++ < 10)
+                diffs.push_back(files[i] + ": " + names[j] + (here[j] ? " present (absent in the first file)"
+                                                                       : " absent (present in the first file)"));
+        }
+        if (nd > 10) diffs.push_back(files[i] + ": ... " + std::to_string(nd - 10) + " more");
+    }
+    if (!unreadable.empty()) {
+        std::cerr << "\n[FATAL][E" << tthh::INPUT_OPEN_FAIL << "] " << unreadable.size() << " of the " << files.size()
+                  << " input files of this job cannot be read (no file or no Events tree):\n";
+        for (const auto& u : unreadable) std::cerr << "    - " << u << "\n";
+        std::cerr << "  ROOT's TChain skips such a file with only an error line, and the job would end with exit 0 on\n"
+                  << "  fewer events. Check the file (size, the storage), correct the filelist if it is gone for good,\n"
+                  << "  and send the job again (submit_job_FH_Tier3_unified.py ... --resubmit).\n";
+        tthh::fatalExit(tthh::INPUT_OPEN_FAIL);
     }
     if (!diffs.empty()) {
         std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO << "] the " << files.size()
@@ -546,10 +560,20 @@ void ttHHanalyzer_unified::requireSameBranchSet_() {
                   << "  depends on the ROOT version), so a branch missing in some files reads as 0 there or stops the job.\n"
                   << "  Run such files one per job (files_per_job: 1, the 2024 yml), or group them by branch set\n"
                   << "  (tools/stage0/branch_signature.py).\n";
-        std::exit(tthh::CONFIG_BAD_RUNINFO);
+        tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
     }
-    std::cout << "[branches] " << files.size() << " input files, the same " << names.size()
-              << " selected branches in each." << std::endl;
+    const Long64_t chain = static_cast<Long64_t>(_ev->size());
+    if (sum != chain) {
+        std::cerr << "\n[FATAL][E" << tthh::INPUT_OPEN_FAIL << "] the Events entries of the " << files.size()
+                  << " input files add up to " << sum << ", the chain has " << chain << ": ROOT skipped (part of) a file\n"
+                  << "  when it counted the chain (look for 'Error in <TFile' above). Send the job again.\n";
+        tthh::fatalExit(tthh::INPUT_OPEN_FAIL);
+    }
+    if (files.size() > 1)
+        std::cout << "[branches] " << files.size() << " input files, the same " << names.size()
+                  << " selected branches in each." << std::endl;
+    std::cout << "[inputs] " << files.size() << (files.size() == 1 ? " input file" : " input files")
+              << ", Events entries " << sum << " = the chain's." << std::endl;
 }
 
 // [STEP 24] EraConfig::metFilters(year) -> the eventBuffer members. An unknown name is fatal (it would be
@@ -574,7 +598,7 @@ void ttHHanalyzer_unified::setupMetFilters_() {
         if (it == member.end()) {
             std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO << "] MET filter '" << f
                       << "' (EraConfig::metFilters) has no member in setupMetFilters_.\n" << std::endl;
-            std::exit(tthh::CONFIG_BAD_RUNINFO);
+            tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
         }
         _metFilterPtrs.push_back(it->second);
         names += (names.empty() ? "" : " ") + f;
@@ -674,7 +698,7 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
                   << _runYear << "'.\n"
                   << "  Only 2017, 2018 and 2024 are implemented. Add the path set here\n"
                   << "  (and the branches to eventBuffer.h) before running this year.\n";
-        std::exit(tthh::CONFIG_BAD_RUNINFO);
+        tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
     }
 
     // 논리 그룹
@@ -704,7 +728,7 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
             std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO
                       << "] 2024 Data PD not recognised (expected JetMET0/1 or Muon0/1): "
                       << _sampleName << std::endl;
-            std::exit(tthh::CONFIG_BAD_RUNINFO);
+            tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
         }
     }
     else if (_runYear == "2018") {
@@ -719,7 +743,7 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
             std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO
                       << "] 2018 Data PD not recognised (expected JetHT or SingleMuon): "
                       << _sampleName << std::endl;
-            std::exit(tthh::CONFIG_BAD_RUNINFO);
+            tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
         }
     }
     else { // [2017 Data] — 기존 로직 그대로
@@ -742,7 +766,7 @@ void ttHHanalyzer_unified::createObjects(event * thisEvent, sysName sysType, boo
              std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO
                        << "] Unknown Data Sample (no JetHT/BTagCSV/SingleMuon trigger-PD match): "
                        << _sampleName << std::endl;
-             std::exit(tthh::CONFIG_BAD_RUNINFO);
+             tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
         }
     }
 
@@ -1167,13 +1191,13 @@ void ttHHanalyzer_unified::applyEventScaleFactors(event* thisEvent){
         const std::string processKey = TtCatGroup::MakeProcessKey(
             _sampleName, _expandedTtbarId);
         if (processKey.empty()) {
-            std::cerr << "\n[FATAL][btagRW] MakeProcessKey() returned an EMPTY key for"
+            std::cerr << "\n[FATAL][E" << tthh::PROCESSKEY_EMPTY << "][btagRW] MakeProcessKey() returned an EMPTY key for"
                       << " sample='" << _sampleName << "' expandedTtbarId="
                       << _expandedTtbarId << " (sub="
                       << (((_expandedTtbarId % 100) + 100) % 100) << ").\n"
-                      << "  Config_TtCatGroup.hh must map this code. Aborting (exit 45)"
+                      << "  Config_TtCatGroup.hh must map this code. Aborting (exit " << tthh::PROCESSKEY_EMPTY << ")"
                       << " so the Condor job is flagged.\n" << std::endl;
-            std::exit(tthh::PROCESSKEY_EMPTY);
+            tthh::fatalExit(tthh::PROCESSKEY_EMPTY);
         }
         // diagnostic: remember the (expandedSub -> processKey) mapping once, so
         // the end-of-job log shows whether 61/62/71/72 get keys distinct from 53.
@@ -1191,10 +1215,10 @@ void ttHHanalyzer_unified::applyEventScaleFactors(event* thisEvent){
             btagNormReweight_ = static_cast<float>(
                 corrMgr->getBTagReweight("central", processKey, nJets, ht));
             if (!std::isfinite(btagNormReweight_)) {
-                std::cerr << "\n[FATAL][btagRW] non-finite reweight (" << btagNormReweight_
+                std::cerr << "\n[FATAL][E" << tthh::REWEIGHT_NONFINITE << "][btagRW] non-finite reweight (" << btagNormReweight_
                           << ") for processKey='" << processKey << "' nJets=" << nJets
-                          << " ht=" << ht << ". Aborting (exit 46).\n" << std::endl;
-                std::exit(tthh::REWEIGHT_NONFINITE);
+                          << " ht=" << ht << ". Aborting (exit " << tthh::REWEIGHT_NONFINITE << ").\n" << std::endl;
+                tthh::fatalExit(tthh::REWEIGHT_NONFINITE);
             }
         }
 
@@ -1616,7 +1640,7 @@ void ttHHanalyzer_unified::process(event* thisEvent, sysName sysType, bool up){
 		      << "  This year is expected to HAVE the prefiring branch; a\n"
 		      << "  non-positive value means the branch is missing or unread,\n"
 		      << "  which would zero out every MC event weight.\n";
-	    std::exit(tthh::CONFIG_BAD_RUNINFO);
+	    tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
 	}
 
         if (debugCorrections) {
@@ -2290,10 +2314,22 @@ void ttHHanalyzer_unified::readRunsTreeSums() {
     _prescan_runs_count         = 0;
     _prescan_nFilesProcessed    = 0;
 
+    // [2026-10-06] MC: every input file must give its Runs sum -- the sample's normalization is Σgenw(Runs) over
+    //   ALL its files. A file that cannot be opened, or has no Runs tree / genEventSumw, used to be skipped with a
+    //   warning only (the job ended with exit 0 and the weight of the sample came out too large); now it stops the
+    //   job (E30). Data keeps the warning (no genEventSumw there).
+    const bool mc = (_DataOrMC != "Data");
+    auto runsFatal = [&](const std::string& fn, const std::string& why) {
+        std::cerr << "\n[FATAL][E" << tthh::INPUT_OPEN_FAIL << "] [Prescan] " << why << ": " << fn << "\n"
+                  << "  The sample's Σgenw(Runs) (its MC normalization) needs every input file. Check the file, then\n"
+                  << "  send the job again (submit_job_FH_Tier3_unified.py --mode prescan ... --resubmit).\n";
+        tthh::fatalExit(tthh::INPUT_OPEN_FAIL);
+    };
     for (const auto& fn : fnames) {
         // Fresh TFile, disjoint from eventBuffer's file handle.
         std::unique_ptr<TFile> f(TFile::Open(fn.c_str(), "READ"));
         if (!f || f->IsZombie()) {
+            if (mc) runsFatal(fn, "cannot open");
             std::cerr << "[Prescan][WARN] cannot open: " << fn << std::endl;
             continue;
         }
@@ -2301,12 +2337,10 @@ void ttHHanalyzer_unified::readRunsTreeSums() {
         TTree* runs = nullptr;
         f->GetObject("Runs", runs);
         if (!runs) {
-            // Data NanoAOD has no Runs/genEventSumw — that's fine.
-            if (_DataOrMC != "Data") {
-                std::cerr << "[Prescan][WARN] no Runs tree in: " << fn << std::endl;
-            }
-            continue;
+            if (mc) runsFatal(fn, "no Runs tree");
+            continue;                                // Data: no Runs/genEventSumw needed
         }
+        if (mc && !runs->GetBranch("genEventSumw")) runsFatal(fn, "no genEventSumw in the Runs tree");
 
         Double_t  sumW_one   = 0.0;
         Double_t  sumW2_one  = 0.0;
@@ -2332,6 +2366,11 @@ void ttHHanalyzer_unified::readRunsTreeSums() {
         // unique_ptr<TFile>::Close() happens here at scope exit.
     }
 
+    if (mc && _prescan_nFilesProcessed != static_cast<int>(fnames.size())) {   // cannot happen after the checks above
+        std::cerr << "\n[FATAL][E" << tthh::INPUT_OPEN_FAIL << "] [Prescan] Runs read in " << _prescan_nFilesProcessed
+                  << " of " << fnames.size() << " input files.\n";
+        tthh::fatalExit(tthh::INPUT_OPEN_FAIL);
+    }
     std::cout << "[Prescan] Runs tree totals: "
               << "Σgenw=" << _prescan_runs_sumW
               << "  Σgenw²=" << _prescan_runs_sumW2
@@ -2590,6 +2629,24 @@ void ttHHanalyzer_unified::writePrescanTree() {
 }
 
 
+// ─────────────────────────────────────────────────────────────────────────────
+// [2026-10-06] exit() outside the analyzer's fatal paths -- treestream and include/eventBuffer.h
+//   ("** eventBuffer::read - cannot load entry N; stopping", exit 1), tnm.cc (bad arguments, a filelist
+//   that cannot be opened) -- ends like tthh::fatalExit (include/ExitCodes.h: why), as far as it can:
+//   glibc runs the exit-time handlers last-registered-first, so this handler runs before the ones
+//   registered before it -- ROOT's end-of-process cleanup and the static destructors of the libraries
+//   loaded at start, and (after `(void)gROOT` in main) the TROOT-delete handler of InitInterpreter --
+//   but after the ones registered later (function-local statics, dictionaries loaded on the way) and
+//   after the thread_local destructors. main() registers it first thing and again just before the
+//   event loop. A non-zero status ends the process there (flush, std::_Exit); status 0, the normal end,
+//   keeps the full teardown. on_exit is glibc's (Linux); elsewhere nothing is registered.
+// ─────────────────────────────────────────────────────────────────────────────
+#if defined(__GLIBC__)
+static void endNonZeroExitWithoutTeardown(int status, void*) {
+    if (status != 0) tthh::fatalExit(status);
+}
+#endif
+
 // =============================================================================
 // main() — entry point for the ttHH(4b) FH analyzer
 // -----------------------------------------------------------------------------
@@ -2598,6 +2655,10 @@ void ttHHanalyzer_unified::writePrescanTree() {
 // 남아 있으며(무해), Step 8 정리 단계에서 제거 예정.
 // =============================================================================
 int main(int argc, char** argv){
+#if defined(__GLIBC__)
+    (void)gROOT;   // keep BEFORE on_exit: sets up ROOT (InitInterpreter registers its TROOT-delete handler)
+    on_exit(endNonZeroExitWithoutTeardown, nullptr);     // so this runs before ROOT's exit-time handlers
+#endif
 
     commandLine cl(argc, argv);
     vector<string> filenames = fileNames(cl.filelist);
@@ -2634,7 +2695,7 @@ int main(int argc, char** argv){
     if ( !stream.good() ) {
         std::cerr << "\n[FATAL][E" << tthh::INPUT_OPEN_FAIL
                   << "] can't read root input files (Events tree).\n" << std::endl;
-        std::exit(tthh::INPUT_OPEN_FAIL);
+        tthh::fatalExit(tthh::INPUT_OPEN_FAIL);
     }
     eventBuffer ev(stream);
 #ifdef TTHH_EVENTBUFFER_STAMP
@@ -2704,6 +2765,9 @@ int main(int argc, char** argv){
     // 5. Run the analysis
     // ─────────────────────────────────────────────────────────────────────
     if(debugVerbose) std::cout<<"debug : Before [ performAnalysis ] in main() function"<<std::endl;
+#if defined(__GLIBC__)
+    on_exit(endNonZeroExitWithoutTeardown, nullptr);     // again: also before the handlers registered while
+#endif                                                   // setting up (an exit() in the event loop, e.g. eventBuffer::read)
     analysis.performAnalysis();
     if(debugVerbose) std::cout<<"debug : After [ performAnalysis() ] and Before [ ev.close() ].. in main() function"<<std::endl;
     ev.close();

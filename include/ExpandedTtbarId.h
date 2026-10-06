@@ -59,7 +59,7 @@ class ExpandedTtbarId {
   //           lookup and for Data).
   //   label : sample tag, for log messages only (e.g. "tt4b").
   //   tree  : input tree name (extractTtNb default is "TtNb").
-  // Fatal (std::exit) if a non-empty path cannot be opened / has no tree.
+  // Fatal (tthh::fatalExit) if a non-empty path cannot be opened / has no tree.
   // --------------------------------------------------------------------------
   void load(const std::string& path,
             const std::string& label    = "",

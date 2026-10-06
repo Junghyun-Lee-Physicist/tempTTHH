@@ -390,8 +390,8 @@ sub-category 별 MC 통계가 부족해 4개 그룹(ttH / tt+bb / tt+cc / tt+LF)
 - 2D(nJets×HT) 여부는 JSON 의 input 개수로 자동 판정된다
   (`btagReweightIs2D_ = inputs.size() >= 4`). 유도 쪽 `Config::useHTForReweight` 와 자동 정합.
   단 **`exe_BTagSF` 와 `exe_MakeJSON` 은 같은 플래그로 빌드**해야 한다.
-- 실패가 조용하지 않다: 빈 key → exit 45 · JSON 에 key 없음 → main 에서 exit
-  (`requireDerived_`) · non-finite → exit 46.
+- 실패가 조용하지 않다: 빈 key → exit 80 · JSON 에 key 없음 → main 에서 exit 51
+  (`requireDerived_`) · non-finite → exit 81 (2026-06-30 의 번호; 그 전 표기는 45/46).
 
 **확인 포인트**
 

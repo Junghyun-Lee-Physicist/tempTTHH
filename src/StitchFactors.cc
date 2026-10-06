@@ -7,7 +7,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include <cstdlib>     // std::exit
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <iomanip>
@@ -19,7 +19,7 @@ void StitchFactors::fatal(const std::string& msg, int code) {
   std::cerr << "\n[FATAL][StitchFactors] " << msg << "\n"
             << "  -> aborting (exit " << code << ") so the Condor job is flagged.\n"
             << std::endl;
-  std::exit(code);
+  tthh::fatalExit(code);
 }
 
 // ----------------------------------------------------------------------------

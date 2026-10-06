@@ -84,7 +84,8 @@ def era_from_name(name):
 # ============================================================================
 _EV_RE = re.compile(r"^(\d{3}) \((\d+)\.(\d+)\.\d+\) ")
 _EXTRA_RC = {1: "treestream fatal or generic failure (.err)", 127: "executable not found",
-             134: "abort (SIGABRT)", 137: "killed (SIGKILL; memory?)", 139: "segfault (SIGSEGV)",
+             134: "abort (SIGABRT)", 137: "killed (SIGKILL; memory?)",
+             139: "segfault (SIGSEGV; right after a [FATAL] line: a build before fatalExit, ERROR_CODES.md)",
              143: "terminated (SIGTERM)"}
 
 

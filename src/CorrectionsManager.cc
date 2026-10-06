@@ -15,7 +15,7 @@
 #include "ExitCodes.h"     // [STEP18] canonical exit codes
 #include "EraConfig.h"     // [2018] year-keyed constants (single source of truth)
 #include "ConfigPath.h"    // [STEP18] cfgpath::resolve (no code-default)
-#include <cstdlib>   // [STEP4] std::getenv, std::exit
+#include <cstdlib>   // [STEP4] std::getenv (fatal exits: tthh::fatalExit, ExitCodes.h)
 #include <fstream>
 #include <iostream>
 #include <filesystem>   // JSON 파일 존재 확인용
@@ -86,7 +86,7 @@ CorrectionsManager::CorrectionsManager(const std::string& runYear,
                   << e.what() << "\n"
                   << "  -> check TTHH_JSONPOG_PATH / TTHH_GOLDENJSON_PATH / TTHH_PU_JSON (2024) "
                   << "(or yml common.path_*).\n";
-        std::exit(tthh::CENTRAL_CORR_LOAD_FAIL);
+        tthh::fatalExit(tthh::CENTRAL_CORR_LOAD_FAIL);
     }
 
     // 파생 보정 — requireDerived_에 따라 FATAL(47/48) 또는 WARN
@@ -207,7 +207,7 @@ void CorrectionsManager::loadJME_() {
         if (key_data.empty()) {
             std::cerr << "\n[FATAL][CorrectionsManager] No Data JEC key for runYear_='"
                       << runYear_ << "'.\n";
-            std::exit(tthh::CONFIG_BAD_RUNINFO);
+            tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
         }
 
         try {
@@ -225,7 +225,7 @@ void CorrectionsManager::loadJME_() {
                       << "  Refusing to fall back to MC JEC for Data — that would\n"
                       << "  apply the wrong jet energy scale with no other symptom.\n"
                       << "  Check runYear/eraName and the jet_jerc.json.gz content.\n";
-            std::exit(tthh::CONFIG_BAD_RUNINFO);
+            tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
         }
     }
     // [STEP 24] the JEC/JER payload names in every job log (provenance; tools/stage3/smoke_2024.sh reads it)
@@ -319,7 +319,7 @@ void CorrectionsManager::loadGoldenJSON_() {
             std::cerr << "[FATAL][CorrectionsManager] GoldenJSON not found for Data: "
                       << txt << "\n"
                       << "  -> TTHH_GOLDENJSON_PATH (yml common.path_goldenjson)를 확인하세요.\n";
-            std::exit(tthh::GOLDENJSON_DATA_MISSING);
+            tthh::fatalExit(tthh::GOLDENJSON_DATA_MISSING);
         }
         std::cerr << "[loadGoldenJSON] ERROR opening " << txt << "\n";
         return;
@@ -376,7 +376,7 @@ double evalJetId(const std::shared_ptr<const correction::Correction>& c, const c
     if (!c) {
         std::cerr << "\n[FATAL][CorrectionsManager] " << what << " asked, but no jet ID payload is loaded "
                   << "for this year (EraConfig::jetIdFromJson is false). Aborting." << std::endl;
-        std::exit(tthh::CONFIG_BAD_RUNINFO);
+        tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
     }
     return c->evaluate({std::abs(eta), chHEF, neHEF, chEmEF, neEmEF, muEF,
                         CorrInt(chMult), CorrInt(neMult), CorrInt(chMult + neMult)});
@@ -398,7 +398,7 @@ bool CorrectionsManager::inJetVetoMap(double eta, double phi) const {
     if (!jetVetoMap_) {
         std::cerr << "\n[FATAL][CorrectionsManager] inJetVetoMap asked, but no veto map is loaded for "
                   << runYear_ << ". Aborting." << std::endl;
-        std::exit(tthh::CONFIG_BAD_RUNINFO);
+        tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
     }
     // the map's edges are |eta| <= 5.191 and |phi| <= pi: keep the inputs inside
     const double e = std::clamp(eta, -5.19, 5.19);
@@ -448,7 +448,7 @@ void CorrectionsManager::loadTrigger_() {
                       << "  -> main/debug 모드는 trigger SF가 필수입니다.\n"
                       << "  -> DeriveSF로 생성하거나 TTHH_TRIGSF_DIR"
                       << " (yml common.path_trigsf_dir)를 확인하세요.\n";
-            std::exit(tthh::TRIGSF_LOAD_FAIL);
+            tthh::fatalExit(tthh::TRIGSF_LOAD_FAIL);
         }
         std::cerr << "[CorrectionsManager][WARN] Trigger SF JSON not found: "
                   << fileName << "\n"
@@ -498,7 +498,7 @@ void CorrectionsManager::loadTrigger_() {
         if (requireDerived_) {   // [STEP4]
             std::cerr << "[FATAL][CorrectionsManager] Failed to load trigger SF JSON: "
                       << e.what() << "\n";
-            std::exit(tthh::TRIGSF_LOAD_FAIL);
+            tthh::fatalExit(tthh::TRIGSF_LOAD_FAIL);
         }
         std::cerr << "[CorrectionsManager][ERROR] Failed to load trigger SF JSON: "
                   << e.what() << "\n"
@@ -563,7 +563,7 @@ void CorrectionsManager::loadBTagReweight_() {
                       << "  -> main/debug 모드는 b-tag norm reweight가 필수입니다.\n"
                       << "  -> makeReweightJSON으로 생성하거나 TTHH_BTAGRW_JSON"
                       << " (yml common.path_btag_reweight_json)를 확인하세요.\n";
-            std::exit(tthh::BTAGRW_LOAD_FAIL);
+            tthh::fatalExit(tthh::BTAGRW_LOAD_FAIL);
         }
         std::cerr << "[CorrectionsManager][WARN] B-tag reweight JSON not found: "
                   << btagReweightPath << "\n"
@@ -598,7 +598,7 @@ void CorrectionsManager::loadBTagReweight_() {
         if (requireDerived_) {   // [STEP4]
             std::cerr << "[FATAL][CorrectionsManager] Failed to load b-tag reweight JSON: "
                       << e.what() << "\n";
-            std::exit(tthh::BTAGRW_LOAD_FAIL);
+            tthh::fatalExit(tthh::BTAGRW_LOAD_FAIL);
         }
         std::cerr << "[CorrectionsManager][ERROR] Failed to load b-tag reweight JSON: "
                   << e.what() << "\n"
@@ -875,7 +875,7 @@ double CorrectionsManager::getTriggerSF(int nbJets, double eta, double ht, doubl
                       << "\n  nbJets=" << nbJets << " eta=" << eta
                       << " ht=" << ht << " pt=" << pt << " syst=" << syst
                       << "\n  -> trigger SF JSON과 입력 정의가 맞는지 확인.\n";
-            std::exit(tthh::TRIGSF_LOAD_FAIL);
+            tthh::fatalExit(tthh::TRIGSF_LOAD_FAIL);
         }
         // bootstrap(btagtrig): 첫 수회 에러만 출력 (스팸 방지)
         static int errCount = 0;
@@ -1039,7 +1039,7 @@ double CorrectionsManager::getBTagReweight(const std::string& systematic,
                       << " nJets=" << nJets << " HT=" << HT
                       << "\n  -> processKey가 JSON에 없으면 매핑 변경 후 JSON"
                       << " 재생성 누락입니다 (makeReweightJSON 재실행).\n";
-            std::exit(tthh::BTAGRW_LOAD_FAIL);
+            tthh::fatalExit(tthh::BTAGRW_LOAD_FAIL);
         }
         // bootstrap(btagtrig): 첫 수회 에러만 출력 (스팸 방지)
         static int errCount = 0;

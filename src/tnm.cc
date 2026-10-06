@@ -24,7 +24,9 @@ using namespace std;
 void error(std::string message)
 {
   std::cout << "** error ** " << message << std::endl;
-  exit(0);
+  // [2026-10-06] was exit(0): a job whose filelist cannot be opened (fileNames) ended as a success.
+  //   1 = the generic failure code (docs/reference/ERROR_CODES.md, tools section).
+  exit(1);
 }
 ///
 std::string strip(std::string line)

@@ -7,6 +7,24 @@
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
 
+## 2026-10-06: [analyzer] STEP 24 E·F — E(입력 완결성 E30, 커밋되지 않았던 것)와 F(멈춘 job 이 제 exit code 로: `tthh::fatalExit`, main 의 `on_exit`)
+
+커밋 E(C++: 못 여는 입력 파일·파일별 entry 합·MC prescan Runs → E30, `[inputs]` 줄, offline smoke +4 — 아래 D·E 항목)는 D(`ef4c87a0`)와
+함께 커밋되지 않고 맥에 남아 있었다 → 이 커밋이 E 와 F 를 함께 담는다. KNU smoke(`knu_build_c` = 커밋 C 의 analyzer + D, 뒤
+`knu_smoke_2024_c`) 68/69: `dC_mix`(branch 집합이 다른 era C 두 파일의 job)가 E11 이 아닌 exit 139. `requireSameBranchSet_`(커밋 C)이 다름을 찾아 `[FATAL][E11]` 을 찍고 `std::exit(11)` 을 부르면 exit 때 정리(ROOT 의 end-of-process cleanup, static 소멸자)가
+돌고, ROOT 6.30(KNU)에서 그것이 segfault 하면 job 은 139 로 끝난다 — 2026-07-06 Data job 의 era 검사 두 exit 와 같은 일(그때는 그 두 곳만
+`std::_Exit`). → `include/ExitCodes.h` 에 `tthh::fatalExit(code)`(출력 flush 뒤 `std::_Exit`), analyzer 의 fatal 경로 모두가 이것으로
+끝난다(`std::exit` 42 곳: `ttHHanalyzer_unified.cc`·`.h`, `src/CorrectionsManager.cc`·`ExpandedTtbarId.cc`·`StitchFactors.cc`,
+`include/EraConfig.h`·`ConfigPath.h`; 헤더의 `std::_Exit` 2 곳도). 우리 코드 밖의 `exit()`(treestream, `eventBuffer.h` 의 읽기 실패
+exit 1, `tnm.cc`)는 `main()` 이 맨 먼저(`(void)gROOT` 뒤)와 event loop 바로 전에 등록하는 `on_exit` handler 가 0 이 아닌 status 만 같은
+방식으로 끝낸다 — 그보다 먼저 등록된 exit 때 handler 앞에서만 돌므로 최선의 노력(0 인 정상 끝은 정리 그대로; glibc). 독립 검토로 더한 것:
+`src/tnm.cc` 의 `error()` 가 `exit(0)` — filelist 를 못 여는 job 이 성공으로 끝났다 → exit 1; b-tag reweight 의 FATAL 두 줄이 옛 번호
+"exit 45/46" 을 찍던 것을 실제 80/81 과 `[FATAL][E80]`·`[E81]` 로, stitch 의 것을 `[FATAL][E63]` 으로(README·`docs/RUNBOOK_2017_SF_rederive.md`
+의 45/46 도). 정상 job 의 경로·출력은 같다. 제출기 `--status` 의 139 설명에 "`[FATAL]` 줄 바로 뒤면 이 커밋 전 빌드". 시험: offline
+smoke 43(E 의 +4, F 의 +5: `crash_teardown.so`(exit status 가 0 이 아니면 exit 때 SIGSEGV; `LD_PRELOAD`)가 듣는지 대조 하나, 그 아래 E11 둘과
+tnm 의 exit 1 이 제 code, 못 여는 filelist → exit 1 — F 없는 빌드는 넷 모두 FAIL(139, 139, 139, 0)), unit·Python 시험 PASS. 상세
+[`changes/STEP_24_stage1_2_2024.md`](changes/STEP_24_stage1_2_2024.md) §15(첫 plot 의 관찰은 §16), [`reference/ERROR_CODES.md`](reference/ERROR_CODES.md).
+
 ## 2026-10-06: [analyzer·도구] STEP 24 D·E — 실패 확인: 못 여는 입력 파일과 entry 합(E30), merge 의 job 수 대조와 --report/--resubmit, make_plots 의 MC 정확 개수, 제출기 --report 의 fail/wait
 
 사용자(10-06): "job 이 fail 난 것을 어디서 확인 가능하며 모든 작업 플로우에서 확인 후 resubmit 이 가능한가, 코드가 잘

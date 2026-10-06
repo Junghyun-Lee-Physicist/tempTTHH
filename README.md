@@ -627,7 +627,7 @@ removed entirely) on the next cleanup pass.
 `bTagSF_ReweightStudy/include/Config_TtCatGroup.hh` (analyzer·도구 **공유**
 single source) 의 `MakeProcessKey` 만 수정. ⚠ 매핑 변경 후 반드시
 `exe_BTagSF` → `exe_MakeJSON` 으로 JSON 재생성 (안 하면 main이 새 키를 옛
-JSON에서 못 찾아 exit 46).
+JSON에서 못 찾아 exit 51 — `[FATAL][getBTagReweight] evaluation failed`; 빈 key 는 80, non-finite 는 81).
 
 ---
 

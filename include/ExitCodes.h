@@ -21,7 +21,13 @@
 //  Numbers are STABLE: never reassign a meaning. To add a failure, take the
 //  next free number in the right band and document it in ERROR_CODES.md.
 //  The Python submitter mirrors the 10-29 band (submit_job_FH_Tier3_unified.py).
+//
+//  A fatal path ends with tthh::fatalExit(code) (below), not std::exit(code).
 // ============================================================================
+
+#include <cstdio>     // std::fflush
+#include <cstdlib>    // std::_Exit
+#include <iostream>
 
 namespace tthh {
 enum ExitCode {
@@ -65,6 +71,32 @@ enum ExitCode {
     PROCESSKEY_EMPTY         = 80,  // MakeProcessKey() returned an empty key
     REWEIGHT_NONFINITE       = 81   // non-finite b-tag normalization reweight
 };
+
+// ----------------------------------------------------------------------------
+//  fatalExit(code) [2026-10-06] -- how a fatal path ends: flush the output
+//  streams, then std::_Exit(code). The process ends with the code and WITHOUT
+//  the exit-time teardown (ROOT's end-of-process cleanup, which closes the open
+//  files and deletes their objects, and the static destructors).
+//  WHY: std::exit(code) runs that teardown, and with ROOT 6.30 (CMSSW_14_2_1,
+//  KNU) it can crash after a fatal exit: the job then ends with 139 (SIGSEGV)
+//  instead of its code: the era check of Data jobs (2026-07-06, CHANGELOG;
+//  those two exits got std::_Exit then), and the E11 of requireSameBranchSet_
+//  at KNU ended with 139 (smoke_2024 dC_mix, 2026-10-06; this teardown crash
+//  is the explanation, the job log is still to be checked). Nothing of the
+//  teardown is needed after a fatal error: the job is sent again (its output
+//  file is left unfinished; it has no end marker cutflow_w_full either way).
+//  exit() calls in code that does not use this (treestream, eventBuffer.h,
+//  tnm.cc) go through the on_exit handler set in main(): it runs before the
+//  exit-time handlers registered before it (ROOT's among them), not before
+//  later ones -- a best effort, this function is the sure way.
+// ----------------------------------------------------------------------------
+[[noreturn]] inline void fatalExit(int code) {
+    std::cout.flush();
+    std::clog.flush();
+    std::cerr.flush();
+    std::fflush(nullptr);
+    std::_Exit(code);
+}
 }  // namespace tthh
 
 #endif // TTHH_EXITCODES_H
