@@ -7,6 +7,16 @@
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
 
+## 2026-10-06: [문서] STEP 24 F 의 KNU 결과, 옛 문서 정리
+
+KNU(사용자): E·F 커밋 `b29856eb` → `knu_build_f` exit 0, 단위 시험 PASS, `knu_smoke_2024_f` 69/69(`dC_mix` 가 E11 로 PASS, E 의
+`[inputs]` 줄); 그 전 `knu_smoke_2024_c` 의 `dC_mix.log` 는 `[FATAL][E11]` 뒤 ` *** Break *** segmentation violation`(판단대로).
+첫 plot 의 관찰(STEP 24 §16)에 단서 하나: 2017 의 4J3T 는 BTagCSV PD 였다 → 2024 의 b-tag 경로가 JetMET PD 에 있는지 확인할 것.
+옛 문서 정리(코드 변화 없음): `README.md` §4 — "코드 안 기본 경로" 문구와 옛 FATAL 번호(40–49)를 지금 정책(E12·E13)과 번호로,
+`path_pu_json` 행; §7.0 — 출력 디렉터리의 연도 성분(STEP 24 부터 있음); `docs/reference/CONFIG_PATHS.md` — `path_pu_json`/`TTHH_PU_JSON`
+과 2024 yml 의 값; `outputMerger/README.md` — 옛 validation 파이프라인 기록이라는 표시와 지금 쓰는 법. 상세
+[`changes/STEP_24_stage1_2_2024.md`](changes/STEP_24_stage1_2_2024.md) §15–§16.
+
 ## 2026-10-06: [analyzer] STEP 24 E·F — E(입력 완결성 E30, 커밋되지 않았던 것)와 F(멈춘 job 이 제 exit code 로: `tthh::fatalExit`, main 의 `on_exit`)
 
 커밋 E(C++: 못 여는 입력 파일·파일별 entry 합·MC prescan Runs → E30, `[inputs]` 줄, offline smoke +4 — 아래 D·E 항목)는 D(`ef4c87a0`)와

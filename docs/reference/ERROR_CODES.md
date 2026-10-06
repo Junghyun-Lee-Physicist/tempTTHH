@@ -73,8 +73,8 @@ Before 2026-06-30 the analyzer used an ad-hoc set of codes (40–49) with two **
 `std::exit(code)` runs the exit-time teardown (ROOT's end-of-process cleanup, which closes the open files and deletes
 their objects, and the static destructors). With ROOT 6.30 (CMSSW_14_2_1, KNU) that teardown can crash after a fatal
 exit, and the job then ends with **139** (SIGSEGV) instead of its code: the era check of Data jobs on 2026-07-06, and the
-E11 of the KNU smoke `dC_mix` on 2026-10-06 (two era-C files with different branches; tempTTHH STEP 24 section 15 — the
-teardown crash is the explanation, the job log is still to be checked). Since commit F every fatal path ends with
+E11 of the KNU smoke `dC_mix` on 2026-10-06 (two era-C files with different branches; tempTTHH STEP 24 section 15 — its
+log has the `[FATAL][E11]` line, then ROOT's ` *** Break *** segmentation violation`). Since commit F every fatal path ends with
 `tthh::fatalExit(code)` (`include/ExitCodes.h`: flush the output, then `std::_Exit(code)` — no exit-time handler runs).
 An `exit()` outside them (treestream, `eventBuffer.h`, `tnm.cc`) goes through the `on_exit` handler of `main()` (registered
 first thing and again before the event loop), which ends a non-zero status the same way; it runs before the exit-time

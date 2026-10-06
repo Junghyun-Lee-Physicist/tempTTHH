@@ -27,7 +27,7 @@
   exit 7, `<proc>_*.root` 만), `consolidate_prescan.py`(`--filelist-dir`), `submit_job_FH_Tier3_unified.py`(`--report` 의
   fail/wait, `--status` 의 원인), `docs/reference/ERROR_CODES.md`(도구의 코드), `README.md` §7.5·§8.1·§8.3b,
   `test/test_failure_checks.py`(신규), `test/test_consolidate_prescan.py`(+6)
-- 커밋 E·F(§15, C++; E 는 D 와 함께 커밋되지 않고 맥에 남아 있었다 → F 와 한 커밋): E 는 위 D·E 줄의 `ttHHanalyzer_unified.cc`·
+- 커밋 E·F(§15, 맥 `b29856eb`; C++; E 는 D 와 함께 커밋되지 않고 맥에 남아 있었다 → F 와 한 커밋): E 는 위 D·E 줄의 `ttHHanalyzer_unified.cc`·
   `run_offline_smoke.sh`(+4); F 는 `include/ExitCodes.h`(`tthh::fatalExit`), `ttHHanalyzer_unified.{cc,h}`(fatal 경로, `main()` 의 `on_exit`,
   FATAL 줄의 번호), `src/{CorrectionsManager,ExpandedTtbarId,StitchFactors,tnm}.cc`, `include/{EraConfig,ConfigPath,ExpandedTtbarId}.h`,
   `test/test_EraConfig.cc`(주석), `test/offline_smoke/run_offline_smoke.sh`(+5 check), `submit_job_FH_Tier3_unified.py`(139 의 설명),
@@ -386,8 +386,9 @@ B 에만 있는 파일 FAIL, tree 값만 바뀜 FAIL, EXPECTED 의 run 이 양�
   branches` 를 찍은 뒤 `std::exit(11)` 을 불렀다. `std::exit` 는 exit 때 정리 — ROOT 의 end-of-process cleanup(열린 파일을 닫고 그 안의
   객체를 지운다)과 static 소멸자 — 를 돌리고, ROOT 6.30(CMSSW_14_2_1, KNU)에서 이것이 segfault 하면 job 은 11 대신 139(SIGSEGV)로
   끝난다. 2026-07-06 Data job 의 era 검사 두 exit 에서 같은 일이 있었다(CHANGELOG; 그때는 그 두 곳만 `std::_Exit`). 컨테이너(ROOT 6.40)는
-  정리에서 죽지 않아 offline smoke 의 같은 경우가 11 이었다. (확인 필요: KNU `condor/smoke_2024_<UTC>/dC_mix.log` 의 끝에
-  `[FATAL][E11]` 줄이 있는지 — 있으면 판정은 했고 끝내는 길만 틀렸다.)
+  정리에서 죽지 않아 offline smoke 의 같은 경우가 11 이었다. **확인**(10-06, 사용자): KNU `condor/smoke_2024_20261005_200634/dC_mix.log`
+  821 행 `[FATAL][E11] the 2 input files of this job do not have the same branches ...`, 829 행 ` *** Break *** segmentation violation`
+  (ROOT 의 signal handler), smoke 기록에 `Segmentation fault (core dumped)` — 판정은 했고 그 뒤 끝내는 길에서 죽었다.
 - **고침(커밋 F, C++ — E 와 함께 KNU 다시 빌드)**: `include/ExitCodes.h` 의 `tthh::fatalExit(code)` — 출력(`std::cout`·`clog`·`cerr`, stdio)을
   flush 하고 `std::_Exit(code)`: exit 때 정리를 건너뛴다. analyzer 의 fatal 경로는 모두 이것으로 끝난다: `std::exit` 42 곳
   (`ttHHanalyzer_unified.cc` 18, `ttHHanalyzer_unified.h` 3, `src/CorrectionsManager.cc` 12, `src/ExpandedTtbarId.cc` 5,
@@ -414,8 +415,11 @@ B 에만 있는 파일 FAIL, tree 값만 바뀜 FAIL, EXPECTED 의 run 이 양�
   건 `--btagsf on`(E11)·두 파일 E11·`--sample` 없는 실행(`tnm.cc` 의 exit 1, `on_exit` 경로)이 각각 11, 11, 1, 못 여는 filelist → exit 1.
   같은 스크립트로 F 없는 빌드(E)는 대조만 PASS, 넷은 FAIL(139, 139, 139, 0) — 증상 재현; 옛 빌드도 139(`NOTE` 줄). 2017 출력은 옛 빌드와
   같음; unit PASS; `test/test_failure_checks.py` 24/24, `test/test_consolidate_prescan.py` 24/24.
-- **KNU 에서 볼 것**: 맥에서 E·F 커밋 → KNU pull → `knu_build_f` → `knu_smoke_2024_f` 에서 `RESULT: 69 PASS, 0 FAIL`(`dC_mix` exit 11),
-  analyzer 로그(`condor/smoke_2024_<UTC>/*.log`)에 E 의 `[inputs] ... = the chain's.` 줄(RUNBOOK §23 M).
+- **KNU 결과**(10-06, 사용자): 맥 커밋 `b29856eb`(E·F, 16:30 KST) → KNU pull → `knu_build_f`(cluster 2181080) exit 0 → `knu_unittests_f`
+  `SUMMARY unit_tests PASS` → `knu_smoke_2024_f`(cluster 2181081) exit 0: `CHECK dC_mix: two era-C files with different HLT branches in one
+  job stop (E11) PASS`, `RESULT: 69 PASS, 0 FAIL`. analyzer 로그(`condor/smoke_2024_<UTC>/*.log`)에 E 의 `[inputs] 1 input file, Events
+  entries 2802 = the chain's.`(5566, 18986 …) 줄. 지금 KNU 의 실행 파일은 E·F 판이다. `include/ExitCodes.h` 의 주석("the job log is still
+  to be checked")은 확인으로 끝났으므로 다음 코드 커밋 때 고친다(지금 고치면 smoke 가 다시 빌드를 요구한다).
 
 ### 16. 첫 plot 보기 (10-06; `knu_plots_2024`, 맥 `~/claude/NtuplizerDev/plots_2024/all_{compact,detailed}.pdf`)
 
@@ -428,7 +432,9 @@ B 에만 있는 파일 FAIL, tree 값만 바뀜 FAIL, EXPECTED 의 run 이 양�
   1.05, 그 위로 천천히 내려가 4000 에서 0.82. HT>500 뒤(step 7)도 같은 모양. 곧 모자람은 HT < 1000 GeV — 오프라인 HT 가
   `HLT_PFHT1050` 의 plateau 아래라 b-tag multijet 경로(4J3T, 6J PNet)로만 들어오는 곳 — 에 몰려 있고 그 위는 Data ≈ MC. 그러므로 §14 의
   "QCD ×0.46–0.55" 는 고른 정규화가 아니라 그 경로들의 Data/MC 차이로 보인다: trigger SF 가 없으니 MC 의 online b-tag 효율이 높거나,
-  그 경로로만 들어온 event 가 JetMET PD 에 다 있지 않거나(확인 필요: Stage 6 의 경로별 효율, 2024 HLT 메뉴의 PD 배정).
+  그 경로로만 들어온 event 가 JetMET PD 에 다 있지 않거나(확인 필요: Stage 6 의 경로별 효율, 2024 HLT 메뉴의 PD 배정). 2017 에는
+  4J3T 가 JetHT 가 아닌 BTagCSV PD 에 있었다(`ttHHanalyzer_unified.cc` 의 trigger 주석 "PD 구성"); 2024 Data 는 JetMET0/1 만
+  생산했으므로 4J3T·6J PNet 경로가 JetMET 에 있는지를 먼저 본다.
 - **b-jet 많은 쪽**: nb≥4(step 10)에서 HT > 900 GeV 의 Data/MC 가 2 쯤(ratio 칸 [0, 2] 밖이라 점이 안 보이는 bin 이 있다), 낮은 HT 는
   위와 같은 turn-on. b-tag SF 없음과 QCD 의 b 많은 쪽 모델링 몫. njets(step 6)는 6 에서 0.45, 13 이상에서 1.6(HT 와 상관).
 - **그림 꼴**(물리 아님): 쪽마다 왼쪽 ~27 % 가 빈칸(쪽 = A4 를 자른 550×567 pt 에 90° 회전), `Total MC` 글이 그림과 겹침, ratio 칸 밖의
@@ -446,7 +452,6 @@ B 에만 있는 파일 FAIL, tree 값만 바뀜 FAIL, EXPECTED 의 run 이 양�
 - `data/samples_2024.json` 의 σ 는 모두 임시. 낮은 신뢰도 다섯(비율로 올린 것)과 TTZHTo4b(XSDB 의 exact-dataset 값이 B(Z→bb) 만 포함한
   것으로 보여 쓰지 않음)는 첫 plot 에 영향이 없거나 작다. XSDB 로 확인할 사람: CERN 로그인이 있는 사용자.
 - D-2026-10-05-B(2024 MC 의 4J3T 는 PNet 만)는 PROPOSED — Stage 6 의 trigger SF 와 함께 정한다.
-- 커밋 E·F 의 KNU 빌드와 smoke(`dC_mix` 가 11 로 끝나야 함, 69/69): 아직(§15). `dC_mix` 의 139 가 exit 때 정리의 segfault 라는 판단은
-  KNU 의 `condor/smoke_2024_<UTC>/dC_mix.log`(그 끝에 `[FATAL][E11]` 줄이 있는지)로 확인할 것(RUNBOOK §23 M 의 첫 명령). 커밋 C 의 analyzer(+D) 빌드의 smoke 는 68/69(`dC_mix` 139, §15),
-  커밋 B 의 것은 §12(68/69).
+- 커밋 E·F 의 KNU smoke: 69/69(10-06, §15). 남은 것: KNU 의 실행 기록(`knu_plots_2024`, `knu_build_c`·`smoke_2024_c`, `knu_build_f`·`unittests_f`·`smoke_2024_f`)의 커밋,
+  첫 look 의 Data/MC 모자람의 원인(4J3T·6J PNet 경로가 JetMET PD 에 있는지, Stage 6 trigger SF; §16).
 - Data 의 처리된 LS 의 lumi(brilcalc): golden LS 의 1.4 % 쯤이 생산에 없다(§13) — 그 전까지 Data/MC 는 109.816 fb⁻¹ 기준.

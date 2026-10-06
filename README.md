@@ -106,9 +106,9 @@ gdb --args ./ttHHanalyzer_unified --mode debug --filelist <list> --output dbg.ro
 
 ## 4. 보정 입력 경로 (env / yml 통제)
 
-절대경로 하드코딩을 제거하고 **env 우선, 미설정 시 코드 내 Tier3 default**
-(하위호환) 구조로 통일했다. condor 실행 시 yml `common.path_*` 가 실행
-스크립트에 export로 주입된다.
+절대경로 하드코딩을 제거했고 **코드 안의 기본 경로는 없다**(STEP 18, 2026-06-30). condor 실행 시 yml
+`common.path_*` 가 실행 스크립트에 export 로 주입된다. 빈 값·없는 키는 E12, 꼭 필요한 보정이 `null` 이면 E13,
+선택 보정의 `null` 은 "끔"(`__NULL__`)이다. 정책 전체는 [`docs/reference/CONFIG_PATHS.md`](docs/reference/CONFIG_PATHS.md).
 
 | yml `common.` | 환경변수 | 대상 |
 |---|---|---|
@@ -118,12 +118,14 @@ gdb --args ./ttHHanalyzer_unified --mode debug --filelist <list> --output dbg.ro
 | `path_btag_reweight_json` | `TTHH_BTAGRW_JSON` | btagNormReweight.json |
 | `path_stitch_json` | `STITCH_FACTORS_JSON` | stitch_factors_2017.json |
 | `path_expanded_ttbarid_dir` | `EXPANDED_TTBARID_DIR` | ttnb_* lookup 디렉토리 |
+| `path_pu_json` | `TTHH_PU_JSON` | 2024 PU weight JSON(2024 의 모든 job; 2016–2018 은 jsonpog 의 PU 라 읽지 않는다) |
 
-**FATAL exit 맵** (Condor .err에서 식별): 40–43 stitch/expandedTtbarId 로드,
-45 빈 process key, 46 b-tag reweight 평가 실패(흔히 **매핑 변경 후 JSON
-미재생성**), 47 trigger SF 누락/평가 실패, 48 b-tag reweight JSON 누락,
-49 중앙 보정 로드 또는 Data GoldenJSON 누락. `main`/`debug` 는 파생 보정
-누락을 FATAL로, `btagtrig` 는 bootstrap(WARN+SF=1)로 처리.
+**FATAL exit 맵**(job `.err` 의 `[FATAL]` 줄; 번호는 2026-06-30 에 바뀌었다 — 표 전체는
+[`docs/reference/ERROR_CODES.md`](docs/reference/ERROR_CODES.md)): 12·13 경로 정책, 40 중앙 보정(JME·PU·b-tag SF) 로드, 41 Data
+golden JSON, 50 trigger SF JSON 없음·깨짐·평가 실패, 51 b-tag reweight JSON 없음·깨짐·평가 실패(흔히 **매핑 변경 뒤 JSON 을 다시
+만들지 않음**), 60–62 stitch JSON, 63 stitch 계획의 샘플에 tt+nb lookup 없음, 70–73 tt+nb lookup, 80 빈 process key, 81 유한하지 않은
+reweight. 옛 번호(45·46·47·48·49, 40–43)는 그 문서의 History note 에 대응표가 있다. `main`/`debug` 는 경로가 주어진 파생 보정의
+로드 실패를 FATAL 로, `btagtrig` 는 bootstrap(WARN, SF=1)으로 처리한다.
 
 ## 5. Selection — 선언적 cut 테이블
 
@@ -205,11 +207,10 @@ python3 submit_job_FH_Tier3_unified.py --mode prescan \
 #     --trigsf off --btagrw off
 ```
 
-> ⚠️ **output 디렉토리에 연도 성분이 없다** (`submit_job_FH_Tier3_unified.py:158-160` →
-> `AnalyzerOutput_<mode><suffix>`). 2018 을 돌리면 2017 산출물과 **같은 디렉토리에 섞인다**
-> — merge·plot 단계에서 두 연도가 합쳐진다. 2018 을 돌리기 전에 2017 산출물을 옮기거나
-> 경로에 연도를 넣어라 (감사 P0′ #9). `consolidate_prescan.py` 도 같은 이유로
-> `--input-base`·`--outdir` 를 반드시 명시해야 한다(P0′ #10).
+> ⚠️ (2026-10-06 갱신) 출력·condor 디렉토리의 연도 성분은 STEP 24 에서 들어갔다: yml `common.year` 가 2017 이 아니면
+> `AnalyzerOutput_<mode><suffix>_<year>`, `condor/filelistTier3_unified_<mode><suffix>_<year>`, filelist 기본값
+> `filelistTier3_<year>` 다(2017 은 예전 경로 그대로). `consolidate_prescan.py` 는 기본값이 2017 경로라
+> `--input-base`·`--outdir` 를 반드시 명시한다(P0′ #10). 2018 의 analyzer 지원(v15)은 아직이다(PLAN §9 Y3).
 
 `--filelist-dir`(2026-07-26 신설)로 연도별 filelist 디렉토리를 고른다.
 

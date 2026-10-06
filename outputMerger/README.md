@@ -1,5 +1,11 @@
 # ttHH(4b) FH — Validation Study Pipeline
 
+> **이 문서는 옛 기록이다(2026-10-06 표시).** 여기의 validation 파이프라인(`--mode validation`, `submit_hadd_validation.py`, 시나리오
+> YAML)은 analyzer 에서 지워졌고(STEP 2) 이 디렉터리에는 `merge_outputs.py` 와 `run_one_hadd.sh` 만 남았다. 지금의 merge 는
+> 저장소 `README.md` §8.3b 와 `python3 outputMerger/merge_outputs.py --help`(`--config` 로 job 수 대조, `--list`, `--report`,
+> `--resubmit`, `--allow-incomplete`, `--mode condor --proxy proxy.cert`), 기록은 `docs/changes/STEP_24_stage1_2_2024.md` §14 를 본다.
+> `run_one_hadd.sh` 의 인자도 바뀌었다(`<indir> <outfile> [<cmssw>|-] [<N>]`, 입력 수 ≠ N 이면 exit 7).
+
 이 디렉토리는 ttHH(4b) Fully Hadronic 분석의 **Step 8 (≥4 b-tag) 영역에서
 Data/MC ratio가 무너지는 원인 진단**을 위한 도구 모음입니다.
 analyzer 의 cut 과 SF 를 시나리오별로 toggle 하여 condor 일괄 제출하고,

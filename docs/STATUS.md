@@ -2,7 +2,7 @@
 
 > **Purpose:** the single place that answers "where are we right now?" — current state, what is ready, what is pending, and what is OPEN.
 > **Audience:** anyone starting a session.
-> **Status:** living · last meaningful update **2026-10-06** (STEP 24 커밋 E·F: KNU smoke `dC_mix` 의 139 → `tthh::fatalExit`, E 는 커밋 전이었음; main 5,291/5,291·merge 76/76, 사후 확인으로 빠짐 없음, 첫 수율표; 커밋 D·E 실패 확인 · prescan 983/983, consolidate 의 `EXIT 1` 은 도구 — 커밋 C 에 `--skimmed`; Data 는 golden LS 의 1.4 % 쯤 없음) · 2026-10-05 (STEP 24 커밋 C: KNU smoke 68/69, plot 도구, 여러 파일 job 검사 고침 · 커밋 B: 진짜 eventBuffer.h 와 2024 analyzer·제출기, smoke_2024 · 묶음 1: 2024 eventBuffer·PU 도구와 입력, Y1 도구; D-2026-10-05-A · 묶음 2: analyzer 의 2024 코드는 진짜 header 와 함께 커밋 대기, Stage 3 도구·yml·임시 σ, 오프라인 smoke 31/31; D-2026-10-05-B·C) · 2026-10-04 (KNU 의 긴 단계는 condor job, 실행 기록은 `runlogs/` 에 커밋 — STEP 23) · 2026-10-03 (Stage 0 의 payload·lumi 실측 반영, eventBuffer 생성기 = 사용자 fork treestream 점검, 그 패치 커밋 `8be42e8`; KNU 의 pull 과 clean 빌드) · 2026-10-02 (2024 먼저 결정, 단계별 계획 [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) §9, 2017 lumi 42.07 반영) · 그 전 2026-10-01 (v15 계획 PROPOSED) · 2026-07-26 (2018UL 준비: samples_2018UL.json, --preflight, OPEN #5).
+> **Status:** living · last meaningful update **2026-10-06** (STEP 24 커밋 E·F `b29856eb`: KNU smoke `dC_mix` 의 139 → `tthh::fatalExit`, F 빌드 smoke 69/69; 첫 plot 의 모자람은 HT < 1000 GeV(trigger 경로·PD 확인); main 5,291/5,291·merge 76/76, 사후 확인으로 빠짐 없음, 첫 수율표; 커밋 D·E 실패 확인 · prescan 983/983, consolidate 의 `EXIT 1` 은 도구 — 커밋 C 에 `--skimmed`; Data 는 golden LS 의 1.4 % 쯤 없음) · 2026-10-05 (STEP 24 커밋 C: KNU smoke 68/69, plot 도구, 여러 파일 job 검사 고침 · 커밋 B: 진짜 eventBuffer.h 와 2024 analyzer·제출기, smoke_2024 · 묶음 1: 2024 eventBuffer·PU 도구와 입력, Y1 도구; D-2026-10-05-A · 묶음 2: analyzer 의 2024 코드는 진짜 header 와 함께 커밋 대기, Stage 3 도구·yml·임시 σ, 오프라인 smoke 31/31; D-2026-10-05-B·C) · 2026-10-04 (KNU 의 긴 단계는 condor job, 실행 기록은 `runlogs/` 에 커밋 — STEP 23) · 2026-10-03 (Stage 0 의 payload·lumi 실측 반영, eventBuffer 생성기 = 사용자 fork treestream 점검, 그 패치 커밋 `8be42e8`; KNU 의 pull 과 clean 빌드) · 2026-10-02 (2024 먼저 결정, 단계별 계획 [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) §9, 2017 lumi 42.07 반영) · 그 전 2026-10-01 (v15 계획 PROPOSED) · 2026-07-26 (2018UL 준비: samples_2018UL.json, --preflight, OPEN #5).
 > **Links:** decisions [`DECISIONS.md`](DECISIONS.md) · history [`CHANGELOG.md`](CHANGELOG.md) · exit codes [`reference/ERROR_CODES.md`](reference/ERROR_CODES.md) · path policy [`reference/CONFIG_PATHS.md`](reference/CONFIG_PATHS.md).
 
 ## Bottom line
@@ -94,7 +94,11 @@ consolidate `--filelist-dir`, 제출기 fail/wait; C++: 못 여는 입력 파일
 `main()` 의 `on_exit`, 독립 검토로 `tnm.cc` 의 못 여는 filelist 가 exit 0 이던 것도 1 로 — 컨테이너 offline smoke 43/43(exit 때 segfault 를
 흉내 낸 시험과 대조, F 없는 빌드는 139) — STEP 24 §15. 첫 plot:
 Data/MC 의 모자람은 HT < 1000 GeV 에 몰려 있고 HT > 1100 에서는 1.0–1.1(PFHT1050 plateau) → b-tag multijet trigger 쪽(Stage 6 의
-trigger SF·PD 확인), nb≥4 는 HT > 900 에서 data 가 MC 의 2 배쯤. 다음: 커밋 E·F 를 KNU 에서 빌드(`knu_build_f`) → smoke 69/69, 설명서.
+trigger SF·PD 확인), nb≥4 는 HT > 900 에서 data 가 MC 의 2 배쯤. **10-06 오후 (KNU):** `dC_mix.log` 확인 — `[FATAL][E11]`(821 행) 뒤
+` *** Break *** segmentation violation`(829 행), 판단대로. E·F 커밋 `b29856eb` → `knu_build_f` exit 0, 단위 시험 PASS, smoke
+`knu_smoke_2024_f` **69/69**(`dC_mix` exit 11, `[inputs]` 줄) — KNU 의 실행 파일은 이제 E·F 판. 한글 설명서 두 권(1권 105 쪽, 2권 74 쪽)
+은 워크스페이스 `manual_2026-10-06/`. 다음: KNU 기록 커밋, 4J3T·6J PNet 경로의 PD 확인(lxplus, HLT 메뉴), 그 결과에 따라 Stage 6
+(trigger SF) 또는 Data PD 추가, 처리된 LS 의 brilcalc.
 
 ## What is ready (DECIDED)
 

@@ -1,8 +1,8 @@
 # Reference — Correction-Input Path Policy
 
-> **Purpose:** define exactly how the six `common.path_*` entries in the analyzer yml are interpreted, so a correction is never silently skipped or silently defaulted.
+> **Purpose:** define exactly how the `common.path_*` entries in the analyzer yml (six, and `path_pu_json` for 2024) are interpreted, so a correction is never silently skipped or silently defaulted.
 > **Audience:** anyone editing `AnalyzerConfig/Tier3_2017_FH_unified_*.yml` or running the submitter.
-> **Status:** DECIDED · last meaningful update **2026-06-30**.
+> **Status:** DECIDED · last meaningful update **2026-10-06** (`path_pu_json` / `TTHH_PU_JSON` for 2024, STEP 24) · 2026-06-30 (the contract).
 > **Links:** enforcement (C++) `include/ConfigPath.h` · enforcement (submit-time) `submit_job_FH_Tier3_unified.py` · exit codes `ERROR_CODES.md`.
 
 ## Bottom line (the contract)
@@ -29,6 +29,13 @@ Requirement depends on job type and SF toggles; the submitter computes it before
 | `path_btag_reweight_json` | `TTHH_BTAGRW_JSON` | mode ∈ {`main`,`debug`} **and** `--btagrw on` |
 | `path_stitch_json` | `STITCH_FACTORS_JSON` | never required (optional; `null` = no stitching) |
 | `path_expanded_ttbarid_dir` | `EXPANDED_TTBARID_DIR` | never required (optional; `null` = tt+nb lookup inactive) |
+| `path_pu_json` | `TTHH_PU_JSON` | `common.year` is 2024 — **every** 2024 job (MC and Data; `CorrectionsManager` loads it for Run 3): our PU weight JSON `DerivedCorr/PU/2024_Summer24/puWeights_2024.json` (`tools/stage2/pu_weights.py`, D-2026-10-05-A), since jsonpog has no 2024 PU. 2016–2018 use the jsonpog PU; their yml has no such key and the submitter does not export it |
+
+## Current values: 2024 (2026-10-05, STEP 24)
+
+In `Tier3_2024_FH_unified_{prescan,main}.yml`: `path_jsonpog` (CVMFS jsonpog-integration), `path_goldenjson` and `path_pu_json` are
+real paths; `path_trigsf_dir`, `path_btag_reweight_json`, `path_stitch_json`, `path_expanded_ttbarid_dir` are `null` (the first look runs
+with `--trigsf off --btagsf off --btagrw off`; no 2024 stitch or tt+nb lookup, D-2026-10-05-C).
 
 ## Current values (DECIDED 2026-06-30) and why
 
