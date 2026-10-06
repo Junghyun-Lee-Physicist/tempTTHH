@@ -1,0 +1,45 @@
+=== RUNLOG ================================================================
+step        : knu_test_failure_checks
+start_utc   : 2026-10-05T19:38:21Z
+host        : cms01   user: jhlee
+cwd         : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+repo        : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+git_head    : ef4c87a0   modified_tracked_files: 1
+cmd         : python3 test/test_failure_checks.py 
+CMSSW_BASE  : /u/user/jhlee/ttHH/CMSSW_14_2_1
+root        : 6.30.09
+python3     : Python 3.9.14
+===========================================================================
+CHECK A short sample: RESULT FAIL, exit 1: PASS
+CHECK A FLAG names SampleB 290 vs 300: PASS
+CHECK A EVENTS line: 2 of 2, 1 differ: PASS
+CHECK A complete: RESULT OK, all equal: PASS
+CHECK A float tolerance: 2.4e8 +- 500 equal, -1 file differs: PASS
+CHECK B --list: SampleA 3 = 3 expected: PASS
+CHECK B --list: SampleB missing job 1: PASS
+CHECK B --list: data extra file idx 3: PASS
+CHECK B --list: Other not in the yml: PASS
+CHECK B --list: SampleC absent: PASS
+CHECK B local merge of SampleA: exit 0, noCut 10+20+30 = 60: PASS
+CHECK B worker: 3 inputs, 4 expected -> exit 7: PASS
+CHECK B --report: exit 1 (not all ok): PASS
+CHECK B --report: data merge FAILED rc=7: PASS
+CHECK B --report: SampleC NOT-MERGED: PASS
+CHECK B --report: SampleB not listed as a problem: PASS
+CHECK B --resubmit: the failed data merge and SampleC: PASS
+CHECK C idx 1: failed, return value 30 INPUT_OPEN_FAIL, .err path: PASS
+CHECK C idx 2: pending (running): PASS
+CHECK C idx 3: held with the reason: PASS
+CHECK C idx 4: pending from the arguments file (newest cluster 200, proc 0): PASS
+CHECK C idx 5: notrun: PASS
+CHECK C idx 6: rc 0 without the end marker -> failed: PASS
+CHECK C table: fail / wait columns and totals: PASS
+SUMMARY test_failure_checks PASS (24/24 checks)
+===========================================================================
+end_utc     : 2026-10-05T19:38:39Z
+wall_s      : 17
+EXIT        : 0
+outputs     : (no file of this repo changed, apart from tmp/ condor/ runlogs/)
+log         : runlogs/run_knu_test_failure_checks_20261005_193821.log
+log_kb      : 2
+=== END ===================================================================

@@ -1,0 +1,52 @@
+=== RUNLOG ================================================================
+step        : knu_build_f
+start_utc   : 2026-10-06T07:31:28Z
+host        : cluster335   user: jhlee
+cwd         : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+repo        : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+git_head    : b29856eb   modified_tracked_files: 1
+cmd         : /bin/bash tools/stage0/build_check.sh -j 4 
+CMSSW_BASE  : /u/user/jhlee/ttHH/CMSSW_14_2_1
+root        : 6.30.09
+python3     : Python 3.9.14
+condor_job  : 2181080.0  slot slot1_20   jobdir: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/runlog/knu_build_f_20261006_073119
+===========================================================================
+[condor_run] worker cluster335  scratch /home/condor/dir_2511910
+[condor_run] cmsenv ok: CMSSW_BASE=/u/user/jhlee/ttHH/CMSSW_14_2_1  root 6.30.09  Python 3.9.14  TMPDIR=/home/condor/dir_2511910
+[condor_run] running in /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH: /bin/bash tools/stage0/build_check.sh -j 4 
+----------------------------------------------------------------------------
+mode        : make clean && make -j4 VERBOSE=1   (in /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH)
+start_utc   : 2026-10-06T07:31:31Z
+end_utc     : 2026-10-06T07:33:35Z
+make_rc     : 0
+make_log    : condor/build/build_20261006_073131.log (191 lines)
+warnings    : 34 lines with 'warning:'
+errors      : 0 lines with 'error:' or make's '***'
+done_line   : yes (VERBOSE log: "[Done] Built" is the Makefile's last line of a complete build)
+--- last 5 lines of the make log ---
+include/eventBuffer.h:4380:3: note: variable tracking size limit exceeded with '-fvar-tracking-assignments', retrying without
+ 4380 |   eventBuffer(itreestream& stream, std::string varlist="")
+      |   ^~~~~~~~~~~
+[App] Linking application ttHHanalyzer_unified
+[Done] Built shared lib=lib/libToolsForAnalysis.so and apps=ttHHanalyzer_unified
+--- products ---
+-rwxr-xr-x 1 jhlee knu 9721520 2026-10-06 16:33:35.132799237 +0900 ttHHanalyzer_unified
+-rw-r--r-- 1 jhlee knu   216780 2026-10-06 16:31:51.194900742 +0900 libEventShape.a
+-rwxr-xr-x 1 jhlee knu 15392912 2026-10-06 16:32:08.366049178 +0900 libToolsForAnalysis.so
+--- headers (md5) ---
+bdc221e811c335e57d2d71aff16b7cf9  include/eventBuffer.h
+c4a5873c5cc63f1c3e10f8bf7c597fbc  src/treestream.cc
+result      : OK (make 0, executable built)
+===========================================================================
+end_utc     : 2026-10-06T07:33:35Z
+wall_s      : 127
+EXIT        : 0
+outputs (files of this repo changed during the run; tmp/ condor/ runlogs/ left out): 5
+      216780  lib/libEventShape.a
+    15392912  lib/libToolsForAnalysis.so
+      213552  src/dictionaryForROOT.cc
+       32840  src/dictionaryForROOT_rdict.pcm
+     9721520  ttHHanalyzer_unified
+log         : runlogs/run_knu_build_f_20261006_073125.log
+log_kb      : 2
+=== END ===================================================================

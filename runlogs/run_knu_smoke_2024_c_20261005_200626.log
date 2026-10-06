@@ -1,0 +1,178 @@
+=== RUNLOG ================================================================
+step        : knu_smoke_2024_c
+start_utc   : 2026-10-05T20:06:27Z
+host        : cluster298   user: jhlee
+cwd         : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+repo        : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+git_head    : ef4c87a0   modified_tracked_files: 1
+cmd         : /bin/bash tools/stage3/smoke_2024.sh 
+CMSSW_BASE  : /u/user/jhlee/ttHH/CMSSW_14_2_1
+root        : 6.30.09
+python3     : Python 3.9.14
+condor_job  : 2180775.0  slot slot1_2   jobdir: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/runlog/knu_smoke_2024_c_20261005_200615
+===========================================================================
+[condor_run] worker cluster298  scratch /home/condor/dir_2869322
+[condor_run] cmsenv ok: CMSSW_BASE=/u/user/jhlee/ttHH/CMSSW_14_2_1  root 6.30.09  Python 3.9.14  TMPDIR=/home/condor/dir_2869322
+[condor_run] running in /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH: /bin/bash tools/stage3/smoke_2024.sh 
+----------------------------------------------------------------------------
+WORK /home/condor/dir_2869322/tthh_smoke2024.szP7qh
+LOGS /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/smoke_2024_20261005_200634
+EXE  /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/ttHHanalyzer_unified (2026-10-06 04:42:20, md5 397e5061d222168551ebf8806d0800ad)
+HEADER stamp: treestream 8be42e8; variables md5 605e8320ea853256035e41068075807e; record run_knu_eventbuffer_manifest_20261005_105905.log
+CONFIG /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/AnalyzerConfig/Tier3_2024_FH_unified_main.yml (prescan: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/AnalyzerConfig/Tier3_2024_FH_unified_prescan.yml)
+[paths] TTHH_JSONPOG_PATH=/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration
+[paths] TTHH_GOLDENJSON_PATH=/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/GoldenJson
+[paths] TTHH_TRIGSF_DIR=__NULL__
+[paths] TTHH_BTAGRW_JSON=__NULL__
+[paths] STITCH_FACTORS_JSON=__NULL__
+[paths] EXPANDED_TTBARID_DIR=__NULL__
+[paths] TTHH_PU_JSON=/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/DerivedCorr/PU/2024_Summer24/puWeights_2024.json
+[files per job] main MC 10, prescan 20
+FILE mc_sig MB=46.6 entries=23245 pnet=y deepjet=y lumis=- golden=- /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTHH-HHto4B_TuneCP5_13p6TeV_madgraph-pythia8/TTHHto4b/260930_162701/0000/forgedNtuple_29.root
+FILE pre_sig MB=46.6 entries=23245 pnet=y deepjet=y lumis=- golden=- /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTHH-HHto4B_TuneCP5_13p6TeV_madgraph-pythia8/TTHHto4b/260930_162701/0000/forgedNtuple_29.root
+FILE mc_tt MB=311.3 entries=216617 pnet=y deepjet=y lumis=- golden=- /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTto4Q_TuneCP5_13p6TeV_powheg-pythia8/TTbar_Hadronic/260930_162708/0000/forgedNtuple_490.root
+FILE dC_pnet MB=7.5 entries=5566 pnet=y deepjet=y lumis=19 golden=19 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET0/JetMET0_Run2024C-MINIv6NANOv15-v1/260930_132643/0000/forgedNtuple_61.root
+FILE dC_nopnet MB=5.1 entries=2802 pnet=n deepjet=y lumis=18 golden=18 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET0/JetMET0_Run2024C-MINIv6NANOv15-v1/260930_132643/0000/forgedNtuple_65.root
+FILE dI MB=17.4 entries=18986 pnet=y deepjet=y lumis=38 golden=37 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET1/JetMET1_Run2024I-MINIv6NANOv15_v2-v2/260930_132751/0000/forgedNtuple_1.root
+PICK filelist_TTHHto4b.txt opened=1 skipped_few_golden_LS=0
+PICK filelist_TTbar_Hadronic.txt opened=1 skipped_few_golden_LS=0
+PICK filelist_JetMET0_Run2024C-MINIv6NANOv15-v1.txt opened=17 skipped_few_golden_LS=0
+PICK filelist_JetMET1_Run2024I-MINIv6NANOv15_v2-v2.txt opened=1 skipped_few_golden_LS=0
+sed: couldn't write 184 items to stdout: Broken pipe
+grep: write error: Broken pipe
+sed: couldn't write 185 items to stdout: Broken pipe
+FILES mc_multi QCD_HT200to400 job 0: 10 file(s), entries=132053 MB=183.2; pre_multi job 0: 20 file(s), entries=303831 MB=414.7
+RUN mc_sig: main MC TTHHto4b (1 file(s))
+TIMING mc_sig entries=23245 wall_s=19.5 ev_per_s=1194 kB_per_ev=2.00
+CHECK mc_sig: exit 0 PASS
+CHECK mc_sig: built from this checkout's header (eventBuffer stamp) PASS
+CHECK mc_sig: required branches present PASS
+CHECK mc_sig: the yml paths were used (jsonpog, PU JSON) PASS
+CHECK mc_sig: 2024 payloads (jet ID, veto map, PU, JEC MC, JER, UParTAK4 WPs) PASS
+CHECK mc_sig: cutflow HadTrigger > 0 PASS
+CHECK mc_sig: cutflow njets>=6 > 0 PASS
+CHECK mc_sig: cutflow HT>500 > 0 PASS
+CHECK mc_sig: cutflow nbjets>=2 > 0 PASS
+CUTFLOW mc_sig noCut=23245.0000 HadTrigger=21426.0000 noiseFilter=15956.0000 pv>=1=15956.0000 njets>=6=13329.0000 6thJetsPT>40=10338.0000 nlepton==0=8074.0000 HT>500=7475.0000 nbjets>=2=7409.0000 nbjets>=3=6942.0000 nbjets>=4=5378.0000 30<HadW<250=7019.0000 HiggsMassWindow=7019.0000 nTotal=7019.0000
+CLEANING mc_sig [cleaning] events 23245: MET filters fail 21, jet veto map 5880 (before the trigger; the two can overlap)
+CHECK mc_sig: output complete (end marker cutflow_w_full) PASS
+RUN mc_tt: main MC TTbar_Hadronic (1 file(s))
+TIMING mc_tt entries=216617 wall_s=132.2 ev_per_s=1638 kB_per_ev=1.44
+CHECK mc_tt: exit 0 PASS
+CHECK mc_tt: built from this checkout's header (eventBuffer stamp) PASS
+CHECK mc_tt: required branches present PASS
+CHECK mc_tt: the yml paths were used (jsonpog, PU JSON) PASS
+CHECK mc_tt: 2024 payloads (jet ID, veto map, PU, JEC MC, JER, UParTAK4 WPs) PASS
+CHECK mc_tt: cutflow HadTrigger > 0 PASS
+CHECK mc_tt: cutflow njets>=6 > 0 PASS
+CHECK mc_tt: cutflow HT>500 > 0 PASS
+CHECK mc_tt: cutflow nbjets>=2 > 0 PASS
+CUTFLOW mc_tt noCut=216617.0000 HadTrigger=71093.0000 noiseFilter=53828.0000 pv>=1=53828.0000 njets>=6=44413.0000 6thJetsPT>40=27053.0000 nlepton==0=26857.0000 HT>500=20640.0000 nbjets>=2=13427.0000 nbjets>=3=2005.0000 nbjets>=4=208.0000 30<HadW<250=13192.0000 HiggsMassWindow=13192.0000 nTotal=13192.0000
+CLEANING mc_tt [cleaning] events 216617: MET filters fail 145, jet veto map 50363 (before the trigger; the two can overlap)
+CHECK mc_tt: output complete (end marker cutflow_w_full) PASS
+CHECK mc_tt: the tt+nb split is off in 2024 (D-2026-10-05-C) PASS
+RUN pre_sig: prescan MC TTHHto4b (1 file(s))
+TIMING pre_sig entries=23245 wall_s=17.6 ev_per_s=1321 kB_per_ev=2.00
+CHECK pre_sig: exit 0 PASS
+CHECK pre_sig: built from this checkout's header (eventBuffer stamp) PASS
+CHECK pre_sig: required branches present PASS
+CHECK pre_sig: the yml paths were used (jsonpog, PU JSON) PASS
+CHECK pre_sig: output complete (one-row prescan tree) PASS
+PRESCAN pre_sig [Prescan] Runs tree totals: Σgenw=24500  Σgenw²=24500  count=24500  (over 1 files)
+RUN mc_multi: main MC QCD_HT200to400 (10 file(s))
+TIMING mc_multi entries=132053 wall_s=73.8 ev_per_s=1789 kB_per_ev=1.39
+CHECK mc_multi: exit 0 PASS
+CHECK mc_multi: built from this checkout's header (eventBuffer stamp) PASS
+CHECK mc_multi: required branches present PASS
+CHECK mc_multi: the yml paths were used (jsonpog, PU JSON) PASS
+CHECK mc_multi: the 10 files of the job have one branch set PASS
+CHECK mc_multi: output complete (end marker cutflow_w_full) PASS
+CUTFLOW mc_multi noCut=132053.0000 HadTrigger=662.0000 noiseFilter=515.0000 pv>=1=515.0000 njets>=6=290.0000 6thJetsPT>40=113.0000 nlepton==0=113.0000 HT>500=33.0000 nbjets>=2=7.0000 nbjets>=3=1.0000 nbjets>=4=1.0000 30<HadW<250=7.0000 HiggsMassWindow=7.0000 nTotal=7.0000
+RUN pre_multi: prescan MC QCD_HT200to400 (20 file(s))
+TIMING pre_multi entries=303831 wall_s=110.5 ev_per_s=2750 kB_per_ev=1.36
+CHECK pre_multi: exit 0 PASS
+CHECK pre_multi: built from this checkout's header (eventBuffer stamp) PASS
+CHECK pre_multi: required branches present PASS
+CHECK pre_multi: the yml paths were used (jsonpog, PU JSON) PASS
+CHECK pre_multi: the 20 files of the job have one branch set PASS
+CHECK pre_multi: the Runs tree of all 20 files is read PASS
+CHECK pre_multi: output complete (one-row prescan tree) PASS
+PRESCAN pre_multi [Prescan] Runs tree totals: Σgenw=2.28879e+14  Σgenw²=3.93682e+21  count=13306821  (over 20 files)
+RUN dC_pnet: main Data JetMET0_Run2024C-MINIv6NANOv15-v1 era C (1 file(s))
+TIMING dC_pnet entries=5566 wall_s=5.2 ev_per_s=1062 kB_per_ev=1.35
+CHECK dC_pnet: exit 0 PASS
+CHECK dC_pnet: built from this checkout's header (eventBuffer stamp) PASS
+CHECK dC_pnet: required branches present PASS
+CHECK dC_pnet: the yml paths were used (jsonpog, PU JSON) PASS
+CHECK dC_pnet: 2024 payloads (jet ID, veto map, PU, JEC DATA, JER, UParTAK4 WPs) PASS
+CHECK dC_pnet: cutflow HadTrigger > 0 PASS
+CHECK dC_pnet: cutflow njets>=6 > 0 PASS
+CHECK dC_pnet: cutflow HT>500 > 0 PASS
+CUTFLOW dC_pnet noCut=5566 HadTrigger=1713 noiseFilter=1296 pv>=1=1296 njets>=6=931 6thJetsPT>40=585 nlepton==0=579 HT>500=574 nbjets>=2=140 nbjets>=3=33 nbjets>=4=8 30<HadW<250=128 HiggsMassWindow=128 nTotal=128
+CLEANING dC_pnet [cleaning] events 5566: MET filters fail 22, jet veto map 1281 (before the trigger; the two can overlap)
+CHECK dC_pnet: output complete (end marker cutflow_w_full) PASS
+CHECK dC_pnet: the [branches] line says the file has the PNet 4J3T path PASS
+RUN dC_nopnet: main Data JetMET0_Run2024C-MINIv6NANOv15-v1 era C (1 file(s))
+TIMING dC_nopnet entries=2802 wall_s=4.2 ev_per_s=662 kB_per_ev=1.81
+CHECK dC_nopnet: exit 0 PASS
+CHECK dC_nopnet: built from this checkout's header (eventBuffer stamp) PASS
+CHECK dC_nopnet: required branches present PASS
+CHECK dC_nopnet: the yml paths were used (jsonpog, PU JSON) PASS
+CHECK dC_nopnet: 2024 payloads (jet ID, veto map, PU, JEC DATA, JER, UParTAK4 WPs) PASS
+CHECK dC_nopnet: cutflow HadTrigger > 0 PASS
+CHECK dC_nopnet: cutflow njets>=6 > 0 PASS
+CHECK dC_nopnet: cutflow HT>500 > 0 PASS
+CUTFLOW dC_nopnet noCut=2802 HadTrigger=840 noiseFilter=623 pv>=1=623 njets>=6=444 6thJetsPT>40=286 nlepton==0=280 HT>500=273 nbjets>=2=81 nbjets>=3=11 nbjets>=4=1 30<HadW<250=74 HiggsMassWindow=74 nTotal=74
+CLEANING dC_nopnet [cleaning] events 2802: MET filters fail 10, jet veto map 675 (before the trigger; the two can overlap)
+CHECK dC_nopnet: output complete (end marker cutflow_w_full) PASS
+CHECK dC_nopnet: the [branches] line says the file has no PNet 4J3T path PASS
+RUN dC_mix: main Data JetMET0_Run2024C-MINIv6NANOv15-v1 era C (2 file(s))
+CHECK dC_mix: two era-C files with different HLT branches in one job stop (E11) FAIL (exit 139)
+RUN dI: main Data JetMET1_Run2024I-MINIv6NANOv15_v2-v2 era I (1 file(s))
+TIMING dI entries=18986 wall_s=9.3 ev_per_s=2041 kB_per_ev=0.91
+CHECK dI: exit 0 PASS
+CHECK dI: built from this checkout's header (eventBuffer stamp) PASS
+CHECK dI: required branches present PASS
+CHECK dI: the yml paths were used (jsonpog, PU JSON) PASS
+CHECK dI: 2024 payloads (jet ID, veto map, PU, JEC DATA, JER, UParTAK4 WPs) PASS
+CHECK dI: cutflow HadTrigger > 0 PASS
+CHECK dI: cutflow njets>=6 > 0 PASS
+CHECK dI: cutflow HT>500 > 0 PASS
+CUTFLOW dI noCut=18114 HadTrigger=5613 noiseFilter=4275 pv>=1=4275 njets>=6=2730 6thJetsPT>40=1669 nlepton==0=1649 HT>500=1632 nbjets>=2=386 nbjets>=3=77 nbjets>=4=10 30<HadW<250=356 HiggsMassWindow=356 nTotal=356
+CLEANING dI [cleaning] events 18114: MET filters fail 85, jet veto map 4124 (before the trigger; the two can overlap)
+CHECK dI: output complete (end marker cutflow_w_full) PASS
+---- last lines of the dC_mix log (/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/smoke_2024_20261005_200634/dC_mix.log) ----
+[SF toggle] production evtWeight: trigSF=off  btagShape=off  btagNormRW=off  (tier branches always recorded)
+[cfgpath] ttbar stitch-factors JSON = (disabled; config null via STITCH_FACTORS_JSON)
+Base Weight = 1
+
+	[35m[ Warning ]: This analyzer commented out [ "WTF" log ] in the header, Please check if you want!!![0m
+
+	[34m[ Log ]: --------------------------------------------------------------------------[0m
+	[34m[ Log ]: Before start, Let's check the analysis information[0m
+	[34m[ Log ]: Run Year    ----> [  2024  ][0m
+	[34m[ Log ]: Data or MC  ----> [  Data  ][0m
+	[34m[ Log ]: Sample Name ----> [  JetMET0_Run2024C-MINIv6NANOv15-v1  ][0m
+	[34m[ Log ]: --------------------------------------------------------------------------[0m
+
+[branches] runYear=2024 Data (analysis code): all 48 required branches present and one of {HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_4p3: no, HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepJet_4p5: yes}.
+
+[FATAL][E11] the 2 input files of this job do not have the same branches (first file /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET0/JetMET0_Run2024C-MINIv6NANOv15-v1/260930_132643/0000/forgedNtuple_61.root):
+    - /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET0/JetMET0_Run2024C-MINIv6NANOv15-v1/260930_132643/0000/forgedNtuple_65.root: HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_2p0 absent (present in the first file)
+    - /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1/JetMET0/JetMET0_Run2024C-MINIv6NANOv15-v1/260930_132643/0000/forgedNtuple_65.root: HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_4p3 absent (present in the first file)
+  treestream uses ONE branch set for the whole job (the chain's branch list; which file it comes from
+  depends on the ROOT version), so a branch missing in some files reads as 0 there or stops the job.
+  Run such files one per job (files_per_job: 1, the 2024 yml), or group them by branch set
+  (tools/stage0/branch_signature.py).
+
+ *** Break *** segmentation violation
+tools/stage3/smoke_2024.sh: line 268: 2889255 Segmentation fault      (core dumped) "$EXE" "${args[@]}"
+RESULT: 68 PASS, 1 FAIL
+===========================================================================
+end_utc     : 2026-10-05T20:15:11Z
+wall_s      : 524
+EXIT        : 1
+outputs     : (no file of this repo changed, apart from tmp/ condor/ runlogs/)
+log         : runlogs/run_knu_smoke_2024_c_20261005_200626.log
+log_kb      : 13
+=== END ===================================================================
