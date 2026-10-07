@@ -1,0 +1,176 @@
+=== RUNLOG ================================================================
+step        : knu_filelists_2024_h
+start_utc   : 2026-10-07T08:12:46Z
+host        : cluster286   user: jhlee
+cwd         : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+repo        : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+git_head    : 409365a6   modified_tracked_files: 0
+cmd         : python3 tools/stage3/make_filelists_v15.py --year 2024 --forge-dir ../NtupleForge 
+CMSSW_BASE  : /u/user/jhlee/ttHH/CMSSW_14_2_1
+root        : 6.30.09
+python3     : Python 3.9.14
+condor_job  : 2181136.0  slot slot1_5   jobdir: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/runlog/knu_filelists_2024_h_20261007_081236
+===========================================================================
+[condor_run] worker cluster286  scratch /home/condor/dir_2990087
+[condor_run] cmsenv ok: CMSSW_BASE=/u/user/jhlee/ttHH/CMSSW_14_2_1  root 6.30.09  Python 3.9.14  TMPDIR=/home/condor/dir_2990087
+[condor_run] running in /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH: python3 tools/stage3/make_filelists_v15.py --year 2024 --forge-dir ../NtupleForge 
+----------------------------------------------------------------------------
+BASE /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1 keys=60
+BASE /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_Data_v1 keys=40
+SAMPLE JetMET0_Run2024C-MINIv6NANOv15-v1 files=160 excluded=0 GB=5.66 task=260930_132643 pd=JetMET0
+SAMPLE JetMET0_Run2024D-MINIv6NANOv15-v1 files=151 excluded=0 GB=6.13 task=260930_132706 pd=JetMET0
+SAMPLE JetMET0_Run2024E-MINIv6NANOv15-v1 files=231 excluded=0 GB=8.60 task=260930_132710 pd=JetMET0
+SAMPLE JetMET0_Run2024F-MINIv6NANOv15-v2 files=366 excluded=0 GB=22.30 task=260930_132716 pd=JetMET0
+SAMPLE JetMET0_Run2024G-MINIv6NANOv15-v2 files=438 excluded=0 GB=33.44 task=260930_132720 pd=JetMET0
+SAMPLE JetMET0_Run2024H-MINIv6NANOv15-v2 files=82 excluded=0 GB=4.89 task=260930_132722 pd=JetMET0
+SAMPLE JetMET0_Run2024I-MINIv6NANOv15-v2 files=149 excluded=0 GB=4.99 task=260930_132725 pd=JetMET0
+SAMPLE JetMET0_Run2024I-MINIv6NANOv15_v2-v1 files=179 excluded=0 GB=5.76 task=260930_132727 pd=JetMET0
+SAMPLE JetMET1_Run2024C-MINIv6NANOv15-v1 files=109 excluded=0 GB=5.40 task=260930_132730 pd=JetMET1
+SAMPLE JetMET1_Run2024D-MINIv6NANOv15-v1 files=155 excluded=0 GB=6.14 task=260930_132734 pd=JetMET1
+SAMPLE JetMET1_Run2024E-MINIv6NANOv15-v1 files=226 excluded=0 GB=8.47 task=260930_132737 pd=JetMET1
+SAMPLE JetMET1_Run2024F-MINIv6NANOv15-v2 files=381 excluded=0 GB=23.25 task=260930_132741 pd=JetMET1
+SAMPLE JetMET1_Run2024G-MINIv6NANOv15-v2 files=451 excluded=0 GB=33.23 task=260930_132744 pd=JetMET1
+SAMPLE JetMET1_Run2024H-MINIv6NANOv15-v2 files=76 excluded=0 GB=4.88 task=260930_132747 pd=JetMET1
+SAMPLE JetMET1_Run2024I-MINIv6NANOv15-v1 files=82 excluded=0 GB=4.78 task=260930_132749 pd=JetMET1
+SAMPLE JetMET1_Run2024I-MINIv6NANOv15_v2-v2 files=116 excluded=0 GB=5.52 task=260930_132751 pd=JetMET1
+SAMPLE Muon0_Run2024C-MINIv6NANOv15-v1 files=103 excluded=0 GB=1.68 task=260930_132753 pd=Muon0
+SAMPLE Muon0_Run2024D-MINIv6NANOv15-v1 files=180 excluded=0 GB=2.22 task=260930_132756 pd=Muon0
+SAMPLE Muon0_Run2024E-MINIv6NANOv15-v1 files=255 excluded=0 GB=3.10 task=260930_132759 pd=Muon0
+SAMPLE Muon0_Run2024F-MINIv6NANOv15-v1 files=594 excluded=0 GB=8.64 task=260930_132803 pd=Muon0
+SAMPLE Muon0_Run2024G-MINIv6NANOv15-v1 files=948 excluded=0 GB=12.62 task=260930_132807 pd=Muon0
+SAMPLE Muon0_Run2024H-MINIv6NANOv15-v1 files=152 excluded=0 GB=1.88 task=260930_132809 pd=Muon0
+SAMPLE Muon0_Run2024I-MINIv6NANOv15-v1 files=173 excluded=0 GB=1.88 task=260930_132813 pd=Muon0
+SAMPLE Muon0_Run2024I-MINIv6NANOv15_v2-v1 files=174 excluded=0 GB=1.85 task=260930_132818 pd=Muon0
+SAMPLE Muon1_Run2024C-MINIv6NANOv15-v1 files=94 excluded=0 GB=1.64 task=260930_132821 pd=Muon1
+SAMPLE Muon1_Run2024D-MINIv6NANOv15-v1 files=168 excluded=0 GB=2.17 task=260930_132825 pd=Muon1
+SAMPLE Muon1_Run2024E-MINIv6NANOv15-v1 files=171 excluded=0 GB=2.83 task=260930_132829 pd=Muon1
+SAMPLE Muon1_Run2024F-MINIv6NANOv15-v1 files=538 excluded=0 GB=8.48 task=260930_132832 pd=Muon1
+SAMPLE Muon1_Run2024G-MINIv6NANOv15-v2 files=565 excluded=0 GB=11.05 task=260930_132835 pd=Muon1
+SAMPLE Muon1_Run2024H-MINIv6NANOv15-v2 files=93 excluded=0 GB=1.64 task=260930_132839 pd=Muon1
+SAMPLE Muon1_Run2024I-MINIv6NANOv15-v1 files=94 excluded=0 GB=1.60 task=260930_132842 pd=Muon1
+SAMPLE Muon1_Run2024I-MINIv6NANOv15_v2-v1 files=133 excluded=0 GB=1.73 task=260930_132846 pd=Muon1
+SAMPLE ParkingHH_Run2024C-MINIv6NANOv15-v1 files=237 excluded=0 GB=20.58 task=261006_155806 pd=ParkingHH
+SAMPLE ParkingHH_Run2024D-MINIv6NANOv15-v1 files=271 excluded=0 GB=23.75 task=261006_155811 pd=ParkingHH
+SAMPLE ParkingHH_Run2024E-MINIv6NANOv15-v1 files=378 excluded=0 GB=33.21 task=261006_155814 pd=ParkingHH
+SAMPLE ParkingHH_Run2024F-MINIv6NANOv15-v4 files=599 excluded=0 GB=93.17 task=261006_155816 pd=ParkingHH
+SAMPLE ParkingHH_Run2024G-MINIv6NANOv15-v3 files=856 excluded=0 GB=133.46 task=261006_155819 pd=ParkingHH
+SAMPLE ParkingHH_Run2024H-MINIv6NANOv15-v3 files=136 excluded=0 GB=18.39 task=261006_155821 pd=ParkingHH
+SAMPLE ParkingHH_Run2024I-MINIv6NANOv15-v3 files=136 excluded=0 GB=17.75 task=261006_155825 pd=ParkingHH
+SAMPLE ParkingHH_Run2024I-MINIv6NANOv15_v2-v2 files=158 excluded=0 GB=17.74 task=261006_155827 pd=ParkingHH
+SAMPLE QCD_HT1000to1200 files=224 excluded=0 GB=43.67 task=260930_162814 pd=QCD-4Jets_Bin-HT-1000to1200_TuneCP5_13p6TeV_madgraphMLM-pythia8
+SAMPLE QCD_HT1200to1500 files=230 excluded=0 GB=46.81 task=260930_162819 pd=QCD-4Jets_Bin-HT-1200to1500_TuneCP5_13p6TeV_madgraphMLM-pythia8
+SAMPLE QCD_HT1500to2000 files=248 excluded=0 GB=55.44 task=260930_162824 pd=QCD-4Jets_Bin-HT-1500to2000_TuneCP5_13p6TeV_madgraphMLM-pythia8
+SAMPLE QCD_HT2000toInf files=221 excluded=0 GB=50.47 task=260930_162829 pd=QCD-4Jets_Bin-HT-2000_TuneCP5_13p6TeV_madgraphMLM-pythia8
+SAMPLE QCD_HT200to400 files=163 excluded=0 GB=3.57 task=260930_162722 pd=QCD-4Jets_Bin-HT-200to400_TuneCP5_13p6TeV_madgraphMLM-pythia8
+SAMPLE QCD_HT400to600 files=173 excluded=0 GB=14.76 task=260930_162725 pd=QCD-4Jets_Bin-HT-400to600_TuneCP5_13p6TeV_madgraphMLM-pythia8
+SAMPLE QCD_HT600to800 files=228 excluded=0 GB=30.73 task=260930_162729 pd=QCD-4Jets_Bin-HT-600to800_TuneCP5_13p6TeV_madgraphMLM-pythia8
+SAMPLE QCD_HT800to1000 files=260 excluded=0 GB=39.84 task=260930_162735 pd=QCD-4Jets_Bin-HT-800to1000_TuneCP5_13p6TeV_madgraphMLM-pythia8
+SAMPLE ST_s_antitop_had files=94 excluded=0 GB=0.83 task=260930_163054 pd=TbarBto2Q-s-channel_TuneCP5_13p6TeV_powheg-pythia8
+SAMPLE ST_s_antitop_lep files=224 excluded=0 GB=1.68 task=260930_163058 pd=TbarBtoLNu-s-channel_TuneCP5_13p6TeV_powheg-pythia8
+SAMPLE ST_s_top_had files=91 excluded=0 GB=1.06 task=260930_163045 pd=TBbarto2Q-s-channel_TuneCP5_13p6TeV_powheg-pythia8
+SAMPLE ST_s_top_lep files=273 excluded=0 GB=2.51 task=260930_163050 pd=TBbartoLNu-s-channel_TuneCP5_13p6TeV_powheg-pythia8
+SAMPLE ST_tW_antitop_dilep files=90 excluded=0 GB=1.51 task=260930_163040 pd=TbarWplusto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8
+SAMPLE ST_tW_antitop_had files=195 excluded=0 GB=10.02 task=260930_163030 pd=TbarWplusto4Q_TuneCP5_13p6TeV_powheg-pythia8
+SAMPLE ST_tW_antitop_semilep files=252 excluded=0 GB=6.56 task=260930_163036 pd=TbarWplustoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8
+SAMPLE ST_tW_top_dilep files=176 excluded=0 GB=1.70 task=260930_163026 pd=TWminusto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8
+SAMPLE ST_tW_top_had files=154 excluded=0 GB=9.88 task=260930_163016 pd=TWminusto4Q_TuneCP5_13p6TeV_powheg-pythia8
+SAMPLE ST_tW_top_semilep files=252 excluded=0 GB=6.39 task=260930_163021 pd=TWminustoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8
+SAMPLE ST_t_antitop_had files=825 excluded=0 GB=6.22 task=260930_163008 pd=TbarBQto2Q-t-channel-4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8
+SAMPLE ST_t_antitop_lep files=249 excluded=0 GB=1.49 task=260930_163012 pd=TbarBQtoLNu-t-channel-4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8
+SAMPLE ST_t_top_had files=778 excluded=0 GB=10.22 task=260930_162958 pd=TBbarQto2Q-t-channel-4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8
+SAMPLE ST_t_top_lep files=391 excluded=0 GB=2.72 task=260930_163003 pd=TBbarQtoLNu-t-channel-4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8
+SAMPLE TT4b files=34 excluded=0 GB=13.45 task=260930_162953 pd=TT4B_TuneCP5_13p6TeV_madgraph-pythia8
+SAMPLE TTHHto4b files=32 excluded=0 GB=18.17 task=260930_162701 pd=TTHH-HHto4B_TuneCP5_13p6TeV_madgraph-pythia8
+SAMPLE TTLL_MLL4to50 files=37 excluded=0 GB=2.76 task=260930_162911 pd=TTLL_Bin-MLL-4to50_TuneCP5_13p6TeV_amcatnlo-pythia8
+SAMPLE TTLL_MLL50 files=47 excluded=0 GB=5.38 task=260930_162909 pd=TTLL_Bin-MLL-50_TuneCP5_13p6TeV_amcatnlo-pythia8
+SAMPLE TTNuNu files=46 excluded=0 GB=2.86 task=260930_162914 pd=TTNuNu_TuneCP5_13p6TeV_amcatnlo-pythia8
+SAMPLE TTTT files=101 excluded=0 GB=20.45 task=260930_162948 pd=TTTT_TuneCP5_13p6TeV_amcatnlo-pythia8
+SAMPLE TTTWminus files=187 excluded=0 GB=19.13 task=260930_162938 pd=TTTWminus-DR1_TuneCP5_13p6TeV_amcatnlo-pythia8
+SAMPLE TTTWplus files=173 excluded=0 GB=18.90 task=260930_162943 pd=TTTWplus-DR1_TuneCP5_13p6TeV_amcatnlo-pythia8
+SAMPLE TTWH files=100 excluded=0 GB=17.19 task=260930_162932 pd=TTWH_TuneCP5_13p6TeV_madgraph-pythia8
+SAMPLE TTWJetsToQQ files=88 excluded=0 GB=7.90 task=260930_162905 pd=TTW-WtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8
+SAMPLE TTWW files=56 excluded=0 GB=9.02 task=260930_162927 pd=TTWW_TuneCP5_13p6TeV_madgraph-pythia8
+SAMPLE TTWZ files=51 excluded=0 GB=8.27 task=260930_162935 pd=TTWZ_TuneCP5_13p6TeV_madgraph-pythia8
+SAMPLE TTZHTo4b files=27 excluded=0 GB=17.99 task=260930_162917 pd=TTZH-ZHto4B_TuneCP5_13p6TeV_madgraph-pythia8
+SAMPLE TTZToQQ files=65 excluded=0 GB=5.84 task=260930_162900 pd=TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8
+SAMPLE TTZZTo4b files=37 excluded=0 GB=17.26 task=260930_162922 pd=TTZZ-ZZto4B_TuneCP5_13p6TeV_madgraph-pythia8
+SAMPLE TTbar_DiLep files=779 excluded=0 GB=114.67 task=260930_162711 pd=TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8
+EXCLUDED /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH2024_v15_had_MC_v1/TTto4Q_TuneCP5_13p6TeV_powheg-pythia8/TTbar_Hadronic/260930_162708/0000/forgedNtuple_443.root zero_bytes
+SAMPLE TTbar_Hadronic files=769 excluded=1 GB=349.55 task=260930_162708 pd=TTto4Q_TuneCP5_13p6TeV_powheg-pythia8
+SAMPLE TTbar_SemiLep files=790 excluded=0 GB=225.33 task=260930_162704 pd=TTtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8
+SAMPLE TTbb_DiLep files=203 excluded=0 GB=5.92 task=260930_162720 pd=TTBBto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8
+SAMPLE TTbb_Hadronic files=189 excluded=0 GB=14.83 task=260930_162717 pd=TTBBto4Q_TuneCP5_13p6TeV_powheg-pythia8
+SAMPLE TTbb_SemiLep files=283 excluded=0 GB=16.24 task=260930_162714 pd=TTBBtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8
+SAMPLE WJetsToQQ_HT1500to2500 files=372 excluded=0 GB=31.87 task=260930_163126 pd=Wto2Q-3Jets_Bin-HT-1500to2500_TuneCP5_13p6TeV_madgraphMLM-pythia8
+SAMPLE WJetsToQQ_HT2500toInf files=439 excluded=0 GB=39.14 task=260930_163131 pd=Wto2Q-3Jets_Bin-HT-2500_TuneCP5_13p6TeV_madgraphMLM-pythia8
+SAMPLE WJetsToQQ_HT400to800 files=2532 excluded=0 GB=99.44 task=260930_163118 pd=Wto2Q-3Jets_Bin-HT-400to800_TuneCP5_13p6TeV_madgraphMLM-pythia8
+SAMPLE WJetsToQQ_HT800to1500 files=414 excluded=0 GB=26.87 task=260930_163122 pd=Wto2Q-3Jets_Bin-HT-800to1500_TuneCP5_13p6TeV_madgraphMLM-pythia8
+SAMPLE WW files=518 excluded=0 GB=2.64 task=260930_163104 pd=WW_TuneCP5_13p6TeV_pythia8
+SAMPLE WZ files=307 excluded=0 GB=1.56 task=260930_163109 pd=WZ_TuneCP5_13p6TeV_pythia8
+SAMPLE ZJetsToQQ_HT1500to2500 files=557 excluded=0 GB=53.17 task=260930_163144 pd=Zto2Q-4Jets_Bin-HT-1500to2500_TuneCP5_13p6TeV_madgraphMLM-pythia8
+SAMPLE ZJetsToQQ_HT2500toInf files=495 excluded=0 GB=37.90 task=260930_163149 pd=Zto2Q-4Jets_Bin-HT-2500_TuneCP5_13p6TeV_madgraphMLM-pythia8
+SAMPLE ZJetsToQQ_HT400to800 files=961 excluded=0 GB=50.54 task=260930_163135 pd=Zto2Q-4Jets_Bin-HT-400to800_TuneCP5_13p6TeV_madgraphMLM-pythia8
+SAMPLE ZJetsToQQ_HT800to1500 files=456 excluded=0 GB=31.11 task=260930_163140 pd=Zto2Q-4Jets_Bin-HT-800to1500_TuneCP5_13p6TeV_madgraphMLM-pythia8
+SAMPLE ZZ files=76 excluded=0 GB=0.32 task=260930_163113 pd=ZZ_TuneCP5_13p6TeV_pythia8
+SAMPLE tHW files=267 excluded=0 GB=18.97 task=260930_162856 pd=THW-5FS-ctcvcp_Par-M-125_TuneCP5_13p6TeV_madgraph-pythia8
+SAMPLE tHq files=352 excluded=0 GB=13.30 task=260930_162851 pd=THQ-4FS-ctcvcp_Par-M-125_TuneCP5_13p6TeV_madgraph-pythia8
+SAMPLE ttHToNonbb files=531 excluded=0 GB=75.62 task=260930_162847 pd=TTH-HtoNon2B_Par-M-125_TuneCP5_13p6TeV_powheg-pythia8
+SAMPLE ttHTobb_dilep files=318 excluded=0 GB=30.61 task=260930_162843 pd=TTH-Hto2B-TTto2L2Nu_Par-M-125_TuneCP5_13p6TeV_powheg-pythia8
+SAMPLE ttHTobb_had files=321 excluded=0 GB=45.26 task=260930_162834 pd=TTH-Hto2B-TTto4Q_Par-M-125_TuneCP5_13p6TeV_powheg-pythia8
+SAMPLE ttHTobb_semilep files=309 excluded=0 GB=37.71 task=260930_162838 pd=TTH-Hto2B-TTtoLNu2Q_Par-M-125_TuneCP5_13p6TeV_powheg-pythia8
+FORGECONFIG config_ttHH2024_v15_had_MC.yaml keys=60
+FORGECONFIG config_ttHH2024_v15_had_Data.yaml keys=32
+FORGECONFIG config_ttHH2024_v15_had_ParkingHH.yaml keys=8
+CONFIG keys=100 on_disk=100 missing=0
+WROTE /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/filelistTier3_2024 (100 filelists, MANIFEST.tsv)
+TOTAL samples=100 files=29668 excluded=1
+RESULT OK
+===========================================================================
+end_utc     : 2026-10-07T08:13:37Z
+wall_s      : 50
+EXIT        : 0
+outputs (files of this repo changed during the run; tmp/ condor/ runlogs/ left out): 101
+       15628  filelistTier3_2024/MANIFEST.tsv
+       24374  filelistTier3_2024/filelist_JetMET0_Run2024C-MINIv6NANOv15-v1.txt
+       22995  filelistTier3_2024/filelist_JetMET0_Run2024D-MINIv6NANOv15-v1.txt
+       35235  filelistTier3_2024/filelist_JetMET0_Run2024E-MINIv6NANOv15-v1.txt
+       55896  filelistTier3_2024/filelist_JetMET0_Run2024F-MINIv6NANOv15-v2.txt
+       66908  filelistTier3_2024/filelist_JetMET0_Run2024G-MINIv6NANOv15-v2.txt
+       12455  filelistTier3_2024/filelist_JetMET0_Run2024H-MINIv6NANOv15-v2.txt
+       22689  filelistTier3_2024/filelist_JetMET0_Run2024I-MINIv6NANOv15-v2.txt
+       27816  filelistTier3_2024/filelist_JetMET0_Run2024I-MINIv6NANOv15_v2-v1.txt
+       16571  filelistTier3_2024/filelist_JetMET1_Run2024C-MINIv6NANOv15-v1.txt
+       23607  filelistTier3_2024/filelist_JetMET1_Run2024D-MINIv6NANOv15-v1.txt
+       34471  filelistTier3_2024/filelist_JetMET1_Run2024E-MINIv6NANOv15-v1.txt
+       58185  filelistTier3_2024/filelist_JetMET1_Run2024F-MINIv6NANOv15-v2.txt
+       68895  filelistTier3_2024/filelist_JetMET1_Run2024G-MINIv6NANOv15-v2.txt
+       11543  filelistTier3_2024/filelist_JetMET1_Run2024H-MINIv6NANOv15-v2.txt
+       12455  filelistTier3_2024/filelist_JetMET1_Run2024I-MINIv6NANOv15-v1.txt
+       17988  filelistTier3_2024/filelist_JetMET1_Run2024I-MINIv6NANOv15_v2-v2.txt
+       15239  filelistTier3_2024/filelist_Muon0_Run2024C-MINIv6NANOv15-v1.txt
+       26712  filelistTier3_2024/filelist_Muon0_Run2024D-MINIv6NANOv15-v1.txt
+       37887  filelistTier3_2024/filelist_Muon0_Run2024E-MINIv6NANOv15-v1.txt
+       88398  filelistTier3_2024/filelist_Muon0_Run2024F-MINIv6NANOv15-v1.txt
+      141144  filelistTier3_2024/filelist_Muon0_Run2024G-MINIv6NANOv15-v1.txt
+       22540  filelistTier3_2024/filelist_Muon0_Run2024H-MINIv6NANOv15-v1.txt
+       25669  filelistTier3_2024/filelist_Muon0_Run2024I-MINIv6NANOv15-v1.txt
+       26340  filelistTier3_2024/filelist_Muon0_Run2024I-MINIv6NANOv15_v2-v1.txt
+       13903  filelistTier3_2024/filelist_Muon1_Run2024C-MINIv6NANOv15-v1.txt
+       24924  filelistTier3_2024/filelist_Muon1_Run2024D-MINIv6NANOv15-v1.txt
+       25371  filelistTier3_2024/filelist_Muon1_Run2024E-MINIv6NANOv15-v1.txt
+       80054  filelistTier3_2024/filelist_Muon1_Run2024F-MINIv6NANOv15-v1.txt
+       84077  filelistTier3_2024/filelist_Muon1_Run2024G-MINIv6NANOv15-v2.txt
+       13755  filelistTier3_2024/filelist_Muon1_Run2024H-MINIv6NANOv15-v2.txt
+       13903  filelistTier3_2024/filelist_Muon1_Run2024I-MINIv6NANOv15-v1.txt
+       20108  filelistTier3_2024/filelist_Muon1_Run2024I-MINIv6NANOv15_v2-v1.txt
+       37101  filelistTier3_2024/filelist_ParkingHH_Run2024C-MINIv6NANOv15-v1.txt
+       42439  filelistTier3_2024/filelist_ParkingHH_Run2024D-MINIv6NANOv15-v1.txt
+       59238  filelistTier3_2024/filelist_ParkingHH_Run2024E-MINIv6NANOv15-v1.txt
+       93935  filelistTier3_2024/filelist_ParkingHH_Run2024F-MINIv6NANOv15-v4.txt
+      134284  filelistTier3_2024/filelist_ParkingHH_Run2024G-MINIv6NANOv15-v3.txt
+       21244  filelistTier3_2024/filelist_ParkingHH_Run2024H-MINIv6NANOv15-v3.txt
+       21244  filelistTier3_2024/filelist_ParkingHH_Run2024I-MINIv6NANOv15-v3.txt
+  ... and 61 more
+log         : runlogs/run_knu_filelists_2024_h_20261007_081245.log
+log_kb      : 16
+=== END ===================================================================

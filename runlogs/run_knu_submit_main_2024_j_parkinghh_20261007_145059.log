@@ -1,0 +1,107 @@
+=== RUNLOG ================================================================
+step        : knu_submit_main_2024_j_parkinghh
+start_utc   : 2026-10-07T14:51:00Z
+host        : cms01   user: jhlee
+cwd         : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+repo        : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+git_head    : 94c4cb6f   modified_tracked_files: 1
+cmd         : python3 submit_job_FH_Tier3_unified.py --mode main --config AnalyzerConfig/Tier3_2024_FH_unified_main.yml --trigsf off --btagsf off --btagrw off --only ParkingHH_\* 
+CMSSW_BASE  : /u/user/jhlee/ttHH/CMSSW_14_2_1
+root        : 6.30.09
+python3     : Python 3.9.14
+===========================================================================
+               total        used        free      shared  buff/cache   available
+Mem:            68Gi        11Gi        14Gi       272Mi        44Gi        57Gi
+Swap:           15Gi       8.0Mi        15Gi
+Submitting job(s).............................................................................................................................................................................................................................................
+237 job(s) submitted to cluster 2181219.
+Submitting job(s)...............................................................................................................................................................................................................................................................................
+271 job(s) submitted to cluster 2181220.
+Submitting job(s)..........................................................................................................................................................................................................................................................................................................................................................................................
+378 job(s) submitted to cluster 2181221.
+Submitting job(s).......................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
+599 job(s) submitted to cluster 2181222.
+Submitting job(s)........................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
+856 job(s) submitted to cluster 2181223.
+Submitting job(s)........................................................................................................................................
+136 job(s) submitted to cluster 2181224.
+Submitting job(s)........................................................................................................................................
+136 job(s) submitted to cluster 2181225.
+Submitting job(s)..............................................................................................................................................................
+158 job(s) submitted to cluster 2181226.
+Set permissions to 777 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024
+Setted Path of proxy : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/proxy.cert
+  [ProxyChecker] Proxy is valid for 167897 seconds.
+
+--------------------------------------------------------------------------
+  --> Memory Check before submit jobs <--  
+
+System Memory Status:
+
+--------------------------------------------------------------------------
+  [only] 8 of 84 yml samples: ParkingHH_Run2024C-MINIv6NANOv15-v1 ParkingHH_Run2024D-MINIv6NANOv15-v1 ParkingHH_Run2024E-MINIv6NANOv15-v1 ParkingHH_Run2024F-MINIv6NANOv15-v4 ParkingHH_Run2024G-MINIv6NANOv15-v3 ParkingHH_Run2024H-MINIv6NANOv15-v3 ParkingHH_Run2024I-MINIv6NANOv15-v3 ParkingHH_Run2024I-MINIv6NANOv15_v2-v2
+  [cmd-log] 제출 명령어 기록: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3_unified_main_notrig_2024/submit_command.txt
+  [era] ParkingHH_Run2024C-MINIv6NANOv15-v1: Data -> era 'C' (샘플명에서 자동 추출)
+  [weight] ParkingHH_Run2024C-MINIv6NANOv15-v1: 1  (data)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ParkingHH_Run2024C-MINIv6NANOv15-v1/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ParkingHH_Run2024C-MINIv6NANOv15-v1/
+
+Setting up job for sample: ParkingHH_Run2024C-MINIv6NANOv15-v1
+Submitting job for sample: ParkingHH_Run2024C-MINIv6NANOv15-v1
+  [era] ParkingHH_Run2024D-MINIv6NANOv15-v1: Data -> era 'D' (샘플명에서 자동 추출)
+  [weight] ParkingHH_Run2024D-MINIv6NANOv15-v1: 1  (data)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ParkingHH_Run2024D-MINIv6NANOv15-v1/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ParkingHH_Run2024D-MINIv6NANOv15-v1/
+
+Setting up job for sample: ParkingHH_Run2024D-MINIv6NANOv15-v1
+Submitting job for sample: ParkingHH_Run2024D-MINIv6NANOv15-v1
+  [era] ParkingHH_Run2024E-MINIv6NANOv15-v1: Data -> era 'E' (샘플명에서 자동 추출)
+  [weight] ParkingHH_Run2024E-MINIv6NANOv15-v1: 1  (data)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ParkingHH_Run2024E-MINIv6NANOv15-v1/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ParkingHH_Run2024E-MINIv6NANOv15-v1/
+
+Setting up job for sample: ParkingHH_Run2024E-MINIv6NANOv15-v1
+Submitting job for sample: ParkingHH_Run2024E-MINIv6NANOv15-v1
+  [era] ParkingHH_Run2024F-MINIv6NANOv15-v4: Data -> era 'F' (샘플명에서 자동 추출)
+  [weight] ParkingHH_Run2024F-MINIv6NANOv15-v4: 1  (data)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ParkingHH_Run2024F-MINIv6NANOv15-v4/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ParkingHH_Run2024F-MINIv6NANOv15-v4/
+
+Setting up job for sample: ParkingHH_Run2024F-MINIv6NANOv15-v4
+Submitting job for sample: ParkingHH_Run2024F-MINIv6NANOv15-v4
+  [era] ParkingHH_Run2024G-MINIv6NANOv15-v3: Data -> era 'G' (샘플명에서 자동 추출)
+  [weight] ParkingHH_Run2024G-MINIv6NANOv15-v3: 1  (data)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ParkingHH_Run2024G-MINIv6NANOv15-v3/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ParkingHH_Run2024G-MINIv6NANOv15-v3/
+
+Setting up job for sample: ParkingHH_Run2024G-MINIv6NANOv15-v3
+Submitting job for sample: ParkingHH_Run2024G-MINIv6NANOv15-v3
+  [era] ParkingHH_Run2024H-MINIv6NANOv15-v3: Data -> era 'H' (샘플명에서 자동 추출)
+  [weight] ParkingHH_Run2024H-MINIv6NANOv15-v3: 1  (data)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ParkingHH_Run2024H-MINIv6NANOv15-v3/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ParkingHH_Run2024H-MINIv6NANOv15-v3/
+
+Setting up job for sample: ParkingHH_Run2024H-MINIv6NANOv15-v3
+Submitting job for sample: ParkingHH_Run2024H-MINIv6NANOv15-v3
+  [era] ParkingHH_Run2024I-MINIv6NANOv15-v3: Data -> era 'I' (샘플명에서 자동 추출)
+  [weight] ParkingHH_Run2024I-MINIv6NANOv15-v3: 1  (data)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ParkingHH_Run2024I-MINIv6NANOv15-v3/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ParkingHH_Run2024I-MINIv6NANOv15-v3/
+
+Setting up job for sample: ParkingHH_Run2024I-MINIv6NANOv15-v3
+Submitting job for sample: ParkingHH_Run2024I-MINIv6NANOv15-v3
+  [era] ParkingHH_Run2024I-MINIv6NANOv15_v2-v2: Data -> era 'I' (샘플명에서 자동 추출)
+  [weight] ParkingHH_Run2024I-MINIv6NANOv15_v2-v2: 1  (data)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ParkingHH_Run2024I-MINIv6NANOv15_v2-v2/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ParkingHH_Run2024I-MINIv6NANOv15_v2-v2/
+
+Setting up job for sample: ParkingHH_Run2024I-MINIv6NANOv15_v2-v2
+Submitting job for sample: ParkingHH_Run2024I-MINIv6NANOv15_v2-v2
+===========================================================================
+end_utc     : 2026-10-07T14:51:25Z
+wall_s      : 25
+EXIT        : 0
+outputs     : (no file of this repo changed, apart from tmp/ condor/ runlogs/)
+log         : runlogs/run_knu_submit_main_2024_j_parkinghh_20261007_145059.log
+log_kb      : 9
+=== END ===================================================================

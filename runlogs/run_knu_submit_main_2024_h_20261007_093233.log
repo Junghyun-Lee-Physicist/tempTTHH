@@ -1,0 +1,721 @@
+=== RUNLOG ================================================================
+step        : knu_submit_main_2024_h
+start_utc   : 2026-10-07T09:32:33Z
+host        : cms01   user: jhlee
+cwd         : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+repo        : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+git_head    : 57b25577   modified_tracked_files: 1
+cmd         : python3 submit_job_FH_Tier3_unified.py --mode main --config AnalyzerConfig/Tier3_2024_FH_unified_main.yml --trigsf off --btagsf off --btagrw off 
+CMSSW_BASE  : /u/user/jhlee/ttHH/CMSSW_14_2_1
+root        : 6.30.09
+python3     : Python 3.9.14
+===========================================================================
+               total        used        free      shared  buff/cache   available
+Mem:            72Gi        15Gi       9.7Gi       189Mi        47Gi        56Gi
+Swap:           15Gi       8.0Mi        15Gi
+Submitting job(s)....
+4 job(s) submitted to cluster 2181139.
+Submitting job(s).................................
+33 job(s) submitted to cluster 2181140.
+Submitting job(s)...............................
+31 job(s) submitted to cluster 2181141.
+Submitting job(s)................................
+32 job(s) submitted to cluster 2181142.
+Submitting job(s)......................................................
+54 job(s) submitted to cluster 2181143.
+Submitting job(s)...
+3 job(s) submitted to cluster 2181144.
+Submitting job(s)....
+4 job(s) submitted to cluster 2181145.
+Submitting job(s)....................................
+36 job(s) submitted to cluster 2181146.
+Submitting job(s)...........................
+27 job(s) submitted to cluster 2181147.
+Submitting job(s).............................................................................
+77 job(s) submitted to cluster 2181148.
+Submitting job(s)...............................................................................
+79 job(s) submitted to cluster 2181149.
+Submitting job(s)..............................................................................
+78 job(s) submitted to cluster 2181150.
+Submitting job(s)...................
+19 job(s) submitted to cluster 2181151.
+Submitting job(s).............................
+29 job(s) submitted to cluster 2181152.
+Set permissions to 777 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024
+Setted Path of proxy : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/proxy.cert
+  [ProxyChecker] Proxy is valid for 187003 seconds.
+
+--------------------------------------------------------------------------
+  --> Memory Check before submit jobs <--  
+
+System Memory Status:
+
+--------------------------------------------------------------------------
+  [cmd-log] 제출 명령어 기록: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/filelistTier3_unified_main_notrig_2024/submit_command.txt
+  [skim] TTHHto4b: sumGenW tree/runs = 0.9503 (events that passed the ntuple skim; normalization uses runs)
+  [weight] TTHHto4b: 3.203592042e-06  (xsec_fb=0.86*br=0.33919*k=1.0*lumi=109.816/sumGenW=9.9993e+06)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTHHto4b/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTHHto4b/
+
+Setting up job for sample: TTHHto4b
+Submitting job for sample: TTHHto4b
+  [skim] ttHTobb_had: sumGenW tree/runs = 0.8798 (events that passed the ntuple skim; normalization uses runs)
+  [weight] ttHTobb_had: 0.002133977029  (xsec_fb=570.0*br=0.26465*k=1.0*lumi=109.816/sumGenW=7.7628e+06)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ttHTobb_had/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ttHTobb_had/
+
+Setting up job for sample: ttHTobb_had
+Submitting job for sample: ttHTobb_had
+  [skim] ttHTobb_semilep: sumGenW tree/runs = 0.7671 (events that passed the ntuple skim; normalization uses runs)
+  [weight] ttHTobb_semilep: 0.002252899886  (xsec_fb=570.0*br=0.25589*k=1.0*lumi=109.816/sumGenW=7.1098e+06)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ttHTobb_semilep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ttHTobb_semilep/
+
+Setting up job for sample: ttHTobb_semilep
+Submitting job for sample: ttHTobb_semilep
+  [skim] ttHTobb_dilep: sumGenW tree/runs = 0.5958 (events that passed the ntuple skim; normalization uses runs)
+  [weight] ttHTobb_dilep: 0.002175590497  (xsec_fb=570.0*br=0.06186*k=1.0*lumi=109.816/sumGenW=1.7797e+06)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ttHTobb_dilep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ttHTobb_dilep/
+
+Setting up job for sample: ttHTobb_dilep
+Submitting job for sample: ttHTobb_dilep
+  [skim] ttHToNonbb: sumGenW tree/runs = 0.8058 (events that passed the ntuple skim; normalization uses runs)
+  [weight] ttHToNonbb: 0.0008444531056  (xsec_fb=570.0*br=0.41760*k=1.0*lumi=109.816/sumGenW=3.0955e+07)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ttHToNonbb/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ttHToNonbb/
+
+Setting up job for sample: ttHToNonbb
+Submitting job for sample: ttHToNonbb
+  [skim] TTZHTo4b: sumGenW tree/runs = 0.9415 (events that passed the ntuple skim; normalization uses runs)
+  [weight] TTZHTo4b: 1.247424878e-06  (xsec_fb=1.288*br=0.08806*k=1.0*lumi=109.816/sumGenW=9.9848e+06)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTZHTo4b/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTZHTo4b/
+
+Setting up job for sample: TTZHTo4b
+Submitting job for sample: TTZHTo4b
+  [skim] TTZZTo4b: sumGenW tree/runs = 0.9193 (events that passed the ntuple skim; normalization uses runs)
+  [weight] TTZZTo4b: 3.999636216e-07  (xsec_fb=1.579*br=0.02286*k=1.0*lumi=109.816/sumGenW=9.9113e+06)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTZZTo4b/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTZZTo4b/
+
+Setting up job for sample: TTZZTo4b
+Submitting job for sample: TTZZTo4b
+  [skim] tHq: sumGenW tree/runs = 0.4018 (events that passed the ntuple skim; normalization uses runs)
+  [weight] tHq: 0.0004594625265  (xsec_fb=83.62*br=1.00000*k=1.0*lumi=109.816/sumGenW=1.9986e+07)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/tHq/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/tHq/
+
+Setting up job for sample: tHq
+Submitting job for sample: tHq
+  [skim] tHW: sumGenW tree/runs = 0.7462 (events that passed the ntuple skim; normalization uses runs)
+  [weight] tHW: 0.0001259560609  (xsec_fb=17.2*br=1.00000*k=1.0*lumi=109.816/sumGenW=1.4996e+07)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/tHW/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/tHW/
+
+Setting up job for sample: tHW
+Submitting job for sample: tHW
+  [skim] TTbar_Hadronic: sumGenW tree/runs = 0.5202 (events that passed the ntuple skim; normalization uses runs)
+  [weight] TTbar_Hadronic: 0.0002827721305  (xsec_fb=923600.0*br=0.45441*k=1.0*lumi=109.816/sumGenW=1.6299e+11)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTbar_Hadronic/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTbar_Hadronic/
+
+Setting up job for sample: TTbar_Hadronic
+Submitting job for sample: TTbar_Hadronic
+  [skim] TTbar_SemiLep: sumGenW tree/runs = 0.3169 (events that passed the ntuple skim; normalization uses runs)
+  [weight] TTbar_SemiLep: 0.0002751442375  (xsec_fb=923600.0*br=0.43938*k=1.0*lumi=109.816/sumGenW=1.6197e+11)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTbar_SemiLep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTbar_SemiLep/
+
+Setting up job for sample: TTbar_SemiLep
+Submitting job for sample: TTbar_SemiLep
+  [skim] TTbar_DiLep: sumGenW tree/runs = 0.1625 (events that passed the ntuple skim; normalization uses runs)
+  [weight] TTbar_DiLep: 0.0002853347116  (xsec_fb=923600.0*br=0.10621*k=1.0*lumi=109.816/sumGenW=3.7754e+10)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTbar_DiLep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTbar_DiLep/
+
+Setting up job for sample: TTbar_DiLep
+Submitting job for sample: TTbar_DiLep
+  [skim] TTbb_Hadronic: sumGenW tree/runs = 0.6585 (events that passed the ntuple skim; normalization uses runs)
+  [weight] TTbb_Hadronic: 0.0003238384286  (xsec_fb=1608.2*br=0.45441*k=1.0*lumi=109.816/sumGenW=2.4781e+08)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTbb_Hadronic/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTbb_Hadronic/
+
+Setting up job for sample: TTbb_Hadronic
+Submitting job for sample: TTbb_Hadronic
+  [skim] TTbb_SemiLep: sumGenW tree/runs = 0.4750 (events that passed the ntuple skim; normalization uses runs)
+  [weight] TTbb_SemiLep: 0.0002169960433  (xsec_fb=1608.2*br=0.43938*k=1.0*lumi=109.816/sumGenW=3.5760e+08)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTbb_SemiLep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTbb_SemiLep/
+
+Setting up job for sample: TTbb_SemiLep
+Submitting job for sample: TTbb_SemiLep
+Submitting job(s).....................
+21 job(s) submitted to cluster 2181153.
+Submitting job(s)....
+4 job(s) submitted to cluster 2181154.
+Submitting job(s).......
+7 job(s) submitted to cluster 2181155.
+Submitting job(s).........
+9 job(s) submitted to cluster 2181156.
+Submitting job(s).....
+5 job(s) submitted to cluster 2181157.
+Submitting job(s)....
+4 job(s) submitted to cluster 2181158.
+Submitting job(s).....
+5 job(s) submitted to cluster 2181159.
+Submitting job(s)......
+6 job(s) submitted to cluster 2181160.
+Submitting job(s)..........
+10 job(s) submitted to cluster 2181161.
+Submitting job(s)......
+6 job(s) submitted to cluster 2181162.
+Submitting job(s)...................
+19 job(s) submitted to cluster 2181163.
+Submitting job(s)..................
+18 job(s) submitted to cluster 2181164.
+Submitting job(s)...........
+11 job(s) submitted to cluster 2181165.
+Submitting job(s)..............................................................................
+78 job(s) submitted to cluster 2181166.
+Submitting job(s)........................................
+40 job(s) submitted to cluster 2181167.
+  [skim] TTbb_DiLep: sumGenW tree/runs = 0.2993 (events that passed the ntuple skim; normalization uses runs)
+  [weight] TTbb_DiLep: 0.0003919552249  (xsec_fb=1608.2*br=0.10621*k=1.0*lumi=109.816/sumGenW=4.7856e+07)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTbb_DiLep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTbb_DiLep/
+
+Setting up job for sample: TTbb_DiLep
+Submitting job for sample: TTbb_DiLep
+  [skim] TT4b: sumGenW tree/runs = 0.7705 (events that passed the ntuple skim; normalization uses runs)
+  [weight] TT4b: 0.003636754271  (xsec_fb=327.8*br=1.00000*k=1.0*lumi=109.816/sumGenW=9.8983e+06)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TT4b/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TT4b/
+
+Setting up job for sample: TT4b
+Submitting job for sample: TT4b
+  [skim] TTZToQQ: sumGenW tree/runs = 0.7782 (events that passed the ntuple skim; normalization uses runs)
+  [weight] TTZToQQ: 0.01401658142  (xsec_fb=660.3*br=1.00000*k=1.0*lumi=109.816/sumGenW=5.1733e+06)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTZToQQ/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTZToQQ/
+
+Setting up job for sample: TTZToQQ
+Submitting job for sample: TTZToQQ
+  [skim] TTWJetsToQQ: sumGenW tree/runs = 0.7074 (events that passed the ntuple skim; normalization uses runs)
+  [weight] TTWJetsToQQ: 0.01111018389  (xsec_fb=467.8*br=1.00000*k=1.0*lumi=109.816/sumGenW=4.6239e+06)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTWJetsToQQ/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTWJetsToQQ/
+
+Setting up job for sample: TTWJetsToQQ
+Submitting job for sample: TTWJetsToQQ
+  [skim] TTLL_MLL50: sumGenW tree/runs = 0.7610 (events that passed the ntuple skim; normalization uses runs)
+  [weight] TTLL_MLL50: 0.02784721799  (xsec_fb=86.46*br=1.00000*k=1.0*lumi=109.816/sumGenW=3.4096e+05)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTLL_MLL50/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTLL_MLL50/
+
+Setting up job for sample: TTLL_MLL50
+Submitting job for sample: TTLL_MLL50
+  [skim] TTLL_MLL4to50: sumGenW tree/runs = 0.5248 (events that passed the ntuple skim; normalization uses runs)
+  [weight] TTLL_MLL4to50: 0.03709073828  (xsec_fb=39.49*br=1.00000*k=1.0*lumi=109.816/sumGenW=1.1692e+05)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTLL_MLL4to50/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTLL_MLL4to50/
+
+Setting up job for sample: TTLL_MLL4to50
+Submitting job for sample: TTLL_MLL4to50
+  [skim] TTNuNu: sumGenW tree/runs = 0.3956 (events that passed the ntuple skim; normalization uses runs)
+  [weight] TTNuNu: 0.02748776112  (xsec_fb=163.8*br=1.00000*k=1.0*lumi=109.816/sumGenW=6.5440e+05)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTNuNu/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTNuNu/
+
+Setting up job for sample: TTNuNu
+Submitting job for sample: TTNuNu
+  [skim] TTWW: sumGenW tree/runs = 0.8795 (events that passed the ntuple skim; normalization uses runs)
+  [weight] TTWW: 0.0001552871312  (xsec_fb=8.203*br=1.00000*k=1.0*lumi=109.816/sumGenW=5.8010e+06)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTWW/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTWW/
+
+Setting up job for sample: TTWW
+Submitting job for sample: TTWW
+  [skim] TTWH: sumGenW tree/runs = 0.8990 (events that passed the ntuple skim; normalization uses runs)
+  [weight] TTWH: 1.297684115e-05  (xsec_fb=1.252*br=1.00000*k=1.0*lumi=109.816/sumGenW=1.0595e+07)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTWH/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTWH/
+
+Setting up job for sample: TTWH
+Submitting job for sample: TTWH
+  [skim] TTWZ: sumGenW tree/runs = 0.8509 (events that passed the ntuple skim; normalization uses runs)
+  [weight] TTWZ: 5.392483993e-05  (xsec_fb=2.715*br=1.00000*k=1.0*lumi=109.816/sumGenW=5.5290e+06)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTWZ/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTWZ/
+
+Setting up job for sample: TTWZ
+Submitting job for sample: TTWZ
+  [skim] TTTWminus: sumGenW tree/runs = 0.9672 (events that passed the ntuple skim; normalization uses runs)
+  [weight] TTTWminus: 0.007839759761  (xsec_fb=0.4173*br=1.00000*k=1.0*lumi=109.816/sumGenW=5.8454e+03)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTTWminus/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTTWminus/
+
+Setting up job for sample: TTTWminus
+Submitting job for sample: TTTWminus
+  [skim] TTTWplus: sumGenW tree/runs = 0.9676 (events that passed the ntuple skim; normalization uses runs)
+  [weight] TTTWplus: 0.007885400345  (xsec_fb=0.4173*br=1.00000*k=1.0*lumi=109.816/sumGenW=5.8115e+03)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTTWplus/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTTWplus/
+
+Setting up job for sample: TTTWplus
+Submitting job for sample: TTTWplus
+  [skim] TTTT: sumGenW tree/runs = 0.9879 (events that passed the ntuple skim; normalization uses runs)
+  [weight] TTTT: 0.01838200199  (xsec_fb=15.82*br=1.00000*k=1.0*lumi=109.816/sumGenW=9.4510e+04)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTTT/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTTT/
+
+Setting up job for sample: TTTT
+Submitting job for sample: TTTT
+  [skim] ST_t_top_had: sumGenW tree/runs = 0.0665 (events that passed the ntuple skim; normalization uses runs)
+  [weight] ST_t_top_had: 0.001579427749  (xsec_fb=145000.0*br=0.67410*k=1.0*lumi=109.816/sumGenW=6.7961e+09)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_t_top_had/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_t_top_had/
+
+Setting up job for sample: ST_t_top_had
+Submitting job for sample: ST_t_top_had
+  [skim] ST_t_top_lep: sumGenW tree/runs = 0.0271 (events that passed the ntuple skim; normalization uses runs)
+  [weight] ST_t_top_lep: 0.003024888108  (xsec_fb=145000.0*br=0.32590*k=1.0*lumi=109.816/sumGenW=1.7156e+09)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_t_top_lep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_t_top_lep/
+
+Setting up job for sample: ST_t_top_lep
+Submitting job for sample: ST_t_top_lep
+  [skim] ST_t_antitop_had: sumGenW tree/runs = 0.0680 (events that passed the ntuple skim; normalization uses runs)
+  [weight] ST_t_antitop_had: 0.003186221261  (xsec_fb=87200.0*br=0.67410*k=1.0*lumi=109.816/sumGenW=2.0260e+09)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_t_antitop_had/
+Submitting job(s)...................................................................................
+83 job(s) submitted to cluster 2181168.
+Submitting job(s).........................
+25 job(s) submitted to cluster 2181169.
+Submitting job(s)................
+16 job(s) submitted to cluster 2181170.
+Submitting job(s)..........................
+26 job(s) submitted to cluster 2181171.
+Submitting job(s)..................
+18 job(s) submitted to cluster 2181172.
+Submitting job(s)....................
+20 job(s) submitted to cluster 2181173.
+Submitting job(s)..........................
+26 job(s) submitted to cluster 2181174.
+Submitting job(s).........
+9 job(s) submitted to cluster 2181175.
+Submitting job(s)..........
+10 job(s) submitted to cluster 2181176.
+Submitting job(s)............................
+28 job(s) submitted to cluster 2181177.
+Submitting job(s)..........
+10 job(s) submitted to cluster 2181178.
+Submitting job(s).......................
+23 job(s) submitted to cluster 2181179.
+Submitting job(s)....................................................
+52 job(s) submitted to cluster 2181180.
+Submitting job(s)...............................
+31 job(s) submitted to cluster 2181181.
+Submitting job(s)........
+8 job(s) submitted to cluster 2181182.
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_t_antitop_had/
+
+Setting up job for sample: ST_t_antitop_had
+Submitting job for sample: ST_t_antitop_had
+  [skim] ST_t_antitop_lep: sumGenW tree/runs = 0.0270 (events that passed the ntuple skim; normalization uses runs)
+  [weight] ST_t_antitop_lep: 0.006036277674  (xsec_fb=87200.0*br=0.32590*k=1.0*lumi=109.816/sumGenW=5.1701e+08)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_t_antitop_lep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_t_antitop_lep/
+
+Setting up job for sample: ST_t_antitop_lep
+Submitting job for sample: ST_t_antitop_lep
+  [skim] ST_tW_top_had: sumGenW tree/runs = 0.2922 (events that passed the ntuple skim; normalization uses runs)
+  [weight] ST_tW_top_had: 0.005571986807  (xsec_fb=43950.0*br=0.45441*k=1.0*lumi=109.816/sumGenW=3.9361e+08)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_tW_top_had/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_tW_top_had/
+
+Setting up job for sample: ST_tW_top_had
+Submitting job for sample: ST_tW_top_had
+  [skim] ST_tW_top_semilep: sumGenW tree/runs = 0.1428 (events that passed the ntuple skim; normalization uses runs)
+  [weight] ST_tW_top_semilep: 0.0020487517  (xsec_fb=43950.0*br=0.43938*k=1.0*lumi=109.816/sumGenW=1.0351e+09)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_tW_top_semilep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_tW_top_semilep/
+
+Setting up job for sample: ST_tW_top_semilep
+Submitting job for sample: ST_tW_top_semilep
+  [skim] ST_tW_top_dilep: sumGenW tree/runs = 0.0592 (events that passed the ntuple skim; normalization uses runs)
+  [weight] ST_tW_top_dilep: 0.00899757501  (xsec_fb=43950.0*br=0.10621*k=1.0*lumi=109.816/sumGenW=5.6973e+07)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_tW_top_dilep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_tW_top_dilep/
+
+Setting up job for sample: ST_tW_top_dilep
+Submitting job for sample: ST_tW_top_dilep
+  [skim] ST_tW_antitop_had: sumGenW tree/runs = 0.2932 (events that passed the ntuple skim; normalization uses runs)
+  [weight] ST_tW_antitop_had: 0.005561303822  (xsec_fb=43950.0*br=0.45441*k=1.0*lumi=109.816/sumGenW=3.9436e+08)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_tW_antitop_had/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_tW_antitop_had/
+
+Setting up job for sample: ST_tW_antitop_had
+Submitting job for sample: ST_tW_antitop_had
+  [skim] ST_tW_antitop_semilep: sumGenW tree/runs = 0.1439 (events that passed the ntuple skim; normalization uses runs)
+  [weight] ST_tW_antitop_semilep: 0.002000926252  (xsec_fb=43950.0*br=0.43938*k=1.0*lumi=109.816/sumGenW=1.0598e+09)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_tW_antitop_semilep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_tW_antitop_semilep/
+
+Setting up job for sample: ST_tW_antitop_semilep
+Submitting job for sample: ST_tW_antitop_semilep
+  [skim] ST_tW_antitop_dilep: sumGenW tree/runs = 0.0598 (events that passed the ntuple skim; normalization uses runs)
+  [weight] ST_tW_antitop_dilep: 0.008979535698  (xsec_fb=43950.0*br=0.10621*k=1.0*lumi=109.816/sumGenW=5.7087e+07)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_tW_antitop_dilep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_tW_antitop_dilep/
+
+Setting up job for sample: ST_tW_antitop_dilep
+Submitting job for sample: ST_tW_antitop_dilep
+  [skim] ST_s_top_had: sumGenW tree/runs = 0.0744 (events that passed the ntuple skim; normalization uses runs)
+  [weight] ST_s_top_had: 0.01519440196  (xsec_fb=7244.0*br=0.67410*k=1.0*lumi=109.816/sumGenW=3.5293e+07)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_s_top_had/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_s_top_had/
+
+Setting up job for sample: ST_s_top_had
+Submitting job for sample: ST_s_top_had
+  [skim] ST_s_top_lep: sumGenW tree/runs = 0.0294 (events that passed the ntuple skim; normalization uses runs)
+  [weight] ST_s_top_lep: 0.002835737587  (xsec_fb=7244.0*br=0.32590*k=1.0*lumi=109.816/sumGenW=9.1424e+07)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_s_top_lep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_s_top_lep/
+
+Setting up job for sample: ST_s_top_lep
+Submitting job for sample: ST_s_top_lep
+  [skim] ST_s_antitop_had: sumGenW tree/runs = 0.0779 (events that passed the ntuple skim; normalization uses runs)
+  [weight] ST_s_antitop_had: 0.02193842471  (xsec_fb=4534.0*br=0.67410*k=1.0*lumi=109.816/sumGenW=1.5299e+07)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_s_antitop_had/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_s_antitop_had/
+
+Setting up job for sample: ST_s_antitop_had
+Submitting job for sample: ST_s_antitop_had
+  [skim] ST_s_antitop_lep: sumGenW tree/runs = 0.0285 (events that passed the ntuple skim; normalization uses runs)
+  [weight] ST_s_antitop_lep: 0.004415786875  (xsec_fb=4534.0*br=0.32590*k=1.0*lumi=109.816/sumGenW=3.6747e+07)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_s_antitop_lep/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_s_antitop_lep/
+
+Setting up job for sample: ST_s_antitop_lep
+Submitting job for sample: ST_s_antitop_lep
+  [skim] WW: sumGenW tree/runs = 0.0200 (events that passed the ntuple skim; normalization uses runs)
+  [weight] WW: 0.2158993573  (xsec_fb=125800.0*br=1.00000*k=1.0*lumi=109.816/sumGenW=6.3987e+07)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/WW/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/WW/
+
+Setting up job for sample: WW
+Submitting job for sample: WW
+  [skim] WZ: sumGenW tree/runs = 0.0240 (events that passed the ntuple skim; normalization uses runs)
+  [weight] WZ: 0.1966403566  (xsec_fb=54700.0*br=1.00000*k=1.0*lumi=109.816/sumGenW=3.0548e+07)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/WZ/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/WZ/
+
+Setting up job for sample: WZ
+Submitting job for sample: WZ
+  [skim] ZZ: sumGenW tree/runs = 0.0255 (events that passed the ntuple skim; normalization uses runs)
+  [weight] ZZ: 0.3820681667  (xsec_fb=16700.0*br=1.00000*k=1.0*lumi=109.816/sumGenW=4.8000e+06)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ZZ/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ZZ/
+
+Setting up job for sample: ZZ
+Submitting job for sample: ZZ
+  [skim] QCD_HT200to400: sumGenW tree/runs = 0.0229 (events that passed the ntuple skim; normalization uses runs)
+  [weight] QCD_HT200to400: 0.0001086292856  (xsec_fb=1961000000.0*br=1.00000*k=1.0*lumi=109.816/sumGenW=1.9824e+15)
+Submitting job(s).................
+17 job(s) submitted to cluster 2181183.
+Submitting job(s)..................
+18 job(s) submitted to cluster 2181184.
+Submitting job(s).......................
+23 job(s) submitted to cluster 2181185.
+Submitting job(s)..........................
+26 job(s) submitted to cluster 2181186.
+Submitting job(s).......................
+23 job(s) submitted to cluster 2181187.
+Submitting job(s).......................
+23 job(s) submitted to cluster 2181188.
+Submitting job(s).........................
+25 job(s) submitted to cluster 2181189.
+Submitting job(s).......................
+23 job(s) submitted to cluster 2181190.
+Submitting job(s)..............................................................................................................................................................................................................................................................
+254 job(s) submitted to cluster 2181191.
+Submitting job(s)..........................................
+42 job(s) submitted to cluster 2181192.
+Submitting job(s)......................................
+38 job(s) submitted to cluster 2181193.
+Submitting job(s)............................................
+44 job(s) submitted to cluster 2181194.
+Submitting job(s).................................................................................................
+97 job(s) submitted to cluster 2181195.
+Submitting job(s)..............................................
+46 job(s) submitted to cluster 2181196.
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/QCD_HT200to400/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/QCD_HT200to400/
+
+Setting up job for sample: QCD_HT200to400
+Submitting job for sample: QCD_HT200to400
+  [skim] QCD_HT400to600: sumGenW tree/runs = 0.1027 (events that passed the ntuple skim; normalization uses runs)
+  [weight] QCD_HT400to600: 9.411641733e-05  (xsec_fb=95620000.0*br=1.00000*k=1.0*lumi=109.816/sumGenW=1.1157e+14)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/QCD_HT400to600/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/QCD_HT400to600/
+
+Setting up job for sample: QCD_HT400to600
+Submitting job for sample: QCD_HT400to600
+  [skim] QCD_HT600to800: sumGenW tree/runs = 0.1720 (events that passed the ntuple skim; normalization uses runs)
+  [weight] QCD_HT600to800: 7.228693656e-05  (xsec_fb=13540000.0*br=1.00000*k=1.0*lumi=109.816/sumGenW=2.0570e+13)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/QCD_HT600to800/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/QCD_HT600to800/
+
+Setting up job for sample: QCD_HT600to800
+Submitting job for sample: QCD_HT600to800
+  [skim] QCD_HT800to1000: sumGenW tree/runs = 0.2219 (events that passed the ntuple skim; normalization uses runs)
+  [weight] QCD_HT800to1000: 7.067691242e-05  (xsec_fb=3033000.0*br=1.00000*k=1.0*lumi=109.816/sumGenW=4.7126e+12)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/QCD_HT800to1000/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/QCD_HT800to1000/
+
+Setting up job for sample: QCD_HT800to1000
+Submitting job for sample: QCD_HT800to1000
+  [skim] QCD_HT1000to1200: sumGenW tree/runs = 0.2570 (events that passed the ntuple skim; normalization uses runs)
+  [weight] QCD_HT1000to1200: 7.407875516e-05  (xsec_fb=883700.0*br=1.00000*k=1.0*lumi=109.816/sumGenW=1.3100e+12)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/QCD_HT1000to1200/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/QCD_HT1000to1200/
+
+Setting up job for sample: QCD_HT1000to1200
+Submitting job for sample: QCD_HT1000to1200
+  [skim] QCD_HT1200to1500: sumGenW tree/runs = 0.2844 (events that passed the ntuple skim; normalization uses runs)
+  [weight] QCD_HT1200to1500: 7.726609679e-05  (xsec_fb=383500.0*br=1.00000*k=1.0*lumi=109.816/sumGenW=5.4506e+11)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/QCD_HT1200to1500/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/QCD_HT1200to1500/
+
+Setting up job for sample: QCD_HT1200to1500
+Submitting job for sample: QCD_HT1200to1500
+  [skim] QCD_HT1500to2000: sumGenW tree/runs = 0.3101 (events that passed the ntuple skim; normalization uses runs)
+  [weight] QCD_HT1500to2000: 7.230548522e-05  (xsec_fb=125200.0*br=1.00000*k=1.0*lumi=109.816/sumGenW=1.9015e+11)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/QCD_HT1500to2000/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/QCD_HT1500to2000/
+
+Setting up job for sample: QCD_HT1500to2000
+Submitting job for sample: QCD_HT1500to2000
+  [skim] QCD_HT2000toInf: sumGenW tree/runs = 0.3295 (events that passed the ntuple skim; normalization uses runs)
+  [weight] QCD_HT2000toInf: 9.057589596e-05  (xsec_fb=26490.0*br=1.00000*k=1.0*lumi=109.816/sumGenW=3.2117e+10)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/QCD_HT2000toInf/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/QCD_HT2000toInf/
+
+Setting up job for sample: QCD_HT2000toInf
+Submitting job for sample: QCD_HT2000toInf
+  [skim] WJetsToQQ_HT400to800: sumGenW tree/runs = 0.1746 (events that passed the ntuple skim; normalization uses runs)
+  [weight] WJetsToQQ_HT400to800: 5.502136007e-05  (xsec_fb=356900.0*br=1.00000*k=1.0*lumi=109.816/sumGenW=7.1233e+11)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/WJetsToQQ_HT400to800/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/WJetsToQQ_HT400to800/
+
+Setting up job for sample: WJetsToQQ_HT400to800
+Submitting job for sample: WJetsToQQ_HT400to800
+  [skim] WJetsToQQ_HT800to1500: sumGenW tree/runs = 0.3348 (events that passed the ntuple skim; normalization uses runs)
+  [weight] WJetsToQQ_HT800to1500: 0.0004083603412  (xsec_fb=29520.0*br=1.00000*k=1.0*lumi=109.816/sumGenW=7.9385e+09)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/WJetsToQQ_HT800to1500/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/WJetsToQQ_HT800to1500/
+
+Setting up job for sample: WJetsToQQ_HT800to1500
+Submitting job for sample: WJetsToQQ_HT800to1500
+  [skim] WJetsToQQ_HT1500to2500: sumGenW tree/runs = 0.4079 (events that passed the ntuple skim; normalization uses runs)
+  [weight] WJetsToQQ_HT1500to2500: 0.0004617285764  (xsec_fb=1825.0*br=1.00000*k=1.0*lumi=109.816/sumGenW=4.3405e+08)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/WJetsToQQ_HT1500to2500/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/WJetsToQQ_HT1500to2500/
+
+Setting up job for sample: WJetsToQQ_HT1500to2500
+Submitting job for sample: WJetsToQQ_HT1500to2500
+  [skim] WJetsToQQ_HT2500toInf: sumGenW tree/runs = 0.4300 (events that passed the ntuple skim; normalization uses runs)
+  [weight] WJetsToQQ_HT2500toInf: 0.0004560718071  (xsec_fb=115.8*br=1.00000*k=1.0*lumi=109.816/sumGenW=2.7883e+07)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/WJetsToQQ_HT2500toInf/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/WJetsToQQ_HT2500toInf/
+
+Setting up job for sample: WJetsToQQ_HT2500toInf
+Submitting job for sample: WJetsToQQ_HT2500toInf
+  [skim] ZJetsToQQ_HT400to800: sumGenW tree/runs = 0.1934 (events that passed the ntuple skim; normalization uses runs)
+  [weight] ZJetsToQQ_HT400to800: 5.905040482e-05  (xsec_fb=145100.0*br=1.00000*k=1.0*lumi=109.816/sumGenW=2.6984e+11)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ZJetsToQQ_HT400to800/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ZJetsToQQ_HT400to800/
+
+Setting up job for sample: ZJetsToQQ_HT400to800
+Submitting job for sample: ZJetsToQQ_HT400to800
+  [skim] ZJetsToQQ_HT800to1500: sumGenW tree/runs = 0.3899 (events that passed the ntuple skim; normalization uses runs)
+  [weight] ZJetsToQQ_HT800to1500: 0.0001780489065  (xsec_fb=12900.0*br=1.00000*k=1.0*lumi=109.816/sumGenW=7.9564e+09)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ZJetsToQQ_HT800to1500/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ZJetsToQQ_HT800to1500/
+
+Setting up job for sample: ZJetsToQQ_HT800to1500
+Submitting job for sample: ZJetsToQQ_HT800to1500
+  [skim] ZJetsToQQ_HT1500to2500: sumGenW tree/runs = 0.4747 (events that passed the ntuple skim; normalization uses runs)
+  [weight] ZJetsToQQ_HT1500to2500: 0.0001300251072  (xsec_fb=854.1*br=1.00000*k=1.0*lumi=109.816/sumGenW=7.2135e+08)
+Submitting job(s)........................................................
+56 job(s) submitted to cluster 2181197.
+Submitting job(s)..................................................
+50 job(s) submitted to cluster 2181198.
+Submitting job(s)................................................................................................................................................................
+160 job(s) submitted to cluster 2181199.
+Submitting job(s).......................................................................................................................................................
+151 job(s) submitted to cluster 2181200.
+Submitting job(s).......................................................................................................................................................................................................................................
+231 job(s) submitted to cluster 2181201.
+Submitting job(s)..............................................................................................................................................................................................................................................................................................................................................................................
+366 job(s) submitted to cluster 2181202.
+Submitting job(s)......................................................................................................................................................................................................................................................................................................................................................................................................................................................
+438 job(s) submitted to cluster 2181203.
+Submitting job(s)..................................................................................
+82 job(s) submitted to cluster 2181204.
+Submitting job(s).....................................................................................................................................................
+149 job(s) submitted to cluster 2181205.
+Submitting job(s)...................................................................................................................................................................................
+179 job(s) submitted to cluster 2181206.
+Submitting job(s).............................................................................................................
+109 job(s) submitted to cluster 2181207.
+Submitting job(s)...........................................................................................................................................................
+155 job(s) submitted to cluster 2181208.
+Submitting job(s)..................................................................................................................................................................................................................................
+226 job(s) submitted to cluster 2181209.
+Submitting job(s).............................................................................................................................................................................................................................................................................................................................................................................................
+381 job(s) submitted to cluster 2181210.
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ZJetsToQQ_HT1500to2500/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ZJetsToQQ_HT1500to2500/
+
+Setting up job for sample: ZJetsToQQ_HT1500to2500
+Submitting job for sample: ZJetsToQQ_HT1500to2500
+  [skim] ZJetsToQQ_HT2500toInf: sumGenW tree/runs = 0.4953 (events that passed the ntuple skim; normalization uses runs)
+  [weight] ZJetsToQQ_HT2500toInf: 0.0002151721494  (xsec_fb=56.84*br=1.00000*k=1.0*lumi=109.816/sumGenW=2.9009e+07)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ZJetsToQQ_HT2500toInf/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ZJetsToQQ_HT2500toInf/
+
+Setting up job for sample: ZJetsToQQ_HT2500toInf
+Submitting job for sample: ZJetsToQQ_HT2500toInf
+  [era] JetMET0_Run2024C-MINIv6NANOv15-v1: Data -> era 'C' (샘플명에서 자동 추출)
+  [weight] JetMET0_Run2024C-MINIv6NANOv15-v1: 1  (data)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET0_Run2024C-MINIv6NANOv15-v1/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET0_Run2024C-MINIv6NANOv15-v1/
+
+Setting up job for sample: JetMET0_Run2024C-MINIv6NANOv15-v1
+Submitting job for sample: JetMET0_Run2024C-MINIv6NANOv15-v1
+  [era] JetMET0_Run2024D-MINIv6NANOv15-v1: Data -> era 'D' (샘플명에서 자동 추출)
+  [weight] JetMET0_Run2024D-MINIv6NANOv15-v1: 1  (data)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET0_Run2024D-MINIv6NANOv15-v1/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET0_Run2024D-MINIv6NANOv15-v1/
+
+Setting up job for sample: JetMET0_Run2024D-MINIv6NANOv15-v1
+Submitting job for sample: JetMET0_Run2024D-MINIv6NANOv15-v1
+  [era] JetMET0_Run2024E-MINIv6NANOv15-v1: Data -> era 'E' (샘플명에서 자동 추출)
+  [weight] JetMET0_Run2024E-MINIv6NANOv15-v1: 1  (data)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET0_Run2024E-MINIv6NANOv15-v1/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET0_Run2024E-MINIv6NANOv15-v1/
+
+Setting up job for sample: JetMET0_Run2024E-MINIv6NANOv15-v1
+Submitting job for sample: JetMET0_Run2024E-MINIv6NANOv15-v1
+  [era] JetMET0_Run2024F-MINIv6NANOv15-v2: Data -> era 'F' (샘플명에서 자동 추출)
+  [weight] JetMET0_Run2024F-MINIv6NANOv15-v2: 1  (data)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET0_Run2024F-MINIv6NANOv15-v2/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET0_Run2024F-MINIv6NANOv15-v2/
+
+Setting up job for sample: JetMET0_Run2024F-MINIv6NANOv15-v2
+Submitting job for sample: JetMET0_Run2024F-MINIv6NANOv15-v2
+  [era] JetMET0_Run2024G-MINIv6NANOv15-v2: Data -> era 'G' (샘플명에서 자동 추출)
+  [weight] JetMET0_Run2024G-MINIv6NANOv15-v2: 1  (data)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET0_Run2024G-MINIv6NANOv15-v2/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET0_Run2024G-MINIv6NANOv15-v2/
+
+Setting up job for sample: JetMET0_Run2024G-MINIv6NANOv15-v2
+Submitting job for sample: JetMET0_Run2024G-MINIv6NANOv15-v2
+  [era] JetMET0_Run2024H-MINIv6NANOv15-v2: Data -> era 'H' (샘플명에서 자동 추출)
+  [weight] JetMET0_Run2024H-MINIv6NANOv15-v2: 1  (data)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET0_Run2024H-MINIv6NANOv15-v2/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET0_Run2024H-MINIv6NANOv15-v2/
+
+Setting up job for sample: JetMET0_Run2024H-MINIv6NANOv15-v2
+Submitting job for sample: JetMET0_Run2024H-MINIv6NANOv15-v2
+  [era] JetMET0_Run2024I-MINIv6NANOv15-v2: Data -> era 'I' (샘플명에서 자동 추출)
+  [weight] JetMET0_Run2024I-MINIv6NANOv15-v2: 1  (data)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET0_Run2024I-MINIv6NANOv15-v2/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET0_Run2024I-MINIv6NANOv15-v2/
+
+Setting up job for sample: JetMET0_Run2024I-MINIv6NANOv15-v2
+Submitting job for sample: JetMET0_Run2024I-MINIv6NANOv15-v2
+  [era] JetMET0_Run2024I-MINIv6NANOv15_v2-v1: Data -> era 'I' (샘플명에서 자동 추출)
+  [weight] JetMET0_Run2024I-MINIv6NANOv15_v2-v1: 1  (data)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET0_Run2024I-MINIv6NANOv15_v2-v1/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET0_Run2024I-MINIv6NANOv15_v2-v1/
+
+Setting up job for sample: JetMET0_Run2024I-MINIv6NANOv15_v2-v1
+Submitting job for sample: JetMET0_Run2024I-MINIv6NANOv15_v2-v1
+  [era] JetMET1_Run2024C-MINIv6NANOv15-v1: Data -> era 'C' (샘플명에서 자동 추출)
+  [weight] JetMET1_Run2024C-MINIv6NANOv15-v1: 1  (data)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET1_Run2024C-MINIv6NANOv15-v1/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET1_Run2024C-MINIv6NANOv15-v1/
+
+Setting up job for sample: JetMET1_Run2024C-MINIv6NANOv15-v1
+Submitting job for sample: JetMET1_Run2024C-MINIv6NANOv15-v1
+  [era] JetMET1_Run2024D-MINIv6NANOv15-v1: Data -> era 'D' (샘플명에서 자동 추출)
+  [weight] JetMET1_Run2024D-MINIv6NANOv15-v1: 1  (data)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET1_Run2024D-MINIv6NANOv15-v1/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET1_Run2024D-MINIv6NANOv15-v1/
+
+Setting up job for sample: JetMET1_Run2024D-MINIv6NANOv15-v1
+Submitting job for sample: JetMET1_Run2024D-MINIv6NANOv15-v1
+  [era] JetMET1_Run2024E-MINIv6NANOv15-v1: Data -> era 'E' (샘플명에서 자동 추출)
+  [weight] JetMET1_Run2024E-MINIv6NANOv15-v1: 1  (data)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET1_Run2024E-MINIv6NANOv15-v1/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET1_Run2024E-MINIv6NANOv15-v1/
+
+Setting up job for sample: JetMET1_Run2024E-MINIv6NANOv15-v1
+Submitting job for sample: JetMET1_Run2024E-MINIv6NANOv15-v1
+  [era] JetMET1_Run2024F-MINIv6NANOv15-v2: Data -> era 'F' (샘플명에서 자동 추출)
+  [weight] JetMET1_Run2024F-MINIv6NANOv15-v2: 1  (data)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET1_Run2024F-MINIv6NANOv15-v2/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET1_Run2024F-MINIv6NANOv15-v2/
+
+Setting up job for sample: JetMET1_Run2024F-MINIv6NANOv15-v2
+Submitting job for sample: JetMET1_Run2024F-MINIv6NANOv15-v2
+  [era] JetMET1_Run2024G-MINIv6NANOv15-v2: Data -> era 'G' (샘플명에서 자동 추출)
+  [weight] JetMET1_Run2024G-MINIv6NANOv15-v2: 1  (data)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET1_Run2024G-MINIv6NANOv15-v2/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET1_Run2024G-MINIv6NANOv15-v2/
+
+Setting up job for sample: JetMET1_Run2024G-MINIv6NANOv15-v2
+Submitting job(s)...................................................................................................................................................................................................................................................................................................................................................................................................................................................................
+451 job(s) submitted to cluster 2181211.
+Submitting job(s)............................................................................
+76 job(s) submitted to cluster 2181212.
+Submitting job(s)..................................................................................
+82 job(s) submitted to cluster 2181213.
+Submitting job(s)....................................................................................................................
+116 job(s) submitted to cluster 2181214.
+
+[FATAL][E20] sample 'ParkingHH_Run2024C-MINIv6NANOv15-v1' not in xsec_db (data/samples_2024.json).
+Submitting job for sample: JetMET1_Run2024G-MINIv6NANOv15-v2
+  [era] JetMET1_Run2024H-MINIv6NANOv15-v2: Data -> era 'H' (샘플명에서 자동 추출)
+  [weight] JetMET1_Run2024H-MINIv6NANOv15-v2: 1  (data)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET1_Run2024H-MINIv6NANOv15-v2/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET1_Run2024H-MINIv6NANOv15-v2/
+
+Setting up job for sample: JetMET1_Run2024H-MINIv6NANOv15-v2
+Submitting job for sample: JetMET1_Run2024H-MINIv6NANOv15-v2
+  [era] JetMET1_Run2024I-MINIv6NANOv15-v1: Data -> era 'I' (샘플명에서 자동 추출)
+  [weight] JetMET1_Run2024I-MINIv6NANOv15-v1: 1  (data)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET1_Run2024I-MINIv6NANOv15-v1/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET1_Run2024I-MINIv6NANOv15-v1/
+
+Setting up job for sample: JetMET1_Run2024I-MINIv6NANOv15-v1
+Submitting job for sample: JetMET1_Run2024I-MINIv6NANOv15-v1
+  [era] JetMET1_Run2024I-MINIv6NANOv15_v2-v2: Data -> era 'I' (샘플명에서 자동 추출)
+  [weight] JetMET1_Run2024I-MINIv6NANOv15_v2-v2: 1  (data)
+Creating output directory: /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET1_Run2024I-MINIv6NANOv15_v2-v2/
+Set permissions to 755 for /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET1_Run2024I-MINIv6NANOv15_v2-v2/
+
+Setting up job for sample: JetMET1_Run2024I-MINIv6NANOv15_v2-v2
+Submitting job for sample: JetMET1_Run2024I-MINIv6NANOv15_v2-v2
+  [era] ParkingHH_Run2024C-MINIv6NANOv15-v1: Data -> era 'C' (샘플명에서 자동 추출)
+===========================================================================
+end_utc     : 2026-10-07T09:33:41Z
+wall_s      : 67
+EXIT        : 20
+outputs     : (no file of this repo changed, apart from tmp/ condor/ runlogs/)
+log         : runlogs/run_knu_submit_main_2024_h_20261007_093233.log
+log_kb      : 52
+=== END ===================================================================
