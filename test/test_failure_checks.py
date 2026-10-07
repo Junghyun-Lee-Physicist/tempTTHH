@@ -13,6 +13,9 @@
      cut (MC by evtWeight, Data by 1), the Control/ histograms in <out>/tree/, only those plotted, a cut on a
      missing branch fails, --tree-label needs --tree-cut; [STEP 24 I] the jet-multiplicity diagnostics (nJets above
      40 / 50 GeV, central / forward, per b-tag multiplicity, the score of every jet) and the TREEFLAV table
+  E  [STEP 24 J] submit_job_FH_Tier3_unified.py: the weight inputs of every sample at once (a Data sample needs its
+     xsec_db entry too; the submission stops before its first sample, E20, nothing queued), --only (fnmatch patterns),
+     and the preflight lines for both (the preflight runs on a copy of the script in the temp dir: its log goes there)
 
 Run from the repo top after cmsenv (needs PyROOT; part B's merge needs hadd):
     python3 test/test_failure_checks.py
@@ -369,6 +372,104 @@ with tempfile.TemporaryDirectory(prefix="tthh_fail_") as T:
           rc2 == 1 and "TREE FAIL SampleA" in out2 and "RESULT FAIL (--tree-cut)" in out2, out2[-2000:])
     rc3, out3 = run(mt[:mt.index("--tree-cut")] + ["--tree-label", "x"], hadd_env())
     check("D --tree-label without --tree-cut: exit 2", rc3 == 2 and "needs --tree-cut" in out3, out3[-500:])
+
+    # ---------------- E: [STEP 24 J] the weight inputs of every sample at once, --only ----------------
+    #   2026-10-07: the 2024 main run queued 76 of its 84 samples, then stopped (E20) at the first ParkingHH sample,
+    #   which had no xsec_db entry -- the preflight checked the MC samples only
+    PK = "ParkingHH_Run2024C-MINIv6NANOv15-v1"
+    ents = [{"sample_name": n} for n in ("SampleA", "SampleB", DATA, PK)]
+    sel, un = sub.select_samples(ents, "ParkingHH_*")
+    check("E --only 'ParkingHH_*': the ParkingHH entry, no unmatched pattern",
+          [sub.entry_name(e) for e in sel] == [PK] and un == [], str((sel, un)))
+    sel, un = sub.select_samples(ents, " SampleA, Sample? ,Nope* ")
+    check("E --only ' SampleA, Sample? ,Nope* ': SampleA and SampleB in yml order, 'Nope*' unmatched",
+          [sub.entry_name(e) for e in sel] == ["SampleA", "SampleB"] and un == ["Nope*"], str((sel, un)))
+    sel, un = sub.select_samples(ents, "")
+    check("E no --only: every entry", len(sel) == 4 and un == [], str((sel, un)))
+    with open(os.path.join(T, "xsec.json")) as fh:
+        dbj = json.load(fh)
+    with open(os.path.join(T, "prescan.json")) as fh:
+        prj = json.load(fh)["samples"]
+    probs = sub.weight_input_problems(ents + [{"sample_name": "SampleZ"}, {"sample_name": "SampleW", "weight": 2.0}],
+                                      dbj, prj)
+    check("E weight inputs: the Data sample without its xsec_db entry, the MC sample without both; a yml weight "
+          "needs neither",
+          probs == [("db_data", PK, "not in xsec_db"), ("db", "SampleZ", ""), ("prescan", "SampleZ", "")], str(probs))
+    dbj2 = dict(dbj, **{PK: {"cross_section_fb": 5.0}, "SampleB": {"cross_section_fb": None}})
+    probs2 = sub.weight_input_problems(ents, dbj2, prj)
+    check("E weight inputs: an MC name with a null cross section, a Data name with one",
+          [p[:2] for p in probs2] == [("db", "SampleB"), ("db_data", PK)], str(probs2))
+    check("E weight inputs: none needed in the prescan mode", sub.weight_input_problems(ents, {}, {}, True) == [])
+    common_t = {"xsec_db": os.path.join(T, "xsec.json"), "prescan": os.path.join(T, "prescan.json")}
+    err, code = io.StringIO(), None
+    with contextlib.redirect_stderr(err):
+        try:
+            object.__new__(sub.CondorJobManager)._check_weight_inputs(ents, common_t, "main")
+        except SystemExit as e:
+            code = e.code
+    check("E the submission stops before its first sample: E20, the sample named, nothing submitted",
+          code == 20 and f"[E20] {PK}" in err.getvalue() and "nothing submitted" in err.getvalue(),
+          f"code={code}\n{err.getvalue()}")
+    check("E ... and goes on when every sample has its inputs, or in the prescan mode",
+          object.__new__(sub.CondorJobManager)._check_weight_inputs(ents[:3], common_t, "main") is None
+          and object.__new__(sub.CondorJobManager)._check_weight_inputs(ents, common_t, "prescan") is None)
+    # the preflight, on a copy of the script (its log is written next to the script); the fixture yml is 2024
+    sd = os.path.join(T, "subcopy")
+    os.makedirs(sd)
+    shutil.copy(os.path.join(REPO, "submit_job_FH_Tier3_unified.py"), sd)
+    with open(os.path.join(fl, f"filelist_{PK}.txt"), "w") as fh:
+        fh.write("/store/x/pk_0.root\n/store/x/pk_1.root\n")
+    cfg_pk = os.path.join(T, "cfg_pk.yml")
+    write_cfg(cfg_pk, ["SampleA", "SampleB", DATA, PK])
+    envp = dict(os.environ, PYTHONDONTWRITEBYTECODE="1",
+                PYTHONPATH=os.pathsep.join(p for p in (os.path.join(REPO, "python", "ttHHmodules"),
+                                                       os.environ.get("PYTHONPATH", "")) if p))
+    pf = [sys.executable, os.path.join(sd, "submit_job_FH_Tier3_unified.py"), "--preflight", "--config", cfg_pk,
+          "--filelist-dir", fl, "--trigsf", "off"]
+    rc, out = run(pf, envp)
+    check("E preflight: the Data sample without its xsec_db entry is a FAIL, the MC samples pass",
+          "[FAIL] xsec_db coverage (Data)" in out and f"{PK}(not in xsec_db)" in out
+          and "[PASS] xsec_db coverage " in out and "all 2 MC samples present" in out, out[-3000:])
+    rc, out = run(pf + ["--only", "ParkingHH_*"], envp)
+    check("E preflight --only 'ParkingHH_*': 1 of 4 samples, their checks and job count; the era check (whole yml) "
+          "finds JetMET and ParkingHH in era C",
+          "[PASS] --only" in out and f"1 of 4 samples: {PK}" in out and "Per-sample checks (1 samples" in out
+          and "~2 jobs (files=2," in out and "by era" not in out and "[PASS] 2024 Data PDs" in out, out[-3000:])
+    rc, out = run(pf + ["--only", "Nope*"], envp)
+    check("E preflight --only matching no sample: FAIL, exit 1", rc == 1 and "[FAIL] --only" in out
+          and "pattern(s) matching no yml sample: ['Nope*'] (0 of 4 selected" in out, out[-2000:])
+    with open(os.path.join(T, "xsec_pk.json"), "w") as fh:
+        json.dump(dict(dbj, **{PK: {"cross_section_fb": None}}), fh)
+    cfg_pk2 = os.path.join(T, "cfg_pk2.yml")
+    with open(cfg_pk) as fh, open(cfg_pk2, "w") as fo:
+        fo.write(fh.read().replace(os.path.join(T, "xsec.json"), os.path.join(T, "xsec_pk.json")))
+    rc, out = run([cfg_pk2 if x == cfg_pk else x for x in pf], envp)
+    check("E preflight with the entry added: all 2 Data samples present with cross_section_fb null",
+          "[PASS] xsec_db coverage (Data)" in out and "all 2 Data samples present with cross_section_fb null" in out
+          and "[FAIL] xsec_db coverage" not in out, out[-3000:])
+    # the submission's loop gets the selected entries only, after the check of their weight inputs
+    #   (process_config_file with the per-sample steps replaced: no condor, no directories)
+    def loop_entries(cfg_path, only):
+        o = object.__new__(sub.CondorJobManager)
+        o.config_file_path, o._cli_only = cfg_path, only
+        o.report_only = o.resubmit_only = o.report_verbose = False
+        o.condor_files_path = os.path.join(T, "condor_loop")
+        os.makedirs(o.condor_files_path, exist_ok=True)
+        seen = []
+        o.parse_config_entry = lambda e, c: seen.append(sub.entry_name(e))
+        o.prepare_output_directory = o.setup_and_submit_job = lambda: None
+        e_buf, code_ = io.StringIO(), None
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(e_buf):
+            try:
+                o.process_config_file()
+            except SystemExit as e:
+                code_ = e.code
+        return seen, code_, e_buf.getvalue()
+    seen, code_, _ = loop_entries(cfg_pk2, "ParkingHH_*")
+    seen_all, code_all, err_all = loop_entries(cfg_pk, "")
+    check("E submission: --only gives the loop the ParkingHH entry only; without the xsec_db entry nothing reaches the "
+          "loop (E20)", seen == [PK] and code_ is None and seen_all == [] and code_all == 20 and PK in err_all,
+          str((seen, code_, seen_all, code_all)))
 
 n_fail = RESULTS.count(False)
 print(f"SUMMARY test_failure_checks {'PASS' if n_fail == 0 else 'FAIL'} ({len(RESULTS) - n_fail}/{len(RESULTS)} checks)")

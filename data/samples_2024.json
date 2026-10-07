@@ -1,14 +1,14 @@
 {
  "_meta": {
   "era": "2024",
-  "campaign": "RunIII2024Summer24 NanoAODv15 (MC); Run2024C-I MINIv6NANOv15 (Data)",
-  "config": "campaign_ttHH2024_v15_had_MC_v1, campaign_ttHH2024_v15_had_Data_v1 (NtupleForge crabConfig/config_ttHH2024_v15_had_{MC,Data}.yaml)",
+  "campaign": "RunIII2024Summer24 NanoAODv15 (MC); Run2024C-I MINIv6NANOv15 (Data: JetMET0/1, Muon0/1, ParkingHH)",
+  "config": "campaign_ttHH2024_v15_had_MC_v1, campaign_ttHH2024_v15_had_Data_v1, campaign_ttHH2024_v15_had_ParkingHH_v1 (NtupleForge crabConfig/config_ttHH2024_v15_had_{MC,Data,ParkingHH}.yaml)",
   "sqrt_s_TeV": 13.6,
   "lumi_fb_inv": 109.816,
   "lumi_ref": "PLAN 9.6 D14 / docs/DECISIONS.md D-2026-10-05-A: brilcalc, normtag_PHYSICS, golden JSON Cert_Collisions2024_378981_386951_Golden.json (2026-08-04, md5 3f8543e8062915c9de97472e7dcf744f), eras C-I; docs/reference/LUMI_SOURCES.md",
   "unit": "fb",
   "PROVISIONAL": "Every MC cross section here is PROVISIONAL (D-2026-10-05-A: first look). Collected 2026-10-05 by the AI from public sources (LHC WG notes, 13.6 TeV CMS/ATLAS papers, public repositories quoting XSDB / GenXSecAnalyzer); XSDB itself (CERN login) and the CERN twikis (robots.txt) were not read. Five keys are 13 TeV values scaled to 13.6 TeV (xsec_ref starts with SCALED_FROM_13TEV). Plots made with this file must say 'provisional cross sections'. Review each entry before any result.",
-  "convention": "Same as data/samples_2017UL.json: cross_section_fb = target production sigma when a separate br field is used (case inclusive_x_br); for generator decay-filtered / forced-decay samples stored with br=1, cross_section_fb is the sample-level effective sigma (case sample_effective). sigma_eff = cross_section_fb x br x kfactor; kfactor = 1.0 for all. Data: all null.",
+  "convention": "Same as data/samples_2017UL.json: cross_section_fb = target production sigma when a separate br field is used (case inclusive_x_br); for generator decay-filtered / forced-decay samples stored with br=1, cross_section_fb is the sample-level effective sigma (case sample_effective). sigma_eff = cross_section_fb x br x kfactor; kfactor = 1.0 for all. Data: all null. Every Data sample of a submitted yml needs its entry too: the submitter takes Data/MC and the weight from here, and stops at a sample without one (E20; STEP 24 J, 2026-10-07).",
   "weight_formula": "base_weight = lumi_fb_inv x cross_section_fb x br x kfactor / sumGenW (runs.genEventSumw of the prescan: the Runs tree of our skimmed ntuples keeps the unskimmed sum).",
   "branching_ratios": "B(W->had) = 0.6741 (PDG 2024 summary tables, 67.41 +- 0.27 %); B(W->lnu, e+mu+tau) = 0.3259 = 1 - 0.6741 (as the 2017 table); B(H->bb) = 0.5824 (mH = 125.00, LHC Higgs WG / YR4, as the 2017 table); B(Z->bb) = 0.1512 (PDG 2024, 15.12 +- 0.05 %; the 2017 table used 0.15)",
   "sources": "research notes of 2026-10-05 (STEP 24): docs/changes/STEP_24_stage1_2_2024.md section 7"
@@ -884,6 +884,62 @@
  },
  "JetMET1_Run2024I-MINIv6NANOv15_v2-v2": {
   "das_path": "/JetMET1/Run2024I-MINIv6NANOv15_v2-v2/NANOAOD",
+  "is_data": true,
+  "cross_section_fb": null,
+  "br": null,
+  "kfactor": null
+ },
+ "ParkingHH_Run2024C-MINIv6NANOv15-v1": {
+  "das_path": "/ParkingHH/Run2024C-MINIv6NANOv15-v1/NANOAOD",
+  "is_data": true,
+  "cross_section_fb": null,
+  "br": null,
+  "kfactor": null
+ },
+ "ParkingHH_Run2024D-MINIv6NANOv15-v1": {
+  "das_path": "/ParkingHH/Run2024D-MINIv6NANOv15-v1/NANOAOD",
+  "is_data": true,
+  "cross_section_fb": null,
+  "br": null,
+  "kfactor": null
+ },
+ "ParkingHH_Run2024E-MINIv6NANOv15-v1": {
+  "das_path": "/ParkingHH/Run2024E-MINIv6NANOv15-v1/NANOAOD",
+  "is_data": true,
+  "cross_section_fb": null,
+  "br": null,
+  "kfactor": null
+ },
+ "ParkingHH_Run2024F-MINIv6NANOv15-v4": {
+  "das_path": "/ParkingHH/Run2024F-MINIv6NANOv15-v4/NANOAOD",
+  "is_data": true,
+  "cross_section_fb": null,
+  "br": null,
+  "kfactor": null
+ },
+ "ParkingHH_Run2024G-MINIv6NANOv15-v3": {
+  "das_path": "/ParkingHH/Run2024G-MINIv6NANOv15-v3/NANOAOD",
+  "is_data": true,
+  "cross_section_fb": null,
+  "br": null,
+  "kfactor": null
+ },
+ "ParkingHH_Run2024H-MINIv6NANOv15-v3": {
+  "das_path": "/ParkingHH/Run2024H-MINIv6NANOv15-v3/NANOAOD",
+  "is_data": true,
+  "cross_section_fb": null,
+  "br": null,
+  "kfactor": null
+ },
+ "ParkingHH_Run2024I-MINIv6NANOv15-v3": {
+  "das_path": "/ParkingHH/Run2024I-MINIv6NANOv15-v3/NANOAOD",
+  "is_data": true,
+  "cross_section_fb": null,
+  "br": null,
+  "kfactor": null
+ },
+ "ParkingHH_Run2024I-MINIv6NANOv15_v2-v2": {
+  "das_path": "/ParkingHH/Run2024I-MINIv6NANOv15_v2-v2/NANOAOD",
   "is_data": true,
   "cross_section_fb": null,
   "br": null,

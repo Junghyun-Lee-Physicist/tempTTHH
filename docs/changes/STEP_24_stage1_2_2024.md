@@ -581,6 +581,53 @@ B 에만 있는 파일 FAIL, tree 값만 바뀜 FAIL, EXPECTED 의 run 이 양�
   둘을 낸 뒤 같은 진단을 세 영역에서; 저장소 사용량(`du`), 2024 BTV payload 재확인(jsonpog). AI: Stage 6(2024 btagtrig yml, TriggerStudy 의
   2024 경로), b-tag 방법 제안(payload 결과로), 2018 v15 경로.
 
+### 20. main 제출이 76 cluster 뒤 E20 으로 멈춤 — Data 의 xsec_db 항목, 모든 표본의 weight 입력을 먼저, `--only` (10-07; 커밋 J)
+
+- **KNU(사용자, RUNBOOK §25 3–6)**: filelist 다시 `RESULT OK`(MC·JetMET 목록은 그대로, ParkingHH 8 이 더해짐), 첫 look 출력과 condor 디렉터리의
+  이름 바꾸기 끝, main preflight 32 PASS · 1 WARN · 0 FAIL. 제출(`knu_submit_main_2024_h`)은 MC 60 + JetMET 16 = **76 cluster** 를 낸 뒤
+  `[FATAL][E20] sample 'ParkingHH_Run2024C-MINIv6NANOv15-v1' not in xsec_db (data/samples_2024.json).` 으로 멈췄다 — ParkingHH 8 표본은 나가지
+  않았다.
+- **원인**: 커밋 H 가 yml 에 ParkingHH 를 넣으면서 `data/samples_2024.json` 에는 넣지 않았다. 제출기는 모든 표본(Data 도)의 Data/MC 와 weight
+  를 xsec_db 에서 읽고(`_compute_base_weight`, 없으면 E20), preflight 는 xsec_db 를 **MC 표본에 대해서만** 보았다 → PASS. E20 은 표본 고리 안의
+  `sys.exit` 라 그 앞의 표본은 이미 큐에 있었다.
+- **영향**: 큐의 76 cluster 는 맞다(같은 yml·실행 파일·인자; condor 파일 `run_<sample>.sh`·`arguments_<sample>.txt`·`<sample>_condor.sub`·
+  `tmp_<sample>_<time>/` 은 표본마다) → 그대로 둔다. ParkingHH 8 표본만 같은 출력 base·condor 디렉터리에 따로 낸다(아래 `--only`). 전체를 다시
+  내거나 `--resubmit` 을 쓰면 돌고 있는 76 표본의 job 이 두 번 나간다(출력이 아직 없으니 `--resubmit` 은 그것들을 빠진 것으로 본다).
+- **고침(커밋 J; Python·json 만 — C++ 그대로라 KNU 다시 빌드 없음)**:
+  - `data/samples_2024.json`: ParkingHH 8 항목(`das_path` = NtupleForge config·DAS 표, `is_data`, `cross_section_fb`·`br`·`kfactor` null — JetMET
+    항목과 같은 꼴); `_meta` 의 campaign·config 에 ParkingHH, convention 에 "Data 표본도 항목이 있어야 한다(E20)".
+  - `submit_job_FH_Tier3_unified.py`:
+    (1) `weight_input_problems()` — preflight 와 제출이 같이 쓰는 함수. MC: xsec_db 항목(없음 / σ null·0)과 prescan 기록(없음 / Σw ≤ 0 /
+    꼴이 틀림), 예전 preflight 와 같은 판정. **Data: xsec_db 항목이 있고 `cross_section_fb` 가 null** 이어야 한다. 이름(Data PD)과 항목이 어긋나는
+    것(Data 이름에 σ, MC 이름에 null σ — 제출에서는 조용히 다른 쪽으로 돈다)도 문제로.
+    (2) preflight 에 `xsec_db coverage (Data)` 줄(FAIL 이면 표본 이름과 "the submission stops there (E20)").
+    (3) 제출(`--resubmit`·`--report`·`--status` 도): 첫 표본 전에 `_check_weight_inputs` 가 모든 표본을 한 번에 보고, 문제가 하나라도 있으면
+    목록을 찍고 E20(xsec_db) / E21(prescan) 로 멈춘다 — 아무것도 큐에 넣지 않는다(all or nothing). `_compute_base_weight` 의 E20/E21 은
+    그대로(뒤의 그물).
+    (4) `--only PATTERN[,PATTERN...]`: yml 의 표본 중 이름이 맞는 것만(fnmatch, 대소문자 구분, 정확한 이름도 패턴). 출력 base·condor 디렉터리는
+    yml 전체와 같다. 아무 표본에도 맞지 않는 패턴은 오류(제출 exit 2, preflight FAIL). preflight 의 표본별 검사와 job 수는 고른 표본으로, 2024
+    의 era 별 JetMET·ParkingHH 짝 검사(5b)는 yml 전체로(ParkingHH 만 골라도 거짓 WARN 이 없게). 기록 `submit_command.txt` 에는 `--only` 를 포함한
+    명령이 남는다.
+  - 점검(컨테이너): `AnalyzerConfig/` 의 yml 다섯 모두에 새 판정 — 2017 main·btagtrig·prescan(repo 의 prescan_summary)과 2024 main·prescan
+    (xsec_db 만; 2024 prescan_summary 는 KNU 에만) — 문제 0. 2024 main yml 에 옛 xsec_db 를 주면 정확히 ParkingHH 8(`db_data`). 시험
+    `test_failure_checks.py` **49/49**(+13, E 부분: `--only` 의 선택과 맞지 않는 패턴, weight 입력 판정 여섯 경우, 제출 전 멈춤(E20, 표본 이름,
+    nothing submitted), preflight 의 새 줄·`--only` 의 표본 수·job 수·era 검사가 yml 전체를 보는 것 — preflight 는 temp 디렉터리의 사본으로 돌려
+    로그가 repo 에 남지 않음 —, 제출 고리에 들어가는 표본(`--only` 면 고른 것만, weight 입력이 빠지면 고리 전에 E20)), Python 3.6 문법.
+    시뮬레이션(컨테이너, 진짜 2024 main yml·xsec_db 와 가짜 filelist·prescan): `--only 'ParkingHH_*'` preflight 가 `8 of 84 samples`,
+    `0 MC, 8 Data`, `~2771 jobs (files=2771, ...)`, `xsec_db coverage (Data) all 8`, era WARN 없음; 전체·`--region muon` 은 `60 MC, 24 Data`,
+    `all 24 Data samples`.
+- **P8 요약(사용자, 10-07)**: ParkingHH(`knu_p8_2024_ParkingHH`) **ALL PASS** — 8 dataset, `n_in` = DAS 1,913,189,591 event, `n_out`
+  472,640,715(6j20 통과 24.7 %), 358.0 GB. 10-05 의 MC 는 60 중 7 dataset FAIL(출력 19,111 / DAS 19,136 파일 → 25 job 출력 없음; 검사 줄의 파일
+  수 773·780·229·262·319·96·442 를 DAS 표에 대면 TTbar_Hadronic, TTbar_DiLep, QCD_HT600to800, QCD_HT800to1000, ttHTobb_semilep, ST_s_top_had,
+  WJetsToQQ_HT2500toInf — dataset 별 수는 P8 의 TSV `condor/knu_p8_2024_MC.tsv` 로 확인할 것), Data 는 32 중 5 FAIL(7,787 / 7,811 → 24 job,
+  모두 JetMET: JetMET0 C 1·F 15·G 5, JetMET1 C 1·E 2). 뜻: MC 는 통계만 준다(prescan 의 Σw 가 같은 목록에서 나왔으므로 정규화는 맞다). Data 는
+  JetMET 에 빠진 LS 가 있고 ParkingHH 는 다 있다 → `HLT_PFHT1050` 쪽 Data 에 대해 lumi 109.816 fb⁻¹ 가 조금 과대(1 % 쯤: JetMET0·1 이
+  같은 LS 의 event 를 나눠 가진다면 빠진 golden LS 2.08 %·0.70 %(10-05 lumi 검사)의 평균쯤 — 나눠 가지는 방식은 확인 필요). 결과
+  전에 CRAB 으로 되살리거나(task 수명 안이면 resubmit), 세 PD 모두에 공통인 처리된 LS 의 mask 와 그 brilcalc 로 맞춘다(첫 look·CR 그림에는
+  작은 효과).
+- **다음**(워크스페이스 RUNBOOK §27): 맥 커밋 J → KNU pull·시험 → 무엇이 이미 나갔는지 확인(제출 기록의 cluster 수) → `--only 'ParkingHH_*'`
+  preflight·제출(main FH) → lepton CR 둘(아직이면 전체, 이미 76 이 나갔으면 같은 `--only`) → merge·plot. 10-05 P8 의 dataset 별 표(TSV).
+
 ## 확인하지 못한 것
 
 - TTbar_Hadronic 의 `260930_162708/0000/forgedNtuple_443.root` 는 크기 0(10-02 18:48 KST; NtupleForge `docs/05_troubleshooting.md` A29):
@@ -593,10 +640,11 @@ B 에만 있는 파일 FAIL, tree 값만 바뀜 FAIL, EXPECTED 의 run 이 양�
   것으로 보여 쓰지 않음)는 첫 plot 에 영향이 없거나 작다. XSDB 로 확인할 사람: CERN 로그인이 있는 사용자.
 - D-2026-10-05-B(2024 MC 의 4J3T 는 PNet 만)는 PROPOSED — Stage 6 의 trigger SF 와 함께 정한다.
 - 커밋 E·F 의 KNU smoke 69/69 와 실행 기록 커밋(`13bf65e7`, 10-06)은 끝. 첫 look 의 모자람의 원인은 §17(b-tag 경로가 ParkingHH 에).
-- ParkingHH 2024: 디스크 사본·branch·preflight 확인과 생산은 끝(NtupleForge V59–V60, §18). 남은 것: `6j20` 통과율과 출력 크기, job audit 의
-  closure — KNU 의 P8(RUNBOOK §25).
-- 2024 MC·Data 의 P8(10-05, `knu_p8_2024_{MC,Data}`)은 둘 다 exit 1 — 요약을 아직 보지 못했다(A29 의 크기 0 파일, 생산에 없는 golden LS
-  1.4 %(§13)와 관계가 있는지).
+- ParkingHH 2024: 디스크 사본·branch·preflight 확인과 생산은 끝(NtupleForge V59–V60, §18); KNU 의 P8 **ALL PASS**(10-07, §20: 6j20 통과
+  24.7 %, 358.0 GB).
+- 2024 MC·Data 의 P8(10-05, `knu_p8_2024_{MC,Data}`): MC 7 / 60, Data 5 / 32 dataset FAIL — 출력 없는 job MC 25, Data 24(모두 JetMET; §20).
+  dataset 별 수(MC 일곱의 이름은 DAS 파일 수로 맞춘 것), 그 job 들을 CRAB 으로 되살릴 수 있는지(task 수명), 아니면 세 PD 공통의 처리된
+  LS mask 와 brilcalc 로 맞출지 — 결과 전에 정한다.
 - `HLT_PFHT1050` 의 offline plateau: control plot 의 HT > 1200 GeV 는 임시 값(Run 2 경험) — Stage 6 에서 Muon0/1 로 잰다.
 - 커밋 G 의 KNU 빌드와 smoke(81 check)는 아직.
 - Data 의 처리된 LS 의 lumi(brilcalc): golden LS 의 1.4 % 쯤이 생산에 없다(§13) — 그 전까지 Data/MC 는 109.816 fb⁻¹ 기준.

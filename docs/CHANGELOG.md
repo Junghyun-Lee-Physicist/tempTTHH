@@ -7,6 +7,17 @@
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
 
+## 2026-10-07: [제출기][data] STEP 24 J — main 제출이 76 cluster 뒤 E20: Data 의 xsec_db 항목, 모든 표본의 weight 입력을 먼저, `--only`
+
+KNU 의 2024 main 제출(커밋 H 의 yml)이 MC 60 + JetMET 16 = 76 cluster 를 낸 뒤 `[FATAL][E20]`(ParkingHH 가 `data/samples_2024.json` 에
+없음)으로 멈췄다 — preflight 는 xsec_db 를 MC 표본에만 보았다. `data/samples_2024.json`: ParkingHH 8 항목(σ null). `submit_job_FH_Tier3_unified.py`:
+`weight_input_problems()`(preflight 와 제출이 같이 씀; Data 도 항목이 있어야 하고, 이름과 항목이 어긋나면 문제), preflight 의 `xsec_db coverage
+(Data)` 줄, 제출 전에 모든 표본을 한 번에 보고 하나라도 없으면 아무것도 내지 않고 E20/E21(all or nothing; `--resubmit`·`--report`·`--status` 도),
+`--only PATTERN[,...]`(같은 출력 base·condor 디렉터리로 표본 일부만 — 큐의 76 은 그대로 두고 ParkingHH 8 만 낸다). 시험
+`test_failure_checks.py` 49/49(+13). P8 요약: ParkingHH ALL PASS(6j20 24.7 %, 358 GB); 10-05 의 MC 7/60·Data 5/32 FAIL(출력 없는 job 25·24,
+Data 는 모두 JetMET). 상세 [`changes/STEP_24_stage1_2_2024.md`](changes/STEP_24_stage1_2_2024.md) §20, [`reference/ERROR_CODES.md`](reference/ERROR_CODES.md)
+E20/E21.
+
 ## 2026-10-07: [plotter] STEP 24 I — jet-multiplicity diagnostics from the event tree; 2024 lepton CR 을 지금 (D-2026-10-07-B)
 
 `plotter/make_plots.py --tree-cut`: control 히스토그램 일곱 더(26 → 33) — pT > 40·> 50 GeV jet 수, |η| < 2.0·2.0–2.4 jet 수, nb = 2·nb ≥ 3 의

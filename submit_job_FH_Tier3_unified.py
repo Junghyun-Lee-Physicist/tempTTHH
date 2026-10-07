@@ -22,6 +22,7 @@
 ###############################################################################
 
 import argparse
+import fnmatch
 import os
 import sys
 import time
@@ -73,6 +74,72 @@ def era_from_name(name):
         if m:
             return m.group(1)
     return None
+
+
+def entry_name(entry):
+    """The sample name of a yml samples: entry (a {sample_name: ...} dict, or a bare name)."""
+    return str(entry["sample_name"] if isinstance(entry, dict) else entry)
+
+
+# ============================================================================
+# [STEP 24 J] --only: a part of the yml's samples (2026-10-07: the 8 ParkingHH samples of the 2024 main run, whose
+#   other 76 samples were already queued). Same output base and condor directory as the whole yml; every condor
+#   file is per sample (run_/arguments_/<sample>_condor.sub/tmp_<sample>_<time>), so the other samples are not touched.
+# ============================================================================
+def select_samples(samples, only):
+    """(entries whose name matches one of the comma-separated fnmatch patterns of `only`, the patterns that match
+    no entry). An empty `only` selects everything. Case-sensitive; an exact name is a pattern too."""
+    pats = [p.strip() for p in str(only or "").split(",") if p.strip()]
+    if not pats:
+        return list(samples), []
+    names = [entry_name(s) for s in samples]
+    sel = [s for s, n in zip(samples, names) if any(fnmatch.fnmatchcase(n, p) for p in pats)]
+    unmatched = [p for p in pats if not any(fnmatch.fnmatchcase(n, p) for n in names)]
+    return sel, unmatched
+
+
+# ============================================================================
+# [STEP 24 J] The weight inputs of every sample, checked at once -- by the preflight (section 5) and by the
+#   submission BEFORE its first condor_submit. _compute_base_weight stops the submitter (E20 / E21, sys.exit) at the
+#   first sample without them; the samples before it were already queued and the ones after it never were
+#   (2026-10-07: 76 of the 84 samples of the 2024 main run, then E20 at the first ParkingHH sample, which had no
+#   xsec_db entry -- the preflight checked the MC samples only).
+#   Data/MC is the sample name here (is_data_name, as in the preflight); the submission takes it from the xsec_db
+#   (cross_section_fb null = Data), so a name and an entry that disagree are a problem too.
+# ============================================================================
+def weight_input_problems(entries, db, prescan, prescan_mode=False):
+    """[(kind, sample, detail)] for the given yml entries; kind: 'db' (MC, xsec_db: absent / cross section null or
+    0), 'db_data' (Data, xsec_db: absent / a cross section that is not null), 'prescan' (MC: absent / sumw <= 0 /
+    malformed). Entries with an explicit yml weight need neither file, and neither does the prescan mode."""
+    out = []
+    if prescan_mode:
+        return out
+    for e in entries:
+        if isinstance(e, dict) and "weight" in e:
+            continue
+        name = entry_name(e)
+        rec = db.get(name)
+        if is_data_name(name):
+            if rec is None:
+                out.append(("db_data", name, "not in xsec_db"))
+            elif rec.get("cross_section_fb") is not None:
+                out.append(("db_data", name, "cross_section_fb %s, not null (it would run as MC)"
+                            % rec.get("cross_section_fb")))
+            continue
+        if rec is None:                     # MC: the xsec_db and the prescan each on their own (as the preflight did)
+            out.append(("db", name, ""))
+        elif rec.get("cross_section_fb") in (None, 0):
+            out.append(("db", name, "xsec null"))
+        prec = prescan.get(name)
+        if prec is None:
+            out.append(("prescan", name, ""))
+            continue
+        try:
+            if float(prec["runs"]["genEventSumw"]) <= 0:
+                out.append(("prescan", name, "sumw<=0"))
+        except Exception:
+            out.append(("prescan", name, "malformed"))
+    return out
 
 
 # ============================================================================
@@ -201,8 +268,14 @@ class CondorJobManager:
                                  "filelist/실행파일/보정 경로/era 추출/output 디렉토리 "
                                  "쓰기권한을 검사하고 로그를 남긴 뒤 종료 "
                                  "(제출·디렉토리 생성 없음, FAIL 있으면 exit 1)")
+        parser.add_argument("--only", default="",
+                            help="[STEP 24 J] yml 의 표본 중 이름이 이 패턴(쉼표로 여럿; fnmatch * ? [..]; 정확한 이름도 "
+                                 "됨)에 맞는 것만 — 제출·--resubmit·--report·--status·--preflight 모두. 출력 base 와 "
+                                 "condor 디렉터리는 yml 전체와 같다(condor 파일은 표본마다라 다른 표본은 건드리지 않음). "
+                                 "예) --only 'ParkingHH_*'. 아무 표본에도 맞지 않는 패턴은 오류.")
         args = parser.parse_args()
         self.preflight_only = bool(args.preflight)
+        self._cli_only = args.only.strip()
         self._cli_config = args.config.strip()
         self._cli_region = args.region.strip()
         self._cli_trigsf  = args.trigsf
@@ -342,6 +415,8 @@ class CondorJobManager:
         note(f"  config      : {self.config_file_path}")
         note(f"  analyzer    : {self.analyzer_path}")
         note(f"  SF toggles  : trigsf={self._cli_trigsf} btagsf={self._cli_btagsf} btagrw={self._cli_btagrw}")
+        if self._cli_only:
+            note(f"  only        : {self._cli_only}  (--only: the matching yml samples)")
         note(f"  time        : {datetime.datetime.now().isoformat(timespec='seconds')}")
         note("=" * 84)
 
@@ -379,6 +454,21 @@ class CondorJobManager:
             bad("samples", "empty list -- nothing to submit")
             return self._preflight_finish(rows, lines, log_path)
         ok("samples", f"{len(samples)} entries")
+        # [STEP 24 J] --only: the per-sample checks (5) and the job count are those of the selected samples; the checks
+        #   of the yml as a whole (5b: the 2024 JetMET / ParkingHH eras) still see all of them (samples_all)
+        samples_all = samples
+        if self._cli_only:
+            samples, unmatched = select_samples(samples_all, self._cli_only)
+            if unmatched:
+                bad("--only", f"pattern(s) matching no yml sample: {unmatched} "
+                              f"({len(samples)} of {len(samples_all)} selected by the others)")
+            if not samples:
+                if not unmatched:
+                    bad("--only", f"'{self._cli_only}' selects no sample -- nothing to submit")
+                return self._preflight_finish(rows, lines, log_path)
+            if not unmatched:
+                ok("--only", f"{len(samples)} of {len(samples_all)} samples: "
+                             + " ".join(entry_name(s) for s in samples[:3]) + (" ..." if len(samples) > 3 else ""))
 
         # ---- 2. executable --------------------------------------------------
         exe = os.path.join(self.analyzer_path, self.nameofExe)
@@ -493,20 +583,13 @@ class CondorJobManager:
                     era_fail.append(name)
             else:
                 n_mc += 1
-                if not is_prescan:
-                    rec = db.get(name)
-                    if rec is None:
-                        miss_db.append(name)
-                    elif rec.get("cross_section_fb") in (None, 0):
-                        miss_db.append(name + "(xsec null)")
-                    if name not in prec:
-                        miss_pre.append(name)
-                    else:
-                        try:
-                            if float(prec[name]["runs"]["genEventSumw"]) <= 0:
-                                miss_pre.append(name + "(sumw<=0)")
-                        except Exception:
-                            miss_pre.append(name + "(malformed)")
+        # [STEP 24 J] xsec_db / prescan: the same function as the submission's check before its first condor_submit
+        #   (weight_input_problems); Data samples too -- the submission stops at a Data sample without its xsec_db
+        #   entry (E20), and the MC-only check here let the 8 ParkingHH samples through on 2026-10-07
+        miss_db_data = []
+        for kind, name, det in weight_input_problems(samples, db, prec, is_prescan):
+            tagged = name + (f"({det})" if det else "")
+            (miss_db if kind == "db" else miss_pre if kind == "prescan" else miss_db_data).append(tagged)
         ok("MC / Data in config", f"{n_mc} MC, {n_data} Data")
         if miss_fl:
             bad("filelists present", f"{len(miss_fl)} missing (run make_filelists.py): {miss_fl[:6]}")
@@ -532,11 +615,16 @@ class CondorJobManager:
         if not is_prescan:
             if miss_db:
                 bad("xsec_db coverage", f"{len(miss_db)} problem(s): {miss_db[:6]}")
-            elif db:
+            elif db and n_mc:                  # [STEP 24 J] no line for a Data-only selection (--only)
                 ok("xsec_db coverage", f"all {n_mc} MC samples present with non-null xsec")
+            if miss_db_data:
+                bad("xsec_db coverage (Data)", f"{len(miss_db_data)} problem(s): {miss_db_data[:6]} -- the submission "
+                                               "stops there (E20): add each with cross_section_fb null")
+            elif db and n_data:
+                ok("xsec_db coverage (Data)", f"all {n_data} Data samples present with cross_section_fb null")
             if miss_pre:
                 bad("prescan coverage", f"{len(miss_pre)} problem(s): {miss_pre[:6]}")
-            elif prec:
+            elif prec and n_mc:
                 ok("prescan coverage", f"all {n_mc} MC samples have runs.genEventSumw > 0")
         else:
             ok("xsec_db / prescan coverage", "not required in prescan mode (weight=1.0)")
@@ -559,7 +647,8 @@ class CondorJobManager:
                                     "ParkingHH the b-tag paths without it)")
                 # per era: JetMET (HLT_PFHT1050) and ParkingHH (the b-tag paths without it) are the two halves of
                 #   the OR in Data; an era with one of them only has a part of the OR, while MC has all of it
-                names_d = [str(s["sample_name"] if isinstance(s, dict) else s) for s in samples]
+                #   [STEP 24 J] the whole yml (samples_all): --only 'ParkingHH_*' adds to a run that has the JetMET
+                names_d = [entry_name(s) for s in samples_all]
                 eras_jm = {era_from_name(n) for n in names_d if n.startswith("JetMET")} - {None}
                 eras_pk = {era_from_name(n) for n in names_d if n.startswith("ParkingHH_")} - {None}
                 only_jm, only_pk = sorted(eras_jm - eras_pk), sorted(eras_pk - eras_jm)
@@ -709,6 +798,22 @@ class CondorJobManager:
                 "(trigsf/validation은 2026-06 리팩토링에서 제거 — "
                 "docs/changes/STEP_2 참조)")
 
+        # [STEP 24 J] --only: the matching samples of the yml (select_samples); a pattern matching nothing stops here
+        _only = getattr(self, "_cli_only", "")
+        if _only:
+            n_all = len(samples)
+            samples, unmatched = select_samples(samples, _only)
+            if unmatched or not samples:
+                sys.stderr.write(f"\n[FATAL] --only '{_only}': "
+                                 + (f"pattern(s) matching no yml sample: {unmatched}" if unmatched
+                                    else "no yml sample selected") + " -- stopped, nothing submitted.\n")
+                sys.exit(2)
+            print(f"  [only] {len(samples)} of {n_all} yml samples: " + " ".join(entry_name(s) for s in samples))
+
+        # [STEP 24 J] all or nothing: the weight inputs of every sample before the first one (a missing one used to
+        #   stop the loop half way, E20/E21 -- 2026-10-07: 76 of 84 samples queued, then E20 at the first ParkingHH)
+        self._check_weight_inputs(samples, common, analyzer_mode)
+
         # [cmd log] 제출 시 명령어를 condor 디렉토리에 기록 / report·resubmit 시 조회.
         self._handle_command_log()
 
@@ -754,6 +859,38 @@ class CondorJobManager:
         with open(path) as f:
             self._prescan = json.load(f).get("samples", {})
         return self._prescan
+
+    def _check_weight_inputs(self, samples, common, analyzer_mode):
+        """[STEP 24 J] Before the first sample: every sample's xsec_db entry (MC and Data) and, for MC, its prescan
+        record (weight_input_problems, the same function as the preflight). Any problem stops the submitter here
+        (E20 when an xsec_db entry is the problem, else E21) -- nothing is queued, nothing is half done. The prescan
+        mode needs neither file. Also for --resubmit / --report / --status, which stopped at the same sample before."""
+        if str(analyzer_mode).strip() == "prescan":
+            return
+        try:
+            db = self._load_xsec_db(common["xsec_db"])
+        except Exception as e:
+            _fatal(EXIT["XSEC_DB_MISSING"], f"xsec_db unreadable: {common.get('xsec_db')} ({e}) -- nothing submitted.")
+        prescan, pre_err = {}, ""
+        if any(not is_data_name(entry_name(s)) for s in samples):
+            try:
+                prescan = self._load_prescan(common["prescan"])
+            except Exception as e:
+                pre_err = f"{common.get('prescan')} unreadable ({e})"
+        probs = weight_input_problems(samples, db, prescan)
+        if not probs:
+            return
+        what = {"db": f"MC: not in xsec_db ({common['xsec_db']}) or cross_section_fb null/0",
+                "db_data": f"Data: needs its xsec_db entry ({common['xsec_db']}) with cross_section_fb null",
+                "prescan": f"MC: not in the prescan summary ({common.get('prescan')}) or runs.genEventSumw <= 0"}
+        for kind, name, det in probs:
+            sys.stderr.write(f"  [E{EXIT['PRESCAN_MISSING'] if kind == 'prescan' else EXIT['XSEC_DB_MISSING']}] "
+                             f"{name}{(' (' + det + ')') if det else ''} -- {what[kind]}\n")
+        if pre_err:
+            sys.stderr.write(f"  [E{EXIT['PRESCAN_MISSING']}] {pre_err}\n")
+        code = (EXIT["XSEC_DB_MISSING"] if any(k != "prescan" for k, _, _ in probs) else EXIT["PRESCAN_MISSING"])
+        _fatal(code, f"{len(probs)} weight-input problem(s) in {len({n for _, n, _ in probs})} sample(s) (listed "
+                     f"above): stopped before the first sample, nothing submitted. Fix them, then --preflight.")
 
     def _compute_base_weight(self, sample_name, common):
         """[TrackC] base weight 런타임 합성:

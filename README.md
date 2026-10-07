@@ -172,10 +172,18 @@ python3 submit_job_FH_Tier3_unified.py --mode main --files-per-job 5 \
 
 `--preflight`(2026-07-26 신설)가 보는 것: yml 스키마(**제출과 동일한 파서**로 파싱) ·
 `analysis_mode` 와 `--mode` 일치 · 실행파일 빌드 여부 · **보정 경로 null 정책**(키 누락→E12,
-필수인데 null→E13 를 미리 예측) · `xsec_db`/`prescan_summary` 커버리지(MC 별 xsec·Σgenw>0) ·
-filelist 존재·개수·job 수 추정 · **Data era 추출 가능 여부** · output·condor 디렉토리 쓰기권한 ·
+필수인데 null→E13 를 미리 예측) · `xsec_db`/`prescan_summary` 커버리지(MC 별 xsec·Σgenw>0; 2026-10-07 부터 Data 도
+`xsec_db` 항목(`cross_section_fb` null)) · filelist 존재·개수·job 수 추정 · **Data era 추출 가능 여부** · output·condor 디렉토리 쓰기권한 ·
 `proxy.cert` 존재와 나이 · lumi 값 일관성(yml ↔ xsec_db `_meta`).
 로그: `preflight_<mode><suffix>_<timestamp>.log`.
+
+**모든 표본의 weight 입력을 먼저(2026-10-07, STEP 24 J).** 제출기는 첫 표본을 내기 전에 모든 표본의 `xsec_db` 항목(MC 와 Data)과
+MC 의 prescan 기록을 한 번에 보고, 하나라도 없으면 아무것도 내지 않고 E20/E21 로 멈춘다(`--resubmit`·`--report`·`--status` 도). 그 전에는
+그 표본에서 멈춰 앞의 표본만 큐에 들어갔다(10-07: 2024 main 84 표본 중 76).
+
+**`--only PATTERN[,PATTERN...]`(2026-10-07, STEP 24 J).** yml 의 표본 중 이름이 맞는 것만(fnmatch `*` `?` `[..]`, 정확한 이름도; 예
+`--only 'ParkingHH_*'`) — 제출·`--resubmit`·`--report`·`--status`·`--preflight` 모두. 출력 base 와 condor 디렉토리는 yml 전체와 같고 condor
+파일은 표본마다라, 돌고 있는 다른 표본을 건드리지 않고 표본을 더할 때 쓴다. 아무 표본에도 맞지 않는 패턴은 오류(제출 exit 2, preflight FAIL).
 
 ### 7.0 다른 연도(2018 UL) 실행 — 현재 **차단 상태**
 

@@ -2,7 +2,7 @@
 
 > **Purpose:** the single, authoritative list of every numbered exit code the analyzer (and submitter) can terminate with, so a failed Condor job is diagnosable from its log alone.
 > **Audience:** anyone debugging a failed job; anyone adding a new fail-fast check.
-> **Status:** DECIDED · last meaningful update **2026-10-06** (a fatal path ends with `tthh::fatalExit`, not `std::exit` — a 139 after a `[FATAL]` line; codes of the tools around the analyzer, last section; the submitter's `--report`/`--status` read this table) · 2026-06-30 (the banded table).
+> **Status:** DECIDED · last meaningful update **2026-10-07** (E20/E21: the submitter checks every sample before the first one; a Data sample needs its xsec_db entry — STEP 24 J) · 2026-10-06 (a fatal path ends with `tthh::fatalExit`, not `std::exit` — a 139 after a `[FATAL]` line; codes of the tools around the analyzer, last section; the submitter's `--report`/`--status` read this table) · 2026-06-30 (the banded table).
 > **Links:** code source of truth `include/ExitCodes.h` · path policy `CONFIG_PATHS.md` · workflow `../README.md`.
 
 ## Bottom line
@@ -39,8 +39,8 @@ grep -nE '\[FATAL\]\[E[0-9]+\]' <condor_job>.log     # message + code
 | 11 | `CONFIG_BAD_RUNINFO` | `runYear` / `DataOrMC` / `sampleName` not set | `ttHHanalyzer_unified.cc` |
 | 12 | `CONFIG_PATH_ENV_MISSING` | a required correction-path env is unset/empty (no code default) | `include/ConfigPath.h`; submitter |
 | 13 | `CONFIG_PATH_NULL_REQUIRED` | a **required** correction path was set to `null` | `include/ConfigPath.h`; submitter |
-| 20 | `XSEC_DB_MISSING` | sample absent from `xsec_db` | submitter (`_compute_base_weight`) |
-| 21 | `PRESCAN_MISSING` | sample absent from / invalid in `prescan_summary` | submitter (`_compute_base_weight`) |
+| 20 | `XSEC_DB_MISSING` | sample absent from `xsec_db` — MC **and Data** (a Data sample needs its entry with `cross_section_fb` null; since 2026-10-07 also an entry that contradicts the name: a Data name with a cross section, an MC name with a null one) | submitter: `_check_weight_inputs` for every sample before the first one (STEP 24 J: nothing is queued), then `_compute_base_weight` |
+| 21 | `PRESCAN_MISSING` | sample absent from / invalid in `prescan_summary` | submitter: `_check_weight_inputs` (before the first sample, STEP 24 J), then `_compute_base_weight` |
 | 30 | `INPUT_OPEN_FAIL` | cannot read input ntuple / `Events` tree; since 2026-10-06 also: any file of the job unreadable, the files' `Events` entries ≠ the chain's, an MC prescan file without its `Runs` tree / `genEventSumw` | `ttHHanalyzer_unified.cc` |
 | 40 | `CENTRAL_CORR_LOAD_FAIL` | JME/PU/b-tag-SF correctionlib load failed | `src/CorrectionsManager.cc` |
 | 41 | `GOLDENJSON_DATA_MISSING` | Data lumi-mask (golden JSON) missing | `src/CorrectionsManager.cc` |
