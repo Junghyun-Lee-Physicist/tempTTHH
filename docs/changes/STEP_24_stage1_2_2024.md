@@ -558,6 +558,29 @@ B 에만 있는 파일 FAIL, tree 값만 바뀜 FAIL, EXPECTED 의 run 이 양�
   → Data lumi(JetMET0 JetMET1 ParkingHH) → 첫 look 출력 이름 바꾸기 → main preflight·제출(84 cluster) → merge → plot(전체 OR) → Stage 6
   trigger SF.
 
+### 19. 사용자 결정(10-07): lepton CR 을 지금, 다음 작업 넷; nJets 진단 (커밋 I)
+
+- **사용자의 관찰(2017)**: lepton 하나와 MET cut 으로 QCD 를 누르면(lepton CR) Data/MC 는 나아지지만 jet 수 분포는 여전히 크게 어긋난다.
+  이것이 2017 만의 일인지, 다른 연도(Run 3 포함)에도 있는지 보려 한다. 그 뒤 trigger SF·b-tag 보정을 다 건 FH 와 FH + lepton 의 비교 →
+  data-driven QCD, 계통, 머신러닝.
+- **결정 D-2026-10-07-B**(사용자): (1) 2024 lepton CR(`--region muon`, `--region electron`: FH 의 lepton veto 를 lepton 1 + 반대 flavour 0 +
+  MET > 20 GeV 로 바꾼 것, trigger 와 Data PD 는 FH 그대로)을 FH 재실행과 함께 지금 돌려 그림을 본다. 2024 lep 표본(W→ℓν 12·DY 7, PLAN
+  D13)의 생산은 목표로 하되 KNU 저장소 사용량을 본 뒤 정한다 — 그 전의 CR MC 에는 W·DY 가 없다(모양 위주). (2) 다음 작업은 넷 모두: nJets
+  진단(event tree; 이 커밋), 2024 trigger SF(Stage 6), 2024 b-tag 방법(Stage 7, D10), 2018 v15 경로(연도 비교).
+- **2024 에서 이미 보이는 것(§18)**: HT1050 control 영역에서 nJets 의 Data/MC 가 6 에서 1.38, 13 에서 2 쯤 — 같은 기울기. 후보: (a) b-tag 와의
+  상관(jet 이 많을수록 mistag 기회가 늘고, 2024 MC 에는 b-tag 보정이 없다), (b) 부드러운·앞쪽 jet(§18: jet 3–6 의 낮은 pT 와 |η| > 2 에서
+  Data 가 많다; PU jet, JER·JEC), (c) 생성기의 추가 복사(LO QCD, ttbar 의 PS), (d) trigger 효율의 jet 수 의존(6J·4J 경로; trigger SF 없음).
+- **고침(커밋 I; Python 만)**: `plotter/make_plots.py --tree-cut` 의 control 히스토그램에 일곱을 더함(26 → 33): pT > 40 GeV·> 50 GeV 인 jet 수,
+  |η| < 2.0 와 2.0 ≤ |η| < 2.4 인 jet 수, nb = 2 와 nb ≥ 3 에서의 nJets, 모든 선택 jet 의 b-tag 점수(jet 마다 한 번). `TREEFLAV` 표(YIELDS.txt
+  에도; MC tree 에 `hadFlavs` 가 있을 때): b-tag 점수 0.1 칸마다 모든 선택 jet 의 MC 합과 그 hadron flavour 분율(b = 5, c = 4, 나머지 light),
+  Data, Data/MC. 읽는 법: (a) 면 nb 별 nJets 의 기울기와 점수 칸별 Data/MC 가 함께 움직이고(light·c 가 많은 칸에서 크다), (b) 면 pT > 50 과 중앙
+  jet 수에서 기울기가 줄고, (c)·(d) 면 둘 다에서 남는다(그때는 trigger SF 와 다른 생성기 표본 — registry 의 `alt`: FxFx·MLM·Sherpa 의 ttbar).
+- 시험(컨테이너): `test_failure_checks.py` **36/36**(+3: 진단 일곱의 값, `btag_alljets` 가 jet 마다 채워짐, `TREEFLAV` 의 flavour 분율과
+  Data/MC), Python 3.6 문법.
+- **다음**(워크스페이스 RUNBOOK §26): KNU 에서 첫 look 의 tree 로 바로 진단(analyzer 실행 없음; 이름을 바꾼 `..._firstlook` 에), FH 재실행과 CR
+  둘을 낸 뒤 같은 진단을 세 영역에서; 저장소 사용량(`du`), 2024 BTV payload 재확인(jsonpog). AI: Stage 6(2024 btagtrig yml, TriggerStudy 의
+  2024 경로), b-tag 방법 제안(payload 결과로), 2018 v15 경로.
+
 ## 확인하지 못한 것
 
 - TTbar_Hadronic 의 `260930_162708/0000/forgedNtuple_443.root` 는 크기 0(10-02 18:48 KST; NtupleForge `docs/05_troubleshooting.md` A29):

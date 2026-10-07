@@ -2,7 +2,7 @@
 
 > **Purpose:** record each significant decision — the choice, why, what else was considered, and whether it still holds — so no one silently reopens a settled question or treats a proposal as settled.
 > **Audience:** anyone about to change behavior or unsure whether something is fixed.
-> **Status:** living, append-and-supersede · last meaningful update **2026-10-07** (D-2026-10-07-A: the whole 2024 main again with ParkingHH, the first look kept as `_firstlook`) · 2026-10-06 (D-2026-10-06-A: 2024 b-tag paths in ParkingHH, the PD rule, tree control plots) · 2026-10-05 (D-2026-10-05-A: 2024 first-look scope, D14 109.816, D15 PU inputs; D-2026-10-02-E DECIDED; D-2026-10-05-B 2024 MC 4J3T bit PROPOSED; D-2026-10-05-C 2024 without tt+nb lookup; D-2026-10-05-D 2017 v20 removed from KNU) · 2026-10-04 (D-2026-10-04-A: run records are committed) · 2026-10-02 (D-2026-10-02-A…E: v15 analyzer order, eventBuffer policy, event cleaning, answers N0–N8, blinding).
+> **Status:** living, append-and-supersede · last meaningful update **2026-10-07** (D-2026-10-07-B: 2024 lepton CRs now, lep samples after the storage check, next work; D-2026-10-07-A: the whole 2024 main again with ParkingHH, the first look kept as `_firstlook`) · 2026-10-06 (D-2026-10-06-A: 2024 b-tag paths in ParkingHH, the PD rule, tree control plots) · 2026-10-05 (D-2026-10-05-A: 2024 first-look scope, D14 109.816, D15 PU inputs; D-2026-10-02-E DECIDED; D-2026-10-05-B 2024 MC 4J3T bit PROPOSED; D-2026-10-05-C 2024 without tt+nb lookup; D-2026-10-05-D 2017 v20 removed from KNU) · 2026-10-04 (D-2026-10-04-A: run records are committed) · 2026-10-02 (D-2026-10-02-A…E: v15 analyzer order, eventBuffer policy, event cleaning, answers N0–N8, blinding).
 > **Links:** index [`README.md`](README.md) · current state [`STATUS.md`](STATUS.md) · per-change detail [`changes/`](changes/).
 
 ## How to use this log
@@ -204,6 +204,19 @@ main: every output is G. (c) The price is the 1,939 MC jobs, a few hours at KNU.
 rejected for (a). The whole main under a new output name from a yml tag (submitter code) — not needed while a rename does the same.
 **Note.** The MC histograms do not depend on the PD rule (MC takes the whole OR before and after), so the MC part reproduces the first look
 up to the filelists.
+
+## D-2026-10-07-B — 2024 lepton control regions now, before the W→ℓν/DY samples; next: nJets diagnostics, trigger SF, b-tag method, 2018 v15 · **DECIDED** (user, 2026-10-07)
+
+**Context.** The user's 2017 study: with one lepton and a MET cut (QCD suppressed) Data/MC improves, but the jet multiplicity stays clearly
+off. Is that 2017's alone or every year's (Run 3 too)? The 2024 HT1050 control region (tempTTHH `changes/STEP_24_stage1_2_2024.md` §18) shows
+the same slope (nJets Data/MC 1.38 at 6 jets, about 2 at 13).
+**Decision.** (1) Run the 2024 lepton CRs — `--region muon` and `--region electron`: the lepton veto replaced by one lepton, none of the other
+flavour and MET > 20 GeV; trigger and Data PDs as FH — now, with the FH rerun of D-2026-10-07-A, and look at the plots. The 2024 lep samples
+(W→ℓν 12, DY 7; PLAN D13) are the goal, but their production is decided after a look at the KNU storage use; until then the CR MC has no W/DY
+(shapes first). (2) Next work, all four: jet-multiplicity diagnostics from the event tree (commit I), 2024 trigger SF (Stage 6), the 2024
+b-tag method (Stage 7, D10), the 2018 v15 analyzer path (year comparison).
+**Why.** The CRs need no new code and answer the question for Run 3 directly; the storage numbers decide whether the lep samples fit now.
+**Open.** D13 (lep production) after the storage numbers; D10 after the BTV payload re-check.
 
 ## D-(historical) — carried invariants · **DECIDED**
 

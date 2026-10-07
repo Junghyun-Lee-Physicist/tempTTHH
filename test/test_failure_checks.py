@@ -11,7 +11,8 @@
      attempt; the report table with the fail / wait columns
   D  plotter/make_plots.py --tree-cut (D-2026-10-06-A): control histograms from Tree/Tree -- the yields after the
      cut (MC by evtWeight, Data by 1), the Control/ histograms in <out>/tree/, only those plotted, a cut on a
-     missing branch fails, --tree-label needs --tree-cut
+     missing branch fails, --tree-label needs --tree-cut; [STEP 24 I] the jet-multiplicity diagnostics (nJets above
+     40 / 50 GeV, central / forward, per b-tag multiplicity, the score of every jet) and the TREEFLAV table
 
 Run from the repo top after cmsenv (needs PyROOT; part B's merge needs hadd):
     python3 test/test_failure_checks.py
@@ -269,6 +270,7 @@ with tempfile.TemporaryDirectory(prefix="tthh_fail_") as T:
                                                "eventD", "bjetAplanarity", "bjetSphericity")}
         ci = {c: array("i", [0]) for c in ("nJets", "nbJets")}
         vec = {c: ROOT.std.vector("float")() for c in ("jetPt", "jetEta", "bTagScore")}
+        flav = ROOT.std.vector("int")()     # [STEP 24 I] hadron flavour of the selected jets (the analyzer's hadFlavs)
         t.Branch("passTrigger_HLT_PFHT1050", c_trig, "passTrigger_HLT_PFHT1050/O")
         for c, a_ in cf.items():
             t.Branch(c, a_, c + "/F")
@@ -276,6 +278,7 @@ with tempfile.TemporaryDirectory(prefix="tthh_fail_") as T:
             t.Branch(c, a_, c + "/I")
         for c, v in vec.items():
             t.Branch(c, v)
+        t.Branch("hadFlavs", flav)
         for trig, ht, w in events:
             c_trig[0] = 1 if trig else 0
             for c, a_ in cf.items():
@@ -283,10 +286,12 @@ with tempfile.TemporaryDirectory(prefix="tthh_fail_") as T:
             ci["nJets"][0], ci["nbJets"][0] = 6, 2
             for v in vec.values():
                 v.clear()
+            flav.clear()
             for i in range(6):
                 vec["jetPt"].push_back(ht / 6.0 * (1.5 - 0.2 * i))
                 vec["jetEta"].push_back(0.1 * i)
                 vec["bTagScore"].push_back(0.1 * (i + 1))
+                flav.push_back(5 if i < 2 else 4 if i == 2 else 0)      # scores 0.1, 0.2: b; 0.3: c; 0.4-0.6: light
             t.Fill()
         t.Write()
         f.Close()
@@ -316,12 +321,33 @@ with tempfile.TemporaryDirectory(prefix="tthh_fail_") as T:
           bool(hht) and hht.InheritsFrom("TH1F") and int(hht.GetEntries()) == 2 and abs(hht.Integral() - 4.0) < 1e-6
           and hht.GetXaxis().GetTitle() == "H_{T} [GeV]",
           str((bool(hht), hht.GetEntries() if hht else None, hht.Integral() if hht else None)))
+    # [STEP 24 I] the jet-multiplicity diagnostics: SampleA has 2 events (weight 2) with 6 jets, all pT > 100 GeV,
+    #   |eta| <= 0.5, nbJets 2 -> every nJets variant at 6 (forward: 0), nb >= 3 empty, 12 jet scores of weight 2
+    def integ_at(name, x):
+        h = hf.Get("Control/" + name) if hf else None
+        return (round(h.GetBinContent(h.FindBin(x)), 6), round(h.Integral(), 6)) if h else None
+    diag = {n: integ_at(n, x) for n, x in (("nJets_pt40", 6), ("nJets_pt50", 6), ("nJets_central", 6), ("nJets_forward", 0),
+                                          ("nJets_nb2", 6), ("nJets_nb3p", 6))}
+    hb = hf.Get("Control/btag_alljets") if hf else None
+    check("D the nJets diagnostics: pT > 40 / 50, central, forward, nb = 2 at 6 jets (weight 4), nb >= 3 empty",
+          all(diag[n] == (4.0, 4.0) for n in ("nJets_pt40", "nJets_pt50", "nJets_central", "nJets_forward", "nJets_nb2"))
+          and diag["nJets_nb3p"] == (0.0, 0.0), str(diag))
+    check("D btag_alljets: one entry per selected jet (12, integral 24)",
+          bool(hb) and int(hb.GetEntries()) == 12 and abs(hb.Integral() - 24.0) < 1e-6,
+          str((hb.GetEntries(), hb.Integral()) if hb else None))
     if hf:
         hf.Close()
+    rows = {l.split()[1]: l.split()[2:] for l in out.splitlines() if l.startswith("TREEFLAV ") and "-" in l.split()[1]}
+    check("D TREEFLAV: per score bin MC 5 (b / c / light from hadFlavs), Data 2, Data/MC 0.400",
+          rows.get("0.1-0.2") == ["5.00", "100.0%", "0.0%", "0.0%", "2", "0.400"]
+          and rows.get("0.3-0.4") == ["5.00", "0.0%", "100.0%", "0.0%", "2", "0.400"]
+          and rows.get("0.5-0.6") == ["5.00", "0.0%", "0.0%", "100.0%", "2", "0.400"]
+          and rows.get("0.0-0.1") == ["0.00", "-", "-", "-", "0", "nan"] and len(rows) == 10, str(rows))
     with open(os.path.join(tout, "YIELDS.txt")) as fh:
         ytxt = fh.read()
-    check("D YIELDS.txt keeps the merged cutflow and adds TREECUT / TREEYIELD",
-          "YIELD noCut" in ytxt and "TREECUT passTrigger_HLT_PFHT1050 && HT > 1200" in ytxt and "TREEYIELD total" in ytxt)
+    check("D YIELDS.txt keeps the merged cutflow and adds TREECUT / TREEYIELD / TREEFLAV",
+          "YIELD noCut" in ytxt and "TREECUT passTrigger_HLT_PFHT1050 && HT > 1200" in ytxt and "TREEYIELD total" in ytxt
+          and "TREEFLAV 0.1-0.2" in ytxt)
     with open(os.path.join(tout, "structure_info.yml")) as fh:
         sinfo = fh.read()
     check("D structure_info: only the Control/ histograms (%d), from the tree files" % len(mpm.TREE_HISTS),

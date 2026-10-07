@@ -47,11 +47,16 @@ What it does (in cmsenv: PyROOT and root):
      then plot those (the YIELDS and checks of 3 stay those of the merged files). TREEYIELD lines (also in
      YIELDS.txt): per sample the events and the weighted sum after EXPR, then MC, Data and Data/MC. --tree-label: a
      line added to the plot note (TLatex; default 'event-tree cut: see YIELDS.txt', also after --note).
+     The jet-multiplicity diagnostics (STEP 24 I): besides nJets, the number of selected jets with pT > 40 and > 50 GeV,
+     with |eta| < 2.0 and with 2.0 <= |eta| < 2.4, nJets for events with exactly two and with three or more b-tagged
+     jets, and the b-tag score of every selected jet (one entry per jet). TREEFLAV lines (also in YIELDS.txt; MC
+     trees with the hadFlavs branch): per b-tag score bin of 0.1, all selected jets, the MC sum split by hadron
+     flavour (b = 5, c = 4, light = the rest), the Data count and Data/MC -- where in the score the Data/MC moves.
      The tree holds the events after the whole selection of the run (its trigger OR included), so EXPR can only
      narrow it: a path of that OR, a higher HT, more b-tags ...
 Output: --out (default <repo>/condor/plots/<base name>[_tree]_<UTC>/; condor/ is gitignored): YIELDS.txt, the two
 yml, plotter_<grouping>.log, plots_<grouping>/*.pdf (and tree/*.root with --tree-cut).
-Lines: SAMPLE / EXCLUDED / MISSING, YIELD ..., [TREECUT, TREEYIELD ...,] HIST n=..., PLOTS <grouping> pdf=<n>
+Lines: SAMPLE / EXCLUDED / MISSING, YIELD ..., [TREECUT, TREEYIELD ..., TREEFLAV ...,] HIST n=..., PLOTS <grouping> pdf=<n>
 multipage=<path>, RESULT OK|FAIL.
 Exit: 0 ok; 1 a check or the plotter failed; 2 bad arguments.
 """
@@ -91,7 +96,17 @@ TREE_HISTS = (
     + [(c, t, c, 25, 0.0, hi) for c, t, hi in (("aplanarity", "aplanarity (jets)", 0.5), ("sphericity", "sphericity (jets)", 1.0),
                                                ("eventC", "C (jets)", 1.0), ("eventD", "D (jets)", 1.0),
                                                ("bjetAplanarity", "aplanarity (b jets)", 0.5),
-                                               ("bjetSphericity", "sphericity (b jets)", 1.0))])
+                                               ("bjetSphericity", "sphericity (b jets)", 1.0))]
+    # [STEP 24 I] where does the nJets slope come from: harder jets only, central / forward jets, per b-tag multiplicity,
+    #   and the b-tag score of every selected jet (the selection: pT > 30 GeV, |eta| < 2.4, 6th jet pT > 40 GeV)
+    + [("nJets_pt40", "number of jets, p_{T} > 40 GeV", "njet_pt40_", 10, 5.5, 15.5),
+       ("nJets_pt50", "number of jets, p_{T} > 50 GeV", "njet_pt50_", 12, 3.5, 15.5),
+       ("nJets_central", "number of jets, |#eta| < 2.0", "njet_central_", 13, 2.5, 15.5),
+       ("nJets_forward", "number of jets, 2.0 #leq |#eta| < 2.4", "njet_forward_", 7, -0.5, 6.5),
+       ("nJets_nb2", "number of jets (n_{b} = 2)", "njet_nb2_", 10, 5.5, 15.5),
+       ("nJets_nb3p", "number of jets (n_{b} #geq 3)", "njet_nb3p_", 10, 5.5, 15.5),
+       ("btag_alljets", "b-tag score, every selected jet", "bTagScore", 20, 0.0, 1.0)])
+FLAV_BINS = 10      # TREEFLAV: b-tag score bins of 0.1 in [0, 1]
 
 
 def submitter():
@@ -165,12 +180,15 @@ def th1_paths(ROOT, path, inc, exc):
 
 def tree_hists(ROOT, path, out_path, cut, is_data):
     """[D-2026-10-06-A] TREE_HISTS from Tree/Tree of path for the events passing cut, into out_path (directory
-    Control/, TH1F like the analyzer's histograms). Returns (events, weighted sum) or the reason it could not."""
+    Control/, TH1F like the analyzer's histograms). Returns (events, weighted sum, flavour table input) or the reason
+    it could not. The table input [STEP 24 I]: {"all": per score bin the weighted count of every selected jet} and, for
+    MC with the hadFlavs branch, the same for "b", "c", "light"."""
     f = ROOT.TFile.Open(path)
     if not f or f.IsZombie():
         return "cannot open %s" % path
     t = f.Get("Tree/Tree")
     ok = bool(t) and t.InheritsFrom("TTree")
+    has_flav = bool(ok and t.GetBranch("hadFlavs"))
     f.Close()
     if not ok:
         return "no Tree/Tree in %s" % path
@@ -183,11 +201,30 @@ def tree_hists(ROOT, path, out_path, cut, is_data):
         d = d.Define("btag_desc_", "ROOT::VecOps::Reverse(ROOT::VecOps::Sort(bTagScore))")
         for i in range(1, 5):
             d = d.Define("btag_%d" % i, "btag_desc_.size() >= %d ? (double)btag_desc_[%d] : -999." % (i, i - 1))
+        # [STEP 24 I] jet-multiplicity diagnostics (TREE_HISTS); -999 = not this b-tag multiplicity (underflow)
+        d = (d.Define("njet_pt40_", "(int)ROOT::VecOps::Sum(jetPt > 40.f)")
+              .Define("njet_pt50_", "(int)ROOT::VecOps::Sum(jetPt > 50.f)")
+              .Define("njet_central_", "(int)ROOT::VecOps::Sum(ROOT::VecOps::abs(jetEta) < 2.0f)")
+              .Define("njet_forward_", "(int)ROOT::VecOps::Sum(ROOT::VecOps::abs(jetEta) >= 2.0f)")
+              .Define("njet_nb2_", "nbJets == 2 ? (double)nJets : -999.")
+              .Define("njet_nb3p_", "nbJets >= 3 ? (double)nJets : -999."))
+        if has_flav and not is_data:
+            d = (d.Define("btag_flav_b_", "bTagScore[hadFlavs == 5]")
+                  .Define("btag_flav_c_", "bTagScore[hadFlavs == 4]")
+                  .Define("btag_flav_l_", "bTagScore[hadFlavs != 5 && hadFlavs != 4]"))
         d = d.Filter(cut, "tree_cut")
         booked = [(name, title, d.Histo1D(ROOT.RDF.TH1DModel("tree_" + name, "", nb, lo, hi), col, "w_tree_"))
                   for name, title, col, nb, lo, hi in TREE_HISTS]
+        flav = {"all": d.Histo1D(ROOT.RDF.TH1DModel("flav_all_", "", FLAV_BINS, 0.0, 1.0), "bTagScore", "w_tree_")}
+        if has_flav and not is_data:
+            for k, col in (("b", "btag_flav_b_"), ("c", "btag_flav_c_"), ("light", "btag_flav_l_")):
+                flav[k] = d.Histo1D(ROOT.RDF.TH1DModel("flav_%s_" % k, "", FLAV_BINS, 0.0, 1.0), col, "w_tree_")
         n_ev, sumw = d.Count(), d.Sum("w_tree_")
         n_ev, sumw = int(n_ev.GetValue()), float(sumw.GetValue())   # one event loop for everything booked
+        # a score of exactly 1 belongs to the last bin (the overflow of [0, 1))
+        flav = {k: [h.GetValue().GetBinContent(b) for b in range(1, FLAV_BINS)]
+                + [h.GetValue().GetBinContent(FLAV_BINS) + h.GetValue().GetBinContent(FLAV_BINS + 1)]
+                for k, h in flav.items()}
     except Exception as e:      # a bad expression (cling; its own error lines are on stderr) or a missing branch
         lines = [x.strip() for x in str(e).strip().splitlines() if x.strip()]
         return "cut '%s' or the tree columns: %s" % (cut, " | ".join(lines[:3] + lines[-1:]) if lines else repr(e))
@@ -204,7 +241,28 @@ def tree_hists(ROOT, path, out_path, cut, is_data):
         hf.GetXaxis().SetTitle(title)
         hf.Write()
     o.Close()
-    return n_ev, sumw
+    return n_ev, sumw, flav
+
+
+def flavour_table(mc_flav, data_flav):
+    """[STEP 24 I] TREEFLAV lines: per b-tag score bin, every selected jet -- the MC sum and its split by hadron flavour,
+    the Data count, Data/MC. mc_flav: the tree_hists tables of the MC samples; data_flav: those of the Data samples."""
+    if not mc_flav:
+        return []
+    with_flav = [m for m in mc_flav if "b" in m]
+    out = ["TREEFLAV score    %12s %7s %7s %7s %10s %8s   (every selected jet; MC split by hadron flavour%s)"
+           % ("MC", "b", "c", "light", "Data", "Data/MC",
+              "" if len(with_flav) == len(mc_flav) else ", %d of %d MC samples have it" % (len(with_flav), len(mc_flav)))]
+    for i in range(FLAV_BINS):
+        m = sum(t["all"][i] for t in mc_flav)
+        fl = [sum(t[k][i] for t in with_flav) for k in ("b", "c", "light")]
+        tot = sum(fl)
+        dat = sum(t["all"][i] for t in data_flav)
+        out.append("TREEFLAV %.1f-%.1f %12.2f %s %10.0f %8s"
+                   % (i / float(FLAV_BINS), (i + 1) / float(FLAV_BINS), m,
+                      " ".join("%6.1f%%" % (100.0 * x / tot) if tot > 0 else "%7s" % "-" for x in fl), dat,
+                      "%.3f" % (dat / m) if m > 0 else "nan"))
+    return out
 
 
 def yq(v):
@@ -379,6 +437,7 @@ def main(argv=None):
         os.makedirs(tdir, exist_ok=True)
         tl = ["TREECUT %s (Tree/Tree of each merged file; MC weighted by evtWeight, Data by 1)" % a.tree_cut]
         plot_samples, tot = [], {"MC": 0.0, "DATA": 0.0}
+        flav_tab = {"MC": [], "DATA": []}
         for n, kind, p, cf in samples:
             tp = os.path.join(tdir, n + ".root")
             r = tree_hists(ROOT, p, tp, a.tree_cut, kind == "DATA")
@@ -389,9 +448,11 @@ def main(argv=None):
                 return 1
             tl.append("TREEYIELD %-4s %-45s events=%d sumw=%.2f" % (kind, n, r[0], r[1]))
             tot[kind] += r[1]
+            flav_tab[kind].append(r[2])
             plot_samples.append((n, kind, tp, cf))
         tl.append("TREEYIELD total MC=%.1f Data=%.0f Data/MC=%s" % (
             tot["MC"], tot["DATA"], "%.3f" % (tot["DATA"] / tot["MC"]) if tot["MC"] > 0 else "nan"))
+        tl += flavour_table(flav_tab["MC"], flav_tab["DATA"])
         print("\n".join(tl))
         with open(os.path.join(out, "YIELDS.txt"), "a") as f:
             f.write("\n".join(tl) + "\n")

@@ -7,6 +7,14 @@
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
 
+## 2026-10-07: [plotter] STEP 24 I — jet-multiplicity diagnostics from the event tree; 2024 lepton CR 을 지금 (D-2026-10-07-B)
+
+`plotter/make_plots.py --tree-cut`: control 히스토그램 일곱 더(26 → 33) — pT > 40·> 50 GeV jet 수, |η| < 2.0·2.0–2.4 jet 수, nb = 2·nb ≥ 3 의
+nJets, 모든 선택 jet 의 b-tag 점수 — 와 `TREEFLAV` 표(점수 0.1 칸마다 MC 의 hadron flavour 분율, Data, Data/MC). 사용자 관찰(2017: lepton CR
+에서도 jet 수가 어긋남)의 원인을 b-tag 상관·부드러운/앞쪽 jet·생성기·trigger 로 나누어 보기 위한 것. 시험 `test_failure_checks.py` 36/36(+3).
+결정 D-2026-10-07-B: 2024 lepton CR(μ, e)을 FH 재실행과 함께 지금, lep 표본 생산은 KNU 저장소 사용량을 본 뒤; 다음 작업은 Stage 6·7 과 2018
+v15 경로. 상세 [`changes/STEP_24_stage1_2_2024.md`](changes/STEP_24_stage1_2_2024.md) §19.
+
 ## 2026-10-07: [config][도구] STEP 24 H — 2024 main 에 ParkingHH, filelist 도구가 ParkingHH config 를 읽음; G 의 KNU 결과와 HT1050 control plot
 
 KNU(사용자, 기록 `f51852a2`): `knu_build_g` 0, 단위 시험 PASS, `knu_smoke_2024_g` 81/81(신호 TTHHto4b 는 OR 통과 event 의 83 % 가 b-tag

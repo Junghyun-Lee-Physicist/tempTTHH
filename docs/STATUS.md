@@ -2,7 +2,7 @@
 
 > **Purpose:** the single place that answers "where are we right now?" — current state, what is ready, what is pending, and what is OPEN.
 > **Audience:** anyone starting a session.
-> **Status:** living · last meaningful update **2026-10-07** (ParkingHH 생산 끝, G 의 KNU smoke 81/81, HT1050 control plot Data/MC 1.46 = b-tag; D-2026-10-07-A: 2024 main 전체 다시, 커밋 H) · 2026-10-06 (2024 의 b-tag 경로는 ParkingHH: D-2026-10-06-A, 커밋 G 의 PD 규칙과 `make_plots.py --tree-cut` control plot; STEP 24 커밋 E·F `b29856eb`: KNU smoke `dC_mix` 의 139 → `tthh::fatalExit`, F 빌드 smoke 69/69; 첫 plot 의 모자람은 HT < 1000 GeV(trigger 경로·PD 확인); main 5,291/5,291·merge 76/76, 사후 확인으로 빠짐 없음, 첫 수율표; 커밋 D·E 실패 확인 · prescan 983/983, consolidate 의 `EXIT 1` 은 도구 — 커밋 C 에 `--skimmed`; Data 는 golden LS 의 1.4 % 쯤 없음) · 2026-10-05 (STEP 24 커밋 C: KNU smoke 68/69, plot 도구, 여러 파일 job 검사 고침 · 커밋 B: 진짜 eventBuffer.h 와 2024 analyzer·제출기, smoke_2024 · 묶음 1: 2024 eventBuffer·PU 도구와 입력, Y1 도구; D-2026-10-05-A · 묶음 2: analyzer 의 2024 코드는 진짜 header 와 함께 커밋 대기, Stage 3 도구·yml·임시 σ, 오프라인 smoke 31/31; D-2026-10-05-B·C) · 2026-10-04 (KNU 의 긴 단계는 condor job, 실행 기록은 `runlogs/` 에 커밋 — STEP 23) · 2026-10-03 (Stage 0 의 payload·lumi 실측 반영, eventBuffer 생성기 = 사용자 fork treestream 점검, 그 패치 커밋 `8be42e8`; KNU 의 pull 과 clean 빌드) · 2026-10-02 (2024 먼저 결정, 단계별 계획 [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) §9, 2017 lumi 42.07 반영) · 그 전 2026-10-01 (v15 계획 PROPOSED) · 2026-07-26 (2018UL 준비: samples_2018UL.json, --preflight, OPEN #5).
+> **Status:** living · last meaningful update **2026-10-07** (D-2026-10-07-B: 2024 lepton CR 지금, 다음 작업 넷, 커밋 I 의 nJets 진단) · 2026-10-07 (ParkingHH 생산 끝, G 의 KNU smoke 81/81, HT1050 control plot Data/MC 1.46 = b-tag; D-2026-10-07-A: 2024 main 전체 다시, 커밋 H) · 2026-10-06 (2024 의 b-tag 경로는 ParkingHH: D-2026-10-06-A, 커밋 G 의 PD 규칙과 `make_plots.py --tree-cut` control plot; STEP 24 커밋 E·F `b29856eb`: KNU smoke `dC_mix` 의 139 → `tthh::fatalExit`, F 빌드 smoke 69/69; 첫 plot 의 모자람은 HT < 1000 GeV(trigger 경로·PD 확인); main 5,291/5,291·merge 76/76, 사후 확인으로 빠짐 없음, 첫 수율표; 커밋 D·E 실패 확인 · prescan 983/983, consolidate 의 `EXIT 1` 은 도구 — 커밋 C 에 `--skimmed`; Data 는 golden LS 의 1.4 % 쯤 없음) · 2026-10-05 (STEP 24 커밋 C: KNU smoke 68/69, plot 도구, 여러 파일 job 검사 고침 · 커밋 B: 진짜 eventBuffer.h 와 2024 analyzer·제출기, smoke_2024 · 묶음 1: 2024 eventBuffer·PU 도구와 입력, Y1 도구; D-2026-10-05-A · 묶음 2: analyzer 의 2024 코드는 진짜 header 와 함께 커밋 대기, Stage 3 도구·yml·임시 σ, 오프라인 smoke 31/31; D-2026-10-05-B·C) · 2026-10-04 (KNU 의 긴 단계는 condor job, 실행 기록은 `runlogs/` 에 커밋 — STEP 23) · 2026-10-03 (Stage 0 의 payload·lumi 실측 반영, eventBuffer 생성기 = 사용자 fork treestream 점검, 그 패치 커밋 `8be42e8`; KNU 의 pull 과 clean 빌드) · 2026-10-02 (2024 먼저 결정, 단계별 계획 [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) §9, 2017 lumi 42.07 반영) · 그 전 2026-10-01 (v15 계획 PROPOSED) · 2026-07-26 (2018UL 준비: samples_2018UL.json, --preflight, OPEN #5).
 > **Links:** decisions [`DECISIONS.md`](DECISIONS.md) · history [`CHANGELOG.md`](CHANGELOG.md) · exit codes [`reference/ERROR_CODES.md`](reference/ERROR_CODES.md) · path policy [`reference/CONFIG_PATHS.md`](reference/CONFIG_PATHS.md).
 
 ## Bottom line
@@ -114,6 +114,11 @@ UTC, 8 task) → **2,771 / 2,771 finished, fail 0**(NtupleForge V59–V60). 결�
 (MC + JetMET + ParkingHH, 8,062 job) 다시, 첫 look 출력은 `_firstlook` 으로 이름만 바꿔 보존. 커밋 H(yml 에 ParkingHH, filelist 도구가
 ParkingHH config 를 읽음; C++ 그대로). 다음: KNU 에서 P8(ParkingHH)과 10-05 P8 의 요약, filelist 다시와 MC 목록 diff, Data lumi(ParkingHH
 포함), 이름 바꾸기, main 제출(워크스페이스 RUNBOOK §25) → merge → plot(전체 OR) → Stage 6.
+
+**10-07 (2) (사용자 결정):** D-2026-10-07-B — 2024 lepton CR(μ, e; FH 의 lepton veto 대신 lepton 1 + MET > 20 GeV)을 FH 재실행과 함께
+지금 돌려 그림을 본다(lep 표본 W→ℓν·DY 의 생산은 KNU 저장소 사용량을 본 뒤). 사용자 관찰: 2017 의 lepton CR 에서도 jet 수 분포가 어긋난다 →
+연도마다 보려 함. 다음 작업 넷: nJets 진단(커밋 I: `make_plots.py --tree-cut` 에 jet pT·η 문턱별·nb 별 nJets, 모든 jet 의 b-tag 점수,
+`TREEFLAV` 표; 시험 36/36), Stage 6(2024 trigger SF), Stage 7(2024 b-tag 방법, D10), 2018 v15 경로 — STEP 24 §19, 워크스페이스 RUNBOOK §26.
 
 ## What is ready (DECIDED)
 
