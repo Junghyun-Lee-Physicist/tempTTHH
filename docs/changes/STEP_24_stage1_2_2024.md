@@ -504,6 +504,60 @@ B 에만 있는 파일 FAIL, tree 값만 바뀜 FAIL, EXPECTED 의 run 이 양�
   filelist·lumi 검사 → main 의 Data(JetMET 은 새 규칙으로 다시, ParkingHH 새로; MC 출력은 규칙이 그대로라 다시 돌리지 않는다) → merge →
   plot(전체 OR); Stage 6 trigger SF(OR 의 turn-on, `HLT_PFHT1050` 의 plateau).
 
+### 18. 커밋 G 의 KNU 결과, `HLT_PFHT1050` control plot, ParkingHH 생산 끝 → main 을 전체 다시 (10-06 밤 ~ 10-07; 커밋 H)
+
+- **KNU**(사용자, 기록 커밋 `f51852a2`): `knu_build_g` exit 0(153 s, `[Done] Built`), `knu_unittests_g` PASS(3/3), `knu_smoke_2024_g`
+  **81/81**. smoke 의 `[trigger]` 수(파일 하나씩; main 에서 taken = cutflow 의 HadTrigger, 일곱 모두 PASS):
+
+| run | sample | event | `HLT_PFHT1050` | b-tag 경로 | 둘 다 | b-tag, HT1050 아님 | taken (규칙) |
+|---|---|---|---|---|---|---|---|
+| mc_sig | TTHHto4b | 23,245 | 3,708 | 21,392 | 3,674 | 17,718 | 21,426 (OR) |
+| mc_tt | TTbar_Hadronic | 216,617 | 4,127 | 70,344 | 3,378 | 66,966 | 71,093 (OR) |
+| mc_multi | QCD_HT200to400 | 132,053 | 7 | 658 | 3 | 655 | 662 (OR) |
+| dC_pnet | JetMET0 2024C | 5,566 | 1,039 | 869 | 195 | 674 | 1,039 (JetMET) |
+| dC_nopnet | JetMET0 2024C | 2,802 | 522 | 412 | 94 | 318 | 522 (JetMET) |
+| dI | JetMET1 2024I `_v2` | 18,114 | 3,232 | 3,071 | 690 | 2,381 | 3,232 (JetMET) |
+| dI_pk | dI 의 파일을 ParkingHH 이름으로 | 18,114 | 3,232 | 3,071 | 690 | 2,381 | 2,381 (ParkingHH) |
+
+  뜻: 신호(TTHHto4b)는 OR 을 통과한 event 의 83 %(17,718 / 21,426)가 b-tag 경로로만 들어온다 — `HLT_PFHT1050` 하나로는 17 %. JetMET
+  파일에도 b-tag 경로만 터진 event 가 11–13 % 있다(다른 JetMET 경로로 기록된 것): 새 규칙에서는 이들을 ParkingHH 에서 받는다(두 번 세지 않음).
+- **`HLT_PFHT1050` && HT > 1200 GeV control plot**(D-2026-10-06-A (3); `knu_plots_2024_ht1050` exit 0, 26 그림, 맥
+  `~/claude/NtuplizerDev/plots_2024_ht1050/`): 첫 look 의 merge 된 main 출력의 `Tree/Tree` = 전체 selection(HadTrigger, noise filter,
+  njets ≥ 6, 6 번째 jet pT > 40, lepton 0, HT > 500, nb ≥ 2, 30 < HadW < 250)을 통과한 event. 수율: MC 575,049(QCD 446,217 = 78 %, tt
+  105,946, single t 9,533, V+jets/VV 11,217, ttV 1,272, ttH+tH 733, tt+X(rare) 130, ttHH 1.2, ttZH/ZZ(4b) 0.7), Data 842,016 → **Data/MC 1.46**.
+  merge 된 MC 56 sample 의 noCut = prescan 의 event 수(빠진 job 없음).
+- **모양**(ratio 칸; 그림을 AI 가 봄):
+  - 운동학: HT 는 1.2–2 TeV 에서 1.45–1.5 로 평평하고 3 TeV 쪽 1.3, jet 1 pT 1.3–1.5, event shape(aplanarity, sphericity, C, D) 1.4–1.5 로
+    평평 — 정규화를 빼면 10–15 % 안에서 맞는다. threshold 근처에서 오르는 비(trigger turn-on 의 꼴)가 없다 → 1200 GeV 는 plateau 쪽.
+  - **b-tag**: nbJets 2 에서 1.38, 3 에서 1.85, 4 이상은 2 를 넘는다(칸 밖). b-tag 점수(큰 순 1–4 번째)의 Data/MC 는 점수와 함께 내려간다 —
+    0.2–0.5 에서 1.6–2.0, 0.7–0.9 에서 1.2–1.4, 가장 높은 칸(> 0.95)에서 1.0–1.2 → 넘침은 b 가 아닌 jet 이 WP 를 넘는 곳(light·charm 의
+    mistag 영역)에 몰려 있다. 2024 MC 에는 b-tag 보정이
+    없다(shape SF 없음, D10; 이 run 은 SF 모두 off). 곧 1.46 은 nb ≥ 2 에서 b-tag 의 Data/MC 차이(와 LO QCD 의 heavy flavour)로 보이고 lumi·σ 의
+    문제가 아니다 — 첫 look 에서 trigger 만 건 단계의 HT 1150–1500 GeV 는 1.05 였다(§16). QCD 는 결국 data-driven 추정이나 2024 b-tag 보정이 필요.
+  - jet 수: 6 에서 1.38, 13 에서 2.
+  - 부드러운·앞쪽 jet: jet 3–6 의 pT < 100 GeV 에서 1.5–2.0, jet 3–6 의 |η| > 2 에서 1.7–1.9(가운데 1.4) — Data 에 낮은 pT·앞쪽 jet 이 더
+    많다(PU jet, JER, PS 후보; JEC/JER·PU 점검 몫).
+  - MET: 1.4 → 1.6(100–130 GeV) → 1.0(250–300 GeV).
+  - **QCD 의 큰 weight**: QCD_HT200to400 의 event 셋(weight 합 4,330, 하나에 약 1,440)과 QCD_HT600to800 의 120 개(합 1,353)가 reco
+    HT > 1200 에 있다 → 한 bin 짜리 MC 튐(HT 약 2.3 TeV, MET 145·265 GeV, jet 4 pT 약 390 GeV 등). 버그가 아니라 낮은 HT bin 의 event 가
+    reco 에서 크게 올라간 것; 다루는 법(생성기 HT 와 reco HT 의 비로 자르기 등)은 나중에 정한다.
+- **ParkingHH 생산 끝**(NtupleForge V59–V60): 10-06 15:58 UTC 제출, 10-07 의 `--report` 에서 2,771 / 2,771 finished, fail 0.
+- **결정 D-2026-10-07-A**(사용자, AI 권고): 2024 main 을 G 실행 파일로 **전체(MC + Data) 다시** — MC 1,939 + JetMET 3,352(새 규칙) +
+  ParkingHH 2,771 = 8,062 job. 첫 look 의 출력 `AnalyzerOutput_main_notrig_2024` 와 condor 디렉터리는 `_firstlook` 을 붙여 이름만 바꿔
+  보존한다. §17 의 "MC 출력은 다시 돌리지 않는다" 를 바꾼 것(이유는 결정 항목).
+- **고침(커밋 H; Python·yml 만 — C++ 는 G 그대로라 KNU 다시 빌드 없음)**:
+  - `AnalyzerConfig/Tier3_2024_FH_unified_main.yml`: ParkingHH 8 sample(NtupleForge config 의 key 그대로), 주석(PD 규칙, job 수
+    1,939 + 6,123).
+  - `tools/stage3/make_filelists_v15.py`: `--forge-dir` 가 그 checkout 에 `config_ttHH<year>_v15_had_ParkingHH.yaml` 이 있으면 그것도
+    읽는다(ParkingHH 의 빠진 key 가 EXTRA 가 아니라 MISSING 으로 잡힌다); config 마다 `FORGECONFIG <config> keys=<n>` 줄.
+  - 시험(컨테이너, 가짜 생산 디렉터리): 세 config(MC 60·Data 32·ParkingHH 8 key)를 읽어 ParkingHH 의 빠진 key 를 MISSING 으로, 있는 key 는
+    EXTRA 아님; ParkingHH config 가 없는 checkout 은 예전처럼 EXTRA; `--forge-config` 만 주면 예전과 같음; 목록 쓰기 정상; Python 3.6 문법.
+    yml: 84 sample, ParkingHH 8 = NtupleForge config 의 key.
+- **다음**(워크스페이스 RUNBOOK §25): NtupleForge P8(ParkingHH; DAS 표 `script/drafts/review_das_ttHH2024_v15_ParkingHH_20261006.tsv`)과
+  10-05 의 2024 MC·Data P8(둘 다 exit 1, 요약 미확인) → filelist 다시(옛 목록 백업, MC 목록이 그대로인지 diff: 바뀌면 prescan 과 어긋난다)
+  → Data lumi(JetMET0 JetMET1 ParkingHH) → 첫 look 출력 이름 바꾸기 → main preflight·제출(84 cluster) → merge → plot(전체 OR) → Stage 6
+  trigger SF.
+
 ## 확인하지 못한 것
 
 - TTbar_Hadronic 의 `260930_162708/0000/forgedNtuple_443.root` 는 크기 0(10-02 18:48 KST; NtupleForge `docs/05_troubleshooting.md` A29):
@@ -516,8 +570,10 @@ B 에만 있는 파일 FAIL, tree 값만 바뀜 FAIL, EXPECTED 의 run 이 양�
   것으로 보여 쓰지 않음)는 첫 plot 에 영향이 없거나 작다. XSDB 로 확인할 사람: CERN 로그인이 있는 사용자.
 - D-2026-10-05-B(2024 MC 의 4J3T 는 PNet 만)는 PROPOSED — Stage 6 의 trigger SF 와 함께 정한다.
 - 커밋 E·F 의 KNU smoke 69/69 와 실행 기록 커밋(`13bf65e7`, 10-06)은 끝. 첫 look 의 모자람의 원인은 §17(b-tag 경로가 ParkingHH 에).
-- ParkingHH 2024 의 NanoAOD v15: DAS 에 C–I 모두 있다(§17, 10-06). 남은 것: 디스크 사본(테이프만인 dataset 이 없는지), branch 가 JetMET 과 같은지,
-  `6j20` 통과율과 출력 크기 — 제출 전후(RUNBOOK §24).
+- ParkingHH 2024: 디스크 사본·branch·preflight 확인과 생산은 끝(NtupleForge V59–V60, §18). 남은 것: `6j20` 통과율과 출력 크기, job audit 의
+  closure — KNU 의 P8(RUNBOOK §25).
+- 2024 MC·Data 의 P8(10-05, `knu_p8_2024_{MC,Data}`)은 둘 다 exit 1 — 요약을 아직 보지 못했다(A29 의 크기 0 파일, 생산에 없는 golden LS
+  1.4 %(§13)와 관계가 있는지).
 - `HLT_PFHT1050` 의 offline plateau: control plot 의 HT > 1200 GeV 는 임시 값(Run 2 경험) — Stage 6 에서 Muon0/1 로 잰다.
 - 커밋 G 의 KNU 빌드와 smoke(81 check)는 아직.
 - Data 의 처리된 LS 의 lumi(brilcalc): golden LS 의 1.4 % 쯤이 생산에 없다(§13) — 그 전까지 Data/MC 는 109.816 fb⁻¹ 기준.

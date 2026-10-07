@@ -14,7 +14,8 @@ common:
   prescan: "prescan_summary_2024/prescan_summary.json"       # consolidate_prescan.py --outdir prescan_summary_2024
   # MC: 10 files per job (one branch set per MC dataset). Data: 1 -- 2024 era C files differ in their HLT
   # branches and a job of several files stops (E11, requireSameBranchSet_; the submitter refuses > 1 for 2024
-  # Data). --report/--resubmit read these values, so do not give --files-per-job. 1,939 MC + 3,352 Data jobs.
+  # Data). --report/--resubmit read these values, so do not give --files-per-job. 1,939 MC + 6,123 Data jobs
+  # (JetMET 3,352 + ParkingHH 2,771; STEP 24 H).
   files_per_job: 10
   files_per_job_data: 1
   # [STEP18] path policy: "" / missing -> E12; null -> optional correction off (required -> E13); "<path>" -> used
@@ -98,9 +99,11 @@ samples:
   - ZJetsToQQ_HT800to1500
   - ZJetsToQQ_HT1500to2500
   - ZJetsToQQ_HT2500toInf
-  # -- Data: JetMET0 / JetMET1, eras C-I (era I: two datasets per PD, disjoint by run -- checked by
+  # -- Data: JetMET0 / JetMET1 and ParkingHH, eras C-I (era I: two datasets per PD, disjoint by run -- checked by
   #    tools/stage3/data_lumi_check.py). The era letter comes from the name (Run2024<X>-...). Muon0/1 (trigger
-  #    SF, PLAN 9 Stage 6) are not in the FH first look.
+  #    SF, PLAN 9 Stage 6) are not in the FH main. The analyzer takes each PD's own paths (D-2026-10-06-A):
+  #    JetMET0/1 -> HLT_PFHT1050; ParkingHH -> the b-tag paths (4J3T PNet/DeepJet, 6J1T, 6J2T) without
+  #    HLT_PFHT1050, so an event in both PDs is counted once (from JetMET).
   - JetMET0_Run2024C-MINIv6NANOv15-v1
   - JetMET0_Run2024D-MINIv6NANOv15-v1
   - JetMET0_Run2024E-MINIv6NANOv15-v1
@@ -117,3 +120,12 @@ samples:
   - JetMET1_Run2024H-MINIv6NANOv15-v2
   - JetMET1_Run2024I-MINIv6NANOv15-v1
   - JetMET1_Run2024I-MINIv6NANOv15_v2-v2
+  # ParkingHH (NtupleForge config_ttHH2024_v15_had_ParkingHH.yaml, D-2026-10-06-parkinghh; produced 10-06/07)
+  - ParkingHH_Run2024C-MINIv6NANOv15-v1
+  - ParkingHH_Run2024D-MINIv6NANOv15-v1
+  - ParkingHH_Run2024E-MINIv6NANOv15-v1
+  - ParkingHH_Run2024F-MINIv6NANOv15-v4
+  - ParkingHH_Run2024G-MINIv6NANOv15-v3
+  - ParkingHH_Run2024H-MINIv6NANOv15-v3
+  - ParkingHH_Run2024I-MINIv6NANOv15-v3
+  - ParkingHH_Run2024I-MINIv6NANOv15_v2-v2

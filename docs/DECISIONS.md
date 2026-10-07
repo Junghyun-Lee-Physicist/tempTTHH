@@ -2,7 +2,7 @@
 
 > **Purpose:** record each significant decision — the choice, why, what else was considered, and whether it still holds — so no one silently reopens a settled question or treats a proposal as settled.
 > **Audience:** anyone about to change behavior or unsure whether something is fixed.
-> **Status:** living, append-and-supersede · last meaningful update **2026-10-06** (D-2026-10-06-A: 2024 b-tag paths in ParkingHH, the PD rule, tree control plots) · 2026-10-05 (D-2026-10-05-A: 2024 first-look scope, D14 109.816, D15 PU inputs; D-2026-10-02-E DECIDED; D-2026-10-05-B 2024 MC 4J3T bit PROPOSED; D-2026-10-05-C 2024 without tt+nb lookup; D-2026-10-05-D 2017 v20 removed from KNU) · 2026-10-04 (D-2026-10-04-A: run records are committed) · 2026-10-02 (D-2026-10-02-A…E: v15 analyzer order, eventBuffer policy, event cleaning, answers N0–N8, blinding).
+> **Status:** living, append-and-supersede · last meaningful update **2026-10-07** (D-2026-10-07-A: the whole 2024 main again with ParkingHH, the first look kept as `_firstlook`) · 2026-10-06 (D-2026-10-06-A: 2024 b-tag paths in ParkingHH, the PD rule, tree control plots) · 2026-10-05 (D-2026-10-05-A: 2024 first-look scope, D14 109.816, D15 PU inputs; D-2026-10-02-E DECIDED; D-2026-10-05-B 2024 MC 4J3T bit PROPOSED; D-2026-10-05-C 2024 without tt+nb lookup; D-2026-10-05-D 2017 v20 removed from KNU) · 2026-10-04 (D-2026-10-04-A: run records are committed) · 2026-10-02 (D-2026-10-02-A…E: v15 analyzer order, eventBuffer policy, event cleaning, answers N0–N8, blinding).
 > **Links:** index [`README.md`](README.md) · current state [`STATUS.md`](STATUS.md) · per-change detail [`changes/`](changes/).
 
 ## How to use this log
@@ -185,6 +185,25 @@ high-HT events that fail the online b-tag. A new analyzer mode `--hadtrig ht1050
 events without a rerun.
 **Supersede when.** The ParkingHH production is in: the 2024 main runs again with JetMET + ParkingHH (the full OR), and the control plots
 move back to the stored histograms; the 1200 GeV plateau value is replaced by the Stage 6 measurement.
+
+## D-2026-10-07-A — 2024 main again with ParkingHH: the whole main (MC and Data) with the G executable; the first-look outputs kept as `_firstlook` · **DECIDED** (user, 2026-10-07, the AI's recommendation)
+
+**Context.** ParkingHH 2024 is produced (NtupleForge V60: 2,771 / 2,771 jobs finished, none failed) and the G build passed the 2024 smoke
+(81/81; tempTTHH `changes/STEP_24_stage1_2_2024.md` §18). D-2026-10-06-A asked for the main to run again with JetMET + ParkingHH (the
+whole OR) once ParkingHH was in; this entry is how.
+**Decision.** Run the **whole** 2024 main again — MC 1,939 + JetMET 3,352 (new PD rule) + ParkingHH 2,771 = 8,062 jobs — with the G
+executable and the main yml of commit H (ParkingHH added), into the same output name `AnalyzerOutput_main_notrig_2024`, after renaming the
+first-look output directory and its condor directory to `..._firstlook`. The filelists are made again (the old ones kept as
+`filelistTier3_2024_firstlook`); the MC lists must come out identical to the first-look ones, because the prescan sums of weights were
+made from them (a difference stops the procedure; `make_plots.py`'s EVENTS check is the second guard).
+**Why.** (a) A Data-only rerun into the old directory leaves the old-rule JetMET files in place: a job that fails would be counted as done
+by `--report` / `--resubmit` through its old file, silently mixing the two rules. (b) One executable and one filelist set for the whole
+main: every output is G. (c) The price is the 1,939 MC jobs, a few hours at KNU. (d) The first look stays readable
+(`make_plots.py --base .../AnalyzerOutput_main_notrig_2024_firstlook`).
+**Alternatives considered.** Data only (about 6,100 jobs; a Data-only yml, and the old JetMET outputs and merged files removed first) —
+rejected for (a). The whole main under a new output name from a yml tag (submitter code) — not needed while a rename does the same.
+**Note.** The MC histograms do not depend on the PD rule (MC takes the whole OR before and after), so the MC part reproduces the first look
+up to the filelists.
 
 ## D-(historical) — carried invariants · **DECIDED**
 

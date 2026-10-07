@@ -2,10 +2,20 @@
 
 > **Purpose:** one chronological line per change, newest first, linking to the full record. The detail lives in [`changes/STEP_*.md`](changes/); this file is the index, not a copy.
 > **Audience:** anyone tracing when and why something changed.
-> **Status:** append-only · last meaningful update **2026-10-06**.
+> **Status:** append-only · last meaningful update **2026-10-07**.
 > **Links:** decisions [`DECISIONS.md`](DECISIONS.md) · state [`STATUS.md`](STATUS.md).
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
+
+## 2026-10-07: [config][도구] STEP 24 H — 2024 main 에 ParkingHH, filelist 도구가 ParkingHH config 를 읽음; G 의 KNU 결과와 HT1050 control plot
+
+KNU(사용자, 기록 `f51852a2`): `knu_build_g` 0, 단위 시험 PASS, `knu_smoke_2024_g` 81/81(신호 TTHHto4b 는 OR 통과 event 의 83 % 가 b-tag
+경로로만 들어온다). `HLT_PFHT1050` && HT > 1200 GeV 의 tree control plot: Data/MC 1.46 — HT·jet pT·event shape 은 평평하고 넘침은 nb ≥ 2 의
+b-tag(중간 점수, mistag 영역; 2024 b-tag 보정 없음)에 몰려 있다; QCD 낮은 HT bin 의 큰 weight event 몇 개가 한 bin 짜리 튐. ParkingHH 생산
+끝(NtupleForge V60). 결정 D-2026-10-07-A: main 을 G 실행 파일로 전체(MC + Data, 8,062 job) 다시, 첫 look 출력은 `_firstlook` 으로 보존.
+`AnalyzerConfig/Tier3_2024_FH_unified_main.yml`: ParkingHH 8 sample. `tools/stage3/make_filelists_v15.py`: `--forge-dir` 가
+`config_ttHH<year>_v15_had_ParkingHH.yaml` 도(있으면) 읽고 `FORGECONFIG` 줄. C++ 는 그대로(KNU 다시 빌드 없음). 상세
+[`changes/STEP_24_stage1_2_2024.md`](changes/STEP_24_stage1_2_2024.md) §18, 결정 [`DECISIONS.md`](DECISIONS.md) D-2026-10-07-A.
 
 ## 2026-10-06: [analyzer][plotter][제출기] STEP 24 G — 2024 의 b-tag 경로는 ParkingHH: PD 규칙, event tree 의 control plot (D-2026-10-06-A)
 

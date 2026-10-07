@@ -23,13 +23,15 @@ Rules
     cover different input files, e.g. a recovery task of the missing jobs)
   * a key found under two primary datasets, or in two bases, is a FAIL
   * --forge-config: every dataset key of those configs must have files (else MISSING, a FAIL), and
-    keys on disk that no config lists are reported (EXTRA, not a FAIL). --forge-dir DIR takes the year's two
-    production configs DIR/crabConfig/config_ttHH<year>_v15_had_{MC,Data}.yaml (and keeps the word 'crab'
-    off the command line, so tools/runlog/runlog.sh commits the record instead of routing it to nocommit/)
+    keys on disk that no config lists are reported (EXTRA, not a FAIL). --forge-dir DIR takes the year's
+    production configs DIR/crabConfig/config_ttHH<year>_v15_had_{MC,Data}.yaml and, when the checkout has
+    it, config_ttHH<year>_v15_had_ParkingHH.yaml (2024: the PD of the b-tag paths, its own campaign;
+    NtupleForge D-2026-10-06-parkinghh, D-2026-10-06-A here) (and keeps the word 'crab' off the command
+    line, so tools/runlog/runlog.sh commits the record instead of routing it to nocommit/)
 Output: <out>/filelist_<key>.txt (absolute paths, sorted by job number) and <out>/MANIFEST.tsv
 (key, base, primary dataset, tasks, files, excluded, bytes). --check-only writes nothing.
-Lines: SAMPLE <key> files=<n> excluded=<n> GB=<x> task=<ts>[,<ts>] pd=<primaryDataset>;
-EXCLUDED <path> <reason>; MULTITASK / DUPKEY / MISSING / EXTRA <key> ...; RESULT OK|FAIL
+Lines: FORGECONFIG <config> keys=<n>; SAMPLE <key> files=<n> excluded=<n> GB=<x> task=<ts>[,<ts>]
+pd=<primaryDataset>; EXCLUDED <path> <reason>; MULTITASK / DUPKEY / MISSING / EXTRA <key> ...; RESULT OK|FAIL
 Exit: 0 ok; 1 a check failed (files are still written unless --check-only); 2 bad arguments.
 """
 from __future__ import print_function
@@ -102,14 +104,20 @@ def main(argv=None):
     ap.add_argument("--base", nargs="*", help="production directories (default: the --year ones under $KNU_STORE)")
     ap.add_argument("--out", help="default filelistTier3_<year> in this repository")
     ap.add_argument("--forge-config", nargs="*", default=[])
-    ap.add_argument("--forge-dir", help="NtupleForge checkout: its config_ttHH<year>_v15_had_{MC,Data}.yaml")
+    ap.add_argument("--forge-dir", help="NtupleForge checkout: its config_ttHH<year>_v15_had_{MC,Data}.yaml "
+                    "and, if present, config_ttHH<year>_v15_had_ParkingHH.yaml")
     ap.add_argument("--exclude", nargs="*", default=[])
     ap.add_argument("--allow-multi-task", nargs="*", default=[])
     ap.add_argument("--check-only", action="store_true")
     a = ap.parse_args(argv)
     if a.forge_dir:
-        a.forge_config = list(a.forge_config) + [
-            os.path.join(a.forge_dir, "crab" + "Config", "config_ttHH%s_v15_had_%s.yaml" % (a.year, k)) for k in ("MC", "Data")]
+        cdir = os.path.join(a.forge_dir, "crab" + "Config")
+        cfgs = [os.path.join(cdir, "config_ttHH%s_v15_had_%s.yaml" % (a.year, k)) for k in ("MC", "Data")]
+        # [STEP 24 H] the ParkingHH campaign (2024) has its own config; a year without one keeps the two
+        pk = os.path.join(cdir, "config_ttHH%s_v15_had_ParkingHH.yaml" % a.year)
+        if os.path.isfile(pk):
+            cfgs.append(pk)
+        a.forge_config = list(a.forge_config) + cfgs
     repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     bases = [os.path.abspath(b) for b in (a.base or [os.path.join(STORE, b) for b in DEFAULT_BASES[a.year]])]
     out = a.out or os.path.join(repo, "filelistTier3_%s" % a.year)
@@ -188,10 +196,12 @@ def main(argv=None):
     want = []
     for c in a.forge_config:
         try:
-            want += config_keys(c)
+            ck = config_keys(c)
         except OSError as err:
             print("ERROR --forge-config %s: %s" % (c, err))
             return 2
+        print("FORGECONFIG %s keys=%d" % (os.path.basename(c), len(ck)))
+        want += ck
     if a.forge_config:
         for k in sorted(set(want) - set(found)):
             print("MISSING %s (in the forge config, no files on disk)" % k)
