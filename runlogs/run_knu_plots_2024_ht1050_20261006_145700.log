@@ -1,0 +1,263 @@
+=== RUNLOG ================================================================
+step        : knu_plots_2024_ht1050
+start_utc   : 2026-10-06T14:57:01Z
+host        : cluster346   user: jhlee
+cwd         : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+repo        : /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH
+git_head    : 0d6aec65   modified_tracked_files: 0
+cmd         : python3 plotter/make_plots.py --config AnalyzerConfig/Tier3_2024_FH_unified_main.yml --base /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024 --tree-cut passTrigger_HLT_PFHT1050\ \&\&\ HT\ \>\ 1200 --tree-label HLT\ PFHT1050\,\ H_\{T\}\ \>\ 1200\ GeV 
+CMSSW_BASE  : /u/user/jhlee/ttHH/CMSSW_14_2_1
+root        : 6.30.09
+python3     : Python 3.9.14
+condor_job  : 2181109.0  slot slot1_3   jobdir: /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/runlog/knu_plots_2024_ht1050_20261006_145638
+===========================================================================
+[condor_run] worker cluster346  scratch /home/condor/dir_2407166
+[condor_run] cmsenv ok: CMSSW_BASE=/u/user/jhlee/ttHH/CMSSW_14_2_1  root 6.30.09  Python 3.9.14  TMPDIR=/home/condor/dir_2407166
+[condor_run] running in /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH: python3 plotter/make_plots.py --config AnalyzerConfig/Tier3_2024_FH_unified_main.yml --base /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024 --tree-cut passTrigger_HLT_PFHT1050\ \&\&\ HT\ \>\ 1200 --tree-label HLT\ PFHT1050\,\ H_\{T\}\ \>\ 1200\ GeV 
+----------------------------------------------------------------------------
+CONFIG /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/AnalyzerConfig/Tier3_2024_FH_unified_main.yml year=2024 lumi=109.816 sqrt(s)=13.6 TeV samples=76
+BASE /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024
+NOTE 2024 C-I;#sigma: provisional (13.6 TeV);no trigger/b-tag SF;HLT PFHT1050, H_{T} > 1200 GeV
+SAMPLE MC   TTHHto4b                                      /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTHHto4b.root
+SAMPLE MC   ttHTobb_had                                   /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ttHTobb_had.root
+SAMPLE MC   ttHTobb_semilep                               /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ttHTobb_semilep.root
+SAMPLE MC   ttHTobb_dilep                                 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ttHTobb_dilep.root
+SAMPLE MC   ttHToNonbb                                    /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ttHToNonbb.root
+SAMPLE MC   TTZHTo4b                                      /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTZHTo4b.root
+SAMPLE MC   TTZZTo4b                                      /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTZZTo4b.root
+SAMPLE MC   tHq                                           /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/tHq.root
+SAMPLE MC   tHW                                           /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/tHW.root
+SAMPLE MC   TTbar_Hadronic                                /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTbar_Hadronic.root
+SAMPLE MC   TTbar_SemiLep                                 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTbar_SemiLep.root
+SAMPLE MC   TTbar_DiLep                                   /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTbar_DiLep.root
+EXCLUDED TTbb_Hadronic (D-2026-10-05-C: not stacked on the inclusive ttbar in 2024)
+EXCLUDED TTbb_SemiLep (D-2026-10-05-C: not stacked on the inclusive ttbar in 2024)
+EXCLUDED TTbb_DiLep (D-2026-10-05-C: not stacked on the inclusive ttbar in 2024)
+EXCLUDED TT4b (D-2026-10-05-C: not stacked on the inclusive ttbar in 2024)
+SAMPLE MC   TTZToQQ                                       /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTZToQQ.root
+SAMPLE MC   TTWJetsToQQ                                   /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTWJetsToQQ.root
+SAMPLE MC   TTLL_MLL50                                    /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTLL_MLL50.root
+SAMPLE MC   TTLL_MLL4to50                                 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTLL_MLL4to50.root
+SAMPLE MC   TTNuNu                                        /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTNuNu.root
+SAMPLE MC   TTWW                                          /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTWW.root
+SAMPLE MC   TTWH                                          /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTWH.root
+SAMPLE MC   TTWZ                                          /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTWZ.root
+SAMPLE MC   TTTWminus                                     /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTTWminus.root
+SAMPLE MC   TTTWplus                                      /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTTWplus.root
+SAMPLE MC   TTTT                                          /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/TTTT.root
+SAMPLE MC   ST_t_top_had                                  /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_t_top_had.root
+SAMPLE MC   ST_t_top_lep                                  /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_t_top_lep.root
+SAMPLE MC   ST_t_antitop_had                              /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_t_antitop_had.root
+SAMPLE MC   ST_t_antitop_lep                              /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_t_antitop_lep.root
+SAMPLE MC   ST_tW_top_had                                 /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_tW_top_had.root
+SAMPLE MC   ST_tW_top_semilep                             /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_tW_top_semilep.root
+SAMPLE MC   ST_tW_top_dilep                               /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_tW_top_dilep.root
+SAMPLE MC   ST_tW_antitop_had                             /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_tW_antitop_had.root
+SAMPLE MC   ST_tW_antitop_semilep                         /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_tW_antitop_semilep.root
+SAMPLE MC   ST_tW_antitop_dilep                           /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_tW_antitop_dilep.root
+SAMPLE MC   ST_s_top_had                                  /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_s_top_had.root
+SAMPLE MC   ST_s_top_lep                                  /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_s_top_lep.root
+SAMPLE MC   ST_s_antitop_had                              /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_s_antitop_had.root
+SAMPLE MC   ST_s_antitop_lep                              /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ST_s_antitop_lep.root
+SAMPLE MC   WW                                            /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/WW.root
+SAMPLE MC   WZ                                            /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/WZ.root
+SAMPLE MC   ZZ                                            /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ZZ.root
+SAMPLE MC   QCD_HT200to400                                /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/QCD_HT200to400.root
+SAMPLE MC   QCD_HT400to600                                /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/QCD_HT400to600.root
+SAMPLE MC   QCD_HT600to800                                /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/QCD_HT600to800.root
+SAMPLE MC   QCD_HT800to1000                               /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/QCD_HT800to1000.root
+SAMPLE MC   QCD_HT1000to1200                              /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/QCD_HT1000to1200.root
+SAMPLE MC   QCD_HT1200to1500                              /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/QCD_HT1200to1500.root
+SAMPLE MC   QCD_HT1500to2000                              /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/QCD_HT1500to2000.root
+SAMPLE MC   QCD_HT2000toInf                               /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/QCD_HT2000toInf.root
+SAMPLE MC   WJetsToQQ_HT400to800                          /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/WJetsToQQ_HT400to800.root
+SAMPLE MC   WJetsToQQ_HT800to1500                         /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/WJetsToQQ_HT800to1500.root
+SAMPLE MC   WJetsToQQ_HT1500to2500                        /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/WJetsToQQ_HT1500to2500.root
+SAMPLE MC   WJetsToQQ_HT2500toInf                         /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/WJetsToQQ_HT2500toInf.root
+SAMPLE MC   ZJetsToQQ_HT400to800                          /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ZJetsToQQ_HT400to800.root
+SAMPLE MC   ZJetsToQQ_HT800to1500                         /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ZJetsToQQ_HT800to1500.root
+SAMPLE MC   ZJetsToQQ_HT1500to2500                        /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ZJetsToQQ_HT1500to2500.root
+SAMPLE MC   ZJetsToQQ_HT2500toInf                         /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/ZJetsToQQ_HT2500toInf.root
+SAMPLE DATA JetMET0_Run2024C-MINIv6NANOv15-v1             /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET0_Run2024C-MINIv6NANOv15-v1.root
+SAMPLE DATA JetMET0_Run2024D-MINIv6NANOv15-v1             /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET0_Run2024D-MINIv6NANOv15-v1.root
+SAMPLE DATA JetMET0_Run2024E-MINIv6NANOv15-v1             /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET0_Run2024E-MINIv6NANOv15-v1.root
+SAMPLE DATA JetMET0_Run2024F-MINIv6NANOv15-v2             /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET0_Run2024F-MINIv6NANOv15-v2.root
+SAMPLE DATA JetMET0_Run2024G-MINIv6NANOv15-v2             /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET0_Run2024G-MINIv6NANOv15-v2.root
+SAMPLE DATA JetMET0_Run2024H-MINIv6NANOv15-v2             /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET0_Run2024H-MINIv6NANOv15-v2.root
+SAMPLE DATA JetMET0_Run2024I-MINIv6NANOv15-v2             /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET0_Run2024I-MINIv6NANOv15-v2.root
+SAMPLE DATA JetMET0_Run2024I-MINIv6NANOv15_v2-v1          /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET0_Run2024I-MINIv6NANOv15_v2-v1.root
+SAMPLE DATA JetMET1_Run2024C-MINIv6NANOv15-v1             /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET1_Run2024C-MINIv6NANOv15-v1.root
+SAMPLE DATA JetMET1_Run2024D-MINIv6NANOv15-v1             /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET1_Run2024D-MINIv6NANOv15-v1.root
+SAMPLE DATA JetMET1_Run2024E-MINIv6NANOv15-v1             /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET1_Run2024E-MINIv6NANOv15-v1.root
+SAMPLE DATA JetMET1_Run2024F-MINIv6NANOv15-v2             /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET1_Run2024F-MINIv6NANOv15-v2.root
+SAMPLE DATA JetMET1_Run2024G-MINIv6NANOv15-v2             /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET1_Run2024G-MINIv6NANOv15-v2.root
+SAMPLE DATA JetMET1_Run2024H-MINIv6NANOv15-v2             /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET1_Run2024H-MINIv6NANOv15-v2.root
+SAMPLE DATA JetMET1_Run2024I-MINIv6NANOv15-v1             /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET1_Run2024I-MINIv6NANOv15-v1.root
+SAMPLE DATA JetMET1_Run2024I-MINIv6NANOv15_v2-v2          /pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_main_notrig_2024/JetMET1_Run2024I-MINIv6NANOv15_v2-v2.root
+YIELDS AnalyzerOutput_main_notrig_2024 (Tree/cutflow_w; MC 56 samples, Data 16; lumi 109.816 fb-1)
+YIELD step                         MC           Data  Data/MC
+YIELD generated        228045438376.1              -        -   (before the skim; MC samples with a prescan record: 56 of 56)
+YIELD noCut              6477562293.7      222541161    0.034
+YIELD HadTrigger          153506861.5       67885951    0.442
+YIELD noiseFilter         117792007.6       51834542    0.440
+YIELD pv>=1               117792007.6       51834542    0.440
+YIELD njets>=6             78939091.2       34037966    0.431
+YIELD 6thJetsPT>40         42473474.5       21280134    0.501
+YIELD nlepton==0           41885062.8       21049416    0.503
+YIELD HT>500               34923699.0       20775491    0.595
+YIELD nbjets>=2             9047049.4        5482088    0.606
+YIELD nbjets>=3             1296619.1        1265442    0.976
+YIELD nbjets>=4              172356.3         209345    1.215
+YIELD 30<HadW<250           8700685.3        5020928    0.577
+YIELD HiggsMassWindow       8700685.3        5020928    0.577
+YIELD nTotal                8700685.3        5020928    0.577
+SAMPLEYIELD sample (MC, by yield at HT>500)    generated  skimEff        noCut noCut/exp       HT>500    nbjets>=2    nbjets>=4       nTotal
+SAMPLEYIELD QCD_HT400to600                 10500605920.0    0.103 1082545664.0     1.004   9346403.00   2803712.50     51098.04   2728452.50
+SAMPLEYIELD QCD_HT600to800                 1486908640.0    0.172  256227472.0     1.002   7374674.00   2173460.50     42232.11   2081770.75
+SAMPLEYIELD QCD_HT800to1000                 333071928.0    0.222   73970984.0     1.001   4771046.50    946363.94     19478.66    887848.62
+SAMPLEYIELD QCD_HT1000to1200                 97044399.2    0.257   24947964.0     1.000   4477128.50    419996.72      8574.81    387632.38
+SAMPLEYIELD QCD_HT1200to1500                 42114436.0    0.284   11987180.0     1.001   2969113.00    245810.36      5091.67    222447.06
+SAMPLEYIELD TTbar_Hadronic                   46089097.0    0.520   23864568.0     0.995   2266599.00   1476765.88     22579.88   1449286.38
+SAMPLEYIELD QCD_HT1500to2000                 13748963.2    0.310    4270664.0     1.002   1205949.75    104243.10      2334.64     91804.05
+SAMPLEYIELD QCD_HT200to400                 215349176000.0    0.023 4967141376.0     1.009   1107762.75    332208.97      5745.19    331318.78
+SAMPLEYIELD TTbar_SemiLep                    44564416.9    0.317   14111199.0     0.999    418567.12    290874.56      7441.36    279875.56
+SAMPLEYIELD QCD_HT2000toInf                   2909025.8    0.330     961558.2     1.003    300632.66     28303.96       691.78     23955.00
+SAMPLEYIELD WJetsToQQ_HT800to1500             3241768.3    0.335    1087448.4     1.002    150950.70     11440.04       121.22     10759.10
+SAMPLEYIELD WJetsToQQ_HT400to800             39193330.4    0.175    6861837.0     1.003    111326.62     19278.46       158.91     18748.41
+SAMPLEYIELD ZJetsToQQ_HT800to1500             1416626.4    0.390     552772.3     1.001     84517.77     22927.08       871.15     21281.03
+SAMPLEYIELD ZJetsToQQ_HT400to800             15934301.6    0.193    3085241.5     1.001     75286.04     33493.25      1268.54     32401.85
+SAMPLEYIELD ST_tW_antitop_had                 2193174.3    0.293     641663.8     0.998     48572.84     26472.79       326.18     25891.46
+SAMPLEYIELD ST_tW_top_had                     2193174.3    0.292     640394.1     0.999     48489.83     26512.05       321.28     25915.44
+SAMPLEYIELD ST_t_top_had                     10733910.0    0.066     715287.6     1.003     34306.70     22081.41       370.62     21285.81
+SAMPLEYIELD WJetsToQQ_HT1500to2500             200414.2    0.408      81976.9     1.003     25751.64      1595.64        23.26      1418.34
+SAMPLEYIELD ST_t_antitop_had                  6455151.4    0.068     440554.3     1.003     18749.51     12168.05       196.62     11789.38
+SAMPLEYIELD TTbar_DiLep                      10772543.7    0.162    1758343.9     1.004     16354.20     11976.48       461.38     11154.85
+SAMPLEYIELD ZJetsToQQ_HT1500to2500              93793.8    0.475      44529.4     1.000     15195.58      2628.79       102.08      2273.24
+SAMPLEYIELD TTZToQQ                             72511.5    0.778      56359.3     0.999      9479.11      6519.01       612.31      6337.15
+SAMPLEYIELD ST_tW_antitop_semilep             2120621.6    0.144     305697.0     1.002      6728.94      4180.17        84.57      4013.65
+SAMPLEYIELD ST_tW_top_semilep                 2120621.6    0.143     303728.0     1.003      6636.28      4136.86        85.84      3968.16
+SAMPLEYIELD TTWJetsToQQ                         51371.9    0.707      36243.0     0.997      5678.00      3489.48        43.91      3410.88
+SAMPLEYIELD ttHTobb_had                         16565.7    0.880      14546.3     0.998      4279.07      4024.94      1138.92      3860.51
+SAMPLEYIELD ttHToNonbb                          26139.7    0.806      21004.8     0.997      2908.94      1889.58        48.26      1857.36
+SAMPLEYIELD WW                               13814852.8    0.020     279439.1     1.010      2703.87       280.93         3.08       271.40
+SAMPLEYIELD ST_t_top_lep                      5189410.0    0.027     141913.4     1.007      2647.36      1801.85        47.28      1686.55
+SAMPLEYIELD ST_s_top_had                       536251.3    0.074      39971.1     1.002      2405.94      1736.69        32.26      1676.69
+SAMPLEYIELD WZ                                6006935.2    0.024     145165.4     1.006      2038.62       638.83         9.36       611.32
+SAMPLEYIELD WJetsToQQ_HT2500toInf               12716.7    0.430       5471.2     1.000      1930.40       146.98         2.73       123.29
+SAMPLEYIELD ST_t_antitop_lep                  3120803.8    0.027      84692.0     1.006      1408.84       988.58        22.95       928.26
+SAMPLEYIELD ST_s_antitop_had                   335638.3    0.078      26270.7     1.005      1336.28       964.92        16.12       938.76
+SAMPLEYIELD ttHTobb_semilep                     16017.7    0.767      12247.3     0.997      1208.68      1156.43       395.60      1073.50
+SAMPLEYIELD ZJetsToQQ_HT2500toInf                6241.9    0.495       3096.5     1.002      1170.33       207.66         8.54       167.86
+SAMPLEYIELD ZZ                                1833927.2    0.026      47068.7     1.006       741.30       307.35        15.97       285.58
+SAMPLEYIELD TTNuNu                              17987.9    0.396       7117.7     1.000       632.34       427.55         6.51       416.30
+SAMPLEYIELD TTTT                                 1737.3    0.988       1714.6     0.999       486.99       445.75       126.71       435.05
+SAMPLEYIELD tHq                                  9182.8    0.402       3683.8     0.998       333.42       280.35        69.65       262.00
+SAMPLEYIELD tHW                                  1888.8    0.746       1409.1     1.000       282.70       207.65        29.59       195.51
+SAMPLEYIELD TTLL_MLL50                           9494.7    0.761       7218.4     0.999       225.87       148.75         3.26       144.44
+SAMPLEYIELD ST_tW_top_dilep                    512617.3    0.059      30494.1     1.005       191.48       124.67         4.62       115.73
+SAMPLEYIELD ST_tW_antitop_dilep                512617.3    0.060      30828.6     1.006       189.60       126.25         3.56       117.10
+SAMPLEYIELD ST_s_top_lep                       259255.8    0.029       7682.2     1.009       161.38       121.59         3.77       114.70
+SAMPLEYIELD TTWW                                  900.8    0.880        792.8     1.001       137.26        86.38         1.40        84.97
+SAMPLEYIELD TTLL_MLL4to50                        4336.6    0.525       2272.8     0.999       119.50        81.98         1.85        79.49
+SAMPLEYIELD ST_s_antitop_lep                   162267.5    0.029       4669.8     1.008        82.30        62.20         1.93        58.81
+SAMPLEYIELD ttHTobb_dilep                        3872.0    0.596       2305.5     0.999        68.17        65.96        26.13        57.36
+SAMPLEYIELD TTWZ                                  298.2    0.851        254.2     1.002        46.88        31.42         2.32        30.72
+SAMPLEYIELD TTWH                                  137.5    0.899        123.2     0.997        25.18        20.96         4.53        20.30
+SAMPLEYIELD TTTWplus                               45.8    0.968         44.3     0.999        10.86         9.41         1.56         9.18
+SAMPLEYIELD TTTWminus                              45.8    0.967         44.3     0.999        10.81         9.35         1.55         9.12
+SAMPLEYIELD TTHHto4b                               32.0    0.950         30.6     1.005         9.78         9.70         6.97         9.17
+SAMPLEYIELD TTZHTo4b                               12.5    0.942         11.8     1.008         3.72         3.69         2.61         3.46
+SAMPLEYIELD TTZZTo4b                                4.0    0.919          3.7     1.002         1.04         1.03         0.70         0.96
+EVENTS MC 56 of 56 samples: merged noCut (unweighted) vs the prescan event count -- all equal
+OUT /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/plots/AnalyzerOutput_main_notrig_2024_tree_20261006_145727
+TREECUT passTrigger_HLT_PFHT1050 && HT > 1200 (Tree/Tree of each merged file; MC weighted by evtWeight, Data by 1)
+TREEYIELD MC   TTHHto4b                                      events=376147 sumw=1.20
+TREEYIELD MC   ttHTobb_had                                   events=671098 sumw=352.46
+TREEYIELD MC   ttHTobb_semilep                               events=202107 sumw=109.53
+TREEYIELD MC   ttHTobb_dilep                                 events=58237 sumw=7.37
+TREEYIELD MC   ttHToNonbb                                    events=435852 sumw=198.35
+TREEYIELD MC   TTZHTo4b                                      events=441337 sumw=0.55
+TREEYIELD MC   TTZZTo4b                                      events=366438 sumw=0.15
+TREEYIELD MC   tHq                                           events=48239 sumw=22.12
+TREEYIELD MC   tHW                                           events=343685 sumw=43.13
+TREEYIELD MC   TTbar_Hadronic                                events=852182 sumw=82436.68
+TREEYIELD MC   TTbar_SemiLep                                 events=244189 sumw=22273.91
+TREEYIELD MC   TTbar_DiLep                                   events=53820 sumw=1235.01
+TREEYIELD MC   TTZToQQ                                       events=43072 sumw=682.43
+TREEYIELD MC   TTWJetsToQQ                                   events=78366 sumw=532.59
+TREEYIELD MC   TTLL_MLL50                                    events=5990 sumw=14.55
+TREEYIELD MC   TTLL_MLL4to50                                 events=4165 sumw=6.77
+TREEYIELD MC   TTNuNu                                        events=7859 sumw=35.93
+TREEYIELD MC   TTWW                                          events=98429 sumw=15.25
+TREEYIELD MC   TTWH                                          events=212848 sumw=2.76
+TREEYIELD MC   TTWZ                                          events=104229 sumw=5.59
+TREEYIELD MC   TTTWminus                                     events=453118 sumw=2.02
+TREEYIELD MC   TTTWplus                                      events=450141 sumw=2.05
+TREEYIELD MC   TTTT                                          events=681212 sumw=102.08
+TREEYIELD MC   ST_t_top_had                                  events=14576 sumw=1559.65
+TREEYIELD MC   ST_t_top_lep                                  events=1621 sumw=175.71
+TREEYIELD MC   ST_t_antitop_had                              events=5420 sumw=707.76
+TREEYIELD MC   ST_t_antitop_lep                              events=596 sumw=74.86
+TREEYIELD MC   ST_tW_top_had                                 events=31187 sumw=2823.50
+TREEYIELD MC   ST_tW_top_semilep                             events=7020 sumw=512.76
+TREEYIELD MC   ST_tW_top_dilep                               events=560 sumw=17.99
+TREEYIELD MC   ST_tW_antitop_had                             events=30987 sumw=2808.51
+TREEYIELD MC   ST_tW_antitop_semilep                         events=7214 sumw=518.06
+TREEYIELD MC   ST_tW_antitop_dilep                           events=574 sumw=19.72
+TREEYIELD MC   ST_s_top_had                                  events=3215 sumw=200.41
+TREEYIELD MC   ST_s_top_lep                                  events=3382 sumw=18.84
+TREEYIELD MC   ST_s_antitop_had                              events=1533 sumw=86.87
+TREEYIELD MC   ST_s_antitop_lep                              events=1465 sumw=8.07
+TREEYIELD MC   WW                                            events=147 sumw=31.74
+TREEYIELD MC   WZ                                            events=222 sumw=42.46
+TREEYIELD MC   ZZ                                            events=81 sumw=30.82
+TREEYIELD MC   QCD_HT200to400                                events=3 sumw=4329.82
+TREEYIELD MC   QCD_HT400to600                                events=0 sumw=0.00
+TREEYIELD MC   QCD_HT600to800                                events=120 sumw=1352.54
+TREEYIELD MC   QCD_HT800to1000                               events=8589 sumw=22875.46
+TREEYIELD MC   QCD_HT1000to1200                              events=130223 sumw=109744.38
+TREEYIELD MC   QCD_HT1200to1500                              events=494833 sumw=192583.71
+TREEYIELD MC   QCD_HT1500to2000                              events=754045 sumw=91377.92
+TREEYIELD MC   QCD_HT2000toInf                               events=757669 sumw=23952.93
+TREEYIELD MC   WJetsToQQ_HT400to800                          events=338 sumw=33.52
+TREEYIELD MC   WJetsToQQ_HT800to1500                         events=52489 sumw=3182.73
+TREEYIELD MC   WJetsToQQ_HT1500to2500                        events=340888 sumw=1414.68
+TREEYIELD MC   WJetsToQQ_HT2500toInf                         events=500950 sumw=123.29
+TREEYIELD MC   ZJetsToQQ_HT400to800                          events=76 sumw=6.63
+TREEYIELD MC   ZJetsToQQ_HT800to1500                         events=143239 sumw=3919.31
+TREEYIELD MC   ZJetsToQQ_HT1500to2500                        events=1629005 sumw=2263.61
+TREEYIELD MC   ZJetsToQQ_HT2500toInf                         events=1129330 sumw=167.86
+TREEYIELD DATA JetMET0_Run2024C-MINIv6NANOv15-v1             events=26751 sumw=26751.00
+TREEYIELD DATA JetMET0_Run2024D-MINIv6NANOv15-v1             events=29948 sumw=29948.00
+TREEYIELD DATA JetMET0_Run2024E-MINIv6NANOv15-v1             events=43449 sumw=43449.00
+TREEYIELD DATA JetMET0_Run2024F-MINIv6NANOv15-v2             events=108863 sumw=108863.00
+TREEYIELD DATA JetMET0_Run2024G-MINIv6NANOv15-v2             events=150723 sumw=150723.00
+TREEYIELD DATA JetMET0_Run2024H-MINIv6NANOv15-v2             events=19317 sumw=19317.00
+TREEYIELD DATA JetMET0_Run2024I-MINIv6NANOv15-v2             events=20214 sumw=20214.00
+TREEYIELD DATA JetMET0_Run2024I-MINIv6NANOv15_v2-v1          events=19005 sumw=19005.00
+TREEYIELD DATA JetMET1_Run2024C-MINIv6NANOv15-v1             events=26842 sumw=26842.00
+TREEYIELD DATA JetMET1_Run2024D-MINIv6NANOv15-v1             events=30296 sumw=30296.00
+TREEYIELD DATA JetMET1_Run2024E-MINIv6NANOv15-v1             events=42786 sumw=42786.00
+TREEYIELD DATA JetMET1_Run2024F-MINIv6NANOv15-v2             events=112505 sumw=112505.00
+TREEYIELD DATA JetMET1_Run2024G-MINIv6NANOv15-v2             events=152662 sumw=152662.00
+TREEYIELD DATA JetMET1_Run2024H-MINIv6NANOv15-v2             events=19476 sumw=19476.00
+TREEYIELD DATA JetMET1_Run2024I-MINIv6NANOv15-v1             events=20202 sumw=20202.00
+TREEYIELD DATA JetMET1_Run2024I-MINIv6NANOv15_v2-v2          events=18977 sumw=18977.00
+TREEYIELD total MC=575048.6 Data=842016 Data/MC=1.464
+HIST n=26 from /u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/plots/AnalyzerOutput_main_notrig_2024_tree_20261006_145727/tree/TTbar_Hadronic.root
+PLOTS compact rc=0 pdf=26 multipage=/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/plots/AnalyzerOutput_main_notrig_2024_tree_20261006_145727/plots_compact/all_compact.pdf log=/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/plots/AnalyzerOutput_main_notrig_2024_tree_20261006_145727/plotter_compact.log
+PLOTS detailed rc=0 pdf=26 multipage=/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/plots/AnalyzerOutput_main_notrig_2024_tree_20261006_145727/plots_detailed/all_detailed.pdf log=/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/condor/plots/AnalyzerOutput_main_notrig_2024_tree_20261006_145727/plotter_detailed.log
+RESULT OK
+===========================================================================
+end_utc     : 2026-10-06T15:09:52Z
+wall_s      : 771
+EXIT        : 0
+outputs (files of this repo changed during the run; tmp/ condor/ runlogs/ left out): 5
+      216780  lib/libEventShape.a
+    15392912  lib/libToolsForAnalysis.so
+      213552  src/dictionaryForROOT.cc
+       32840  src/dictionaryForROOT_rdict.pcm
+     9723968  ttHHanalyzer_unified
+log         : runlogs/run_knu_plots_2024_ht1050_20261006_145700.log
+log_kb      : 30
+=== END ===================================================================

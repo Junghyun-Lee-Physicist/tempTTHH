@@ -36,3 +36,7 @@ utc_start	step	exit	wall_s	host	git_head	log	outputs
 2026-10-06T07:31:28Z	knu_build_f	0	127	cluster335	b29856eb	runlogs/run_knu_build_f_20261006_073125.log	lib/libEventShape.a;lib/libToolsForAnalysis.so;src/dictionaryForROOT.cc;src/dictionaryForROOT_rdict.pcm;ttHHanalyzer_unified
 2026-10-06T07:34:12Z	knu_unittests_f	0	13	cms01	b29856eb	runlogs/run_knu_unittests_f_20261006_073412.log	none
 2026-10-06T07:34:36Z	knu_smoke_2024_f	0	253	cluster335	b29856eb	runlogs/run_knu_smoke_2024_f_20261006_073436.log	none
+2026-10-06T14:57:02Z	knu_build_g	0	153	dm01	0d6aec65	runlogs/run_knu_build_g_20261006_145702.log	lib/libEventShape.a;lib/libToolsForAnalysis.so;src/dictionaryForROOT.cc;src/dictionaryForROOT_rdict.pcm;ttHHanalyzer_unified
+2026-10-06T14:57:01Z	knu_plots_2024_ht1050	0	771	cluster346	0d6aec65	runlogs/run_knu_plots_2024_ht1050_20261006_145700.log	lib/libEventShape.a;lib/libToolsForAnalysis.so;src/dictionaryForROOT.cc;src/dictionaryForROOT_rdict.pcm;ttHHanalyzer_unified
+2026-10-06T16:01:20Z	knu_unittests_g	0	11	cms01	0d6aec65	runlogs/run_knu_unittests_g_20261006_160119.log	none
+2026-10-06T16:01:45Z	knu_smoke_2024_g	0	453	cluster275	0d6aec65	runlogs/run_knu_smoke_2024_g_20261006_160145.log	none
