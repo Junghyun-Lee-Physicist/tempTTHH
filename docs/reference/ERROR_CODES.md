@@ -2,7 +2,7 @@
 
 > **Purpose:** the single, authoritative list of every numbered exit code the analyzer (and submitter) can terminate with, so a failed Condor job is diagnosable from its log alone.
 > **Audience:** anyone debugging a failed job; anyone adding a new fail-fast check.
-> **Status:** DECIDED · last meaningful update **2026-10-07** (E20/E21: the submitter checks every sample before the first one; a Data sample needs its xsec_db entry — STEP 24 J) · 2026-10-06 (a fatal path ends with `tthh::fatalExit`, not `std::exit` — a 139 after a `[FATAL]` line; codes of the tools around the analyzer, last section; the submitter's `--report`/`--status` read this table) · 2026-06-30 (the banded table).
+> **Status:** DECIDED · last meaningful update **2026-10-08** (E52 `BTAGEFF_LOAD_FAIL`: the 2024 fixed-WP b-tag weight without our efficiency JSON; E40 also for `--btagsf on` without the 2024 BTV payload — STEP 25 K) · 2026-10-07 (E20/E21: the submitter checks every sample before the first one; a Data sample needs its xsec_db entry — STEP 24 J) · 2026-10-06 (a fatal path ends with `tthh::fatalExit`, not `std::exit` — a 139 after a `[FATAL]` line; codes of the tools around the analyzer, last section; the submitter's `--report`/`--status` read this table) · 2026-06-30 (the banded table).
 > **Links:** code source of truth `include/ExitCodes.h` · path policy `CONFIG_PATHS.md` · workflow `../README.md`.
 
 ## Bottom line
@@ -25,7 +25,7 @@ grep -nE '\[FATAL\]\[E[0-9]+\]' <condor_job>.log     # message + code
 | `20–29` | normalization inputs (xsec_db, prescan) — also emitted by the submitter |
 | `30–39` | input data (ntuple / `Events` tree) |
 | `40–49` | central (POG) corrections — JME / PU / b-tag SF / golden JSON |
-| `50–59` | derived corrections — trigger SF, b-tag normalization reweight |
+| `50–59` | derived corrections — trigger SF, b-tag normalization reweight, b-tag efficiency maps (2024 fixed WP) |
 | `60–69` | ttbar stitching |
 | `70–79` | `Expanded_genTtbarId` (tt+nb) lookup |
 | `80–89` | per-event physics integrity |
@@ -42,10 +42,11 @@ grep -nE '\[FATAL\]\[E[0-9]+\]' <condor_job>.log     # message + code
 | 20 | `XSEC_DB_MISSING` | sample absent from `xsec_db` — MC **and Data** (a Data sample needs its entry with `cross_section_fb` null; since 2026-10-07 also an entry that contradicts the name: a Data name with a cross section, an MC name with a null one) | submitter: `_check_weight_inputs` for every sample before the first one (STEP 24 J: nothing is queued), then `_compute_base_weight` |
 | 21 | `PRESCAN_MISSING` | sample absent from / invalid in `prescan_summary` | submitter: `_check_weight_inputs` (before the first sample, STEP 24 J), then `_compute_base_weight` |
 | 30 | `INPUT_OPEN_FAIL` | cannot read input ntuple / `Events` tree; since 2026-10-06 also: any file of the job unreadable, the files' `Events` entries ≠ the chain's, an MC prescan file without its `Runs` tree / `genEventSumw` | `ttHHanalyzer_unified.cc` |
-| 40 | `CENTRAL_CORR_LOAD_FAIL` | JME/PU/b-tag-SF correctionlib load failed | `src/CorrectionsManager.cc` |
+| 40 | `CENTRAL_CORR_LOAD_FAIL` | JME/PU/b-tag-SF correctionlib load failed; [2026-10-08] also `--btagsf on` for 2024 MC when the fixed-WP payload (`btagging_preliminary.json.gz` → `UParTAK4_kinfit`) did not load — the load itself is only a WARN (a run that does not ask for the weight goes on), and an evaluation error of a b-jet SF | `src/CorrectionsManager.cc`; `ttHHanalyzer_unified.h` (`setSFflags`) |
 | 41 | `GOLDENJSON_DATA_MISSING` | Data lumi-mask (golden JSON) missing | `src/CorrectionsManager.cc` |
 | 50 | `TRIGSF_LOAD_FAIL` | trigger SF JSON missing/corrupt while required | `src/CorrectionsManager.cc` |
 | 51 | `BTAGRW_LOAD_FAIL` | b-tag norm reweight JSON missing/corrupt while required | `src/CorrectionsManager.cc` |
+| 52 | `BTAGEFF_LOAD_FAIL` | [2026-10-08, STEP 25 K] the b-tag efficiency JSON of the 2024 fixed-WP method (env `TTHH_BTAGEFF_JSON` = yml `path_btag_eff_json`; `tools/stage7/btag_eff_maps.py`) given but unusable in main/debug (btagtrig/prescan: a WARN): unreadable, or it cannot answer for this job (its group or `all`, a flavour or WP, `btag_eff_groups` without an answer for the group), or made with other WPs (`wp=` of its description vs `EraConfig::btagWP`), or the payload's flavours not in its `flavours_required=`; an evaluation error in the event loop; or `--btagsf on` for 2024 MC without it (the submitter already stops a null with E13; the preflight reads the file node by node) | `src/CorrectionsManager.cc` (`loadBTagEff_`); `ttHHanalyzer_unified.h` (`setSFflags`) |
 | 60 | `STITCH_JSON_OPEN_FAIL` | stitch-factors JSON cannot be opened | `src/StitchFactors.cc` |
 | 61 | `STITCH_JSON_PARSE_FAIL` | stitch-factors JSON parse error | `src/StitchFactors.cc` |
 | 62 | `STITCH_JSON_SCHEMA_FAIL` | stitch-factors JSON schema/contents invalid | `src/StitchFactors.cc` |

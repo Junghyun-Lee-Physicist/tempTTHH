@@ -27,6 +27,7 @@ common:
   path_btag_reweight_json: null       # no 2024 b-tag norm reweight
   path_stitch_json: null              # no 2024 stitch factors (D-2026-10-05-C: the 4FS tt+bb / tt4b are not stacked)
   path_expanded_ttbarid_dir: null     # no 2024 tt+nb lookup: tt+>=3b stays in 51-55 (D-2026-10-02-A, D-2026-10-05-C)
+  path_btag_eff_json: null            # [STEP 25 K] read by every 2024 job (key absent -> E12); not used by the prescan
 samples:
   # -- signal / ttH / 4b-like --
   - TTHHto4b

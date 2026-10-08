@@ -31,6 +31,8 @@
 //#include "fifo_map.hpp" // No need now, I'll update cutflow logic
 
 #include "CorrectionsManager.h"
+#include "BTagEffGroup.h"         // [STEP 25 K] process group of the fixed-WP b-tag efficiency maps
+#include "TH2D.h"
 #include "Config_TtCatGroup.hh"   // ttH AN App. A.2.1 process key mapping (LF/cc/B/ttH/ttHH/...)
 #include "ExpandedTtbarId.h"      // [tt+nb] Expanded_genTtbarId per-event lookup
 #include "StitchFactors.h"        // [stitch] per-(sample,category) stitch multiplier
@@ -1120,6 +1122,8 @@ class ttHHanalyzer_unified {
     _usePUJetID     = EraConfig::usesPUJetID(_runYear);
     _useJetVetoMap  = EraConfig::jetVetoMap(_runYear).active;
     _hasBTagShapeSF = EraConfig::hasBTagShapeSF(_runYear);
+    _btagFixedWP    = (EraConfig::btagMethod(_runYear) == EraConfig::BTagMethod::FixedWP);   // [STEP 25 K]
+    _btagEffGroup   = tthh::btagEffGroup(_sampleName);
     setupMetFilters_();
 
     // [STEP2][debug] kDebug 모드: 디버그 로거 활성화.
@@ -1209,10 +1213,28 @@ class ttHHanalyzer_unified {
     const bool requireDerived = (_analysisMode == AnalysisMode::kMainAnalysis ||
                                  _analysisMode == AnalysisMode::kDebug);
     corrMgr = new CorrectionsManager(yearForCorr, _era, isData, _sampleName, requireDerived);
+    // [STEP 25 K] fixed-WP b-tag weight (2024, D-2026-10-08-A): ready when the payload SF and our MC efficiency
+    //   JSON are both loaded (MC). A group the maps do not have uses the maps' "all" (said here, once).
+    if (_btagFixedWP && !isData) {
+        _btagFixedWPReady = corrMgr->hasBTagFixedWP() && corrMgr->hasBTagEff();
+        if (_btagFixedWPReady && !corrMgr->btagEffHasGroup(_btagEffGroup)) {
+            std::cout << "[btagSF] efficiency group '" << _btagEffGroup << "' of " << _sampleName
+                      << " is not in " << corrMgr->btagEffPath() << " -> its 'all' maps" << std::endl;
+            _btagEffGroup = "all";
+        }
+        const bool sfOk = corrMgr->hasBTagFixedWP(), effOk = corrMgr->hasBTagEff();
+        const std::string why = (!sfOk && !effOk) ? "no payload SF, no efficiency JSON"
+                              : !sfOk ? "no payload SF" : "no efficiency JSON";
+        std::cout << "[btagSF] fixed WP (method 1a, L and M; " << runYear << "): "
+                  << (_btagFixedWPReady ? ("ready, efficiency group '" + _btagEffGroup + "'")
+                                        : ("NOT ready (" + why + ") -> bTagWeight = 1"))
+                  << std::endl;
+    }
 
 	debugCorrections = debug;
 
 	initHistograms();	
+	bookBTagEff_();      // [STEP 25 K] MC of a fixed-WP year only
 	initTree();
        	std::string dummy = "";
 
@@ -1344,6 +1366,22 @@ class ttHHanalyzer_unified {
     bool _useJetVetoMap  = false;
     bool _hasBTagShapeSF = true;
     bool _jetVetoed      = false;
+    // [STEP 25 K] fixed-WP b-tag weight (EraConfig::BTagMethod::FixedWP: 2024; docs/DECISIONS.md D-2026-10-08-A)
+    bool _btagFixedWP      = false;       // the year uses the fixed-WP method
+    bool _btagFixedWPReady = false;       // MC with the payload SF and our efficiency JSON loaded
+    std::string _btagEffGroup;            // BTagEffGroup.h ("tt", "qcd", "other") or the maps' "all"
+    double _btagClosureW = 0.0, _btagClosureWB = 0.0;   // at the HT step: sum w, sum w x bTagWeight (closure)
+    long long _btagClosureN = 0;
+    // b-tag efficiency histograms (MC of a fixed-WP year): [flavour b, c, light][all, >= L, >= M, >= T], pT x |eta|,
+    //   filled at the HT step (all cuts but the b-tag ones) with the event weight before the SFs
+    TH2D* _hBTagEff[3][4] = {{nullptr}};
+    TH1D* _hBTagEffNevt = nullptr;        // BTagEff/h_nevt: the events filled (unweighted; the maps tool's check)
+    TH1D* _hBTagEffWP = nullptr;          // BTagEff/h_wp: the year's WPs x jobs (bin 4 = jobs; the maps record them)
+    long long _btagNJet = 0, _btagNBig = 0, _btagNZero[3] = {0, 0, 0};   // the end-of-job [btagSF] counts
+    TDirectory* _btagEffDir = nullptr;
+    void bookBTagEff_();
+    void fillBTagEff_(event* thisEvent);
+    void computeBTagWeightFixedWP_(event* thisEvent);
     std::vector<const bool*> _metFilterPtrs;
     long long _nCleanAll = 0, _nCleanMETFail = 0, _nCleanVetoFail = 0;
     // [D-2026-10-06-A] hadronic trigger counts (every event that reaches the trigger decision): HLT_PFHT1050,
@@ -1518,16 +1556,39 @@ public:
         _applyTrigSF = parse(trig,   _applyTrigSF);
         _applyBtagSF = parse(btag,   _applyBtagSF);
         _applyBtagRW = parse(btagrw, _applyBtagRW);
-        if (_applyBtagSF && !_hasBTagShapeSF) {
-            // [STEP 24] 2024: no b-tag shape SF in the BTV payload (PLAN 9.6 D10) -> refuse, not SF=1 silently
+        if (_applyBtagSF && _btagFixedWP) {
+            // [STEP 25 K] 2024: --btagsf on = the fixed-WP b-tag weight (method 1a with L and M; D-2026-10-08-A).
+            //   MC needs the payload SF (else E40, a central correction) and our efficiency JSON (yml
+            //   path_btag_eff_json; else E52) -- never a silent SF 1. Data get no b-tag weight.
+            if (_DataOrMC != "Data" && !(corrMgr && corrMgr->hasBTagFixedWP())) {
+                std::cerr << "\n[FATAL][E" << tthh::CENTRAL_CORR_LOAD_FAIL << "] --btagsf on for runYear=" << _runYear
+                          << " (the fixed-WP b-tag weight, D-2026-10-08-A): the BTV payload SF is not loaded: "
+                          << (corrMgr ? corrMgr->btagFixedWPError() : std::string("no CorrectionsManager"))
+                          << "\n  -> check TTHH_JSONPOG_PATH (yml common.path_jsonpog) and the payload (PLAN 9.2).\n"
+                          << std::endl;
+                tthh::fatalExit(tthh::CENTRAL_CORR_LOAD_FAIL);
+            }
+            if (_DataOrMC != "Data" && _btagFixedWPReady && !corrMgr->btagFixedWPHasVariation())
+                std::cerr << "[btagSF][WARN] --btagsf on: the payload gave no up/down variation -> bTagWeight_up/_down "
+                             "= central (see the [CorrectionsManager] b-tag SF line)" << std::endl;
+            if (_DataOrMC != "Data" && !_btagFixedWPReady) {
+                std::cerr << "\n[FATAL][E" << tthh::BTAGEFF_LOAD_FAIL << "] --btagsf on for runYear=" << _runYear
+                          << " (the fixed-WP b-tag weight, D-2026-10-08-A) needs our MC efficiency JSON: env "
+                             "TTHH_BTAGEFF_JSON = yml common.path_btag_eff_json (tools/stage7/btag_eff_maps.py); here: "
+                          << (corrMgr && corrMgr->hasBTagEff() ? "efficiency JSON loaded" : "efficiency JSON not given or not loaded")
+                          << ".\n" << std::endl;
+                tthh::fatalExit(tthh::BTAGEFF_LOAD_FAIL);
+            }
+        } else if (_applyBtagSF && !_hasBTagShapeSF) {
+            // [STEP 24] a year without shape SF and without a fixed-WP method -> refuse, not SF=1 silently
             std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO << "] --btagsf on for runYear=" << _runYear
-                      << ": this year has no b-tag shape SF (PLAN 9.6 D10). Use --btagsf off.\n" << std::endl;
+                      << ": this year has no b-tag SF method. Use --btagsf off.\n" << std::endl;
             tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
         }
         _skipBtagReweight = !_applyBtagRW;   // 동기화 (skip == !apply)
         std::cout << "[SF toggle] production evtWeight: "
                   << "trigSF=" << (_applyTrigSF ? "ON" : "off")
-                  << "  btagShape=" << (_applyBtagSF ? "ON" : "off")
+                  << (_btagFixedWP ? "  btagFixedWP=" : "  btagShape=") << (_applyBtagSF ? "ON" : "off")
                   << "  btagNormRW=" << (_applyBtagRW ? "ON" : "off")
                   << "  (tier branches always recorded)\n";
     }
@@ -2939,6 +3000,10 @@ private:
 	_inputTree->Branch("mZ1ZZ",    &_hr_mZ1ZZ,    "mZ1ZZ/F");
 	_inputTree->Branch("mZ2ZZ",    &_hr_mZ2ZZ,    "mZ2ZZ/F");
 	_inputTree->Branch("bTagWeight", &bTagWeight_central_, "bTagWeight/F");
+	if (_btagFixedWP) {   // [STEP 25 K] the fixed-WP weight's up/down (the payload's b-jet SF variation)
+	    _inputTree->Branch("bTagWeight_up",   &bTagWeight_up_hf_,   "bTagWeight_up/F");
+	    _inputTree->Branch("bTagWeight_down", &bTagWeight_down_hf_, "bTagWeight_down/F");
+	}
 	_inputTree->Branch("failGoldenJson", &failGoldenJson, "failGoldenJson/O");
 	_inputTree->Branch("passMETFilters", &passMETFilters, "passMETFilters/O");
 	_inputTree->Branch("passHadTrig", &passHadTrig, "passHadTrig/O");

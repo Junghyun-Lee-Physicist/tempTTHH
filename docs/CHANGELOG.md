@@ -2,10 +2,30 @@
 
 > **Purpose:** one chronological line per change, newest first, linking to the full record. The detail lives in [`changes/STEP_*.md`](changes/); this file is the index, not a copy.
 > **Audience:** anyone tracing when and why something changed.
-> **Status:** append-only · last meaningful update **2026-10-07**.
+> **Status:** append-only · last meaningful update **2026-10-08**.
 > **Links:** decisions [`DECISIONS.md`](DECISIONS.md) · state [`STATUS.md`](STATUS.md).
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
+
+## 2026-10-08: [analyzer][도구][제출기][config] STEP 25 K — 2024 b-tag SF 는 fixed WP(method 1a), 효율 map 도구, 2024 btagtrig yml (D-2026-10-08-A)
+
+사용자 결정 D-2026-10-08-A: 2024 는 지금 BTV 의 fixed-WP 방법, shape 방법이 확인되면 전환. analyzer: `EraConfig::btagMethod`(2024 FixedWP,
+Run 2 Shape)와 `btagFixedWPPayload`(`btagging_preliminary.json.gz` → `UParTAK4_kinfit`, b jet 만); `CorrectionsManager` 가 그 payload(입력 이름
+확인, 격자 평가, up/down 은 payload 의 total → correlated+uncorrelated → kinfit 출처들의 제곱합 순으로 찾음(central 과 달라야 셈; 못 찾으면
+WARN); 못 읽으면 WARN)와 우리 효율 JSON(env `TTHH_BTAGEFF_JSON`; main/debug 에서 못 읽거나 이 job 의 묶음·flavour·WP 에 답하지 못하거나 다른 WP 로
+만들었으면 E52)을 읽고, `computeBTagWeightFixedWP_` 가 jet 마다 세 칸(≥ M, L–M, < L)의 P_Data/P_MC 곱을
+`bTagWeight`(+ `bTagWeight_up/_down` branch)에; `--btagsf on` 은 MC 에 payload(E40)와 효율 JSON(E52)을 요구(전의 E11 대신); MC 출력에 `BTagEff/`
+(HT 단계의 선택 jet, flavour × {all, ≥L, ≥M, ≥T}, pT × |η|, `h_nevt`, `h_wp`), job 끝에 closure 줄(Σ w·bTagWeight / Σ w ≈ 1)과 jet weight 수
+줄; 새 exit code E52 `BTAGEFF_LOAD_FAIL`; `include/BTagEffGroup.h`(tt·qcd·other). `tools/stage7/btag_eff_maps.py`(+ 시험 26): merge 된 MC 의
+`BTagEff/` 를 묶음마다 더해 correctionlib JSON(`btag_eff`, `btag_eff_groups`; N_eff < 50·b 의 tag 칸 N_eff < 10·비물리 칸은 |η| 합 → 'all';
+WP·flavours 를 description 에). 제출기: `path_btag_eff_json`(2024 의 모든 job 에
+`TTHH_BTAGEFF_JSON`, `--btagsf on` 이면 MC 에 필수), preflight 가 효율 JSON 을 읽어 확인. yml: 2024 main·prescan 에 `path_btag_eff_json: null`,
+새 `Tier3_2024_FH_unified_btagtrig.yml`(Muon0/1 16 + MC 60). plotter: `BTagEff/` 는 그리지 않고, SF 표기가 2024 b-tag 을 "fixed WP, b jets" 로.
+시험: 오프라인 smoke 83/83(+33: payload·E52·E40·효율 도구·tree 에서 다시 계산한 weight·closure·sources payload·default payload·다른 표본·읽히지만
+답하지 못하는 JSON), 실패 확인 56/56(+7), 단위 시험 PASS(EraConfig +4), 컨테이너의 smoke_2024 모의 106/106; 2017 과 2024 의 기존 출력은 J 와
+같다(새 것은 `BTagEff/` 와 두 branch 뿐). 독립 검토(AI agent)의 결함 둘(0·1 효율, 답하지 못하는 JSON 의 abort)을 고침. 상세
+[`changes/STEP_25_btag_fixedWP_2024.md`](changes/STEP_25_btag_fixedWP_2024.md), [`DECISIONS.md`](DECISIONS.md) D-2026-10-08-A,
+[`reference/ERROR_CODES.md`](reference/ERROR_CODES.md) E52, [`reference/CONFIG_PATHS.md`](reference/CONFIG_PATHS.md) `path_btag_eff_json`.
 
 ## 2026-10-07: [제출기][data] STEP 24 J — main 제출이 76 cluster 뒤 E20: Data 의 xsec_db 항목, 모든 표본의 weight 입력을 먼저, `--only`
 

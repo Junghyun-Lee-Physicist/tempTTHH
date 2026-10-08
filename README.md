@@ -119,11 +119,12 @@ gdb --args ./ttHHanalyzer_unified --mode debug --filelist <list> --output dbg.ro
 | `path_stitch_json` | `STITCH_FACTORS_JSON` | stitch_factors_2017.json |
 | `path_expanded_ttbarid_dir` | `EXPANDED_TTBARID_DIR` | ttnb_* lookup 디렉토리 |
 | `path_pu_json` | `TTHH_PU_JSON` | 2024 PU weight JSON(2024 의 모든 job; 2016–2018 은 jsonpog 의 PU 라 읽지 않는다) |
+| `path_btag_eff_json` | `TTHH_BTAGEFF_JSON` | [STEP 25 K] 2024 fixed-WP b-tag 의 우리 MC 효율 map(`tools/stage7/btag_eff_maps.py`; 2024 의 모든 job 이 키를 읽고, `--btagsf on` 의 MC 에 필수; 2016–2018 은 shape SF 라 없음) |
 
 **FATAL exit 맵**(job `.err` 의 `[FATAL]` 줄; 번호는 2026-06-30 에 바뀌었다 — 표 전체는
 [`docs/reference/ERROR_CODES.md`](docs/reference/ERROR_CODES.md)): 12·13 경로 정책, 40 중앙 보정(JME·PU·b-tag SF) 로드, 41 Data
 golden JSON, 50 trigger SF JSON 없음·깨짐·평가 실패, 51 b-tag reweight JSON 없음·깨짐·평가 실패(흔히 **매핑 변경 뒤 JSON 을 다시
-만들지 않음**), 60–62 stitch JSON, 63 stitch 계획의 샘플에 tt+nb lookup 없음, 70–73 tt+nb lookup, 80 빈 process key, 81 유한하지 않은
+만들지 않음**), 52 2024 b-tag 효율 JSON 깨짐(main/debug) 또는 `--btagsf on` 인데 없음(40 은 그 BTV payload 가 없을 때), 60–62 stitch JSON, 63 stitch 계획의 샘플에 tt+nb lookup 없음, 70–73 tt+nb lookup, 80 빈 process key, 81 유한하지 않은
 reweight. 옛 번호(45·46·47·48·49, 40–43)는 그 문서의 History note 에 대응표가 있다. `main`/`debug` 는 경로가 주어진 파생 보정의
 로드 실패를 FATAL 로, `btagtrig` 는 bootstrap(WARN, SF=1)으로 처리한다.
 
@@ -236,6 +237,10 @@ SF 적용은 `--trigsf/--btagsf/--btagrw {on,off}` 로 production `evtWeight` �
 고른다. **기본값(trigSF on, b-tag shape/reweight off)이 곧 'trigSF만'** 이므로
 세 영역에 trigSF 만 적용하려면 추가 인자 없이 그대로 둔다. (tree 의
 `evtWeight_btagSF`/`evtWeight_full` tier 는 토글과 무관하게 항상 기록.)
+**[STEP 25 K] 2024 의 `--btagsf on`** 은 shape SF 가 아니라 fixed-WP weight(BTV method 1a, 우리 L·M; D-2026-10-08-A)다: MC 에 yml
+`path_btag_eff_json`(우리 효율 map; 2024 btagtrig MC 에서 `python3 tools/stage7/btag_eff_maps.py --config AnalyzerConfig/Tier3_2024_FH_unified_btagtrig.yml --base <btagtrig 출력>`)이
+있어야 하고(없으면 E13/E52), 2024 는 `--btagrw` 를 쓰지 않는다(method 1a 가 정규화를 지킨다; job 로그의 `[btagSF] closure` 줄). MC 출력의
+`BTagEff/` 가 그 도구의 입력이다. BTV 의 2024 shape 방법이 확인되면 그것으로 바꾼다(`EraConfig::btagMethod`).
 
 **세 영역 제출 (trigSF 만):**
 ```bash
@@ -405,7 +410,8 @@ python3 plotter/make_plots.py --config <분석 yml> --base <AnalyzerOutput_...> 
 종료 코드는 `docs/reference/ERROR_CODES.md` 끝. `--tree-cut` 의 식은 tree 의 branch 와 파생 열(`jet_pt_<i>`, `btag_<i>` …)의
 RDataFrame 식이고, tree 는 그 run 의 selection(trigger OR 포함)을 통과한 event 라 더 좁히는 것만 된다(make_plots docstring 6).
 2024 Data 의 trigger 는 PD 마다 다르다: JetMET0/1 은 `HLT_PFHT1050`, ParkingHH 는 b-tag 경로 가운데 `HLT_PFHT1050` 이 아닌 것
-(D-2026-10-06-A). 시험: `python3 test/test_failure_checks.py`(33), `python3 test/test_consolidate_prescan.py`(24).
+(D-2026-10-06-A). 시험: `python3 test/test_failure_checks.py`(56), `python3 test/test_consolidate_prescan.py`(24),
+`python3 tools/stage7/test_btag_eff_maps.py`(26; STEP 25 K).
 
 ### 8.4 cross section 확인 (The Barn)
 ```

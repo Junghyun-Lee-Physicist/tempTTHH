@@ -54,6 +54,8 @@ enum ExitCode {
     // 50-59 — derived corrections
     TRIGSF_LOAD_FAIL         = 50,  // trigger SF JSON missing/corrupt (required)
     BTAGRW_LOAD_FAIL         = 51,  // b-tag norm reweight JSON missing/corrupt (req.)
+    BTAGEFF_LOAD_FAIL        = 52,  // [STEP 25 K] b-tag efficiency JSON (fixed WP, 2024) given but unreadable
+                                    //   (main/debug), or --btagsf on (MC) without it
 
     // 60-69 — ttbar stitching
     STITCH_JSON_OPEN_FAIL    = 60,  // stitch-factors JSON cannot be opened

@@ -2,7 +2,7 @@
 
 > **Purpose:** the single place that answers "where are we right now?" — current state, what is ready, what is pending, and what is OPEN.
 > **Audience:** anyone starting a session.
-> **Status:** living · last meaningful update **2026-10-07** (커밋 J: main 제출이 76 cluster 뒤 E20 — Data 의 xsec_db 항목, 제출 전 모든 표본 확인, `--only`; ParkingHH 만 따로 낸다) · 2026-10-07 (D-2026-10-07-B: 2024 lepton CR 지금, 다음 작업 넷, 커밋 I 의 nJets 진단) · 2026-10-07 (ParkingHH 생산 끝, G 의 KNU smoke 81/81, HT1050 control plot Data/MC 1.46 = b-tag; D-2026-10-07-A: 2024 main 전체 다시, 커밋 H) · 2026-10-06 (2024 의 b-tag 경로는 ParkingHH: D-2026-10-06-A, 커밋 G 의 PD 규칙과 `make_plots.py --tree-cut` control plot; STEP 24 커밋 E·F `b29856eb`: KNU smoke `dC_mix` 의 139 → `tthh::fatalExit`, F 빌드 smoke 69/69; 첫 plot 의 모자람은 HT < 1000 GeV(trigger 경로·PD 확인); main 5,291/5,291·merge 76/76, 사후 확인으로 빠짐 없음, 첫 수율표; 커밋 D·E 실패 확인 · prescan 983/983, consolidate 의 `EXIT 1` 은 도구 — 커밋 C 에 `--skimmed`; Data 는 golden LS 의 1.4 % 쯤 없음) · 2026-10-05 (STEP 24 커밋 C: KNU smoke 68/69, plot 도구, 여러 파일 job 검사 고침 · 커밋 B: 진짜 eventBuffer.h 와 2024 analyzer·제출기, smoke_2024 · 묶음 1: 2024 eventBuffer·PU 도구와 입력, Y1 도구; D-2026-10-05-A · 묶음 2: analyzer 의 2024 코드는 진짜 header 와 함께 커밋 대기, Stage 3 도구·yml·임시 σ, 오프라인 smoke 31/31; D-2026-10-05-B·C) · 2026-10-04 (KNU 의 긴 단계는 condor job, 실행 기록은 `runlogs/` 에 커밋 — STEP 23) · 2026-10-03 (Stage 0 의 payload·lumi 실측 반영, eventBuffer 생성기 = 사용자 fork treestream 점검, 그 패치 커밋 `8be42e8`; KNU 의 pull 과 clean 빌드) · 2026-10-02 (2024 먼저 결정, 단계별 계획 [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) §9, 2017 lumi 42.07 반영) · 그 전 2026-10-01 (v15 계획 PROPOSED) · 2026-07-26 (2018UL 준비: samples_2018UL.json, --preflight, OPEN #5).
+> **Status:** living · last meaningful update **2026-10-08** (D-2026-10-08-A: 2024 b-tag SF 는 지금 fixed WP, shape 방법이 확인되면 전환; 커밋 K = analyzer 의 fixed-WP weight·효율 히스토그램, `tools/stage7/btag_eff_maps.py`, 2024 btagtrig yml; KNU 10-08 03:43 큐 9,890) · 2026-10-07 (커밋 J: main 제출이 76 cluster 뒤 E20 — Data 의 xsec_db 항목, 제출 전 모든 표본 확인, `--only`; ParkingHH 만 따로 낸다) · 2026-10-07 (D-2026-10-07-B: 2024 lepton CR 지금, 다음 작업 넷, 커밋 I 의 nJets 진단) · 2026-10-07 (ParkingHH 생산 끝, G 의 KNU smoke 81/81, HT1050 control plot Data/MC 1.46 = b-tag; D-2026-10-07-A: 2024 main 전체 다시, 커밋 H) · 2026-10-06 (2024 의 b-tag 경로는 ParkingHH: D-2026-10-06-A, 커밋 G 의 PD 규칙과 `make_plots.py --tree-cut` control plot; STEP 24 커밋 E·F `b29856eb`: KNU smoke `dC_mix` 의 139 → `tthh::fatalExit`, F 빌드 smoke 69/69; 첫 plot 의 모자람은 HT < 1000 GeV(trigger 경로·PD 확인); main 5,291/5,291·merge 76/76, 사후 확인으로 빠짐 없음, 첫 수율표; 커밋 D·E 실패 확인 · prescan 983/983, consolidate 의 `EXIT 1` 은 도구 — 커밋 C 에 `--skimmed`; Data 는 golden LS 의 1.4 % 쯤 없음) · 2026-10-05 (STEP 24 커밋 C: KNU smoke 68/69, plot 도구, 여러 파일 job 검사 고침 · 커밋 B: 진짜 eventBuffer.h 와 2024 analyzer·제출기, smoke_2024 · 묶음 1: 2024 eventBuffer·PU 도구와 입력, Y1 도구; D-2026-10-05-A · 묶음 2: analyzer 의 2024 코드는 진짜 header 와 함께 커밋 대기, Stage 3 도구·yml·임시 σ, 오프라인 smoke 31/31; D-2026-10-05-B·C) · 2026-10-04 (KNU 의 긴 단계는 condor job, 실행 기록은 `runlogs/` 에 커밋 — STEP 23) · 2026-10-03 (Stage 0 의 payload·lumi 실측 반영, eventBuffer 생성기 = 사용자 fork treestream 점검, 그 패치 커밋 `8be42e8`; KNU 의 pull 과 clean 빌드) · 2026-10-02 (2024 먼저 결정, 단계별 계획 [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) §9, 2017 lumi 42.07 반영) · 그 전 2026-10-01 (v15 계획 PROPOSED) · 2026-07-26 (2018UL 준비: samples_2018UL.json, --preflight, OPEN #5).
 > **Links:** decisions [`DECISIONS.md`](DECISIONS.md) · history [`CHANGELOG.md`](CHANGELOG.md) · exit codes [`reference/ERROR_CODES.md`](reference/ERROR_CODES.md) · path policy [`reference/CONFIG_PATHS.md`](reference/CONFIG_PATHS.md).
 
 ## Bottom line
@@ -126,6 +126,21 @@ ParkingHH config 를 읽음; C++ 그대로). 다음: KNU 에서 P8(ParkingHH)과
 내지 않음), `--only`(표본 일부만 같은 출력 base 로) — STEP 24 §20. P8: ParkingHH ALL PASS; 10-05 의 MC 7/60·Data 5/32 FAIL(출력 없는 job 25·24,
 Data 는 모두 JetMET → 결과 전에 되살리거나 공통 LS mask). 다음: 맥 커밋 J → KNU 에서 `--only 'ParkingHH_*'` 로 FH 의 ParkingHH 8 → lepton CR 둘
 (워크스페이스 RUNBOOK §27) → merge·plot.
+
+**10-08 (KNU, 사용자 결정, 커밋 K):** KNU 03:43 KST — FH 의 ParkingHH 8 은 끝, μCR 은 ParkingHH F–I 가 남음, eCR 8,062 대기, 큐 9,890, `du` job 은
+10 시간 넘게 도는 중, `proxy.cert` 는 10-16 까지. P8 표(10-05 생산): MC 7/60 FAIL 출력 없는 job 25(TTbar_Hadronic 3, TTbar_DiLep 1,
+QCD_HT600to800 1, QCD_HT800to1000 2, ttHTobb_semilep 10, ST_s_top_had 5, WJetsToQQ_HT2500toInf 3), Data 5/32 FAIL 24(모두 JetMET: JetMET0 C 1·F 15·
+G 5, JetMET1 C 1·E 2); 처리된 golden LS 의 빠짐 JetMET0 2.080 %, JetMET1 0.703 %, ParkingHH 0.398 %(dataset 쪽 빈칸) → 결과 전에 CRAB 되살리기 또는
+세 PD 공통 LS mask 와 brilcalc. 지금까지의 control plot 에는 trigger SF 도 b-tag SF 도 없다(D-2026-10-05-A 의 `_notrig`, Stage 6·7 이 그것).
+BTV payload 다시 봄: 2024 는 `UParTAK4_kinfit`(fixed WP, b jet 만) 뿐(2025-09-24 판 그대로). **사용자 결정 D-2026-10-08-A**: 2024 는 지금 fixed WP
+(BTV method 1a, 우리 L·M; 효율은 우리 MC; c·light SF 1; norm reweight 없음), BTV 의 shape 방법이 확인되면 그것으로; 목표는 2024·2018 의 FH·μCR·eCR
+control plot 을 trigger SF(와 그 검증 plot)·b-tag SF 와 함께 보고 2017 v9 와 비교. 사용자의 예상("fixed WP 라서 ratio 가 크게 바뀌지 않는다")은
+b-tag 수별 수율·운동학에는 맞고, 점수 분포·mistag(c·light SF 없음)·2017 v9 와의 점수 모양 비교에는 맞지 않는다(그 결정의 본문). 커밋 K
+(STEP 25): analyzer 의 fixed-WP weight(`--btagsf on`; 효율 JSON 없으면 E52, payload 없으면 E40)와 MC 의 `BTagEff/` 효율 히스토그램(HT 단계),
+`tools/stage7/btag_eff_maps.py`(correctionlib JSON), 제출기의 `path_btag_eff_json` → `TTHH_BTAGEFF_JSON`(2024 의 모든 job), 2024 btagtrig yml
+(Muon0/1 16 + MC 60; trigger SF 와 효율 map 이 함께 쓴다), 시험(오프라인 smoke 83/83, 효율 도구 26/26, 실패 확인 56/56, 단위 PASS, 컨테이너의
+smoke_2024 모의 106/106; 독립 검토의 결함 둘 고침), 2017 출력은 J 와 같음(Y1). **KNU 에서 다시 빌드는 큐가 빈 뒤**(지금의 job 이 실행 파일을 쓴다). 다음: 큐가 비면 merge·plot
+(SF 없음) → K 빌드·smoke → 2024 btagtrig → 효율 map → trigger SF(Stage 6 의 2 부) → SF 를 켠 main 셋(워크스페이스 RUNBOOK §28).
 
 ## What is ready (DECIDED)
 

@@ -31,10 +31,12 @@ What it does (in cmsenv: PyROOT and root):
      --check-only stops here.
   4. structure_info.yml from one MC file (TTbar_Hadronic if present): every TH1 (no TH2/TProfile), in file order,
      filtered by --include-hist / --exclude-hist (regex on the key path) -- the format plotter/extract_structure.py
-     writes, made with PyROOT here so uproot is not needed.
+     writes, made with PyROOT here so uproot is not needed. [STEP 25 K] Not the BTagEff/ directory (the inputs of
+     the b-tag efficiency maps, MC only).
   5. samples_config.yml, a copy of plotter/stack_plotter.C, and `root -l -b -q stack_plotter.C` per grouping with
      TTHH_PLOT_GROUPING, TTHH_PLOT_LUMI (the yml's lumi_fb_inv), TTHH_PLOT_SQRTS (13.6 for Run 3, else 13),
-     TTHH_PLOT_NOTE (year; 2024: '#sigma: provisional'; the SF state read from the base name) and
+     TTHH_PLOT_NOTE (year; 2024: '#sigma: provisional'; the SF state read from the base name, e.g. 'trigger SF + b-tag
+     SF (fixed WP, b jets) applied' for a 2024 _btagsf base) and
      TTHH_PLOT_MULTIPAGE=1 (all plots also in plots_<grouping>/all_<grouping>.pdf).
   6. --tree-cut EXPR (D-2026-10-06-A): control plots from the event tree instead of the stored histograms. The main
      output keeps every selected event in Tree/Tree with its trigger bits, HT, jets, b-tag scores, event shapes and
@@ -117,13 +119,18 @@ def submitter():
     return mod
 
 
-def sf_note(base):
-    """The SF state from the output directory name (the submitter's suffixes: _notrig, _btagsf, _btagrw)."""
+def sf_note(base, year=""):
+    """The SF state from the output directory name (the submitter's suffixes: _notrig, _btagsf, _btagrw). [STEP 25 K]
+    2024: the b-tag SF is the fixed-WP weight (D-2026-10-08-A; b jets only, c / light jets SF 1)."""
     name = os.path.basename(os.path.normpath(base))
     trig = "_notrig" not in name
     btag = "_btagsf" in name
-    off = [x for x, on in (("trigger", trig), ("b-tag", btag)) if not on]
-    return ("no %s SF" % "/".join(off)) if off else "trigger SF applied"
+    on = [x for x, o in (("trigger SF", trig), ("b-tag SF (fixed WP, b jets)" if year == "2024" else "b-tag SF", btag))
+          if o]
+    off = [x for x, o in (("trigger", trig), ("b-tag", btag)) if not o]
+    if not on:
+        return "no %s SF" % "/".join(off)
+    return " + ".join(on) + " applied" + (", no %s SF" % "/".join(off) if off else "")   # (";" splits note lines)
 
 
 def cutflow(ROOT, path):
@@ -161,6 +168,8 @@ def th1_paths(ROOT, path, inc, exc):
             cls = k.GetClassName()
             name = k.GetName()
             if cls.startswith("TDirectory"):
+                if prefix + name == "BTagEff":
+                    continue        # [STEP 25 K] the b-tag efficiency inputs (MC only; tools/stage7/btag_eff_maps.py)
                 walk(k.ReadObj(), prefix + name + "/")
                 continue
             if not cls.startswith("TH1"):
@@ -316,7 +325,7 @@ def main(argv=None):
     names = [(s["sample_name"] if isinstance(s, dict) else str(s)) for s in conf["samples"]]
     excl = set(a.exclude) | (set() if a.no_default_exclude else set(DEFAULT_EXCLUDE.get(year, [])))
     sqrts = SQRTS.get(year, "13")
-    note = ";".join(x for x in ((a.note,) if a.note is not None else (YEAR_NOTE.get(year, year), sf_note(a.base)))
+    note = ";".join(x for x in ((a.note,) if a.note is not None else (YEAR_NOTE.get(year, year), sf_note(a.base, year)))
                     + ((a.tree_label,) if a.tree_cut else ()) if x)
     print("CONFIG %s year=%s lumi=%.3f sqrt(s)=%s TeV samples=%d" % (cfg, year, lumi, sqrts, len(names)))
     print("BASE %s" % a.base)

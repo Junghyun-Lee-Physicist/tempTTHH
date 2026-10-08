@@ -2,7 +2,7 @@
 """synth_nano.py -- small NanoAOD-like files with plausible values, for the offline smoke test (STEP 24)
 
     python3 synth_nano.py --year 2017|2024 --kind mc|data [--era X] [--golden <golden json>]
-                          [--run-range LO HI] [--n 400] [--seed 1] [--drop BRANCH ...] -o out.root
+                          [--run-range LO HI] [--n 400] [--seed 1] [--drop BRANCH ...] [--b-low F] -o out.root
 
 Writes only the branches the analyzer reads (ttHHanalyzer_unified.cc requireBranches_ and the object
 fields), each with the leaf type it has in the real ntuples of that year (2017: NanoAOD v9 of
@@ -11,6 +11,10 @@ and the HLT paths of that kind of file (2017 era B Data: the CSV names; 2017 MC 
 2024: all six). Data take (run, LS) from the golden JSON, 10 % of the events outside it. Trees: Events,
 LuminosityBlocks (the (run, LS) of the events), Runs (genEventSumw for MC). --drop leaves a branch out
 (to test the required-branch check). Values are random but in physical ranges; never physics.
+b-tag scores: b jets above the medium WP, the others below 0.08 -- unless [STEP 25 K] --b-low F > 0: then a b jet
+is, with probability F/2 each, between the loose and the medium WP or below the loose WP (so the b efficiencies
+are inside (0, 1), as the fixed-WP weight needs; the default F = 0 draws no extra random numbers: the files of
+the other checks stay what they were).
 """
 import argparse
 import json
@@ -113,6 +117,7 @@ def main(argv=None):
     ap.add_argument("--n", type=int, default=400)
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--drop", nargs="*", default=[])
+    ap.add_argument("--b-low", type=float, default=0.0, help="[STEP 25 K] fraction of b jets below the medium WP")
     ap.add_argument("-o", required=True)
     a = ap.parse_args(argv)
 
@@ -222,6 +227,11 @@ def main(argv=None):
         isb = np.zeros(nj, dtype=bool)
         isb[rng.choice(nj, size=min(nb, nj), replace=False)] = True
         disc = np.where(isb, rng.uniform(hi_wp + 0.05, 1.0, nj), rng.uniform(0.0, 0.08, nj))
+        if a.b_low > 0:                              # [STEP 25 K] (only then: the default draws stay the same)
+            wl, wm = {"2017": (0.0532, 0.3040), "2024": (0.0246, 0.1272)}[y]   # loose / medium WP of the year
+            u = rng.random(nj)
+            disc = np.where(isb & (u < a.b_low / 2), rng.uniform(wl, wm, nj),
+                            np.where(isb & (u >= a.b_low / 2) & (u < a.b_low), rng.uniform(0.0, wl, nj), disc))
         setc("nJet", nj)
         setv("Jet_pt", pt)
         setv("Jet_eta", eta)

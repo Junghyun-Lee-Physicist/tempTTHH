@@ -36,6 +36,16 @@
 #  DeepJet); MC and Muon0 take the whole OR, JetMET HLT_PFHT1050, ParkingHH
 #  the b-tag paths without it (HadTrigger step = taken); the JetMET and
 #  ParkingHH output trees are disjoint and together the Muon0 (whole OR) one.
+#  [STEP 25 K, D-2026-10-08-A] the 2024 fixed-WP b-tag weight: the payload line (fake UParTAK4_kinfit of
+#  fake_pog.py) and "NOT ready" without the efficiency JSON; --btagsf on stops without it (E52) and without the
+#  payload (E40), not for Data; btagtrig MC fills BTagEff, tools/stage7/btag_eff_maps.py makes the maps from it,
+#  and a --btagsf on run gives bTagWeight / _up / _down equal to the method-1a product recomputed from Tree/Tree
+#  with correctionlib (also for a payload of sources only: central +- their quadrature sum), its closure line is
+#  within 2 % of 1 (mc24b: synth_nano --b-low, b efficiencies inside (0, 1)), main --btagsf on = off x bTagWeight
+#  for the same events; an unreadable efficiency JSON stops main (E52), not btagtrig; TTHH_BTAGEFF_JSON unset: E12;
+#  [10-08 review] one that loads but cannot answer (groups without default, a WP missing, other WPs) stops at load
+#  (E52), a payload whose keys only reach a default gives no variation (said twice), the jet-weight counts, and a
+#  sample weighted with maps not made from it stays finite (the tool never uses an e of 0 or 1).
 #  Exit: 0 all checks pass; 1 a check failed; 2 bad usage.
 #  The values are random: the checks are about running and stopping, never physics.
 # =============================================================================
@@ -77,6 +87,7 @@ S --year 2024 --kind data --golden "$G24" --run-range 386071 386951 --n 200 --se
 S --year 2024 --kind mc --n 200 --seed 33 --drop Jet_chHEF -o "$IN/noChHEF.root"
 S --year 2024 --kind mc --n 200 --seed 34 --drop HLT_IsoMu24 -o "$IN/noIsoMu24.root"
 S --year 2024 --kind mc --n 200 --seed 35 --drop genWeight -o "$IN/noGenWeight.root"
+S --year 2024 --kind mc --n 1500 --seed 41 --b-low 0.3 -o "$IN/mc24b.root"     # [STEP 25 K] b efficiencies inside (0, 1)
 DQM="$REPO/DerivedCorr/PU/2024_Summer24/input"
 python3 "$REPO/tools/stage2/pu_weights.py" mcprofile --glob "$IN/mc24.root" \
   --binning-from "$DQM/dataPileupHistogram-2024CDEFGHI_Golden-69200ub.root" > "$W/pu_mcprofile.log" 2>&1
@@ -117,7 +128,7 @@ runa() {
     env LD_LIBRARY_PATH="$repo/lib:${RLIB}:${CLIB}:${LD_LIBRARY_PATH:-}" TNM_PATH="$repo" \
         TTHH_JSONPOG_PATH="$W/fakepog" TTHH_GOLDENJSON_PATH="$REPO/GoldenJson" TTHH_TRIGSF_DIR=__NULL__ \
         TTHH_BTAGRW_JSON=__NULL__ STITCH_FACTORS_JSON=__NULL__ EXPANDED_TTBARID_DIR=__NULL__ \
-        TTHH_PU_JSON="$W/puWeights_2024_FAKE.json" "$@" \
+        TTHH_PU_JSON="$W/puWeights_2024_FAKE.json" TTHH_BTAGEFF_JSON=__NULL__ "$@" \
         "$repo/ttHHanalyzer_unified" "${args[@]}" ) > "$out.log" 2>&1
   echo $? > "$out.rc"
   LAST="$out"
@@ -142,6 +153,10 @@ check "2024 MC prints the jet ID, veto map and PU payloads" \
 check "2024 MC prints the cleaning counts" "$(grep -q '^\[cleaning\] events .*MET filters fail' "$LAST.log" && echo 1)"
 check "2024 MC prints the JEC/JER payload names and the UParTAK4 WPs" \
       "$(grep -q 'JEC/JER (2024_Summer24): .* -> JEC Summer24Prompt24_V1_MC_L1L2L3Res_AK4PFPuppi, JER Summer23BPixPrompt23_RunD_JRV1_MC_PtResolution_AK4PFPuppi + Summer23BPixPrompt23_RunD_JRV1_MC_ScaleFactor_AK4PFPuppi' "$LAST.log" && grep -q '^\[objectJet\] UParTAK4 (Jet_btagUParTAK4B) WP for 2024 : L=0.0246 M=0.1272 T=0.4648' "$LAST.log" && echo 1)"
+check "2024 MC loads the fixed-WP b-tag payload (UParTAK4_kinfit, b jets; up/down found) and says the weight is off" \
+      "$(grep -q 'b-tag SF (2024_Summer24): fixed WP (method 1a with L and M), .*/POG/BTV/2024_Summer24/btagging_preliminary.json.gz -> UParTAK4_kinfit (b jets; c and light jets: SF 1, no payload yet); up/down: the payload.s up/down' "$LAST.log" \
+            && grep -q '^\[btagSF\] fixed WP (method 1a, L and M; 2024): NOT ready (no efficiency JSON) -> bTagWeight = 1' "$LAST.log" \
+            && grep -q 'b-tag efficiency JSON (fixed WP): not given (config null)' "$LAST.log" && echo 1)"
 runa d24C "$NEW" Data JetMET0_Run2024C-MINIv6NANOv15-v1 C 2024 "$IN/jetmet24C.root"; ok_run "2024 Data era C runs"
 check "2024 Data uses the Data JEC" "$(grep -q -- '-> JEC Summer24Prompt24_V1_DATA_L1L2L3Res_AK4PFPuppi,' "$LAST.log" && echo 1)"
 runa d24I "$NEW" Data JetMET1_Run2024I-MINIv6NANOv15_v2-v2 I 2024 "$IN/jetmet24I.root"; ok_run "2024 Data era I runs"
@@ -213,8 +228,192 @@ PY
 )"
 check "2024 JetMET and ParkingHH select disjoint events whose union is the whole-OR selection (Tree/Tree: ${e_j:-?} + ${e_p:-?} = ${e_m:-?})" \
       "$([[ -n "${e_union:-}" && "$e_jp" == 0 && "$e_union" == 1 && "${e_m:-0}" -gt 0 ]] && echo 1)" "(overlap ${e_jp:-?}, union = Muon0's: ${e_union:-?})"
-BTAGSF=on runa btag "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root"; stops "2024 --btagsf on stops (E11)" 11 "btagsf on for runYear=2024"
+BTAGSF=on runa btag "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root"
+stops "2024 --btagsf on without the efficiency JSON stops (E52)" 52 "needs our MC efficiency JSON"
+# ---- [STEP 25 K] the fixed-WP b-tag weight end to end (D-2026-10-08-A) ----------------------------------------
+#   btagtrig MC runs fill BTagEff; tools/stage7/btag_eff_maps.py makes the maps from them; a --btagsf on run then
+#   gives bTagWeight = the product over its selected jets of the method-1a weight with the payload SF and the maps --
+#   recomputed here from Tree/Tree (jetPt, jetEta, bTagScore, hadFlavs) with correctionlib's Python package.
+MODE=btagtrig runa bt_tt "$NEW" MC TTbar_Hadronic "" 2024 "$IN/mc24b.root"; ok_run "2024 btagtrig MC runs (TTbar_Hadronic)"
+MODE=btagtrig runa bt_qcd "$NEW" MC QCD_HT1000to1200 "" 2024 "$IN/mc24.root"; ok_run "2024 btagtrig MC runs (QCD_HT1000to1200)"
+mkdir -p "$W/beff"
+cp "$W/out/new_bt_tt.root" "$W/beff/TTbar_Hadronic.root"; cp "$W/out/new_bt_qcd.root" "$W/beff/QCD_HT1000to1200.root"
+printf 'common:\n  year: "2024"\n  analysis_mode: btagtrig\nsamples:\n  - TTbar_Hadronic\n  - QCD_HT1000to1200\n  - %s\n' \
+       Muon0_Run2024I-MINIv6NANOv15-v1 > "$W/beff.yml"
+EFFJ="$W/beff/btag_eff_2024.json.gz"
+python3 "$REPO/tools/stage7/btag_eff_maps.py" --config "$W/beff.yml" --base "$W/beff" --out "$EFFJ" --min-neff 20 --min-neff-bin 3 \
+        > "$W/beff.log" 2>&1; rc=$?
+check "btag_eff_maps.py on the btagtrig outputs (h_nevt = the HT>500 cutflow bin; JSON written and verified)" \
+      "$([[ $rc == 0 ]] && grep -q '^SAMPLE TTbar_Hadronic group=tt nevt=[1-9][0-9]* ht_step=[0-9]* OK' "$W/beff.log" \
+            && grep -q '^SAMPLE QCD_HT1000to1200 group=qcd ' "$W/beff.log" && grep -q '^DATA-SKIPPED Muon0' "$W/beff.log" \
+            && grep -q '^VERIFY ok' "$W/beff.log" && [[ -s "$EFFJ" ]] && echo 1)" "(exit $rc, $W/beff.log)"
+MODE=btagtrig BTAGSF=on runa wp_bt "$NEW" MC TTbar_Hadronic "" 2024 "$IN/mc24b.root" TTHH_BTAGEFF_JSON="$EFFJ"
+ok_run "2024 --btagsf on with the efficiency JSON runs (btagtrig, TTbar_Hadronic)"
+check "2024 --btagsf on: the weight is ready (group tt), the closure line is printed" \
+      "$(grep -q "^\[btagSF\] fixed WP (method 1a, L and M; 2024): ready, efficiency group 'tt'" "$LAST.log" \
+            && grep -q '^\[btagSF\] closure at the HT step (no b-tag cut yet): events [1-9]' "$LAST.log" && echo 1)"
+CLOS=$(sed -nE 's/^\[btagSF\] closure at the HT step .* = ([0-9.eE+-]+) .*/\1/p' "$LAST.log")
+check "2024 closure of the weight on the sample the maps come from: |sum(w x bTagWeight) / sum(w) - 1| < 0.02 (${CLOS:-?})" \
+      "$(awk -v c="${CLOS:-0}" 'BEGIN{exit !(c > 0.98 && c < 1.02)}' && echo 1)"
+# wpcheck <output> <payload file> <variation: updown | key_up,key_down;...> -> "events b_jets weights!=1 worst"
+wpcheck() {
+  ( cd "$W" && python3 - "$1" "$2" "$EFFJ" "$3" 2>> "$W/synth.log" <<'PY'
+import math, sys, ROOT, correctionlib
+out, sfp, effp, var = sys.argv[1:5]
+sf = correctionlib.CorrectionSet.from_file(sfp)["UParTAK4_kinfit"]
+eff = correctionlib.CorrectionSet.from_file(effp)["btag_eff"]
+srcs = None if var == "updown" else [tuple(p.split(",")) for p in var.split(";")]
+def sfv(sy, wp, ae, p):                 # the analyzer's getBTagSF_WP: up/down, or central +- the sources in quadrature
+    c = sf.evaluate("central", wp, 5, ae, p)
+    if sy == "central":
+        return c
+    if srcs is None:
+        return sf.evaluate(sy, wp, 5, ae, p)
+    q = math.sqrt(sum((sf.evaluate(k[0 if sy == "up" else 1], wp, 5, ae, p) - c) ** 2 for k in srcs))
+    return c + q if sy == "up" else c - q
+L, M = 0.0246, 0.1272                               # EraConfig 2024 UParTAK4 WPs
+cl = lambda e: min(max(e, 1e-4), 1 - 1e-4)
+f = ROOT.TFile.Open(out); t = f.Get("Tree/Tree")
+n = nb = 0; worst = 0.0; nonone = 0
+for i in range(t.GetEntries()):
+    t.GetEntry(i)
+    w = {"central": 1.0, "up": 1.0, "down": 1.0}
+    for pt, eta, s, fl in zip(t.jetPt, t.jetEta, t.bTagScore, t.hadFlavs):
+        if fl != 5:
+            continue                                # the 2024 payload has b jets only: weight 1
+        nb += 1
+        ae, p = min(abs(eta), 2.4999), min(max(pt, 20.0), 599.9)
+        eL = cl(eff.evaluate("tt", 5, "L", abs(eta), pt)); eM = min(cl(eff.evaluate("tt", 5, "M", abs(eta), pt)), eL)
+        for sy in w:
+            sL, sM = sfv(sy, "L", ae, p), sfv(sy, "M", ae, p)
+            if s >= M:   wj = sM
+            elif s >= L: wj = max(0.0, sL * eL - sM * eM) / (eL - eM) if eL - eM > 1e-6 else 1.0
+            else:        wj = max(0.0, 1 - sL * eL) / (1 - eL) if 1 - eL > 1e-6 else 1.0
+            w[sy] *= wj
+    for sy, br in (("central", "bTagWeight"), ("up", "bTagWeight_up"), ("down", "bTagWeight_down")):
+        v = getattr(t, br)
+        worst = max(worst, abs(v - w[sy]) / max(abs(w[sy]), 1e-12))
+    nonone += abs(t.bTagWeight - 1.0) > 1e-6
+    n += 1
+print(n, nb, nonone, "%.3g" % worst)
+PY
+  )
+}
+read -r wp_n wp_nb wp_non1 wp_worst <<< "$(wpcheck "$LAST.root" "$W/fakepog/POG/BTV/2024_Summer24/btagging_preliminary.json.gz" updown)"
+check "2024 bTagWeight / _up / _down of every Tree/Tree event = the method-1a product recomputed from its jets (${wp_n:-?} events, ${wp_nb:-?} b jets, ${wp_non1:-?} weights != 1; largest relative difference ${wp_worst:-?})" \
+      "$([[ -n "${wp_worst:-}" && "${wp_n:-0}" -gt 0 && "${wp_non1:-0}" -gt 0 ]] && awk -v x="$wp_worst" 'BEGIN{exit !(x < 2e-6)}' && echo 1)"
+# a payload without a total up/down: the analyzer finds the sources (two spellings) and adds them in quadrature
+mkdir -p "$W/fakepog_src"; cp -r "$W/fakepog/." "$W/fakepog_src/"
+python3 "$HERE/fake_pog.py" --btv-sources "$W/fakepog_src" >> "$W/fake_pog.log" 2>&1
+MODE=btagtrig BTAGSF=on runa wp_src "$NEW" MC TTbar_Hadronic "" 2024 "$IN/mc24b.root" TTHH_BTAGEFF_JSON="$EFFJ" \
+     TTHH_JSONPOG_PATH="$W/fakepog_src"
+ok_run "2024 --btagsf on with a payload of sources only runs"
+check "... its load line names the sources it found (up_jes/down_jes, statistic_up/statistic_down)" \
+      "$(grep -q 'up/down: sources in quadrature: up_jes/down_jes statistic_up/statistic_down' "$LAST.log" && echo 1)"
+read -r ws_n ws_nb ws_non1 ws_worst <<< "$(wpcheck "$LAST.root" "$W/fakepog_src/POG/BTV/2024_Summer24/btagging_preliminary.json.gz" 'up_jes,down_jes;statistic_up,statistic_down')"
+check "... and its bTagWeight_up / _down = central +- the sources in quadrature, recomputed (${ws_n:-?} events; ${ws_worst:-?})" \
+      "$([[ -n "${ws_worst:-}" && "${ws_n:-0}" -gt 0 ]] && awk -v x="$ws_worst" 'BEGIN{exit !(x < 2e-6)}' && echo 1)"
+# the end-of-job counts of the jet weights (maps made from this sample: no weight > 10)
+check "2024 the [btagSF] jet-weight line: b jets counted, none above 10 on the sample the maps come from" \
+      "$(grep -qE '^\[btagSF\] jets weighted \(b, all events\): [1-9][0-9]*; jet weight > 10: 0; set to 0 \(P_Data < 0\): central [0-9]+, up [0-9]+, down [0-9]+$' "$W/out/new_wp_bt.log" && echo 1)"
+# a payload whose systematic category has a default (every key evaluates, none differs from central): no variation,
+#   said loudly (load WARN, --btagsf on WARN), up = down = central
+mkdir -p "$W/fakepog_def"; cp -r "$W/fakepog/." "$W/fakepog_def/"
+python3 "$HERE/fake_pog.py" --btv-default "$W/fakepog_def" >> "$W/fake_pog.log" 2>&1
+MODE=btagtrig BTAGSF=on runa wp_def "$NEW" MC TTbar_Hadronic "" 2024 "$IN/mc24b.root" TTHH_BTAGEFF_JSON="$EFFJ" \
+     TTHH_JSONPOG_PATH="$W/fakepog_def"
+ok_run "2024 --btagsf on with a payload of central + a default runs"
+check "... finds no variation (keys that only reach the default do not count) and says so twice (WARN)" \
+      "$(grep -q 'up/down: none found (up/down = central)' "$LAST.log" && grep -q 'has no up/down variation this code recognises' "$LAST.log" \
+            && grep -q '^\[btagSF\]\[WARN\] --btagsf on: the payload gave no up/down variation' "$LAST.log" && echo 1)"
+check "... and bTagWeight_up = bTagWeight_down = bTagWeight in every event" "$( cd "$W" && python3 - "$LAST.root" 2>> "$W/synth.log" <<'PY'
+import sys, ROOT
+f = ROOT.TFile.Open(sys.argv[1]); t = f.Get("Tree/Tree"); n = bad = 0
+for i in range(t.GetEntries()):
+    t.GetEntry(i); n += 1
+    c, u, d = float(getattr(t, "bTagWeight")), float(getattr(t, "bTagWeight_up")), float(getattr(t, "bTagWeight_down"))
+    bad += (u != c or d != c)
+print(1 if n > 0 and bad == 0 else "")
+PY
+)"
+# a sample weighted with maps not made from it (QCD: its own b maps would be e_L = e_M = 1 -- mc24 has every b jet above
+#   M -- so the tool takes the 'all' maps there): weights stay finite
+MODE=btagtrig BTAGSF=on runa wp_qcd "$NEW" MC QCD_HT1000to1200 "" 2024 "$IN/mc24b.root" TTHH_BTAGEFF_JSON="$EFFJ"
+ok_run "2024 --btagsf on, QCD_HT1000to1200 on the other synthetic file"
+CLQ=$(sed -nE 's/^\[btagSF\] closure at the HT step .* = ([0-9.eE+-]+) .*/\1/p' "$LAST.log")
+check "... no jet weight above 10 and a closure in (0.5, 2) (${CLQ:-?}): the maps never use an e of 0 or 1 (reviewer, 10-08)" \
+      "$(grep -q 'jet weight > 10: 0;' "$LAST.log" && awk -v c="${CLQ:-0}" 'BEGIN{exit !(c > 0.5 && c < 2)}' && echo 1)"
+check "... btag_eff_maps.py took the 'all' maps for qcd b (its own bins have no jet below M)" \
+      "$(grep -qE '^LEVELS qcd b L0=0 L1=0 ' "$W/beff.log" && grep -qE '^LEVELS qcd b .*thin tag bin [1-9]' "$W/beff.log" && echo 1)"
+# an efficiency JSON that loads but cannot answer: stops at load with E52 (not an abort in the event loop)
+python3 - "$EFFJ" "$W" >> "$W/synth.log" 2>&1 <<'PY'
+import gzip, json, sys
+src, w = sys.argv[1:3]
+js = json.load(gzip.open(src, "rt"))
+a = json.loads(json.dumps(js)); del a["corrections"][1]["data"]["default"]           # btag_eff_groups: no default
+json.dump(a, open(w + "/eff_nodefault.json", "w"))
+b = json.loads(json.dumps(js))                                                          # tt b without WP L
+tt = [it for it in b["corrections"][0]["data"]["content"] if it["key"] == "tt"][0]["value"]
+bb = [it for it in tt["content"] if it["key"] == 5][0]["value"]
+bb["content"] = [it for it in bb["content"] if it["key"] != "L"]
+json.dump(b, open(w + "/eff_noL.json", "w"))
+c = json.loads(json.dumps(js))                                                          # other WPs in the description
+c["corrections"][0]["description"] = c["corrections"][0]["description"].replace("wp=L:0.0246,", "wp=L:0.03,")
+json.dump(c, open(w + "/eff_otherwp.json", "w"))
+PY
+runa eff_nd "$NEW" MC ST_tW_top_had "" 2024 "$IN/mc24b.root" TTHH_BTAGEFF_JSON="$W/eff_nodefault.json"
+stops "2024 main, efficiency JSON whose groups have no default, a sample of a group not in it: E52 at load" 52 "b-tag efficiency JSON"
+runa eff_nl "$NEW" MC TTbar_Hadronic "" 2024 "$IN/mc24b.root" TTHH_BTAGEFF_JSON="$W/eff_noL.json"
+stops "2024 main, efficiency JSON without WP L for tt b: E52 at load" 52 "b-tag efficiency JSON"
+runa eff_wp "$NEW" MC TTbar_Hadronic "" 2024 "$IN/mc24b.root" TTHH_BTAGEFF_JSON="$W/eff_otherwp.json"
+stops "2024 main, efficiency JSON made with other WPs: E52 at load" 52 "made with the WPs L=0.03"
+MODE=btagtrig runa eff_nlbt "$NEW" MC TTbar_Hadronic "" 2024 "$IN/mc24b.root" TTHH_BTAGEFF_JSON="$W/eff_noL.json"
+ok_run "2024 btagtrig with that JSON runs (bootstrap: WARN, no weight)"
+# main: the production weight carries the b-tag weight (--btagsf on vs off, the same events)
+runa wp_moff "$NEW" MC TTHHto4b "" 2024 "$IN/mc24b.root" TTHH_BTAGEFF_JSON="$EFFJ"; ok_run "2024 main --btagsf off runs (efficiency JSON given)"
+BTAGSF=on runa wp_main "$NEW" MC TTHHto4b "" 2024 "$IN/mc24b.root" TTHH_BTAGEFF_JSON="$EFFJ"; ok_run "2024 main --btagsf on runs"
+WPMAIN=$( cd "$W" && python3 - "$W/out/new_wp_moff.root" "$LAST.root" 2>> "$W/synth.log" <<'PY'
+import sys, ROOT
+def rows(fn):
+    f = ROOT.TFile.Open(fn); t = f.Get("Tree/Tree"); d = {}
+    for i in range(t.GetEntries()):
+        t.GetEntry(i); d[(int(t.runNumber), int(t.eventNumber))] = (t.evtWeight, t.bTagWeight)
+    return d
+off, on = rows(sys.argv[1]), rows(sys.argv[2])
+worst = max(abs(on[k][0] - off[k][0] * on[k][1]) / max(abs(on[k][0]), 1e-12) for k in on) if on else 1.0
+same_bw = all(abs(off[k][1] - on[k][1]) < 1e-7 for k in on)       # the branch is filled in both runs
+print(len(off), len(on), int(set(off) == set(on) and same_bw), "%.3g" % worst)
+PY
+)
+read -r m_off m_on m_same m_worst <<< "${WPMAIN:-}"
+check "2024 main: --btagsf on selects the same events, the same bTagWeight, and evtWeight(on) = evtWeight(off) x bTagWeight (${m_on:-?} events; ${m_worst:-?})" \
+      "$([[ "${m_same:-0}" == 1 && "${m_on:-0}" -gt 0 ]] && awk -v x="${m_worst:-1}" 'BEGIN{exit !(x < 2e-6)}' && echo 1)"
+check "2024 main keeps BTagEff (h_nevt = the HT>500 step) and Data has none" \
+      "$( cd "$W" && python3 - "$LAST.root" "$LAST.log" "$W/out/new_d24C.root" 2>> "$W/synth.log" <<'PY'
+import sys, ROOT
+f = ROOT.TFile.Open(sys.argv[1]); h = f.Get("BTagEff/h_nevt"); cf = f.Get("Tree/cutflow")
+ht = [cf.GetBinContent(i) for i in range(1, cf.GetNbinsX() + 1) if cf.GetXaxis().GetBinLabel(i) == "HT>500"]
+d = ROOT.TFile.Open(sys.argv[3])
+print(1 if (h and ht and h.GetBinContent(1) == ht[0] and not d.Get("BTagEff")) else "")
+PY
+)"
+BTAGSF=on runa d24on "$NEW" Data JetMET0_Run2024C-MINIv6NANOv15-v1 C 2024 "$IN/jetmet24C.root"; ok_run "2024 Data --btagsf on runs (no b-tag weight for Data, no efficiency JSON needed)"
+# the payload missing: --btagsf off runs with a WARN, --btagsf on stops (E40); an unreadable efficiency JSON: main E52
+mkdir -p "$W/fakepog_nobtv"; cp -r "$W/fakepog/." "$W/fakepog_nobtv/"
+mv "$W/fakepog_nobtv/POG/BTV/2024_Summer24/btagging_preliminary.json.gz" "$W/fakepog_nobtv/POG/BTV/2024_Summer24/moved.json.gz"
+runa nobtv "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root" TTHH_JSONPOG_PATH="$W/fakepog_nobtv"
+ok_run "2024 MC without the BTV payload runs with --btagsf off"
+check "... and says the payload is not loaded (WARN)" \
+      "$(grep -q 'WARN\] b-tag SF (2024_Summer24, fixed WP): .*btagging_preliminary.json.gz -> UParTAK4_kinfit: .* -- not loaded' "$LAST.log" && echo 1)"
+BTAGSF=on runa nobtvon "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root" TTHH_JSONPOG_PATH="$W/fakepog_nobtv" TTHH_BTAGEFF_JSON="$EFFJ"
+stops "2024 --btagsf on without the BTV payload stops (E40)" 40 "the BTV payload SF is not loaded"
+printf '{"not": "a correction set"}' > "$W/badeff.json"
+runa badeff "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root" TTHH_BTAGEFF_JSON="$W/badeff.json"
+stops "2024 main with an unreadable efficiency JSON stops (E52; a derived correction given but broken)" 52 "b-tag efficiency JSON"
+MODE=btagtrig runa badeffbt "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root" TTHH_BTAGEFF_JSON="$W/badeff.json"
+ok_run "2024 btagtrig with an unreadable efficiency JSON runs (bootstrap: WARN)"
 runa nopu "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root" TTHH_PU_JSON=; stops "2024 without TTHH_PU_JSON stops (E12)" 12 "TTHH_PU_JSON"
+runa noeff "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root" TTHH_BTAGEFF_JSON=; stops "2024 without TTHH_BTAGEFF_JSON stops (E12)" 12 "TTHH_BTAGEFF_JSON"
 runa pd "$NEW" Data EGamma0_Run2024C-MINIv6NANOv15-v1 C 2024 "$IN/jetmet24C.root"; stops "2024 unknown Data PD stops (E11)" 11 "PD not recognised"
 runa no4j "$NEW" Data JetMET0_Run2024I-MINIv6NANOv15-v2 I 2024 "$IN/no4J3T.root"; stops "2024 Data without any 4J3T branch stops (E11)" 11 "one of: HLT_PFHT330PT30"
 runa nochf "$NEW" MC TTHHto4b "" 2024 "$IN/noChHEF.root"; stops "2024 MC without Jet_chHEF stops (E11)" 11 "Jet_chHEF   (not in the input file)"
@@ -270,7 +469,7 @@ if ${CC:-gcc} -shared -fPIC -o "$W/crash_teardown.so" "$W/crash_teardown.c" > "$
   { ( ulimit -c 0; env "$CT" "$W/ct_control" ); } 2>/dev/null; rc=$?
   check "crash_teardown.so works: a plain 'return 3' under it ends with 139 (control)" "$([[ $rc == 139 ]] && echo 1)" "(exit $rc)"
   BTAGSF=on runa ctfatal "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root" "$CT"
-  stops "a stop keeps its exit code when the exit-time teardown crashes (E11 --btagsf on; not 139)" 11 "btagsf on for runYear=2024"
+  stops "a stop keeps its exit code when the exit-time teardown crashes (E52 --btagsf on; not 139)" 52 "needs our MC efficiency JSON"
   runa ctmix "$NEW" Data JetMET0_Run2024I-MINIv6NANOv15-v2 I 2024 "$IN/jetmet24I.root,$IN/noDeepJet.root" "$CT"
   stops "the same for the two-file E11 (smoke_2024 dC_mix at KNU)" 11 "do not have the same branches"
   ARGS_NOSAMPLE=(--filelist "$W/out/new_sig24.filelist" --output "$W/out/ctarg.root" --weight 1 --year 2024 --dataOrMC MC --mode main)

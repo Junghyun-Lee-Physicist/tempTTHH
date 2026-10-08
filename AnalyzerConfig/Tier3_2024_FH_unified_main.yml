@@ -3,7 +3,8 @@
 # weight = lumi x cross_section_fb x br / runs.genEventSumw (data/samples_2024.json, prescan_summary_2024/)
 #   python3 submit_job_FH_Tier3_unified.py --mode main --config AnalyzerConfig/Tier3_2024_FH_unified_main.yml --trigsf off --btagsf off --btagrw off --preflight
 # Output: .../AnalyzerOutput_main_notrig_2024/ (region and SF tags as for 2017, then the year).
-# --btagsf on is refused for 2024 (no shape SF, PLAN 9.6 D10; analyzer E11, preflight FAIL).
+# [STEP 25 K] --btagsf on = the fixed-WP b-tag weight (D-2026-10-08-A): needs path_btag_eff_json (below) to be the
+#   maps of tools/stage7/btag_eff_maps.py; output then .../AnalyzerOutput_main[_region]_btagsf_2024/ (or _notrig_btagsf).
 # ============================================================================
 common:
   year: "2024"
@@ -28,6 +29,11 @@ common:
   path_btag_reweight_json: null       # no 2024 b-tag norm reweight
   path_stitch_json: null              # no 2024 stitch factors (D-2026-10-05-C: the 4FS tt+bb / tt4b are not stacked)
   path_expanded_ttbarid_dir: null     # no 2024 tt+nb lookup: tt+>=3b stays in 51-55 (D-2026-10-02-A, D-2026-10-05-C)
+  # [STEP 25 K] our MC b-tag efficiency maps of the fixed-WP method (D-2026-10-08-A; tools/stage7/btag_eff_maps.py from
+  #   the 2024 btagtrig MC). Read by every 2024 job (key absent -> E12); null -> no b-tag weight (bTagWeight = 1), and
+  #   --btagsf on needs a real file (MC: E13 at submission, E52 in the job). After btag_eff_maps.py:
+  #   "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/DerivedCorr/BTagEff/2024_Summer24/btag_eff_2024.json.gz"
+  path_btag_eff_json: null
 samples:
   # -- signal / ttH / 4b-like --
   - TTHHto4b

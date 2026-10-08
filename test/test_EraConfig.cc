@@ -78,6 +78,12 @@ int main(){
     assert( EraConfig::jetVetoMap("2024").active && std::string(EraConfig::jetVetoMap("2024").correction)=="Summer24Prompt24_RunBCDEFGHI_V1");
     assert(!EraConfig::jetVetoMap("2017").active);
     assert(!EraConfig::hasBTagShapeSF("2024") && EraConfig::hasBTagShapeSF("2017"));
+    // [STEP 25 K] D-2026-10-08-A: 2024 fixed WP (UParTAK4_kinfit of btagging_preliminary.json.gz, b jets only),
+    //   Run 2 shape
+    assert(EraConfig::btagMethod("2024")==EraConfig::BTagMethod::FixedWP);
+    assert(EraConfig::btagMethod("2017")==EraConfig::BTagMethod::Shape && EraConfig::btagMethod("2018")==EraConfig::BTagMethod::Shape);
+    assert(std::string(EraConfig::btagFixedWPPayload("2024").file)=="btagging_preliminary.json.gz");
+    assert(std::string(EraConfig::btagFixedWPPayload("2024").correction)=="UParTAK4_kinfit" && EraConfig::btagFixedWPPayload("2024").bJetsOnly);
     assert(!EraConfig::hasTtNbLookup("2024") && EraConfig::hasTtNbLookup("2017") && EraConfig::hasTtNbLookup("2018"));
     assert(EraConfig::metFilters("2017").size()==9 && EraConfig::metFilters("2024").size()==8);
     for (const auto& f : EraConfig::metFilters("2024")) assert(f!="Flag_HBHENoiseFilter" && f!="Flag_HBHENoiseIsoFilter");

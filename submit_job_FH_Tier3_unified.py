@@ -143,6 +143,92 @@ def weight_input_problems(entries, db, prescan, prescan_mode=False):
 
 
 # ============================================================================
+# [STEP 25 K] The b-tag efficiency JSON of the fixed-WP method (2024; tools/stage7/btag_eff_maps.py, docs/DECISIONS.md
+#   D-2026-10-08-A): what the analyzer needs from it (CorrectionsManager::loadBTagEff_), checked by the preflight so a
+#   bad file stops here and not in every job (main/debug: E52 at the job start; btagtrig: a WARN and no weight).
+# ============================================================================
+BTAG_EFF_INPUTS = ("group", "flavor", "working_point", "abseta", "pt")
+
+
+def btag_eff_json_summary(path, year=""):
+    """(problems, info) of an efficiency JSON: problems = [text] (empty = usable); info = {"groups": [the groups of
+    btag_eff_groups], "description": the JSON's description (btag_eff_maps.py: '... year=<YYYY>; wp=L:..,M:..,T:..; ...')}.
+    The structure the analyzer evaluates, checked node by node: btag_eff = category(group, with a default) ->
+    category(flavor: 0, 4, 5) -> category(working_point: L, M, T) -> multibinning(abseta, pt) of efficiencies in [0, 1];
+    btag_eff_groups = category(group) with a default. A JSON that loads but misses a key would stop every job that asks
+    for it (E52)."""
+    import gzip
+    import json
+    probs, info = [], {"groups": [], "description": ""}
+    try:
+        opener = gzip.open if str(path).endswith(".gz") else open
+        with opener(path, "rt") as fh:
+            js = json.load(fh)
+    except Exception as e:
+        return ["cannot read it as JSON: %s" % str(e)[:150]], info
+    corr = {c.get("name"): c for c in js.get("corrections", []) if isinstance(c, dict)}
+    eff, grp = corr.get("btag_eff"), corr.get("btag_eff_groups")
+
+    def cat(node, inp, keys, where):
+        """the content values of a category node on `inp` that has every key of `keys` ([] if not such a node)"""
+        if not isinstance(node, dict) or node.get("nodetype") != "category" or node.get("input") != inp:
+            probs.append("%s: not a category on '%s'" % (where, inp))
+            return []
+        have = {it.get("key"): it.get("value") for it in node.get("content", []) if isinstance(it, dict)}
+        miss = [k for k in keys if k not in have]
+        if miss:
+            probs.append("%s: no key %s" % (where, miss))
+        return [(k, have[k]) for k in keys if k in have]
+
+    if eff is None:
+        probs.append("no correction 'btag_eff'")
+    else:
+        names = [v.get("name") for v in eff.get("inputs", [])]
+        if sorted(names) != sorted(BTAG_EFF_INPUTS):
+            probs.append("btag_eff inputs %s, expected %s" % (names, list(BTAG_EFF_INPUTS)))
+        data = eff.get("data", {})
+        groups = [it.get("key") for it in data.get("content", [])] if isinstance(data, dict) else []
+        if not isinstance(data, dict) or data.get("default") is None:
+            probs.append("btag_eff: the group category has no default (an unknown group could not be evaluated)")
+        for g in groups + (["(default)"] if isinstance(data, dict) and data.get("default") is not None else []):
+            gnode = data.get("default") if g == "(default)" else dict(cat(data, "group", [g], "btag_eff"))[g]
+            for fl, fnode in cat(gnode, "flavor", [5, 4, 0], "btag_eff[%s]" % g):
+                for wp, mb in cat(fnode, "working_point", ["L", "M", "T"], "btag_eff[%s][%s]" % (g, fl)):
+                    w = "btag_eff[%s][%s][%s]" % (g, fl, wp)
+                    if not isinstance(mb, dict) or mb.get("nodetype") != "multibinning" \
+                            or mb.get("inputs") != ["abseta", "pt"]:
+                        probs.append("%s: not a multibinning on (abseta, pt)" % w)
+                        continue
+                    e = mb.get("edges", [[], []])
+                    vals = mb.get("content", [])
+                    if len(e) != 2 or len(vals) != max(len(e[0]) - 1, 0) * max(len(e[1]) - 1, 0) or not vals:
+                        probs.append("%s: %d values for edges %s x %s" % (w, len(vals), len(e[0]) if e else "?",
+                                                                       len(e[1]) if len(e) > 1 else "?"))
+                    elif not all(isinstance(v, (int, float)) and 0.0 <= v <= 1.0 for v in vals):
+                        probs.append("%s: a value outside [0, 1]" % w)
+    if grp is None:
+        probs.append("no correction 'btag_eff_groups'")
+    else:
+        data = grp.get("data", {})
+        keys = [it.get("key") for it in data.get("content", [])] if isinstance(data, dict) else []
+        info["groups"] = keys
+        if "all" not in keys:
+            probs.append("btag_eff_groups has no 'all' (groups: %s)" % keys)
+        if not isinstance(data, dict) or data.get("default") is None:
+            probs.append("btag_eff_groups has no default (a job of another group would stop)")
+    desc = str(js.get("description", ""))
+    info["description"] = desc
+    m = re.search(r"\byear=(\d{4})\b", desc)
+    if year and m and m.group(1) != str(year):
+        probs.append("made for year %s, the yml is %s" % (m.group(1), year))
+    elif year and not m:
+        probs.append("its description has no 'year=<YYYY>' (not made by tools/stage7/btag_eff_maps.py?)")
+    if eff is not None and not re.search(r"wp=L:[0-9.eE+-]+,M:[0-9.eE+-]+,T:[0-9.eE+-]+", str(eff.get("description", ""))):
+        probs.append("btag_eff's description has no 'wp=L:..,M:..,T:..' (the analyzer checks the WPs: E52)")
+    return probs, info
+
+
+# ============================================================================
 # [2026-10-06] Why a job is missing (--report / --status): the condor files of the sample.
 #   condor user log  condor/<...>/log_<sample>.<cluster>.log : state and return value per (cluster, proc)
 #   job stdout       condor/<...>/tmp_<sample>_<time>/job_<sample>.<cluster>.<proc>.out : the analyzer prints
@@ -255,7 +341,8 @@ class CondorJobManager:
         parser.add_argument("--trigsf", default="on",  choices=["on", "off"],
                             help="trigger SF 적용 (기본 on)")
         parser.add_argument("--btagsf", default="off", choices=["on", "off"],
-                            help="b-tag shape SF 적용 (기본 off)")
+                            help="b-tag SF 적용 (기본 off): 2016-2018 shape SF, 2024 fixed WP (method 1a, "
+                                 "D-2026-10-08-A; yml common.path_btag_eff_json 필요)")
         parser.add_argument("--btagrw", default="off", choices=["on", "off"],
                             help="b-tag norm reweight 적용 (기본 off; 8-group JSON 필요)")
         parser.add_argument("--filelist-dir", default="",
@@ -484,8 +571,13 @@ class CondorJobManager:
         if any(is_data_name(s["sample_name"] if isinstance(s, dict) else s) for s in samples):
             required_now.add("path_goldenjson")
         # [STEP 24] 2024: our PU weight JSON (the analyzer reads TTHH_PU_JSON for every 2024 job)
-        if str(common.get("year", "")).strip() == "2024":
+        is_2024_cfg = (str(common.get("year", "")).strip() == "2024")
+        if is_2024_cfg:
             required_now.add("path_pu_json")
+        # [STEP 25 K] 2024 --btagsf on: the fixed-WP b-tag weight needs our MC efficiency JSON in every MC job (any
+        #   mode: the analyzer stops with E52 without it); the key itself is read by every 2024 job (E12 if absent)
+        if is_2024_cfg and self._cli_btagsf == "on" and any(not is_data_name(entry_name(s)) for s in samples):
+            required_now.add("path_btag_eff_json")
         if self.AnalyzerMode in ("main", "debug"):
             if self._cli_trigsf == "on":
                 required_now.add("path_trigsf_dir")
@@ -493,9 +585,11 @@ class CondorJobManager:
                 required_now.add("path_btag_reweight_json")
         for key in ("path_jsonpog", "path_goldenjson", "path_trigsf_dir",
                     "path_btag_reweight_json", "path_stitch_json",
-                    "path_expanded_ttbarid_dir", "path_pu_json"):
+                    "path_expanded_ttbarid_dir", "path_pu_json", "path_btag_eff_json"):
             if key == "path_pu_json" and key not in required_now and key not in common:
                 continue                       # [STEP 24] only 2024 has (and needs) it
+            if key == "path_btag_eff_json" and not is_2024_cfg and key not in common:
+                continue                       # [STEP 25 K] only 2024 (the fixed-WP years) has it
             if key not in common:
                 bad(f"{key}", "KEY MISSING -> analyzer exits E12 (no silent default)")
                 continue
@@ -506,7 +600,8 @@ class CondorJobManager:
             elif is_null:
                 if key in required_now:
                     bad(f"{key}", f"null but REQUIRED for mode={self.AnalyzerMode} "
-                                  f"(trigsf={self._cli_trigsf}, btagrw={self._cli_btagrw}) -> E13")
+                                  f"(trigsf={self._cli_trigsf}, btagsf={self._cli_btagsf}, "
+                                  f"btagrw={self._cli_btagrw}) -> E13")
                 else:
                     ok(f"{key}", "null -> disabled (ok for this mode/toggles)")
             else:
@@ -631,10 +726,26 @@ class CondorJobManager:
 
         # ---- 5b. [STEP 24] 2024 rules the analyzer would only find in the jobs (E11) ----
         if str(common.get("year", "")).strip() == "2024":
+            # [STEP 25 K] --btagsf on = the fixed-WP b-tag weight (method 1a with L and M; D-2026-10-08-A): the BTV
+            #   payload SF (b jets) and our MC efficiency JSON (common.path_btag_eff_json; null/missing: section 3)
+            effp = common.get("path_btag_eff_json")
+            eff_real = isinstance(effp, str) and effp.strip() not in ("", "none", "null", "~") \
+                and os.path.exists(effp.strip())
+            if eff_real:
+                eprobs, einfo = btag_eff_json_summary(effp.strip(), "2024")
+                if eprobs:
+                    bad("2024 b-tag efficiency JSON", f"{effp}: {'; '.join(eprobs)} -> "
+                                                      + ("every MC job E52" if self.AnalyzerMode in ("main", "debug")
+                                                         else "not loaded (WARN), no b-tag weight"))
+                else:
+                    ok("2024 b-tag efficiency JSON", f"{effp} (groups {' '.join(einfo['groups'])})")
             if self._cli_btagsf == "on":
-                bad("2024 --btagsf", "on, but 2024 has no b-tag shape SF (PLAN 9.6 D10) -> every MC job E11")
+                if eff_real:      # (not an existing file: the FAIL of section 3, path_btag_eff_json)
+                    ok("2024 --btagsf", "on: the fixed-WP b-tag weight (method 1a with L and M, D-2026-10-08-A; b jets: "
+                                        "BTV UParTAK4_kinfit, c / light jets: SF 1)")
             else:
-                ok("2024 --btagsf", "off")
+                ok("2024 --btagsf", "off" + (" (the efficiency JSON is given: the bTagWeight branch is filled, the "
+                                             "production weight does not use it)" if eff_real else ""))
             pd_bad = [str(s["sample_name"] if isinstance(s, dict) else s) for s in samples
                       if is_data_name(s["sample_name"] if isinstance(s, dict) else s)
                       and not re.match(r"^((JetMET|Muon)[01]|ParkingHH)_",
@@ -1032,10 +1143,13 @@ class CondorJobManager:
             "path_stitch_json":           "STITCH_FACTORS_JSON",
             "path_expanded_ttbarid_dir":  "EXPANDED_TTBARID_DIR",
             "path_pu_json":               "TTHH_PU_JSON",   # [STEP 24] 2024 only
+            "path_btag_eff_json":         "TTHH_BTAGEFF_JSON",   # [STEP 25 K] 2024 only (fixed-WP b-tag weight)
         }
         is_2024     = (str(common.get("year", "")).strip() == "2024")
         if not is_2024 and "path_pu_json" not in common:
             del path_env_map["path_pu_json"]   # 2016-2018: jsonpog PU; their yml has no such key
+        if not is_2024 and "path_btag_eff_json" not in common:
+            del path_env_map["path_btag_eff_json"]   # [STEP 25 K] 2016-2018: shape SF; their yml has no such key
         is_data     = (self.data_or_mc == "Data")
         derived_req = self.AnalyzerMode in ("main", "debug")
         # 필수 여부: jsonpog 는 항상(JME/PU); goldenjson 은 Data; trigsf/btagrw 는
@@ -1049,6 +1163,8 @@ class CondorJobManager:
             required_keys.add("path_btag_reweight_json")
         if is_2024:
             required_keys.add("path_pu_json")   # [STEP 24] CorrectionsManager reads it for every 2024 job
+        if is_2024 and not is_data and self._cli_btagsf == "on":
+            required_keys.add("path_btag_eff_json")   # [STEP 25 K] the fixed-WP weight (MC, any mode; else E52)
 
         self.env_exports = {}
         for yml_key, env_name in path_env_map.items():
@@ -1059,7 +1175,7 @@ class CondorJobManager:
                     _fatal(EXIT["CONFIG_PATH_NULL_REQUIRED"],
                            f"{yml_key} is REQUIRED for mode={self.AnalyzerMode} "
                            f"data_or_mc={self.data_or_mc} "
-                           f"(trigsf={self._cli_trigsf}, btagrw={self._cli_btagrw}) "
+                           f"(trigsf={self._cli_trigsf}, btagsf={self._cli_btagsf}, btagrw={self._cli_btagrw}) "
                            f"but is null. Provide a real path, or change mode/toggle.")
                 self.env_exports[env_name] = NULL_SENTINEL  # 선택 보정 -> 비활성
                 continue

@@ -21,6 +21,10 @@
 #include <filesystem>   // JSON 파일 존재 확인용
 #include <algorithm>    // [STEP 24] std::clamp
 #include <cmath>
+#include <limits>       // [STEP 25 K] quiet_NaN
+#include <stdexcept>    // [STEP 25 K]
+#include <cstdio>       // [STEP 25 K] std::sscanf (the WPs in the efficiency JSON's description)
+#include "BTagEffGroup.h"   // [STEP 25 K] the job's process group for the efficiency-JSON check
 #include <TRandom3.h>
 
 // static flag for verbose logging:
@@ -67,6 +71,11 @@ CorrectionsManager::CorrectionsManager(const std::string& runYear,
     //   2016-2018 은 jsonpog 그대로이고 이 env 를 읽지도 않는다(그 연도의 yml·job 은 바뀌지 않는다).
     if (EraConfig::isRun3(EraConfig::normalizeYear(runYear_)))
         puJsonPath = cfgpath::resolve("TTHH_PU_JSON", "2024 PU weight JSON", /*required=*/true);
+    // [STEP 25 K] fixed-WP b-tag years (2024; EraConfig::btagMethod): our MC efficiency JSON (yml
+    //   path_btag_eff_json; tools/stage7/btag_eff_maps.py). Optional here (null -> "" -> not loaded): --btagsf on
+    //   needs it, and the analyzer stops with E52 without it. 2016-2018 (shape method) never read this env.
+    if (EraConfig::btagMethod(EraConfig::normalizeYear(runYear_)) == EraConfig::BTagMethod::FixedWP)
+        btagEffPath_ = cfgpath::resolve("TTHH_BTAGEFF_JSON", "b-tag efficiency JSON (fixed WP)", /*required=*/false);
 
     std::cout << "[CorrectionsManager] derived-correction policy: "
               << (requireDerived_ ? "REQUIRED if path given (load fail -> FATAL 50/51)"
@@ -92,6 +101,7 @@ CorrectionsManager::CorrectionsManager(const std::string& runYear,
     // 파생 보정 — requireDerived_에 따라 FATAL(47/48) 또는 WARN
     loadTrigger_();
     loadBTagReweight_();
+    loadBTagEff_();      // [STEP 25 K] fixed-WP years only (btagEffPath_ is "" otherwise)
 }
 
 // ============================================================================
@@ -269,7 +279,103 @@ void CorrectionsManager::loadPU_() {
 //--------------------------------------------------------------------------------------------------
 void CorrectionsManager::loadBTag_() {
     if (isData_) return; // 데이터에는 b-tag SF 적용하지 않음
-    if (!EraConfig::hasBTagShapeSF(EraConfig::normalizeYear(runYear_))) {
+    const std::string yr = EraConfig::normalizeYear(runYear_);
+    if (EraConfig::btagMethod(yr) == EraConfig::BTagMethod::FixedWP) {
+        // [STEP 25 K] 2024: the fixed-WP payload (D-2026-10-08-A). Used only by the fixed-WP b-tag weight, which also
+        //   needs our efficiency JSON: a missing file / correction / unknown input / an evaluation that throws is
+        //   a WARN here (recorded in btagFixedWPError_), so a run that does not ask for the weight (--btagsf off: the
+        //   first look, btagtrig for the efficiency maps) does not depend on the preliminary payload; --btagsf on
+        //   then stops with E40 (the analyzer's setSFflags, with this message).
+        const EraConfig::BTagFixedWPPayload p = EraConfig::btagFixedWPPayload(yr);
+        const std::string file = jsonPath + "/POG/BTV/" + runYear_ + "/" + p.file;
+        try {
+            auto cset = correction::CorrectionSet::from_file(file);
+            btagCorr_fixedWP_ = cset->at(p.correction);
+            btagFixedWPbOnly_ = p.bJetsOnly;
+            btagFixedWPInNames_.clear();
+            for (const auto& v : btagCorr_fixedWP_->inputs()) {
+                const std::string& n = v.name();
+                if (n != "systematic" && n != "working_point" && n != "flavor" && n != "abseta" && n != "pt")
+                    throw std::runtime_error(std::string(p.correction) + " has an input this code does not know: '" +
+                                             n + "' (known: systematic, working_point, flavor, abseta, pt)");
+                btagFixedWPInNames_.push_back(n);
+            }
+            // the payload must evaluate on the whole domain the analyzer feeds it (getBTagSF_WP clamps |eta| into
+            //   [0, 2.4999] and pT into [20, 599.9]): central at L and M on a grid of that domain (throws otherwise)
+            static const double gridEta[] = {0.0, 1.25, 2.4999};
+            static const double gridPt[]  = {20.0, 55.0, 599.9};
+            static const char*  gridWP[]  = {"L", "M"};
+            auto gridEval = [&](const std::string& sy) {
+                for (const char* wp : gridWP) for (double ae : gridEta) for (double pt : gridPt) evalFixedWP_(sy, wp, 5, ae, pt);
+            };
+            gridEval("central");
+            auto works = [&](const std::string& sy) {
+                try { gridEval(sy); return true; } catch (const std::exception&) { return false; }
+            };
+            // a variation counts only if it differs from central somewhere on the grid: a 'systematic' category with a
+            //   default would let any key evaluate (and give central)
+            auto differs = [&](const std::string& sy) {
+                for (const char* wp : gridWP) for (double ae : gridEta) for (double pt : gridPt)
+                    if (std::abs(evalFixedWP_(sy, wp, 5, ae, pt) - evalFixedWP_("central", wp, 5, ae, pt)) > 1.0e-9)
+                        return true;
+                return false;
+            };
+            btagFixedWPSrcKeys_.clear();
+            std::string varText;
+            if (works("up") && works("down") && (differs("up") || differs("down"))) {
+                btagFixedWPVar_ = WPVar::UpDown;
+                varText = "the payload's up/down";
+            } else {
+                // no total: BTV's correlated + uncorrelated split if the payload has both (their quadrature sum is the
+                //   total), else the 2026-10-02 inventory's kinfit sources (PLAN 9.2), each as up_<s>/down_<s> or
+                //   <s>_up/<s>_down -- never both sets (a breakdown of one would be counted twice)
+                auto pairOf = [&](const char* sr) -> std::pair<std::string, std::string> {
+                    const std::string a = std::string("up_") + sr, b = std::string("down_") + sr;
+                    const std::string c = std::string(sr) + "_up", d = std::string(sr) + "_down";
+                    if (works(a) && works(b) && (differs(a) || differs(b))) return {a, b};
+                    if (works(c) && works(d) && (differs(c) || differs(d))) return {c, d};
+                    return {"", ""};
+                };
+                const auto pc = pairOf("correlated"), pu = pairOf("uncorrelated");
+                if (!pc.first.empty() && !pu.first.empty()) {
+                    btagFixedWPSrcKeys_ = {pc, pu};
+                } else {
+                    static const char* srcs[] = {"fsrdef", "hdamp", "isrdef", "jer", "jes", "mass", "statistic", "tune"};
+                    for (const char* sr : srcs) {
+                        const auto k = pairOf(sr);
+                        if (!k.first.empty()) btagFixedWPSrcKeys_.push_back(k);
+                    }
+                }
+                btagFixedWPVar_ = btagFixedWPSrcKeys_.empty() ? WPVar::None : WPVar::Sources;
+                if (btagFixedWPVar_ == WPVar::Sources) {
+                    varText = "sources in quadrature:";
+                    for (const auto& k : btagFixedWPSrcKeys_) varText += " " + k.first + "/" + k.second;
+                } else {
+                    varText = "none found (up/down = central)";
+                    std::cerr << "[CorrectionsManager][WARN] b-tag SF (" << runYear_ << ", fixed WP): " << p.correction
+                              << " has no up/down variation this code recognises (up/down, correlated/uncorrelated, or "
+                                 "the kinfit sources, each differing from central): bTagWeight_up/_down = central"
+                              << std::endl;
+                }
+            }
+            btagFixedWPError_.clear();
+            std::cout << "[CorrectionsManager] b-tag SF (" << runYear_ << "): fixed WP (method 1a with L and M), "
+                      << file << " -> " << p.correction
+                      << (p.bJetsOnly ? " (b jets; c and light jets: SF 1, no payload yet)" : "")
+                      << "; up/down: " << varText << std::endl;
+        } catch (const std::exception& e) {
+            btagCorr_fixedWP_.reset();
+            btagFixedWPInNames_.clear();
+            btagFixedWPSrcKeys_.clear();
+            btagFixedWPVar_ = WPVar::None;
+            btagFixedWPError_ = file + " -> " + p.correction + ": " + e.what();
+            std::cerr << "[CorrectionsManager][WARN] b-tag SF (" << runYear_ << ", fixed WP): " << btagFixedWPError_
+                      << " -- not loaded: the fixed-WP b-tag weight cannot be made (--btagsf on stops, E"
+                      << tthh::CENTRAL_CORR_LOAD_FAIL << ")" << std::endl;
+        }
+        return;
+    }
+    if (!EraConfig::hasBTagShapeSF(yr)) {
         // [STEP 24] 2024 BTV 에는 deepJet 도 UParTAK4 의 shape SF 도 없다(PLAN §9.6 D10):
         //   불러오지 않고 getBTagSF_* 는 1 을 돌려준다. --btagsf on 은 analyzer 가 FATAL 로 막는다.
         std::cout << "[CorrectionsManager] b-tag SF: none for " << runYear_
@@ -607,6 +713,94 @@ void CorrectionsManager::loadBTagReweight_() {
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// [STEP 25 K] b-tag efficiency JSON of the fixed-WP method (2024; tools/stage7/btag_eff_maps.py)
+//   corrections: "btag_eff" (inputs group, flavor, working_point, abseta, pt -> efficiency of our MC) and
+//   "btag_eff_groups" (input group -> 1 for a group the maps have, else 0).
+//   Not given (yml null): nothing loaded -- the analyzer stops with E52 if --btagsf on asks for the weight.
+//   Given but unreadable: E52 in main/debug (requireDerived_), a WARN in btagtrig/prescan (the weight is not
+//   used there).
+// ═══════════════════════════════════════════════════════════════════════════════
+void CorrectionsManager::loadBTagEff_() {
+    if (isData_) return;
+    if (btagEffPath_.empty()) {
+        if (EraConfig::btagMethod(EraConfig::normalizeYear(runYear_)) == EraConfig::BTagMethod::FixedWP)
+            std::cout << "[CorrectionsManager] b-tag efficiency JSON (fixed WP): not given (config null) -- "
+                         "the fixed-WP b-tag weight cannot be made (--btagsf on stops, E52)\n";
+        return;
+    }
+    try {
+        btagEffCSet_   = correction::CorrectionSet::from_file(btagEffPath_);
+        btagEff_       = btagEffCSet_->at("btag_eff");
+        btagEffGroups_ = btagEffCSet_->at("btag_eff_groups");
+        btagEffInNames_.clear();
+        for (const auto& v : btagEff_->inputs()) {
+            const std::string& n = v.name();
+            if (n != "group" && n != "flavor" && n != "working_point" && n != "abseta" && n != "pt")
+                throw std::runtime_error("btag_eff has an input this code does not know: '" + n + "'");
+            btagEffInNames_.push_back(n);
+        }
+        // the WPs the maps were made with (tools/stage7/btag_eff_maps.py writes 'wp=L:<l>,M:<m>,T:<t>' into the
+        //   description): they must be this year's (EraConfig::btagWP), or the bins of the weight are not the maps'
+        const std::string desc = btagEff_->description();
+        const auto wpos = desc.find("wp=L:");
+        float wl = 0.f, wm = 0.f, wt = 0.f;
+        if (wpos == std::string::npos || std::sscanf(desc.c_str() + wpos, "wp=L:%f,M:%f,T:%f", &wl, &wm, &wt) != 3)
+            throw std::runtime_error("btag_eff has no 'wp=L:<l>,M:<m>,T:<t>' in its description (not made by "
+                                     "tools/stage7/btag_eff_maps.py?)");
+        const EraConfig::BTagWP ywp = EraConfig::btagWP(EraConfig::normalizeYear(runYear_));
+        if (std::abs(wl - ywp.loose) > 1.0e-5f || std::abs(wm - ywp.medium) > 1.0e-5f || std::abs(wt - ywp.tight) > 1.0e-5f)
+            throw std::runtime_error("made with the WPs L=" + std::to_string(wl) + " M=" + std::to_string(wm) + " T=" +
+                                     std::to_string(wt) + ", this year's are L=" + std::to_string(ywp.loose) + " M=" +
+                                     std::to_string(ywp.medium) + " T=" + std::to_string(ywp.tight));
+        // the flavours whose maps passed the tag-bin rule (btag_eff_maps.py --flavours-required; no efficiency at 0 or
+        //   1): every flavour the payload gives an SF for must be among them (2024: b)
+        if (btagCorr_fixedWP_) {
+            const auto fpos = desc.find("flavours_required=");
+            const std::string fr = (fpos == std::string::npos) ? std::string()
+                                 : desc.substr(fpos + 18, desc.find(';', fpos) == std::string::npos
+                                                              ? std::string::npos : desc.find(';', fpos) - fpos - 18);
+            const std::vector<std::string> need = btagFixedWPbOnly_ ? std::vector<std::string>{"b"}
+                                                                    : std::vector<std::string>{"b", "c", "l"};
+            for (const auto& n : need)
+                if (fr.find(n) == std::string::npos)
+                    throw std::runtime_error("the maps were not checked for flavour '" + n + "' (description "
+                                             "flavours_required='" + fr + "'; tools/stage7/btag_eff_maps.py "
+                                             "--flavours-required)");
+        }
+        // every flavour and WP of this job's group and of 'all' must evaluate, inside the maps and outside (clamp),
+        //   to an efficiency in [0, 1]; and the groups correction must answer for this job's group (a JSON that loads
+        //   but misses a key would otherwise stop the job in the event loop)
+        const std::string grp = tthh::btagEffGroup(sampleName_);
+        btagEffGroups_->evaluate({grp});
+        static const double pts[][2] = {{0.1, 25.0}, {1.3, 80.0}, {2.4, 700.0}, {3.0, 5000.0}};   // (|eta|, pT)
+        for (const std::string& g : {grp, std::string("all")})
+            for (int f : {5, 4, 0})
+                for (const char* wp : {"L", "M", "T"})
+                    for (const auto& q : pts) {
+                        const double e = evalBTagEff_(g, f, q[0], q[1], wp);
+                        if (!(e >= 0.0 && e <= 1.0))
+                            throw std::runtime_error("btag_eff(" + g + ", " + std::to_string(f) + ", " + wp + ", |eta| " +
+                                                     std::to_string(q[0]) + ", pt " + std::to_string(q[1]) + ") = " +
+                                                     std::to_string(e) + ", not in [0, 1]");
+                    }
+        std::cout << "[CorrectionsManager] b-tag efficiency JSON (fixed WP): " << btagEffPath_
+                  << " -> btag_eff, btag_eff_groups (WPs L=" << wl << " M=" << wm << " T=" << wt << ")" << std::endl;
+    } catch (const std::exception& ex) {
+        btagEff_.reset();
+        btagEffGroups_.reset();
+        if (requireDerived_) {
+            std::cerr << "\n[FATAL][E" << tthh::BTAGEFF_LOAD_FAIL << "][CorrectionsManager] b-tag efficiency JSON "
+                      << btagEffPath_ << ": " << ex.what() << "\n"
+                      << "  -> make it with tools/stage7/btag_eff_maps.py, or set yml common.path_btag_eff_json\n"
+                      << std::endl;
+            tthh::fatalExit(tthh::BTAGEFF_LOAD_FAIL);
+        }
+        std::cerr << "[CorrectionsManager][WARN] b-tag efficiency JSON " << btagEffPath_ << ": " << ex.what()
+                  << " -- not loaded (bootstrap mode; the fixed-WP weight is not used here)\n";
+    }
+}
+
 
 //--------------------------------------------------------------------------------------------------
 //  API implementations
@@ -923,6 +1117,102 @@ double CorrectionsManager::getBTagSF_FixedWP(int hadFlav, double absEta, double 
                   << " pt=" << pt_clamped << " wp=" << wp
                   << " syst=" << syst << std::endl;
         return 1.0;
+    }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// [STEP 25 K] fixed-WP method (2024): the payload SF and our MC efficiency
+// ───────────────────────────────────────────────────────────────────────────
+// the payload's inputs in the order it declares them (load checks the names)
+double CorrectionsManager::evalFixedWP_(const std::string& syst, const std::string& wp, int flav,
+                                        double absEta, double pt) const {
+    std::vector<correction::Variable::Type> args;
+    args.reserve(btagFixedWPInNames_.size());
+    for (const auto& n : btagFixedWPInNames_) {
+        if      (n == "systematic")    args.emplace_back(syst);
+        else if (n == "working_point") args.emplace_back(wp);
+        else if (n == "flavor")        args.emplace_back(flav);
+        else if (n == "abseta")        args.emplace_back(absEta);
+        else                           args.emplace_back(pt);           // "pt"
+    }
+    return btagCorr_fixedWP_->evaluate(args);
+}
+
+double CorrectionsManager::getBTagSF_WP(int hadFlav, double absEta, double pt, const std::string& wp,
+                                        const std::string& syst) const {
+    if (isData_ || !btagCorr_fixedWP_) return 1.0;
+    const int flav = (hadFlav == 5 || hadFlav == 4) ? hadFlav : 0;
+    if (btagFixedWPbOnly_ && flav != 5) return 1.0;                    // no c / light SF in the payload yet
+    // the 2024 kinfit binning (PLAN 9.2): |eta| < 2.5 in one bin, pT 20-600 GeV in 8 bins -> clamp into it
+    const double ae = std::clamp(std::abs(absEta), 0.0, 2.4999);
+    const double p  = std::clamp(pt, 20.0, 599.9);
+    try {
+        const double c = evalFixedWP_("central", wp, flav, ae, p);
+        if (syst == "central") return c;
+        if (syst != "up" && syst != "down")
+            throw std::runtime_error("syst must be central, up or down (got '" + syst + "')");
+        const bool up = (syst == "up");
+        switch (btagFixedWPVar_) {
+            case WPVar::UpDown:
+                return evalFixedWP_(up ? "up" : "down", wp, flav, ae, p);
+            case WPVar::Sources: {
+                double s2 = 0.0;
+                for (const auto& k : btagFixedWPSrcKeys_) {
+                    const double v = evalFixedWP_(up ? k.first : k.second, wp, flav, ae, p);
+                    s2 += (v - c) * (v - c);
+                }
+                return up ? c + std::sqrt(s2) : c - std::sqrt(s2);
+            }
+            default:
+                return c;
+        }
+    } catch (const std::exception& e) {
+        // never a silent 1: the central SF of a b jet is the correction itself
+        std::cerr << "\n[FATAL][E" << tthh::CENTRAL_CORR_LOAD_FAIL << "][getBTagSF_WP] " << e.what()
+                  << " (flav=" << flav << " |eta|=" << ae << " pt=" << p << " wp=" << wp << " syst=" << syst << ")\n"
+                  << std::endl;
+        tthh::fatalExit(tthh::CENTRAL_CORR_LOAD_FAIL);
+    }
+}
+
+// the efficiency of one jet (throws on an evaluation error; getBTagEff turns that into E52)
+double CorrectionsManager::evalBTagEff_(const std::string& group, int hadFlav, double absEta, double pt,
+                                        const std::string& wp) const {
+    const int flav = (hadFlav == 5 || hadFlav == 4) ? hadFlav : 0;
+    std::vector<correction::Variable::Type> args;
+    args.reserve(btagEffInNames_.size());
+    for (const auto& n : btagEffInNames_) {
+        if      (n == "group")         args.emplace_back(group);
+        else if (n == "flavor")        args.emplace_back(flav);
+        else if (n == "working_point") args.emplace_back(wp);
+        else if (n == "abseta")        args.emplace_back(std::abs(absEta));
+        else                           args.emplace_back(pt);           // "pt" (the maps clamp)
+    }
+    return btagEff_->evaluate(args);
+}
+
+double CorrectionsManager::getBTagEff(const std::string& group, int hadFlav, double absEta, double pt,
+                                      const std::string& wp) const {
+    if (!btagEff_) return std::numeric_limits<double>::quiet_NaN();
+    try {
+        return evalBTagEff_(group, hadFlav, absEta, pt, wp);
+    } catch (const std::exception& e) {
+        // never an abort (an uncaught exception ends the job with 134 and no code) and never a silent value
+        std::cerr << "\n[FATAL][E" << tthh::BTAGEFF_LOAD_FAIL << "][getBTagEff] " << btagEffPath_ << ": " << e.what()
+                  << " (group=" << group << " flav=" << hadFlav << " |eta|=" << absEta << " pt=" << pt << " wp=" << wp
+                  << ")\n" << std::endl;
+        tthh::fatalExit(tthh::BTAGEFF_LOAD_FAIL);
+    }
+}
+
+bool CorrectionsManager::btagEffHasGroup(const std::string& group) const {
+    if (!btagEffGroups_) return false;
+    try {
+        return btagEffGroups_->evaluate({group}) > 0.5;
+    } catch (const std::exception& e) {
+        std::cerr << "\n[FATAL][E" << tthh::BTAGEFF_LOAD_FAIL << "][btagEffHasGroup] " << btagEffPath_ << ": "
+                  << e.what() << " (group=" << group << ")\n" << std::endl;
+        tthh::fatalExit(tthh::BTAGEFF_LOAD_FAIL);
     }
 }
 

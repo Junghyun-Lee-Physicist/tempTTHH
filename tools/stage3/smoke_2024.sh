@@ -21,6 +21,9 @@
 #    pre_sig   prescan  TTHHto4b (the mc_sig file)            the prescan path
 #    mc_multi  main     QCD_HT200to400, job 0 of the main yml's chunks     several files in one MC job
 #    pre_multi prescan  QCD_HT200to400, job 0 of the prescan yml's chunks  the same for the prescan
+#    [STEP 25 K] mc_bt  btagtrig  TTHHto4b (the mc_sig file)   the btagtrig mode on a real 2024 file (BTagEff)
+#    [STEP 25 K] mu_bt  btagtrig  Muon0_Run2024I-MINIv6NANOv15-v1  the trigger-SF reference PD (if its filelist
+#                       exists; a file with golden LS), the whole OR
 #  Files: from <filelist-dir>/filelist_<sample>.txt, the one at the 10th
 #  percentile of the sizes (small, but not a short tail job). Data: only a file
 #  with at least half of its LS (LuminosityBlocks tree) in the 2024 golden JSON
@@ -47,11 +50,17 @@
 #  end-of-job [trigger] line -- MC the whole OR, JetMET HLT_PFHT1050, ParkingHH
 #  (dI_pk) the b-tag paths without HLT_PFHT1050 -- and the HadTrigger step = the
 #  events taken.
+#  [STEP 25 K, D-2026-10-08-A] every MC run (main, btagtrig): the BTV fixed-WP payload is loaded (the
+#  [CorrectionsManager] b-tag SF line names btagging_preliminary.json.gz -> UParTAK4_kinfit, not a WARN) and its
+#  up/down variation is found -- the line is printed as BTAGSF <run> (what the real kinfit systematic keys gave) --
+#  and the output's
+#  BTagEff/h_nevt equals its HT>500 step; Data runs have no BTagEff. The efficiency JSON is what the yml gives
+#  (null now: "NOT ready", bTagWeight 1).
 #  Prints: FILE <run> MB=<size> entries=<Events entries> pnet=<y/n> deepjet=<y/n>
 #               lumis=<LS> golden=<golden LS> <path>   (lumis/golden '-' for MC)
 #          TIMING <run> entries=<n> wall_s=<s> ev_per_s=<x> kB_per_ev=<y>
 #          CUTFLOW <run> <label>=<count> ...;  CLEANING <run> <the [cleaning] line>
-#          TRIGGER <run> <the [trigger] counts line>
+#          TRIGGER <run> <the [trigger] counts line>;  BTAGSF <run> <the payload line after '->'>
 #  Exit: 0 all checks pass; 1 a check failed; 2 bad usage or a missing input.
 # =============================================================================
 set -u
@@ -230,6 +239,13 @@ done
 SI=JetMET1_Run2024I-MINIv6NANOv15_v2-v2
 L="$(pick "$SI" --golden "$G24")" || { cat "$W/pick.err"; echo "ERROR no file with golden LS in filelist_$SI.txt"; exit 2; }
 note_file dI "$L"
+note_file mc_bt "$(pick TTHHto4b)"          # [STEP 25 K] the mc_sig file again, in the btagtrig mode
+SMU=Muon0_Run2024I-MINIv6NANOv15-v1; HAVE_MU=0
+if [[ -f "$FLD/filelist_$SMU.txt" ]] && L="$(pick "$SMU" --golden "$G24")"; then
+  note_file mu_bt "$L"; HAVE_MU=1
+else
+  echo "NOTE no filelist_$SMU.txt with a golden-LS file in $FLD: mu_bt is skipped (tools/stage3/make_filelists_v15.py --year 2024)"
+fi
 cat "$W/pick.err"
 [[ $HAVE_PNET == 1 ]] || { echo "ERROR no era-C file with the PNet 4J3T branch and golden LS in filelist_$SC.txt"; exit 2; }
 [[ $HAVE_NOPNET == 1 ]] || echo "NOTE no era-C file without the PNet 4J3T branch found: dC_nopnet and dC_mix are skipped"
@@ -316,8 +332,9 @@ common_checks() {   # dataOrMC label(analysis code|prescan)
   check "$LRUN" "the yml paths were used (jsonpog, PU JSON)" \
         "$(grep -qF "[cfgpath] jsonpog-integration = $TTHH_JSONPOG_PATH " "$LAST.log" && grep -qF "[cfgpath] 2024 PU weight JSON = $TTHH_PU_JSON " "$LAST.log" && echo 1)"
 }
-trig_check() {   # rule (OR | JetMET | ParkingHH): the end-of-job [trigger] line (D-2026-10-06-A) and the HadTrigger step
-  local rule="$1" line n ht b both nob taken want hv
+trig_check() {   # rule (OR | JetMET | ParkingHH) [btagtrig]: the end-of-job [trigger] line (D-2026-10-06-A) and the
+                 #   HadTrigger step (= taken where the trigger is enforced; btagtrig records every event there: = noCut)
+  local rule="$1" bt="${2:-}" line n ht b both nob taken want hv nc
   line="$(grep -m1 '^\[trigger\] events ' "$LAST.log")"
   read -r n ht b both nob taken <<< "$(sed -nE 's/^\[trigger\] events ([0-9]+): HLT_PFHT1050 ([0-9]+), b-tag paths ([0-9]+), both ([0-9]+), b-tag without HLT_PFHT1050 ([0-9]+); taken ([0-9]+) .*/\1 \2 \3 \4 \5 \6/p' <<< "$line")"
   case "$rule" in
@@ -326,10 +343,44 @@ trig_check() {   # rule (OR | JetMET | ParkingHH): the end-of-job [trigger] line
     *)         want=$(( ${ht:-0} + ${b:-0} - ${both:-0} )) ;;   # MC (and Muon0/1): the whole OR
   esac
   hv="$(cutval HadTrigger)"
-  check "$LRUN" "trigger rule $rule (D-2026-10-06-A): taken = ${want:-?} = the HadTrigger step" \
-        "$([[ -n "${taken:-}" && -n "${want:-}" ]] && awk -v t="$taken" -v w="$want" -v h="${hv:-x}" 'BEGIN{exit !(t == w && h != "x" && h + 0 == t)}' && echo 1)" \
-        "(${line:-no [trigger] line}; HadTrigger '${hv:-none}')"
+  if [[ "$bt" == btagtrig ]]; then
+    nc="$(cutval noCut)"
+    check "$LRUN" "trigger rule $rule (D-2026-10-06-A): taken = ${want:-?}; btagtrig records every event at HadTrigger (= noCut)" \
+          "$([[ -n "${taken:-}" && -n "${want:-}" ]] && awk -v t="$taken" -v w="$want" -v h="${hv:-x}" -v c="${nc:-y}" 'BEGIN{exit !(t == w && h != "x" && c != "y" && h + 0 == c + 0)}' && echo 1)" \
+          "(${line:-no [trigger] line}; HadTrigger '${hv:-none}', noCut '${nc:-none}')"
+  else
+    check "$LRUN" "trigger rule $rule (D-2026-10-06-A): taken = ${want:-?} = the HadTrigger step" \
+          "$([[ -n "${taken:-}" && -n "${want:-}" ]] && awk -v t="$taken" -v w="$want" -v h="${hv:-x}" 'BEGIN{exit !(t == w && h != "x" && h + 0 == t)}' && echo 1)" \
+          "(${line:-no [trigger] line}; HadTrigger '${hv:-none}')"
+  fi
   echo "TRIGGER $LRUN ${line#\[trigger\] }"
+}
+btag_checks() {   # dataOrMC: [STEP 25 K] the fixed-WP payload (MC) and BTagEff (MC: h_nevt = the HT>500 step; Data: none)
+  local dom="$1" bl hv
+  if [[ "$dom" == MC ]]; then
+    bl="$(grep -m1 'b-tag SF (2024_Summer24' "$LAST.log")"
+    check "$LRUN" "the BTV fixed-WP payload is loaded (btagging_preliminary.json.gz -> UParTAK4_kinfit; D-2026-10-08-A)" \
+          "$(grep -q 'b-tag SF (2024_Summer24): fixed WP (method 1a with L and M), .*/POG/BTV/2024_Summer24/btagging_preliminary.json.gz -> UParTAK4_kinfit' <<< "$bl" && echo 1)" \
+          "(${bl:-no b-tag SF line})"
+    check "$LRUN" "the payload's up/down variation is found (its total, correlated + uncorrelated, or the kinfit sources)" \
+          "$([[ -n "$bl" ]] && ! grep -q 'up/down: none found' <<< "$bl" && echo 1)" \
+          "(the keys of UParTAK4_kinfit are not the ones the code knows: paste the BTAGSF line and the jsonpog KEYS line)"
+    echo "BTAGSF $LRUN ${bl#*-> }"
+  fi
+  hv="$(cutval "HT>500")"
+  check "$LRUN" "BTagEff: $([[ "$dom" == MC ]] && echo "h_nevt = the HT>500 step (${hv:-?})" || echo "none in Data")" "$(
+    python3 - "$LAST.root" "$dom" "${hv:-x}" <<'PY'
+import sys, ROOT
+ROOT.gErrorIgnoreLevel = ROOT.kError
+f = ROOT.TFile.Open(sys.argv[1])
+h = f.Get("BTagEff/h_nevt") if f and not f.IsZombie() else None
+if sys.argv[2] == "MC":
+    ok = bool(h) and sys.argv[3] != "x" and h.GetBinContent(1) == float(sys.argv[3])
+else:
+    ok = bool(f) and not f.IsZombie() and not f.Get("BTagEff")
+print(1 if ok else "")
+PY
+)"
 }
 main_checks() {   # dataOrMC [trigger rule: default MC -> OR, Data -> JetMET]
   local dom="$1" jec=MC; [[ "$dom" == Data ]] && jec=DATA
@@ -342,6 +393,7 @@ main_checks() {   # dataOrMC [trigger rule: default MC -> OR, Data -> JetMET]
     grep -q 'PU weights (2024): .* -> Collisions24_goldenJSON' "$LAST.log" &&
     grep -q -- "-> JEC Summer24Prompt24_V1_${jec}_L1L2L3Res_AK4PFPuppi, JER Summer23BPixPrompt23_RunD_JRV1_MC_PtResolution_AK4PFPuppi + Summer23BPixPrompt23_RunD_JRV1_MC_ScaleFactor_AK4PFPuppi" "$LAST.log" &&
     grep -q '^\[objectJet\] UParTAK4 (Jet_btagUParTAK4B) WP for 2024 : L=0.0246 M=0.1272 T=0.4648' "$LAST.log" && echo 1)"
+  btag_checks "$dom"
   local steps=(HadTrigger "njets>=6" "HT>500"); [[ "$dom" == MC ]] && steps+=("nbjets>=2")
   local s v
   for s in "${steps[@]}"; do
@@ -399,6 +451,20 @@ runa dI_pk main Data "ParkingHH_Run2024I-MINIv6NANOv15-v1" I "${FPATH[dI]}"
 common_checks Data "analysis code"
 trig_check ParkingHH
 check dI_pk "the [trigger] rule line names ParkingHH" "$(grep -q '^\[trigger\] 2024 Data ParkingHH takes: ' "$LAST.log" && echo 1)"
+
+# ---- [STEP 25 K] the btagtrig mode on real 2024 files (the 2024 trigger-SF skim and the b-tag efficiencies) ----
+runa mc_bt btagtrig MC TTHHto4b "" "${FPATH[mc_bt]}"
+common_checks MC "analysis code"
+trig_check OR btagtrig
+btag_checks MC
+check mc_bt "output complete (end marker cutflow_w_full)" "$(complete main && echo 1)"
+if [[ $HAVE_MU == 1 ]]; then
+  runa mu_bt btagtrig Data "$SMU" I "${FPATH[mu_bt]}"
+  common_checks Data "analysis code"
+  trig_check OR btagtrig
+  btag_checks Data
+  check mu_bt "output complete (end marker cutflow_w_full)" "$(complete main && echo 1)"
+fi
 
 # ---- the end ------------------------------------------------------------------------------------------
 if [[ ${#FAILED_RUNS[@]} -gt 0 ]]; then

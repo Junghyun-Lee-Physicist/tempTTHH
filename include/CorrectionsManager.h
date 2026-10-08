@@ -24,6 +24,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <utility>   // [STEP 25 K] std::pair
 #include <memory>
 #include <nlohmann/json.hpp>
 
@@ -145,6 +146,37 @@ public:
     // Shape Correction 방식 (continuous discriminant)
     double getBTagSF_Shape(int hadFlav, double eta, double pt, double discr,
                            const std::string& syst = "central") const;
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // [STEP 25 K] fixed-WP 방법 (EraConfig::BTagMethod::FixedWP, 2024; docs/DECISIONS.md D-2026-10-08-A)
+    //   getBTagSF_WP : the year's fixed-WP payload (EraConfig::btagFixedWPPayload; 2024: UParTAK4_kinfit)
+    //                  for one jet at one WP ("L"/"M"/"T"); syst "central", "up", "down". 1 for c and light
+    //                  jets while the payload has b jets only. The inputs are matched by the names the payload
+    //                  declares (systematic, working_point, flavor, abseta, pt); abseta < 2.5, pt in [20, 600).
+    //                  up/down: the payload's own "up"/"down" when it has them, else its correlated + uncorrelated
+    //                  parts, else its kinfit uncertainty sources (up_<src>/down_<src> or <src>_up/<src>_down), added
+    //                  in quadrature, else central (the load line says which). A payload that does not load is a
+    //                  WARN (btagFixedWPError); --btagsf on then stops with E40 (the analyzer's setSFflags).
+    //   getBTagEff   : our MC efficiency of one jet at one WP for a process group (BTagEffGroup.h), from the
+    //                  JSON of tools/stage7/btag_eff_maps.py (env TTHH_BTAGEFF_JSON; correction "btag_eff",
+    //                  inputs group, flavor, working_point, abseta, pt).
+    // ═══════════════════════════════════════════════════════════════════════
+    bool   hasBTagFixedWP() const { return static_cast<bool>(btagCorr_fixedWP_); }
+    // why the fixed-WP payload is not loaded ("" when it is, or for a year without the method)
+    const std::string& btagFixedWPError() const { return btagFixedWPError_; }
+    // the payload gave an up/down variation (else bTagWeight_up/_down = central; the load said so with a WARN)
+    bool   btagFixedWPHasVariation() const { return btagFixedWPVar_ != WPVar::None; }
+    bool   hasBTagEff() const { return static_cast<bool>(btagEff_); }
+    // the payload has an SF for this hadron flavour (2024: b jets only)
+    bool   btagFixedWPCovers(int hadFlav) const { return btagCorr_fixedWP_ && (!btagFixedWPbOnly_ || hadFlav == 5); }
+    const std::string& btagEffPath() const { return btagEffPath_; }
+    double getBTagSF_WP(int hadFlav, double absEta, double pt, const std::string& wp,
+                        const std::string& syst = "central") const;
+    // (an evaluation error stops the job with E52: never an uncaught exception, never a silent value)
+    double getBTagEff(const std::string& group, int hadFlav, double absEta, double pt,
+                      const std::string& wp) const;
+    // true when the efficiency JSON has this group (else getBTagEff uses its default, "all")
+    bool   btagEffHasGroup(const std::string& group) const;
 
     // Event-level b-tag weight 계산 결과 구조체 (모든 jet에 대한 곱)
     struct BTagWeightResult {
@@ -280,6 +312,24 @@ private:
     std::shared_ptr<const correction::Correction> btagCorr_shape_;    // deepJet_shape
     std::shared_ptr<const correction::Correction> btagCorr_bc_;       // deepJet_comb (b/c jets)
     std::shared_ptr<const correction::Correction> btagCorr_light_;    // deepJet_incl (light jets)
+
+    // [STEP 25 K] fixed-WP method (2024): the payload SF and our MC efficiencies
+    std::shared_ptr<const correction::Correction> btagCorr_fixedWP_;  // EraConfig::btagFixedWPPayload
+    bool btagFixedWPbOnly_ = true;
+    enum class WPVar { None, UpDown, Sources };
+    WPVar btagFixedWPVar_ = WPVar::None;
+    std::vector<std::pair<std::string, std::string>> btagFixedWPSrcKeys_;   // WPVar::Sources: (up key, down key)
+    std::vector<std::string> btagFixedWPInNames_;                      // the payload's input names, in order
+    std::string btagFixedWPError_;                                     // load failure (WARN; --btagsf on -> E40)
+    std::string btagEffPath_;                                          // "" = not given (yml null)
+    std::unique_ptr<correction::CorrectionSet>    btagEffCSet_;
+    std::shared_ptr<const correction::Correction> btagEff_;
+    std::vector<std::string> btagEffInNames_;
+    std::shared_ptr<const correction::Correction> btagEffGroups_;      // "btag_eff_groups": 1 for a group it has
+    double evalFixedWP_(const std::string& syst, const std::string& wp, int flav, double absEta, double pt) const;
+    double evalBTagEff_(const std::string& group, int hadFlav, double absEta, double pt,
+                        const std::string& wp) const;                  // throws (getBTagEff: E52)
+    void loadBTagEff_();                                               // derived: E52 (main/debug) or WARN
 
     // B-tag normalization reweight (user-derived correctionlib JSON)
     std::unique_ptr<correction::CorrectionSet>    btagReweightCSet_;

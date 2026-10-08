@@ -2,7 +2,7 @@
 
 > **Purpose:** record each significant decision — the choice, why, what else was considered, and whether it still holds — so no one silently reopens a settled question or treats a proposal as settled.
 > **Audience:** anyone about to change behavior or unsure whether something is fixed.
-> **Status:** living, append-and-supersede · last meaningful update **2026-10-07** (D-2026-10-07-B: 2024 lepton CRs now, lep samples after the storage check, next work; D-2026-10-07-A: the whole 2024 main again with ParkingHH, the first look kept as `_firstlook`) · 2026-10-06 (D-2026-10-06-A: 2024 b-tag paths in ParkingHH, the PD rule, tree control plots) · 2026-10-05 (D-2026-10-05-A: 2024 first-look scope, D14 109.816, D15 PU inputs; D-2026-10-02-E DECIDED; D-2026-10-05-B 2024 MC 4J3T bit PROPOSED; D-2026-10-05-C 2024 without tt+nb lookup; D-2026-10-05-D 2017 v20 removed from KNU) · 2026-10-04 (D-2026-10-04-A: run records are committed) · 2026-10-02 (D-2026-10-02-A…E: v15 analyzer order, eventBuffer policy, event cleaning, answers N0–N8, blinding).
+> **Status:** living, append-and-supersede · last meaningful update **2026-10-08** (D-2026-10-08-A: 2024 b-tag SF by the fixed-WP method now, the shape method when BTV's is confirmed; the 2024/2018 control-plot program) · 2026-10-07 (D-2026-10-07-B: 2024 lepton CRs now, lep samples after the storage check, next work; D-2026-10-07-A: the whole 2024 main again with ParkingHH, the first look kept as `_firstlook`) · 2026-10-06 (D-2026-10-06-A: 2024 b-tag paths in ParkingHH, the PD rule, tree control plots) · 2026-10-05 (D-2026-10-05-A: 2024 first-look scope, D14 109.816, D15 PU inputs; D-2026-10-02-E DECIDED; D-2026-10-05-B 2024 MC 4J3T bit PROPOSED; D-2026-10-05-C 2024 without tt+nb lookup; D-2026-10-05-D 2017 v20 removed from KNU) · 2026-10-04 (D-2026-10-04-A: run records are committed) · 2026-10-02 (D-2026-10-02-A…E: v15 analyzer order, eventBuffer policy, event cleaning, answers N0–N8, blinding).
 > **Links:** index [`README.md`](README.md) · current state [`STATUS.md`](STATUS.md) · per-change detail [`changes/`](changes/).
 
 ## How to use this log
@@ -217,6 +217,48 @@ flavour and MET > 20 GeV; trigger and Data PDs as FH — now, with the FH rerun 
 b-tag method (Stage 7, D10), the 2018 v15 analyzer path (year comparison).
 **Why.** The CRs need no new code and answer the question for Run 3 directly; the storage numbers decide whether the lep samples fit now.
 **Open.** D13 (lep production) after the storage numbers; D10 after the BTV payload re-check.
+
+## D-2026-10-08-A — 2024 b-tag SF: the fixed-WP method now (BTV method 1a with our L and M, our MC efficiencies, b jets only), the shape method once BTV's is confirmed; then the 2024 and 2018 control plots with trigger and b-tag SF against 2017 v9 · **DECIDED** (user, 2026-10-08)
+
+**Fact (payload).** The jsonpog `POG/BTV/2024_Summer24` directory is unchanged since 2025-09-24 (KNU inventory 2026-10-08, PLAN §9.2): the
+UParTAK4 WP values (`btagging.json.gz`), and one SF, `UParTAK4_kinfit` in `btagging_preliminary.json.gz` — fixed WP, **b jets only**
+(flavour 5), |η| < 2.5 in one bin, pT 20–600 GeV in 8 bins, its uncertainty split into fsrdef, hdamp, isrdef, jer, jes, mass, statistic,
+tune. No shape SF, no c or light SF. The Run 2 method (deepJet shape SF + b-tag norm reweight, AN-2022/122) cannot be carried over (PLAN
+§9.6 D10). The control plots so far had neither trigger nor b-tag SF (D-2026-10-05-A, the `_notrig` outputs).
+**Decision (user, 2026-10-08: "일단 작업 자체는 fixed WP로 진행하다가 shape correction 방법이 확인되면 그것으로 전환한다. 이 사항은 기록을 분명히
+해 두어라").** (1) 2024 takes BTV's fixed-WP event weight, "method 1a", with the two WPs our selection uses — a b jet is score ≥ M
+(`selectbJet`), a light jet for the hadronic W is score < L — so a selected jet is in one of three bins and its weight is P_Data / P_MC of
+its bin: score ≥ M: SF_M; L ≤ score < M: (SF_L e_L − SF_M e_M) / (e_L − e_M); score < L: (1 − SF_L e_L) / (1 − e_L); the event weight is
+the product (`computeBTagWeightFixedWP_`). SF from `UParTAK4_kinfit`; **c and light jets get SF 1** (weight exactly 1) until BTV gives
+theirs; up/down = the payload's b-jet variation (its total, else its parts in quadrature). (2) e = **our MC efficiency** per process
+group (tt, qcd, other, and all), hadron flavour, WP, pT (13 bins) and |η| (4 bins), measured at the HT step (every cut but the b-tag ones)
+of the 2024 btagtrig MC (no trigger and no lepton requirement), the 4FS TTbb/TT4b left out as in the stack; a bin with fewer than 50
+effective jets, or a b-jet bin where one of the three tag bins has fewer than 10 (an efficiency at or near 0 or 1 gives the jets on the
+other side of a WP a weight up to 10⁴ in a sample weighted with these maps — the 10-08 review), or with sums made unphysical by negative
+weights, takes its pT bin over |η|, then the 'all' maps
+(`tools/stage7/btag_eff_maps.py`; JSON → yml `path_btag_eff_json` → env `TTHH_BTAGEFF_JSON`). (3) **No b-tag norm reweight in 2024**:
+method 1a keeps the pre-tag normalization when the efficiencies fit; every MC job prints the check (Σ w·bTagWeight / Σ w at the HT step,
+about 1). (4) **The switch**: when the 2024 shape method is confirmed (the user is reading the BTV documentation; a shape payload in
+jsonpog), `EraConfig::btagMethod("2024")` becomes `Shape`, the shape SF and the norm reweight are derived for 2024 as for Run 2, and
+this entry is superseded. (5) **The program it serves**: 2024 and 2018 control plots in FH, μCR and eCR with the trigger SF (and its
+validation plots: efficiency curves Data vs MC, SF maps, closure) and the b-tag SF, compared with the 2017 v9 results; the control-plot
+ratio is the first thing to look at.
+**The user's expectation, and where it holds (AI, 2026-10-08).** "The Data/MC ratio will not change much because the SF is fixed-WP
+rather than shape." Right for the yields per b-tag multiplicity and for the kinematic distributions: either method corrects the tag
+rates at the WPs that define our categories (M for nb, L for the W jets), and method 1a needs no norm reweight. Not right, or not yet,
+for (a) the b-tag score distributions (btag_1…4, every jet's score): the fixed-WP weight corrects only the three bins, inside a bin the MC
+shape stays, while a shape SF corrects the whole distribution; (b) the mistag part: with nb ≥ 2 in the multijet-rich FH selection many
+tagged jets are c or light (the 2024 HT1050 control region: Data/MC 1.46 sitting at intermediate scores, 10-07), and 2024 has no c/light
+SF — neither method can correct that until BTV gives one; (c) the comparison with 2017 v9, which used the shape SF + norm reweight:
+compare b-tag categories and kinematics, not score shapes; (d) the jet-multiplicity slope is not a b-tag effect.
+**Alternatives considered.** Wait for a shape SF — rejected (user): the trigger SF and the control plots go first. Method 1a with M
+only — rejected: the W jets are defined by L, so L–M jets are a category of their own. BTV's efficiencies — none for our phase space; ours
+from MC is the method's recipe. Keep a norm reweight for 2024 — not needed for method 1a (the closure line watches it). One map per
+sample — too few events in most samples; groups by process are the usual compromise, the 'all' maps the fallback.
+**Supersede when.** BTV's 2024 shape method is confirmed (→ shape SF + norm reweight, point 4), or BTV adds c/light fixed-WP SFs (→ the
+same weight takes them: `EraConfig::btagFixedWPPayload` loses `bJetsOnly`), or the closure in the SR/CR main runs is off by more than
+1–2 % (→ maps from the main-run MC, whose BTagEff histograms are filled after the trigger and the lepton requirement).
+**Record.** tempTTHH [`changes/STEP_25_btag_fixedWP_2024.md`](changes/STEP_25_btag_fixedWP_2024.md) (commit K: code, tests, commands).
 
 ## D-(historical) — carried invariants · **DECIDED**
 

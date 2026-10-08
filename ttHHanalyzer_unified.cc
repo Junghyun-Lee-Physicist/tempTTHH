@@ -48,7 +48,13 @@ void ttHHanalyzer_unified::computeBTagWeight(event* thisEvent) {
     
     // Data는 SF 적용하지 않음
     if (_DataOrMC == "Data") return;
-    // [STEP 24] no b-tag shape SF for this year (2024, PLAN 9.6 D10): every weight stays 1
+    // [STEP 25 K] 2024: the fixed-WP method (method 1a with L and M; D-2026-10-08-A) when the payload SF and our
+    //   efficiency JSON are loaded; without the JSON the weights stay 1 (--btagsf on then stops, E52)
+    if (_btagFixedWP) {
+        if (_btagFixedWPReady) computeBTagWeightFixedWP_(thisEvent);
+        return;
+    }
+    // [STEP 24] no b-tag shape SF for this year: every weight stays 1
     if (!_hasBTagShapeSF) return;
     
     // 선택된 모든 jet에 대해 SF 계산
@@ -119,6 +125,119 @@ void ttHHanalyzer_unified::computeBTagWeight(event* thisEvent) {
                   << " up_lf=" << bTagWeight_up_lf_
                   << " down_lf=" << bTagWeight_down_lf_
                   << std::endl;
+    }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// [STEP 25 K] B-tag event weight, fixed-WP method (2024; docs/DECISIONS.md D-2026-10-08-A)
+//   BTV "method 1a" with the two WPs the selection uses: a selected jet is a b jet when its score >= M
+//   (selectbJet) and a light jet when its score < L (selectLightJet, the hadronic W), so each jet is in one of
+//   three bins and its weight is P_Data(bin) / P_MC(bin):
+//     score >= M      : SF_M e_M / e_M                              = SF_M
+//     L <= score < M  : (SF_L e_L - SF_M e_M) / (e_L - e_M)
+//     score < L       : (1 - SF_L e_L) / (1 - e_L)
+//   e_L, e_M: our MC efficiency for the jet's flavour, pT, |eta| and process group (getBTagEff); SF: the payload
+//   (getBTagSF_WP; 2024 b jets only -> 1 for c and light jets, whose weight is then exactly 1). The event weight
+//   is the product over the selected jets; it keeps the pre-tag normalization on average (the closure line at
+//   the end of the job). up/down: the payload's b-jet SF variation (in the hf slots; lf/cferr stay central).
+// ───────────────────────────────────────────────────────────────────────────
+void ttHHanalyzer_unified::computeBTagWeightFixedWP_(event* thisEvent) {
+    const float wpL = objectJet::valbTagLoose, wpM = objectJet::valbTagMedium;
+    auto clampEff = [](double e) { return std::min(std::max(e, 1.0e-4), 1.0 - 1.0e-4); };
+    double w[3] = {1.0, 1.0, 1.0};                                    // central, up, down
+    static const char* syst[3] = {"central", "up", "down"};
+    for (const auto* jet : *thisEvent->getSelJets()) {
+        const int f = jet->hadFlav;
+        const double pt = jet->getp4()->Pt();
+        const double ae = std::abs(jet->getp4()->Eta());
+        const double s  = jet->bTagCSV;
+        if (!corrMgr->btagFixedWPCovers(f)) continue;   // no SF for this flavour (2024: c, light): weight exactly 1
+        const double sL0 = corrMgr->getBTagSF_WP(f, ae, pt, "L", "central");
+        const double sM0 = corrMgr->getBTagSF_WP(f, ae, pt, "M", "central");
+        const double eL = clampEff(corrMgr->getBTagEff(_btagEffGroup, f, ae, pt, "L"));
+        const double eM = std::min(clampEff(corrMgr->getBTagEff(_btagEffGroup, f, ae, pt, "M")), eL);
+        for (int v = 0; v < 3; ++v) {
+            const double sL = v == 0 ? sL0 : corrMgr->getBTagSF_WP(f, ae, pt, "L", syst[v]);
+            const double sM = v == 0 ? sM0 : corrMgr->getBTagSF_WP(f, ae, pt, "M", syst[v]);
+            double wj;
+            if (s >= wpM) {
+                wj = sM;
+            } else if (s >= wpL) {
+                const double pmc = eL - eM;
+                wj = (pmc > 1.0e-6) ? std::max(0.0, sL * eL - sM * eM) / pmc : 1.0;
+            } else {
+                const double pmc = 1.0 - eL;
+                wj = (pmc > 1.0e-6) ? std::max(0.0, 1.0 - sL * eL) / pmc : 1.0;
+            }
+            w[v] *= wj;
+            // the end-of-job [btagSF] line counts the jet weights that point at maps that do not fit (> 10) and the
+            //   P_Data < 0 cases set to 0 (SF x e > 1: likely for the up variation of a high-efficiency bin)
+            if (v == 0 && wj > 10.0) ++_btagNBig;
+            if (wj == 0.0) ++_btagNZero[v];
+        }
+        ++_btagNJet;
+    }
+    bTagWeight_central_ = static_cast<float>(w[0]);
+    bTagWeight_up_hf_   = static_cast<float>(w[1]);
+    bTagWeight_down_hf_ = static_cast<float>(w[2]);
+    bTagWeight_up_lf_ = bTagWeight_down_lf_ = bTagWeight_central_;
+    bTagWeight_up_cferr1_ = bTagWeight_down_cferr1_ = bTagWeight_central_;
+    bTagWeight_up_cferr2_ = bTagWeight_down_cferr2_ = bTagWeight_central_;
+    if (debugCorrections)
+        std::cout << "[BTagWeight][fixed WP] central=" << w[0] << " up=" << w[1] << " down=" << w[2] << std::endl;
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// [STEP 25 K] b-tag efficiency histograms (MC of a fixed-WP year, not prescan; tools/stage7/btag_eff_maps.py
+//   makes the maps from them)
+//   BTagEff/h2_<b|c|l>_<all|L|M|T>: selected jets in pT x |eta|, all of them and those with score >= the WP,
+//   filled at the HT step (every cut but the b-tag ones; main: after the hadronic trigger and the lepton veto or
+//   the CR lepton, btagtrig: neither of the two) with the event weight before the SFs (base x PU x genW x
+//   stitch). TH2D, Sumw2. BTagEff/h_nevt: the number of events filled.
+// ───────────────────────────────────────────────────────────────────────────
+void ttHHanalyzer_unified::bookBTagEff_() {
+    if (!_btagFixedWP || _DataOrMC == "Data" || _analysisMode == AnalysisMode::kPrescan) return;
+    TDirectory* keep = gDirectory;
+    _of->file->cd();
+    _btagEffDir = _of->file->mkdir("BTagEff");
+    _btagEffDir->cd();
+    static const double ptEdges[] = {20, 30, 40, 50, 60, 80, 100, 130, 170, 220, 300, 400, 600, 1000};
+    static const double etaEdges[] = {0.0, 0.6, 1.2, 1.8, 2.5};
+    const int nPt = sizeof(ptEdges) / sizeof(ptEdges[0]) - 1, nEta = sizeof(etaEdges) / sizeof(etaEdges[0]) - 1;
+    static const char* fl[3] = {"b", "c", "l"};
+    static const char* wp[4] = {"all", "L", "M", "T"};
+    for (int i = 0; i < 3; ++i)
+        for (int j = 0; j < 4; ++j) {
+            const TString name = TString::Format("h2_%s_%s", fl[i], wp[j]);
+            const TString title = TString::Format("%s jets, %s;p_{T} [GeV];|#eta|", fl[i],
+                                                  j == 0 ? "all" : TString::Format("score >= %s", wp[j]).Data());
+            _hBTagEff[i][j] = new TH2D(name, title, nPt, ptEdges, nEta, etaEdges);
+            _hBTagEff[i][j]->Sumw2();
+        }
+    // the events filled (unweighted): tools/stage7/btag_eff_maps.py compares it with the HT>500 bin of Tree/cutflow
+    //   of the same merged file -- equal when every job of the sample filled these histograms (an output of an older
+    //   executable has none)
+    _hBTagEffNevt = new TH1D("h_nevt", "events filled (the HT step);;events", 1, 0.0, 1.0);
+    // the WPs of the year x the jobs (bin 4 = 1 per job): hadd adds them, so the merged file has WP = bin / bin 4;
+    //   tools/stage7/btag_eff_maps.py puts them into the maps' description and the analyzer checks them at load
+    _hBTagEffWP = new TH1D("h_wp", "b-tag WPs (L, M, T) x jobs; ; ", 4, 0.0, 4.0);
+    _hBTagEffWP->SetBinContent(1, objectJet::valbTagLoose);
+    _hBTagEffWP->SetBinContent(2, objectJet::valbTagMedium);
+    _hBTagEffWP->SetBinContent(3, objectJet::valbTagTight);
+    _hBTagEffWP->SetBinContent(4, 1.0);
+    if (keep) keep->cd();
+}
+
+void ttHHanalyzer_unified::fillBTagEff_(event* thisEvent) {
+    if (!_btagEffDir) return;
+    _hBTagEffNevt->Fill(0.5);
+    const float wp[3] = {objectJet::valbTagLoose, objectJet::valbTagMedium, objectJet::valbTagTight};
+    for (const auto* jet : *thisEvent->getSelJets()) {
+        const int i = (jet->hadFlav == 5) ? 0 : (jet->hadFlav == 4) ? 1 : 2;
+        const double pt = jet->getp4()->Pt(), ae = std::abs(jet->getp4()->Eta()), s = jet->bTagCSV;
+        _hBTagEff[i][0]->Fill(pt, ae, _evtWeight);
+        for (int j = 0; j < 3; ++j)
+            if (s >= wp[j]) _hBTagEff[i][j + 1]->Fill(pt, ae, _evtWeight);
     }
 }
 
@@ -286,6 +405,17 @@ void ttHHanalyzer_unified::loop(sysName sysType, bool up){
     std::cout << "[trigger] events " << _nTrigAll << ": HLT_PFHT1050 " << _nTrigHT << ", b-tag paths " << _nTrigBtag
               << ", both " << _nTrigBoth << ", b-tag without HLT_PFHT1050 " << (_nTrigBtag - _nTrigBoth)
               << "; taken " << _nTrigTaken << " (" << _DataOrMC << " " << _sampleName << ")" << std::endl;
+    // [STEP 25 K] the fixed-WP b-tag weight keeps the pre-tag normalization: over the events at the HT step (before
+    //   any b-tag cut) sum(w x bTagWeight) / sum(w) is about 1 when the efficiency maps fit this sample
+    if (_btagFixedWPReady) {
+        std::cout << "[btagSF] closure at the HT step (no b-tag cut yet): events " << _btagClosureN
+                  << ", sum(w x bTagWeight) / sum(w) = "
+                  << (_btagClosureW != 0.0 ? _btagClosureWB / _btagClosureW : 0.0)
+                  << " (efficiency group '" << _btagEffGroup << "'; about 1 expected)" << std::endl;
+        std::cout << "[btagSF] jets weighted (b, all events): " << _btagNJet << "; jet weight > 10: " << _btagNBig
+                  << "; set to 0 (P_Data < 0): central " << _btagNZero[0] << ", up " << _btagNZero[1] << ", down "
+                  << _btagNZero[2] << std::endl;
+    }
     std::cout << "=== CutFlow Summary ===" << std::endl;
     for (size_t i = 0; i < _cutStepLabels.size(); ++i) {
         std::cout << _cutStepLabels[i] 
@@ -1196,6 +1326,17 @@ void ttHHanalyzer_unified::applyEventScaleFactors(event* thisEvent){
     _evtWeight_chain_full   = _evtWeight;     // will multiply all SFs below
 
     if (_DataOrMC != "Data") {
+
+        // [STEP 25 K] fixed-WP years: the efficiency histograms (every cut but the b-tag ones passed here) and the
+        //   closure of the b-tag weight (sum w x bTagWeight / sum w over these events, printed at the end: ~1)
+        if (_btagFixedWP) {
+            fillBTagEff_(thisEvent);
+            if (_btagFixedWPReady) {
+                _btagClosureW  += _evtWeight;
+                _btagClosureWB += _evtWeight * bTagWeight_central_;
+                ++_btagClosureN;
+            }
+        }
 
         // ── b-tag shape SF ─────────────────────────────────────────────
         // Both chains get it (even if legacy _evtWeight skips it in
@@ -2196,6 +2337,17 @@ void ttHHanalyzer_unified::writeHistos(){
 
     std::cout << "[ttCatSummary] ═══════════════════════════════════════════════\n"
               << std::endl;
+
+    // [STEP 25 K] b-tag efficiency histograms (MC of a fixed-WP year)
+    if (_btagEffDir) {
+        _btagEffDir->cd();
+        for (auto& row : _hBTagEff)
+            for (TH2D* h : row)
+                if (h) h->Write();
+        if (_hBTagEffNevt) _hBTagEffNevt->Write();
+        if (_hBTagEffWP) _hBTagEffWP->Write();
+        _of->file->cd();
+    }
 }
 // ═══════════════════════════════════════════════════════════════════════════
 // fillTree — selection 통과 이벤트를 flat tree(Tree/Tree)에 기록.

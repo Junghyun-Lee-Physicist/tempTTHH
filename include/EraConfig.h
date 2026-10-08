@@ -177,8 +177,31 @@ inline JetVetoMap jetVetoMap(const std::string& year) {
 }
 
 // b-tag shape SF (deepJet_shape) 가 있는가. 2024 BTV 에는 UParTAK4 의 shape SF 가
-// 없다(fixed-WP kinfit, b jet 만; PLAN §9.6 D10) → 2024 의 b-tag SF 는 1, --btagsf on 은 FATAL.
+// 없다(fixed-WP kinfit, b jet 만; PLAN §9.6 D10) → 2024 는 아래의 fixed-WP 방법 (STEP 25 K).
 inline bool hasBTagShapeSF(const std::string& year) { return !isRun3(year); }
+
+// -----------------------------------------------------------------------------
+// [STEP 25 K] b-tag SF 방법 (docs/DECISIONS.md D-2026-10-08-A: 사용자 결정 2026-10-08 — 2024 는 지금 fixed WP,
+//   BTV 의 shape 보정 방법이 확인되면 그것으로 바꾼다)
+//   Shape  : Run 2 — deepJet_shape (jet 마다 점수의 SF) + b-tag norm reweight (AN-2022/122). 그대로.
+//   FixedWP: 2024 — BTV "method 1a" event weight, 분석의 WP 둘(b jet = 점수 >= M, light jet = 점수 < L)로:
+//            jet 마다 그 구간(< L, L–M, >= M)의 확률의 Data/MC 비. P_MC 는 우리 MC 의 효율
+//            (tools/stage7/btag_eff_maps.py 가 analyzer 의 BTagEff/ 히스토그램으로 만든 JSON,
+//            yml path_btag_eff_json → env TTHH_BTAGEFF_JSON), P_Data = SF × 효율. b-tag 요구 전의 정규화를
+//            지키므로 norm reweight 는 쓰지 않는다.
+//            payload: 2024 의 b-tag SF 는 btagging_preliminary.json.gz 의 UParTAK4_kinfit 뿐 (b jet, flavour 5;
+//            KNU 의 jsonpog 2026-10-08 확인: 2025-09-24 판 그대로). c·light jet 은 BTV 가 줄 때까지 SF 1.
+// -----------------------------------------------------------------------------
+enum class BTagMethod { Shape, FixedWP };
+inline BTagMethod btagMethod(const std::string& year) {
+    return isRun3(year) ? BTagMethod::FixedWP : BTagMethod::Shape;
+}
+
+struct BTagFixedWPPayload { const char* file; const char* correction; bool bJetsOnly; };
+inline BTagFixedWPPayload btagFixedWPPayload(const std::string& year) {
+    if (year == "2024") return {"btagging_preliminary.json.gz", "UParTAK4_kinfit", true};
+    fatalYear(year, "btagFixedWPPayload");
+}
 
 // [STEP 24] tt+nb lookup (Expanded_genTtbarId, ttnb_<sample>.root; TTHHGenCategoryTools) 가 그 연도에
 //   만들어져 있는가. 2017/2018 은 있다 -> ttbar stitching 집합의 샘플은 lookup 이 없으면 FATAL (기존 그대로).

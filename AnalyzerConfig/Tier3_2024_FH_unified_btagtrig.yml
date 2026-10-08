@@ -1,0 +1,124 @@
+# [STEP 25 K] 2024 btagtrig -- the flat skim for the 2024 trigger SF (PLAN 9 Stage 6) and the MC b-tag efficiency maps
+#   of the fixed-WP method (D-2026-10-08-A)
+# ============================================================================
+# One run, two uses (as for 2017, docs/RUNBOOK_2017_SF_rederive.md §3): the btagtrig mode does not enforce the hadronic
+# trigger (its bits are stored) nor the lepton veto (the lead-muon gate only decides whether leptons are collected).
+#   - trigger SF: Muon0/1 Data and MC, HLT_IsoMu24 reference + 1 muon (TriggerStudy; 2024 config: Stage 6 part 2)
+#   - b-tag efficiencies: the MC histograms BTagEff/h2_<b|c|l>_<all|L|M|T> (filled at the HT step: every cut but
+#     the b-tag ones, before the trigger and without lepton requirement) -> tools/stage7/btag_eff_maps.py
+#   python3 submit_job_FH_Tier3_unified.py --mode btagtrig --config AnalyzerConfig/Tier3_2024_FH_unified_btagtrig.yml --trigsf off --btagsf off --btagrw off --preflight
+# Output: .../AnalyzerOutput_btagtrig_notrig_2024/ (the SF tags and the year, as for main).
+# Weights: as main (lumi x cross_section_fb x br / runs.genEventSumw; data/samples_2024.json, prescan_summary_2024/).
+# The muon reference trigger: Muon0/1 take the whole hadronic OR like MC (D-2026-10-06-A).
+# ============================================================================
+common:
+  year: "2024"
+  analysis_mode: btagtrig
+  # 2024 C-I, normtag_PHYSICS, golden JSON 2026-08-04 (PLAN 9.6 D14, docs/DECISIONS.md D-2026-10-05-A)
+  lumi_fb_inv: 109.816
+  xsec_db: "data/samples_2024.json"                          # PROVISIONAL 13.6 TeV cross sections (D-2026-10-05-A)
+  prescan: "prescan_summary_2024/prescan_summary.json"       # consolidate_prescan.py --outdir prescan_summary_2024
+  # MC: 10 files per job (one branch set per MC dataset), as main. Data: 1 -- 2024 era C files differ in their HLT
+  # branches and a job of several files stops (E11, requireSameBranchSet_). --report/--resubmit read these values,
+  # so do not give --files-per-job.
+  files_per_job: 10
+  files_per_job_data: 1
+  # [STEP18] path policy: "" / missing -> E12; null -> optional correction off (required -> E13); "<path>" -> used
+  path_jsonpog: "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration"
+  path_goldenjson: "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/GoldenJson"
+  # [STEP 24] our 2024 PU weights (jsonpog has no POG/LUM 2024; tools/stage2/pu_weights.py, D-2026-10-05-A)
+  path_pu_json: "/u/user/jhlee/ttHH/CMSSW_14_2_1/src/tempTTHH/DerivedCorr/PU/2024_Summer24/puWeights_2024.json"
+  path_trigsf_dir: null               # made FROM this run (TriggerSF; bootstrap: btagtrig needs none)
+  path_btag_reweight_json: null       # none for 2024: the fixed-WP weight keeps the normalization (D-2026-10-08-A)
+  path_stitch_json: null              # no 2024 stitch factors (D-2026-10-05-C)
+  path_expanded_ttbarid_dir: null     # no 2024 tt+nb lookup (D-2026-10-02-A, D-2026-10-05-C)
+  path_btag_eff_json: null            # made FROM this run (tools/stage7/btag_eff_maps.py)
+samples:
+  # -- signal / ttH / 4b-like --
+  - TTHHto4b
+  - ttHTobb_had
+  - ttHTobb_semilep
+  - ttHTobb_dilep
+  - ttHToNonbb
+  - TTZHTo4b
+  - TTZZTo4b
+  # -- tH (single-top + H) --
+  - tHq
+  - tHW
+  # -- tt+jets inclusive (5FS; the 2024 first look uses these alone for tt, D-2026-10-05-C) --
+  - TTbar_Hadronic
+  - TTbar_SemiLep
+  - TTbar_DiLep
+  # -- tt+bb (4FS) and tt+4b dedicated -- run, but NOT stacked with the inclusive tt until 2024 stitching exists (D-2026-10-05-C) --
+  - TTbb_Hadronic
+  - TTbb_SemiLep
+  - TTbb_DiLep
+  - TT4b
+  # -- ttV --
+  - TTZToQQ
+  - TTWJetsToQQ
+  - TTLL_MLL50
+  - TTLL_MLL4to50
+  - TTNuNu
+  # -- ttVV / ttVH / multi-top --
+  - TTWW
+  - TTWH
+  - TTWZ
+  - TTTWminus
+  - TTTWplus
+  - TTTT
+  # -- single top (non-Higgs) --
+  - ST_t_top_had
+  - ST_t_top_lep
+  - ST_t_antitop_had
+  - ST_t_antitop_lep
+  - ST_tW_top_had
+  - ST_tW_top_semilep
+  - ST_tW_top_dilep
+  - ST_tW_antitop_had
+  - ST_tW_antitop_semilep
+  - ST_tW_antitop_dilep
+  - ST_s_top_had
+  - ST_s_top_lep
+  - ST_s_antitop_had
+  - ST_s_antitop_lep
+  # -- diboson --
+  - WW
+  - WZ
+  - ZZ
+  # -- QCD multijet (HT-binned; 2024 bins) --
+  - QCD_HT200to400
+  - QCD_HT400to600
+  - QCD_HT600to800
+  - QCD_HT800to1000
+  - QCD_HT1000to1200
+  - QCD_HT1200to1500
+  - QCD_HT1500to2000
+  - QCD_HT2000toInf
+  # -- V->qq (HT-binned; 2024 bins) --
+  - WJetsToQQ_HT400to800
+  - WJetsToQQ_HT800to1500
+  - WJetsToQQ_HT1500to2500
+  - WJetsToQQ_HT2500toInf
+  - ZJetsToQQ_HT400to800
+  - ZJetsToQQ_HT800to1500
+  - ZJetsToQQ_HT1500to2500
+  - ZJetsToQQ_HT2500toInf
+  # -- Data: Muon0 / Muon1, eras C-I (era I: two datasets per PD, disjoint by run) -- the reference sample of the
+  #    trigger SF (HLT_IsoMu24); not used for the b-tag efficiencies (MC only)
+  - Muon0_Run2024C-MINIv6NANOv15-v1
+  - Muon0_Run2024D-MINIv6NANOv15-v1
+  - Muon0_Run2024E-MINIv6NANOv15-v1
+  - Muon0_Run2024F-MINIv6NANOv15-v1
+  - Muon0_Run2024G-MINIv6NANOv15-v1
+  - Muon0_Run2024H-MINIv6NANOv15-v1
+  - Muon0_Run2024I-MINIv6NANOv15-v1
+  - Muon0_Run2024I-MINIv6NANOv15_v2-v1
+  - Muon1_Run2024C-MINIv6NANOv15-v1
+  - Muon1_Run2024D-MINIv6NANOv15-v1
+  - Muon1_Run2024E-MINIv6NANOv15-v1
+  - Muon1_Run2024F-MINIv6NANOv15-v1
+  - Muon1_Run2024G-MINIv6NANOv15-v2
+  - Muon1_Run2024H-MINIv6NANOv15-v2
+  - Muon1_Run2024I-MINIv6NANOv15-v1
+  - Muon1_Run2024I-MINIv6NANOv15_v2-v1

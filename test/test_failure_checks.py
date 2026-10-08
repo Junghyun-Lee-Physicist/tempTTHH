@@ -16,6 +16,11 @@
   E  [STEP 24 J] submit_job_FH_Tier3_unified.py: the weight inputs of every sample at once (a Data sample needs its
      xsec_db entry too; the submission stops before its first sample, E20, nothing queued), --only (fnmatch patterns),
      and the preflight lines for both (the preflight runs on a copy of the script in the temp dir: its log goes there)
+  F  [STEP 25 K] the 2024 fixed-WP b-tag weight in the submitter (D-2026-10-08-A): common.path_btag_eff_json reaches
+     every 2024 job as TTHH_BTAGEFF_JSON (null -> __NULL__; absent -> E12; 2017 without the key: not exported);
+     --btagsf on makes it required for MC (null -> E13 at submission; Data not); the preflight: null + --btagsf on
+     FAIL, a usable JSON PASS with its groups, a JSON of another year FAIL, the key absent FAIL, --btagsf off PASS;
+     its reading of the JSON node by node (a groups correction without default, a WP missing)
 
 Run from the repo top after cmsenv (needs PyROOT; part B's merge needs hadd):
     python3 test/test_failure_checks.py
@@ -470,6 +475,110 @@ with tempfile.TemporaryDirectory(prefix="tthh_fail_") as T:
     check("E submission: --only gives the loop the ParkingHH entry only; without the xsec_db entry nothing reaches the "
           "loop (E20)", seen == [PK] and code_ is None and seen_all == [] and code_all == 20 and PK in err_all,
           str((seen, code_, seen_all, code_all)))
+
+    # ---------------- F: [STEP 25 K] the 2024 fixed-WP b-tag weight in the submitter ----------------
+    bem = load("tthh_btag_eff_maps", os.path.join("tools", "stage7", "btag_eff_maps.py"))
+    PTE, ETE = [20.0, 50.0, 1000.0], [0.0, 1.2, 2.5]
+
+    def eff_json(path, year, breakage=None):
+        """a JSON as tools/stage7/btag_eff_maps.py writes it (groups tt, all); breakage: 'nodefault' (btag_eff_groups
+        without its default), 'noL' (the tt b node without WP L)"""
+        maps = {g: {f: {"eff": {wp: [[0.5, 0.4], [0.3, 0.2]] for wp in bem.WPS}} for f, _ in bem.FLAVOURS}
+                for g in ("tt", "all")}
+        js = bem.correction_json(maps, ["tt", "all"], PTE, ETE,
+                                 f"year={year}; wp=L:0.0246,M:0.1272,T:0.4648; flavours_required=b; test")
+        if breakage == "nodefault":
+            del js["corrections"][1]["data"]["default"]
+        if breakage == "noL":
+            tt = js["corrections"][0]["data"]["content"][0]["value"]
+            b = [it for it in tt["content"] if it["key"] == 5][0]["value"]
+            b["content"] = [it for it in b["content"] if it["key"] != "L"]
+        with open(path, "w") as fh:
+            json.dump(js, fh)
+    eff24, eff17 = os.path.join(T, "eff24.json"), os.path.join(T, "eff17.json")
+    eff24nd, eff24nl = os.path.join(T, "eff24_nodefault.json"), os.path.join(T, "eff24_noL.json")
+    eff_json(eff24, "2024")
+    eff_json(eff17, "2017")
+    eff_json(eff24nd, "2024", "nodefault")
+    eff_json(eff24nl, "2024", "noL")
+    p_nd, _ = sub.btag_eff_json_summary(eff24nd, "2024")
+    p_nl, _ = sub.btag_eff_json_summary(eff24nl, "2024")
+    check("F the preflight reading of the JSON finds a missing groups default and a missing WP (they would stop jobs)",
+          any("btag_eff_groups has no default" in x for x in p_nd) and any("[tt][5]: no key ['L']" in x for x in p_nl)
+          and sub.btag_eff_json_summary(eff24, "2024")[0] == [], str((p_nd, p_nl)))
+    pu = os.path.join(T, "pu.json")
+    with open(pu, "w") as fh:
+        fh.write("{}")
+
+    def cfg24(path, eff_line, samples=("SampleA", "SampleB")):
+        with open(path, "w") as fh:
+            fh.write('common:\n  year: "2024"\n  analysis_mode: main\n  lumi_fb_inv: 10.0\n'
+                     f'  xsec_db: "{T}/xsec.json"\n  prescan: "{T}/prescan.json"\n'
+                     "  files_per_job: 2\n  files_per_job_data: 1\n"
+                     f'  path_jsonpog: "{T}"\n  path_goldenjson: "{T}"\n  path_pu_json: "{pu}"\n'
+                     "  path_trigsf_dir: null\n  path_btag_reweight_json: null\n  path_stitch_json: null\n"
+                     "  path_expanded_ttbarid_dir: null\n" + eff_line + "samples:\n"
+                     + "".join(f"  - {x}\n" for x in samples))
+    cf_null, cf_eff, cf_e17, cf_none = (os.path.join(T, f"cfg_f{k}.yml") for k in range(4))
+    cfg24(cf_null, "  path_btag_eff_json: null\n")
+    cfg24(cf_eff, f'  path_btag_eff_json: "{eff24}"\n')
+    cfg24(cf_e17, f'  path_btag_eff_json: "{eff17}"\n')
+    cfg24(cf_none, "")
+    pff = [sys.executable, os.path.join(sd, "submit_job_FH_Tier3_unified.py"), "--preflight", "--filelist-dir", fl,
+           "--trigsf", "off"]
+    rc, out = run(pff + ["--config", cf_null, "--btagsf", "on"], envp)
+    check("F preflight --btagsf on with path_btag_eff_json null: FAIL (required for the MC samples, E13)",
+          "[FAIL] path_btag_eff_json" in out and "null but REQUIRED" in out and "btagsf=on" in out, out[-3000:])
+    rc, out = run(pff + ["--config", cf_eff, "--btagsf", "on"], envp)
+    check("F preflight --btagsf on with a usable efficiency JSON: PASS lines (the file, its groups, the method)",
+          "[PASS] path_btag_eff_json" in out and "[PASS] 2024 b-tag efficiency JSON" in out and "(groups tt all)" in out
+          and "[PASS] 2024 --btagsf" in out and "the fixed-WP b-tag weight" in out
+          and "[FAIL] path_btag_eff_json" not in out, out[-3000:])
+    rc, out = run(pff + ["--config", cf_e17, "--btagsf", "on"], envp)
+    check("F preflight: an efficiency JSON made for 2017 is a FAIL (every MC job E52)",
+          "[FAIL] 2024 b-tag efficiency JSON" in out and "made for year 2017, the yml is 2024" in out
+          and "every MC job E52" in out, out[-3000:])
+    rc, out = run(pff + ["--config", cf_none, "--btagsf", "off"], envp)
+    check("F preflight 2024 without the key: FAIL (KEY MISSING, E12 in every job)",
+          "[FAIL] path_btag_eff_json" in out and "KEY MISSING" in out, out[-3000:])
+    rc, out = run(pff + ["--config", cf_null, "--btagsf", "off"], envp)
+    check("F preflight --btagsf off with null: PASS (disabled), --btagsf off",
+          "[PASS] path_btag_eff_json" in out and "null -> disabled" in out and "[PASS] 2024 --btagsf" in out
+          and "[FAIL] path_btag_eff_json" not in out, out[-3000:])
+    # the submission: what reaches the job's environment (parse_config_entry, no condor)
+    def job_env(common, name, btagsf):
+        o = object.__new__(sub.CondorJobManager)
+        o.AnalyzerMode, o._cli_trigsf, o._cli_btagsf, o._cli_btagrw = "main", "off", btagsf, "off"
+        o.report_only = o.report_verbose = False
+        o.cli_files_per_job = None
+        o.path_output_base, o.condor_files_path, o.time_info = os.path.join(T, "outb"), os.path.join(T, "cnd"), "t0"
+        e_buf, code_ = io.StringIO(), None
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(e_buf):
+            try:
+                o.parse_config_entry({"sample_name": name}, common)
+            except SystemExit as e:
+                code_ = e.code
+        return getattr(o, "env_exports", {}), code_, e_buf.getvalue()
+    c24 = sub.CondorJobManager.load_yaml_config(None, cf_null)["common"]
+    env_a, code_a, _ = job_env(c24, "SampleA", "off")
+    env_b, code_b, err_b = job_env(c24, "SampleA", "on")
+    env_d, code_d, _ = job_env(c24, DATA, "on")
+    c24e = sub.CondorJobManager.load_yaml_config(None, cf_eff)["common"]
+    env_e, code_e, _ = job_env(c24e, "SampleA", "on")
+    c17 = dict(c24, year="2017")
+    del c17["path_btag_eff_json"], c17["path_pu_json"]
+    env_17, code_17, _ = job_env(c17, "SampleA", "off")
+    c24n = sub.CondorJobManager.load_yaml_config(None, cf_none)["common"]
+    env_n, code_n, err_n = job_env(c24n, "SampleA", "off")
+    check("F submission: null -> TTHH_BTAGEFF_JSON=__NULL__ (--btagsf off); --btagsf on: MC E13, Data still __NULL__; "
+          "a real path is exported; 2017 without the key exports nothing; 2024 without the key E12",
+          code_a is None and env_a.get("TTHH_BTAGEFF_JSON") == "__NULL__"
+          and code_b == 13 and "path_btag_eff_json is REQUIRED" in err_b and "btagsf=on" in err_b
+          and code_d is None and env_d.get("TTHH_BTAGEFF_JSON") == "__NULL__"
+          and code_e is None and env_e.get("TTHH_BTAGEFF_JSON") == eff24
+          and code_17 is None and "TTHH_BTAGEFF_JSON" not in env_17
+          and code_n == 12 and "path_btag_eff_json" in err_n,
+          str((code_a, env_a.get("TTHH_BTAGEFF_JSON"), code_b, code_d, code_e, code_17, code_n, err_b[-300:])))
 
 n_fail = RESULTS.count(False)
 print(f"SUMMARY test_failure_checks {'PASS' if n_fail == 0 else 'FAIL'} ({len(RESULTS) - n_fail}/{len(RESULTS)} checks)")
