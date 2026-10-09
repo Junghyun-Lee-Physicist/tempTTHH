@@ -362,6 +362,16 @@ void BTagSFProcessor::Loop()
         dataSet = sampleInfo->dataset.c_str();
         era     = sampleInfo->era.c_str();
         std::cout << "  DataSet: " << dataSet << ", Era: " << era << "\n";
+        // [STEP 26 L, 2026-10-09] passHadronicTrigger() knows the 2016-2018 PDs only (BTagCSV, JetHT, SingleMuon) and
+        //   rejects every event of another PD with a WARN per event. Until STEP 26 a 2024 name (JetMET0_Run2024C-...)
+        //   stopped already in SampleRegistry (unparseable); it parses now, so the stop is here, once, at the start.
+        //   2024 has no b-tag shape reweight: the fixed-WP weight (D-2026-10-08-A).
+        if (!(dataSet.Contains("BTagCSV") || dataSet.Contains("JetHT") || dataSet.Contains("SingleMuon"))) {
+            std::cerr << "\n[BTagSFProcessor][FATAL] Data set '" << dataSet << "' (" << sampleName << "): this package "
+                         "knows the 2016-2018 PDs BTagCSV, JetHT and SingleMuon only (passHadronicTrigger).\n"
+                         "  2024 has no b-tag shape reweight: it uses the fixed-WP b-tag weight (D-2026-10-08-A).\n";
+            std::exit(1);
+        }
     }
 
     // ── skim preflight : region 이 요구하는 branch ────────────────────────

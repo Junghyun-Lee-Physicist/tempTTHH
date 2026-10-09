@@ -114,9 +114,12 @@ inline std::vector<std::string> expandDataName(const std::string& name) {
 //   "첫 '_' 에서 자르기" 였고, 그러면 era 가 "Run2017B" 가 되어 `era=="B"` 비교가
 //   항상 거짓 → Run B 이벤트를 CDEF trigger bit 로 평가 → passHadTrig 불일치로
 //   exit(1) 이었다.
+//   [STEP 26 L] 2024 names go on after the era letter (`Muon0_Run2024C-MINIv6NANOv15-v1`,
+//   `ParkingHH_Run2024I-MINIv6NANOv15_v2-v2`): the era is the letter right after Run<YYYY>, followed by the end
+//   or a '-' -- the submitter's `Run\d{4}([A-Z])(?=$|-)`. Without it every 2024 Data sample stopped here (FATAL).
 inline bool parseDataName(const std::string& name,
                           std::string& dataset, std::string& era) {
-    static const std::regex kRe(R"(^(.+)_Run\d{4}([A-Z])$)");
+    static const std::regex kRe(R"(^(.+?)_Run\d{4}([A-Z])(-.*)?$)");
     std::smatch m;
     if (std::regex_match(name, m, kRe)) { dataset = m[1]; era = m[2]; return true; }
     static const std::regex kShort(R"(^(.+)_([A-Z])$)");
@@ -128,6 +131,7 @@ inline bool parseDataName(const std::string& name,
 struct Db {
     nlohmann::json xsec;
     nlohmann::json prescan;   // 이미 `["samples"]` 로 내려간 객체
+    nlohmann::json prescanMeta;   // [STEP 26 L] its "meta" (consolidate_prescan.py: input_base, ...)
     double         lumi = 0.0;
     std::string    xsecPath, prescanPath;
 };
@@ -146,6 +150,7 @@ inline const Db& db() {
             fatal("prescan summary has no 'samples' object: " + out.prescanPath +
                   "\n  Regenerate it with consolidate_prescan.py.");
         out.prescan = pre["samples"];
+        out.prescanMeta = pre.contains("meta") && pre["meta"].is_object() ? pre["meta"] : nlohmann::json::object();
 
         const char* lumiEnv = std::getenv("TTHH_LUMI_FB");
         if (lumiEnv && *lumiEnv) {
@@ -194,7 +199,7 @@ inline Info build(const std::string& requested, const std::string& key) {
     if (isData) {
         info.weight = 1.0;
         if (!parseDataName(key, info.dataset, info.era))
-            fatal("Data sample '" + key + "' does not match <PD>_Run<YYYY><E>.\n"
+            fatal("Data sample '" + key + "' does not match <PD>_Run<YYYY><E>[-<processing>].\n"
                   "  The hadronic trigger bit set (B vs CDEF) is selected from the era\n"
                   "  letter, so an unparseable name would silently evaluate Run B with\n"
                   "  the CDEF bits.");
@@ -295,6 +300,33 @@ inline const Info& get(const std::string& name) {
 
     return detail::cache().emplace(name, std::move(info)).first->second;
 }
+
+/// [STEP 26 L] the xsec_db's `_meta.era` ("2017UL", "2024"; "" if it has none) and its path: TriggerStudy refuses
+/// an xsec_db of another year than TTHH_YEAR (the ttbar MC names are the same in 2017 and 2024).
+inline std::string xsecEra() {
+    const auto& x = detail::db().xsec;
+    if (x.contains("_meta") && x["_meta"].is_object() && x["_meta"].contains("era") && x["_meta"]["era"].is_string())
+        return x["_meta"]["era"].get<std::string>();
+    return "";
+}
+inline const std::string& xsecPath() { return detail::db().xsecPath; }
+
+/// [STEP 26 L] the year of the prescan summary: its meta.year if it has one, else read from meta.input_base, the
+/// submitter's output directory (AnalyzerOutput_prescan_<YYYY> for every year but 2017, AnalyzerOutput_prescan for
+/// 2017, as the submitter names it); "" if neither is there. TriggerStudy refuses a prescan of another year than
+/// TTHH_YEAR: its genEventSumw of the ttbar samples (the same names in 2017 and 2024) would set the MC weights.
+inline std::string prescanYear() {
+    const auto& m = detail::db().prescanMeta;
+    if (m.contains("year") && m["year"].is_string()) return m["year"].get<std::string>();
+    if (!m.contains("input_base") || !m["input_base"].is_string()) return "";
+    std::string b = m["input_base"].get<std::string>();
+    while (!b.empty() && b.back() == '/') b.pop_back();
+    static const std::regex kSuffix(R"(_(20\d\d)$)");
+    std::smatch sm;
+    if (std::regex_search(b, sm, kSuffix)) return sm[1].str();
+    return "2017";
+}
+inline const std::string& prescanPath() { return detail::db().prescanPath; }
 
 /// xsec_db 에 등록된 MC 샘플 전체 (campaign 이름 기준, `_ext*` 제외).
 inline std::vector<std::string> mcSampleNames() {

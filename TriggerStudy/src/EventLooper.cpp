@@ -1,11 +1,15 @@
 #define EventLooper_cxx
 #include "EventLooper.hh"
 #include "Config.hh"
+#include "TrigStudyStamp.hh"   // [STEP 26 L] the year stamp of the output files
 
 #include <TH2.h>
 #include <iostream>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
+#include <regex>
+#include <string>
 #include <vector>
 
 // ============================================================================
@@ -61,6 +65,24 @@ void EventLooper::Init()
     }
 
     reader = new NtupleReader(fChain);
+
+    // [STEP 26 L] the 2024 reference trigger must be in the skim: without the branch every event would fail the
+    //   reference (the member stays false) and the job would end with empty maps and no error.
+    if (Config::IsRun3() && !reader->HasIsoMu24()) {
+        std::cerr << "\n[EventLooper][FATAL] TTHH_YEAR=" << Config::Year() << " needs the branch "
+                     "'passTrigger_HLT_IsoMu24' (the 2024 reference), absent in " << ntuplePath << "\n"
+                     "  -> a 2017 skim, or a skim written before STEP 24 (the analyzer books it for every year but 2017).\n";
+        std::exit(1);
+    }
+    // [STEP 26 L review] ... and the other way: the analyzer books that branch for every year BUT 2017, so a skim with
+    //   it read as 2017 (TTHH_YEAR unset) is a 2024 skim evaluated with the 2017 reference and the 2017 weights.
+    if (!Config::IsRun3() && reader->HasIsoMu24()) {
+        std::cerr << "\n[EventLooper][FATAL] TTHH_YEAR=" << Config::Year()
+                  << (std::getenv("TTHH_YEAR") && *std::getenv("TTHH_YEAR") ? "" : " (unset: the default)")
+                  << " but " << ntuplePath << " has 'passTrigger_HLT_IsoMu24', which the analyzer books for every\n"
+                     "  year but 2017 -> a 2024 skim: TTHH_YEAR=2024 (TriggerStudy/run_analysis.sh --year 2024).\n";
+        std::exit(1);
+    }
 
     // [2026-07-29] metCut 을 켰는데 skim 에 MET_pt 가 없으면 조용히 컷이
     //   무시되는 것을 막는다. 그 경우 "MET cut 을 걸고 유도했다"고 믿으면서
@@ -302,6 +324,23 @@ void EventLooper::Loop()
                           << e.what() << std::endl;
                 std::exit(1);
             }
+            // [STEP 26 L review] the JSON must be this year's (its triggerSF description 'year=' tag, as the analyzer
+            //   reads it; no tag = written before STEP 26 = 2017)
+            {
+                const std::string desc = sf_provider->description();
+                std::string tag;
+                const auto p = desc.find("year=");
+                if (p != std::string::npos) {
+                    const auto e = desc.find_first_of("; \t\n", p + 5);
+                    tag = desc.substr(p + 5, e == std::string::npos ? std::string::npos : e - (p + 5));
+                }
+                if (tag.empty() ? (Config::Year() != "2017") : (tag != Config::Year())) {
+                    std::cerr << "\n[EventLooper][FATAL] " << Config::sfOutputJSON << " was made for "
+                              << (tag.empty() ? std::string("2017 (no year= tag)") : tag) << ", TTHH_YEAR="
+                              << Config::Year() << "\n";
+                    std::exit(1);
+                }
+            }
         }
 
     } else {
@@ -415,12 +454,51 @@ void EventLooper::Loop()
     } else {
         std::cout << "  [EventLooper] MC, weight=" << MC_weight << std::endl;
     }
+
+    // [STEP 26 L review] the weights and the Data names must be of this run's year: an xsec_db of another year
+    //   (a TTHH_XSEC_DB left from another session; the ttbar names are the same in both years) or a Data sample of
+    //   another year stops here instead of giving MC weights or eras of the wrong year without a sign.
+    {
+        const std::string dbEra = ::SampleRegistry::xsecEra();
+        if ((dbEra.empty() && Config::Year() != "2017") ||
+            (!dbEra.empty() && dbEra.find(Config::Year()) == std::string::npos)) {
+            std::cerr << "\n[EventLooper][FATAL] TTHH_YEAR=" << Config::Year() << " but the xsec_db "
+                      << ::SampleRegistry::xsecPath() << " is for era '" << (dbEra.empty() ? "(none: no _meta.era)" : dbEra)
+                      << "' (_meta.era)\n"
+                         "  -> TTHH_XSEC_DB / TTHH_PRESCAN of that year (run_analysis.sh sets them when unset).\n";
+            std::exit(1);
+        }
+        const std::string preYear = ::SampleRegistry::prescanYear();
+        if (preYear != Config::Year()) {
+            std::cerr << "\n[EventLooper][FATAL] TTHH_YEAR=" << Config::Year() << " but the prescan summary "
+                      << ::SampleRegistry::prescanPath() << " is of '" << (preYear.empty() ? "(unknown: no meta)" : preYear)
+                      << "' (meta.year, else meta.input_base)\n"
+                         "  -> TTHH_PRESCAN of that year: its genEventSumw sets the MC weights (2024: "
+                         "prescan_summary_2024/prescan_summary.json).\n";
+            std::exit(1);
+        }
+        static const std::regex kYear(R"(_Run(\d{4}))");
+        std::smatch m;
+        const std::string canon = sampleInfo->canonical;
+        if (isData && std::regex_search(canon, m, kYear) && m[1].str() != Config::Year()) {
+            std::cerr << "\n[EventLooper][FATAL] TTHH_YEAR=" << Config::Year() << " but the Data sample '" << canon
+                      << "' is of " << m[1].str() << "\n";
+            std::exit(1);
+        }
+        std::cout << "  [EventLooper] year " << Config::Year() << ", reference " << Config::RefTrigger()
+                  << ", xsec_db era '" << (dbEra.empty() ? std::string("(no _meta.era)") : dbEra)
+                  << "', prescan of " << preYear << std::endl;
+    }
  
     // ========================================================================
     // [Phase 4] Main Event Loop
     // ========================================================================
     Long64_t nentries = fChain->GetEntries();
     std::cout << ">>> Starting event loop: " << nentries << " entries\n";
+
+    // [STEP 26 L] counts for the end-of-job [TrigStudy] line (unweighted, and Σw for MC)
+    long long nMuCR = 0, nRef = 0, nHad = 0;
+    double sumwRef = 0.0, sumwHad = 0.0;
 
     for (Long64_t jentry = 0; jentry < nentries; ++jentry) {
         reader->GetEntry(jentry);
@@ -503,12 +581,26 @@ void EventLooper::Loop()
                    * MC_weight;
         }
 
+        ++nMuCR;
+
         // ====================================================================
         // Trigger Logic
         // ====================================================================
-        if (!reader->GetPassTrigger_IsoMu27()) continue;
+        // [STEP 26 L] the reference per year (2017 HLT_IsoMu27, 2024 HLT_IsoMu24; Config::RefTrigger)
+        const bool passRef = Config::IsRun3() ? reader->GetPassTrigger_IsoMu24()
+                                              : reader->GetPassTrigger_IsoMu27();
+        if (!passRef) continue;
 
-        bool isEraB = (era == "B");
+        // 2017: era B has its own (CSV-named) bits. 2024: the analyzer puts the PNet paths in the _CDEF slots
+        //   and leaves the _B slots 0 (ttHHanalyzer_unified.cc fillTree) -- a set _B bit means the skim does not
+        //   follow that convention, so it is not silently ignored.
+        bool isEraB = (!Config::IsRun3() && era == "B");
+        if (Config::IsRun3() && (reader->GetPassTrigger_4J3T_B() || reader->GetPassTrigger_6J1T_B()
+                                 || reader->GetPassTrigger_6J2T_B())) {
+            std::cerr << "\n[ERROR] entry " << jentry << ": a _B trigger slot is set in a " << Config::Year()
+                      << " skim (expected 0; the 2024 paths are in the _CDEF slots)" << std::endl;
+            std::exit(1);
+        }
         bool fired_4J3T = isEraB ? reader->GetPassTrigger_4J3T_B()
                                  : reader->GetPassTrigger_4J3T_CDEF();
         bool fired_6J1T = isEraB ? reader->GetPassTrigger_6J1T_B()
@@ -523,6 +615,9 @@ void EventLooper::Loop()
             std::cerr << "[ERROR] Trigger logic mismatch at entry " << jentry << std::endl;
             std::exit(1);
         }
+        ++nRef;
+        sumwRef += weight;
+        if (passHadTrig) { ++nHad; sumwHad += weight; }
 
         // ====================================================================
         // SF Calculation (Step 2 only)
@@ -751,7 +846,29 @@ void EventLooper::Loop()
         std::cout << "╚══════════════════════════════════════════════════════════════╝\n\n";
     }
     
+    // [STEP 26 L] one line per job for the logs: how many events reached each step, and the raw efficiency
+    {
+        char buf[160];
+        std::snprintf(buf, sizeof(buf), "%.4f", nRef > 0 ? double(nHad) / double(nRef) : 0.0);
+        std::string effRaw = buf;
+        std::snprintf(buf, sizeof(buf), "%.4f", sumwRef > 0.0 ? sumwHad / sumwRef : 0.0);
+        std::cout << "[TrigStudy] " << Config::Year() << " " << sampleName << " (" << (isData ? "Data" : "MC")
+                  << ", mode " << (applySFMode ? "applySF" : "eff") << "): entries " << nentries
+                  << ", muon CR " << nMuCR << ", " << Config::RefTrigger() << " " << nRef
+                  << ", hadronic OR " << nHad << " (eff " << effRaw;
+        if (!isData) std::cout << ", weighted " << buf;
+        std::cout << ")" << std::endl;
+    }
+    // [STEP 26 L review] muon-CR events but the reference never fired: a broken or wrong reference branch (all
+    //   false), not a sample to derive anything from -- its maps would be empty without an error
+    if (nMuCR >= 100 && nRef == 0) {
+        std::cerr << "\n[EventLooper][FATAL] " << sampleName << ": " << nMuCR << " muon-CR events, none fired the reference "
+                  << Config::RefTrigger() << " (passTrigger_" << Config::RefTrigger() << " always false?)\n";
+        std::exit(1);
+    }
+
     std::cout << ">>> Writing output to: " << getOutputName() << "\n";
+    TrigStudyStamp::Write(outputFile);   // [STEP 26 L] "year=<Y>; reference=<ref>" (DeriveSF / PlotTriggerEfficiency check it)
     outputFile->cd();
 
     // Write histograms

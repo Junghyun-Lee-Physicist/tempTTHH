@@ -9,6 +9,36 @@ Data/MC 비율로 SF를 계산해 correctionlib JSON으로 저장한 뒤, 같은
 
 ---
 
+## 0. 연도 (STEP 26 L, 2026-10-09 — 상세: `../docs/changes/STEP_26_trigger_sf_2024.md`)
+
+연도는 env `TTHH_YEAR`(없으면 2017 = 이전 동작)로 정하고, `run_analysis.sh --year` 가 그것을 export 한다.
+
+| | 2017 | 2024 |
+|---|---|---|
+| reference(직교) trigger | `HLT_IsoMu27` | `HLT_IsoMu24` |
+| hadronic OR | era B 는 `_B` slot(CSV 이름), C–F 는 `_CDEF` | `_CDEF` slot 만(analyzer 가 PNet 경로를 넣음; Data 는 4J3T DeepJet 도), `_B` 는 0 이어야 함 |
+| Data | `SingleMuon_Run2017B..F` | xsec_db 의 `Muon0/1_Run2024*` 16 개 |
+| xsec_db / prescan 기본값 | `data/samples_2017UL.json`, `prescan_summary/` | `data/samples_2024.json`, `prescan_summary_2024/` |
+| 출력 위치 기본값 | `TriggerStudy/`(이전처럼) | `TriggerStudy/run_2024/` |
+
+```bash
+# 2024 (KNU, cmsenv 뒤; TTHH_SKIM_DIR = merge 된 btagtrig 출력)
+TTHH_SKIM_DIR=/pnfs/knu.ac.kr/data/cms/store/user/junghyun/ttHH/AnalyzerOutput_btagtrig_notrig_2024 bash run_analysis.sh --year 2024 --jobs 4
+```
+
+다른 해의 입력은 멈춘다(exit 1 또는 `RESULT FAIL`): `TTHH_YEAR` 없이(=2017) 2024 skim(`passTrigger_HLT_IsoMu24` 가 있음), 2024 에
+2017 xsec_db(`_meta.era`)나 2017 prescan(`meta.year`, 없으면 `meta.input_base` 의 `_<YYYY>`), 다른 해의 Data 이름, Step 2 의 다른 해
+JSON, reference 가 한 번도 안 켜진 sample(muon CR 100 개 이상), 다른 해의 Step 1/2 출력을 DeriveSF/PlotTriggerEfficiency 로
+(`TrigStudyStamp`: EventLooper 가 출력마다 `year=...; reference=...` 를 남김; 표시가 없는 옛 출력은 2017 로만 받음). DeriveSF 는
+측정된 bin 이 없는 category 가 있으면 `RESULT FAIL`(exit 1): 이번 JSON 은 `trigger_sf.json.gz.FAILED`, 있던 것은
+`trigger_sf.json.gz.previous` 로(아무것도 지우지 않음); 입력이 없거나 다른 해면 디렉터리를 건드리지 않는다. JSON 의 description 에
+`year=<YYYY>; reference=...; hadronic OR: ...` 가 들어가고, analyzer 는 다른 해의 JSON 을 거부한다(E50). 알려진 빈틈: 손으로 한
+hadd 가 표시 없는 옛(2017) 출력과 2024 출력을 섞으면 잡지 못한다 — run_analysis.sh 를 쓴다.
+
+합성 입력으로 전체를 시험(설치 확인용, 몇 분): `bash ../test/trigger_study/run_trigstudy_synth.sh <빌드된 tempTTHH>`.
+
+---
+
 ## 1. Quickstart
 
 ```bash
@@ -17,8 +47,8 @@ make            # exe_TrigStudy 생성
 make info       # (선택) 빌드 변수 dump
 make clean
 
-# 2) 전체 파이프라인 실행
-./run_analysis.sh
+# 2) 전체 파이프라인 실행 (2017; 2024 는 위 0 절)
+bash run_analysis.sh            # = --year 2017, 출력은 TriggerStudy/
 ```
 
 `run_analysis.sh`는 다음을 순차/병렬 수행한다:
@@ -127,22 +157,29 @@ _nbBins  = {
 
 ## 5. 단계별 수동 실행
 
-전체 파이프라인을 한꺼번에 돌리지 않고 단계별로 디버깅할 때:
+전체 파이프라인을 한꺼번에 돌리지 않고 단계별로 디버깅할 때. **[STEP 26 L] 먼저 `export TTHH_YEAR=2017`(또는 2024)**,
+그리고 macro 용 `export ROOT_INCLUDE_PATH=$PWD:$PWD/include:$PWD/../include` — 연도가 없으면 2017 이고, 2024 skim 이면
+EventLooper 가 멈춘다. 샘플 이름은 campaign 이름(`SingleMuon_Run2017B`, `TTbar_DiLep`, `Muon0_Run2024C-MINIv6NANOv15-v1`):
 
 ```bash
+# 2017 (2024: TTHH_YEAR=2024 에 TTHH_SKIM_DIR, TTHH_XSEC_DB=../data/samples_2024.json,
+#       TTHH_PRESCAN=../prescan_summary_2024/prescan_summary.json 도 — 다른 해의 xsec_db·prescan 이면 exe 가 멈춘다)
+export TTHH_YEAR=2017
+export ROOT_INCLUDE_PATH=$PWD:$PWD/include:$PWD/../include
+
 # Step 1만 (특정 샘플 하나)
-./exe_TrigStudy SingleMuon_B 0
-./exe_TrigStudy TTTo2L2Nu 0
+./exe_TrigStudy SingleMuon_Run2017B 0
+./exe_TrigStudy TTbar_DiLep 0
 
 # Merge
-hadd -f output_SingleMuon.root output_SingleMuon_*.root
-hadd -f output_TTbarInc.root output_TTTo*.root
+hadd -f output_SingleMuon.root output_SingleMuon_Run2017?.root
+hadd -f output_TTbarInc.root output_TTbar_DiLep.root output_TTbar_Hadronic.root output_TTbar_SemiLep.root
 
-# DeriveSF만
+# DeriveSF만 (exit 0 = RESULT OK)
 root -l -b -q DeriveSF.cpp
 
 # Step 2 (SF 적용)
-./exe_TrigStudy TTTo2L2Nu 1
+./exe_TrigStudy TTbar_DiLep 1
 
 # Plotting만
 root -l -b -q PlotTriggerEfficiency.cpp
@@ -204,6 +241,8 @@ bool useDebugSF = false;  // ← true로 바꾸면
 - correctionlib `evaluate()` 예외 → `exit(57)`
 - ntuple의 `passHadTrig`와 코드에서 재계산한 OR 결과 불일치 → `exit(1)`
 - 등록되지 않은 샘플 이름 → `exit(1)`
+- [STEP 26 L] 다른 해의 입력(0 절의 목록) → `exit(1)`; 2024 skim 의 `_B` slot 이 켜짐 → `exit(1)`; DeriveSF 의 측정 bin 없는
+  category·다른 해의 Step 1 출력 → `RESULT FAIL`, exit 1, `trigger_sf.json.gz` 없음
 
 이 중 어느 하나가 터지면 보통 ntuple 단계의 문제이거나 Config 누락이다. **에러 코드 번호로 어디서 죽었는지 즉시 식별 가능**.
 

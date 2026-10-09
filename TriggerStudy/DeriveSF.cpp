@@ -60,6 +60,9 @@
 
 // Configuration
 #include "include/Config.hh"
+#include "include/TrigStudyStamp.hh"   // [STEP 26 L] the year of the Step 1 maps
+
+#include <cstdio>                      // [STEP 26 L] std::rename / std::remove of the JSON
 
 using json = nlohmann::json;
 
@@ -332,7 +335,7 @@ void MakePrettyPlot(TH2D* hOrig,
     int nBinsX = static_cast<int>(xEdges.size()) - 1;
     int nBinsY = static_cast<int>(yEdges.size()) - 1;
 
-    TH2D* hPlot = new TH2D(Form("%s_plot", outName.Data()), title,
+    TH2D* hPlot = new TH2D(Form("%s_plot", outName.Data()), title + " [" + Config::Year().c_str() + "]",   // [STEP 26 L]
                            nBinsX, 0, nBinsX, nBinsY, 0, nBinsY);
 
     for (int i = 1; i <= nBinsX; ++i) {
@@ -548,11 +551,17 @@ json BuildCorrectionSet(const std::map<std::string, TH2D*>& sfMap,
                         const std::vector<double>& htEdges,
                         const std::vector<double>& ptEdges)
 {
+    // [STEP 26 L] the year, the reference and the OR go into every description: the analyzer reads 'year=' from
+    //   the triggerSF description and refuses a JSON made for another year (a 2024 job pointed at the 2017 dir
+    //   would otherwise apply the 2017 SF without a sign).
+    const std::string tag = "year=" + Config::Year() + "; reference=" + Config::RefTrigger()
+                          + "; hadronic OR: " + Config::HadronicOR();
+
     // (1) Central SF correction (기존과 동일)
     json correction_sf = {
         {"name", "triggerSF"},
         {"version", 1},
-        {"description", "Hadronic trigger scale factors (central value)"},
+        {"description", "Hadronic trigger scale factors (central value); " + tag},
         {"inputs", {
             {{"name", "nbJets"}, {"type", "int"}, {"description", "Number of b-jets"}},
             {{"name", "eta"}, {"type", "real"}, {"description", "6th jet eta"}},
@@ -572,7 +581,7 @@ json BuildCorrectionSet(const std::map<std::string, TH2D*>& sfMap,
     json correction_err = {
         {"name", "triggerSF_err"},
         {"version", 1},
-        {"description", "Hadronic trigger SF uncertainty (error for ±1σ)"},
+        {"description", "Hadronic trigger SF uncertainty (error for ±1σ); " + tag},
         {"inputs", {
             {{"name", "nbJets"}, {"type", "int"}, {"description", "Number of b-jets"}},
             {{"name", "eta"}, {"type", "real"}, {"description", "6th jet eta"}},
@@ -585,7 +594,7 @@ json BuildCorrectionSet(const std::map<std::string, TH2D*>& sfMap,
 
     return {
         {"schema_version", 2},
-        {"description", "Trigger SF for ttHH analysis (central + error)"},
+        {"description", "Trigger SF for ttHH analysis (central + error); " + tag},
         {"corrections", {correction_sf, correction_err}}  // 두 개의 correction 포함
     };
 }
@@ -618,7 +627,7 @@ bool WriteGzipJSON(const json& j, const std::string& filename)
 // [Section 4] Main Function
 // ============================================================================
 
-void DeriveSF()
+int DeriveSF()   // [STEP 26 L] 0 = RESULT OK, 1 = RESULT FAIL (root -l -b -q DeriveSF.cpp exits with it)
 {
     TH1::SetDefaultSumw2(true);
     Config::Dump();
@@ -631,6 +640,15 @@ void DeriveSF()
     const std::string& outFileName  = Config::sfOutputRoot;
     const std::string& jsonFileName = Config::sfOutputJSON;
 
+    // [STEP 26 L] RESULT FAIL never deletes a file. A run that fails before deriving anything (inputs missing, of
+    //   another year) leaves the directory as it was; a run that derived but failed its verdict keeps its JSON as
+    //   trigger_sf.json.gz.FAILED and moves an earlier trigger_sf.json.gz aside to trigger_sf.json.gz.previous (the
+    //   name the analyzer reads then holds no JSON that looks like this run's result).
+    auto fail = [&](const std::string& why) {
+        std::cout << "RESULT FAIL (DeriveSF " << Config::Year() << ": " << why << ")" << std::endl;
+        return 1;
+    };
+
     // ------------------------------------------------------------------------
     // Open input files
     // ------------------------------------------------------------------------
@@ -639,16 +657,30 @@ void DeriveSF()
 
     if (!dataFile || dataFile->IsZombie()) {
         std::cerr << "[ERROR] Cannot open " << dataFileName << "\n";
-        return;
+        return fail("cannot open " + dataFileName);
     }
     if (!mcFile || mcFile->IsZombie()) {
         std::cerr << "[ERROR] Cannot open " << mcFileName << "\n";
-        return;
+        return fail("cannot open " + mcFileName);
     }
 
     std::cout << ">>> Input files opened.\n";
     std::cout << "    Data: " << dataFileName << "\n";
     std::cout << "    MC  : " << mcFileName << "\n";
+
+    // [STEP 26 L review] the Step 1 maps must be of this run's year (TrigStudyStamp.hh): 2017 maps through
+    //   TTHH_YEAR=2024 would otherwise give a JSON tagged year=2024 that the 2024 analyzer loads
+    {
+        int nD = 0, nM = 0;
+        const std::string pD = TrigStudyStamp::Problem(dataFile, nD);
+        const std::string pM = TrigStudyStamp::Problem(mcFile, nM);
+        std::cout << "[DeriveSF] Step 1 stamps (" << TrigStudyStamp::Expected() << "): Data " << nD << " file(s)"
+                  << (pD.empty() ? " ok" : ": " + pD) << ", MC " << nM << " file(s)" << (pM.empty() ? " ok" : ": " + pM)
+                  << "\n";
+        if (!pD.empty() || !pM.empty())
+            return fail(dataFileName + " / " + mcFileName + " are not this year's Step 1 maps: "
+                        + (pD.empty() ? pM : pD));
+    }
 
     // ------------------------------------------------------------------------
     // Create output file
@@ -662,6 +694,9 @@ void DeriveSF()
     auto etaLabels = Config::Eta_Labels();
 
     std::map<std::string, TH2D*> sfMapForJSON;
+    // [STEP 26 L] totals for the closing [DeriveSF] line and RESULT (run_analysis.sh checks RESULT OK)
+    int tCat = 0, tSkipped = 0, tBins = 0, tMeasured = 0, tNeighbor = 0, tFit = 0, tFallback = 0;
+    std::string noMeasured;   // [STEP 26 L review] categories without one measured bin (all extrapolated or SF = 1)
     std::map<std::string, TH2D*> sfErrMapForJSON;   // [FIX] BuildCorrectionSet 4-arg 시그니처 (sfMap, sfErrMap, htEdges, ptEdges)에 맞춤. central SF와 별개로 uncertainty도 JSON에 직렬화하기 위해 보관.
 
     // ------------------------------------------------------------------------
@@ -679,6 +714,7 @@ void DeriveSF()
 
             if (!hDataTotal || !hDataPass || !hMCTotal || !hMCPass) {
                 std::cout << "  [WARNING] Missing histograms, skipping.\n";
+                ++tSkipped;   // [STEP 26 L] its JSON node becomes SF = 1 everywhere: RESULT FAIL below
                 continue;
             }
 
@@ -842,6 +878,9 @@ void DeriveSF()
                       << ", Fit: " << nFit
                       << ", Neighbor: " << nNeighbor
                       << ", Fallback: " << nFallback << "\n";
+            ++tCat; tBins += nx * ny; tMeasured += nMeasured; tFit += nFit; tNeighbor += nNeighbor;
+            tFallback += nFallback;   // [STEP 26 L]
+            if (nMeasured == 0) noMeasured += (noMeasured.empty() ? "" : " ") + key;
 
             // Generate plots
             MakePrettyPlot(hDataTotal, HT_Edges, PT_Edges,
@@ -895,8 +934,12 @@ void DeriveSF()
     // [FIX] BuildCorrectionSet 시그니처: (sfMap, sfErrMap, htEdges, ptEdges). 4번째 인자는 eta가 아니라 uncertainty map.
     json cset = JSONBuilder::BuildCorrectionSet(sfMapForJSON, sfErrMapForJSON, HT_Edges, PT_Edges);
 
-    if (JSONBuilder::WriteGzipJSON(cset, jsonFileName)) {
-        std::cout << ">>> Success: " << jsonFileName << " created.\n";
+    // [STEP 26 L] written under a temporary name; renamed to trigger_sf.json.gz only when the run ends with RESULT OK
+    //   (a FAILED run keeps it as trigger_sf.json.gz.FAILED for a look, never under the name the analyzer reads)
+    const std::string jsonTmp = jsonFileName + ".tmp";
+    const bool jsonOK = JSONBuilder::WriteGzipJSON(cset, jsonTmp);
+    if (jsonOK) {
+        std::cout << ">>> Success: " << jsonTmp << " written.\n";
     } else {
         std::cerr << "[ERROR] Failed to write JSON.\n";
     }
@@ -913,8 +956,32 @@ void DeriveSF()
     delete mcFile;
 
     std::cout << "\n>>> Output: " << outFileName << "\n";
+    // [STEP 26 L] one closing line + RESULT for the logs and run_analysis.sh
+    std::cout << "[DeriveSF] year=" << Config::Year() << ": categories " << tCat << " (skipped, missing maps: "
+              << tSkipped << "), bins " << tBins << ": measured " << tMeasured << ", neighbour/extrapolated "
+              << tNeighbor << ", fit " << tFit << ", fallback SF=1+-0.5 " << tFallback
+              << (noMeasured.empty() ? "" : "; NO measured bin in: " + noMeasured) << "\n";
+    std::string why;
+    if (!jsonOK)             why = "the JSON could not be written";
+    else if (tCat == 0)      why = "no category processed";
+    else if (tSkipped > 0)   why = std::to_string(tSkipped) + " categor(y/ies) without maps (their SF would be 1)";
+    else if (!noMeasured.empty())
+        why = "no measured bin in " + noMeasured + " (every SF there extrapolated or 1 +- 0.5: too few events, or "
+              "empty maps)";
+    if (!why.empty()) {
+        if (jsonOK && std::rename(jsonTmp.c_str(), (jsonFileName + ".FAILED").c_str()) == 0)
+            std::cout << ">>> The JSON of this run is kept as " << jsonFileName << ".FAILED (not for the analyzer)\n";
+        if (std::rename(jsonFileName.c_str(), (jsonFileName + ".previous").c_str()) == 0)
+            std::cout << ">>> The " << jsonFileName << " of an earlier run is moved to " << jsonFileName
+                      << ".previous (not this run's result)\n";
+        return fail(why);
+    }
+    if (std::rename(jsonTmp.c_str(), jsonFileName.c_str()) != 0)
+        return fail("cannot rename " + jsonTmp + " to " + jsonFileName);
     std::cout << ">>> Output: " << jsonFileName << "\n";
+    std::cout << "RESULT OK (DeriveSF " << Config::Year() << ")" << std::endl;
     std::cout << ">>> Done.\n";
+    return 0;
 }
 
-void DeriveSF_main() { DeriveSF(); }
+int DeriveSF_main() { return DeriveSF(); }

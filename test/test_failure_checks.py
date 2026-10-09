@@ -26,10 +26,15 @@
      none with --stall-guard off, the preflight line; with a ClassAd module (classad2 or classad: pip install
      htcondor) also their evaluation -- the 10-08 jobs held, healthy or young or idle jobs not, our hold released
      twice at most and only after 5 min, other holds not, the machine of the last run refused (else 'SKIP G ...')
+  H  [STEP 26 L] the trigger SF JSON (trigger_sf.json.gz in common.path_trigsf_dir): trigger_sf_json_summary (the year=
+     tag as the analyzer reads it -- no tag = 2017 --, the triggerSF inputs in the order the analyzer evaluates, no
+     triggerSF, not JSON; which of them matter in every mode), the preflight line (2024 JSON PASS, 2017 JSON FAIL in
+     every mode, no file or no triggerSF FAIL in main / WARN in btagtrig) and the stop at submission (E50 before the
+     first sample, through process_config_file; not for --report/--status; Data-only runs do not read it)
 
 Run from the repo top after cmsenv (needs PyROOT; part B's merge needs hadd):
     python3 test/test_failure_checks.py
-Last line: SUMMARY test_failure_checks PASS|FAIL (<n>/<m> checks): 59 checks, 60 with a ClassAd module.
+Last line: SUMMARY test_failure_checks PASS|FAIL (<n>/<m> checks): 63 checks, 64 with a ClassAd module.
 """
 import contextlib
 import importlib.util
@@ -686,6 +691,138 @@ with tempfile.TemporaryDirectory(prefix="tthh_fail_") as T:
         check(f"G ClassAd evaluation ({ca.__name__}): the 10-08 jobs held, healthy / young / idle jobs not; our hold "
               "released twice at most and after 5 min, other holds not; the last machine refused",
               all(got.values()), str({k: v for k, v in got.items() if not v}))
+
+    # ---------------- H: [STEP 26 L] the trigger SF JSON: its year (and structure) at preflight and submission ----------
+    #   the analyzer refuses a JSON made for another year (E50 in every MC job); the submitter stops before that
+    def trig_json(path, year=None, inputs=sub.TRIGSF_INPUTS, with_err=True, name="triggerSF"):
+        """a JSON shaped as TriggerStudy/DeriveSF.cpp writes it (binning nbJets -> multibinning (ht, pt)); year None =
+        no year= tag (as before STEP 26)"""
+        tag = "" if year is None else f"; year={year}; reference=HLT_IsoMu24; hadronic OR: test"
+        leaf = {"nodetype": "multibinning", "inputs": ["ht", "pt"], "edges": [[0.0, 700.0, 5000.0], [0.0, 1000.0]],
+                "content": [0.95, 0.97], "flow": "clamp"}
+        def corr(n, d):
+            return {"name": n, "version": 1, "description": d,
+                    "inputs": [{"name": x, "type": "int" if x == "nbJets" else "real"} for x in inputs],
+                    "output": {"name": "weight", "type": "real"},
+                    "data": {"nodetype": "binning", "input": "nbJets", "edges": [0.0, 3.0, 4.0, 5.0],
+                             "content": [leaf, leaf, leaf], "flow": "clamp"}}
+        js = {"schema_version": 2, "description": "Trigger SF for ttHH analysis (central + error)" + tag,
+              "corrections": [corr(name, "Hadronic trigger scale factors (central value)" + tag)]
+              + ([corr("triggerSF_err", "Hadronic trigger SF uncertainty" + tag)] if with_err else [])}
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        import gzip
+        with gzip.open(path, "wt") as fh:
+            json.dump(js, fh)
+    TJ = {k: os.path.join(T, "trig_" + k, sub.TRIGSF_FILE) for k in ("24", "17", "untag", "order", "noerr", "nosf")}
+    trig_json(TJ["24"], "2024")
+    trig_json(TJ["17"], "2017")
+    trig_json(TJ["untag"], None)
+    trig_json(TJ["order"], "2024", inputs=("ht", "pt", "nbJets", "eta"))
+    trig_json(TJ["noerr"], "2024", with_err=False)
+    trig_json(TJ["nosf"], "2024", name="trigSF")
+    os.makedirs(os.path.join(T, "trig_empty"), exist_ok=True)
+    bad_txt = os.path.join(T, "trig_bad.json")
+    with open(bad_txt, "w") as fh:
+        fh.write("not json")
+    S = sub.trigger_sf_json_summary
+    r = {k: S(TJ[k], "2024") for k in TJ}
+    check("H trigger_sf_json_summary: the 2024 JSON usable for 2024 (year 2024, up/down); for 2024 a 2017 JSON or one "
+          "without the tag is not; an untagged one is for 2017; the inputs order, no triggerSF, not JSON: problems",
+          r["24"][0] == [] and r["24"][1]["year"] == "2024" and r["24"][1]["has_err"] is True
+          and r["24"][1]["any_mode"] is False
+          and r["17"][0] == ["made for year 2017, the yml is 2024"] and r["17"][1]["any_mode"] is True
+          and len(r["untag"][0]) == 1 and "no 'year=' tag" in r["untag"][0][0] and r["untag"][1]["year"] == ""
+          and S(TJ["untag"], "2017")[0] == [] and S(TJ["24"], "2017")[0] == ["made for year 2024, the yml is 2017"]
+          and len(r["order"][0]) == 1 and "the analyzer evaluates ['nbJets', 'eta', 'ht', 'pt'] in this order"
+          in r["order"][0][0] and r["order"][1]["any_mode"] is True
+          and r["noerr"][0] == [] and r["noerr"][1]["has_err"] is False
+          and r["nosf"][0] == ["no correction 'triggerSF'"] and r["nosf"][1]["any_mode"] is False
+          and S(bad_txt, "2024")[0][0].startswith("cannot read it") and S(bad_txt, "2024")[1]["any_mode"] is False
+          and S(TJ["24"], "")[0] == [], str(r))
+
+    def cfgH(path, trig_dir, mode="main", samples=("SampleA", "SampleB")):
+        with open(path, "w") as fh:
+            fh.write('common:\n  year: "2024"\n' + f"  analysis_mode: {mode}\n  lumi_fb_inv: 10.0\n"
+                     f'  xsec_db: "{T}/xsec.json"\n  prescan: "{T}/prescan.json"\n'
+                     "  files_per_job: 2\n  files_per_job_data: 1\n"
+                     f'  path_jsonpog: "{T}"\n  path_goldenjson: "{T}"\n  path_pu_json: "{pu}"\n'
+                     f'  path_trigsf_dir: "{trig_dir}"\n  path_btag_reweight_json: null\n  path_stitch_json: null\n'
+                     "  path_expanded_ttbarid_dir: null\n  path_btag_eff_json: null\nsamples:\n"
+                     + "".join(f"  - {x}\n" for x in samples))
+    ch24, ch17, chE, chEb, chS, chSb = (os.path.join(T, f"cfg_h{k}.yml") for k in range(6))
+    cfgH(ch24, os.path.dirname(TJ["24"]))
+    cfgH(ch17, os.path.dirname(TJ["17"]))
+    cfgH(chE, os.path.join(T, "trig_empty"))
+    cfgH(chEb, os.path.join(T, "trig_empty"), mode="btagtrig")
+    cfgH(chS, os.path.dirname(TJ["nosf"]))                       # loads, but no triggerSF in it
+    cfgH(chSb, os.path.dirname(TJ["nosf"]), mode="btagtrig")
+    pfh = [sys.executable, os.path.join(sd, "submit_job_FH_Tier3_unified.py"), "--preflight", "--filelist-dir", fl,
+           "--btagsf", "off"]
+    rc, out = run(pfh + ["--config", ch24, "--mode", "main", "--trigsf", "on"], envp)
+    rc2, out2 = run(pfh + ["--config", ch17, "--mode", "main", "--trigsf", "on"], envp)
+    rc3, out3 = run(pfh + ["--config", chE, "--mode", "main", "--trigsf", "on"], envp)
+    rc4, out4 = run(pfh + ["--config", chEb, "--mode", "btagtrig", "--trigsf", "off"], envp)
+    rc5, out5 = run(pfh + ["--config", chS, "--mode", "main", "--trigsf", "on"], envp)
+    rc6, out6 = run(pfh + ["--config", chSb, "--mode", "btagtrig", "--trigsf", "off"], envp)
+    check("H preflight: a 2024 JSON PASS (year, up/down, --trigsf on); a 2017 JSON FAIL (E50, any mode); no file or no "
+          "triggerSF: FAIL in main, WARN in btagtrig (the jobs record triggerSF = 1 there)",
+          "[PASS] trigger SF JSON" in out and "(year 2024; triggerSF_err: up/down; evtWeight uses it, --trigsf on)" in out
+          and "[FAIL] trigger SF JSON" in out2 and "made for year 2017, the yml is 2024 -> the MC jobs stop (E50)" in out2
+          and "[FAIL] trigger SF JSON" in out3 and "not found -> every MC job E50" in out3
+          and "[WARN] trigger SF JSON" in out4 and "not found -> the MC jobs WARN" in out4
+          and "[FAIL] trigger SF JSON" in out5 and "no correction 'triggerSF' -> every MC job E50 (main/debug)" in out5
+          and "[WARN] trigger SF JSON" in out6 and "mode btagtrig: the MC jobs log an error and record triggerSF = 1" in out6,
+          "\n---\n".join(o[-1500:] for o in (out, out2, out3, out4, out5, out6)))
+
+    def trig_submit(cfg_path, mode="main", samples=None):
+        o = object.__new__(sub.CondorJobManager)
+        common_h = sub.CondorJobManager.load_yaml_config(None, cfg_path)["common"]
+        ents_h = [{"sample_name": n} for n in (samples or ("SampleA", "SampleB"))]
+        o_buf, e_buf, code_ = io.StringIO(), io.StringIO(), None
+        with contextlib.redirect_stdout(o_buf), contextlib.redirect_stderr(e_buf):
+            try:
+                o._check_trigger_sf_json(ents_h, common_h, mode)
+            except SystemExit as e:
+                code_ = e.code
+        return code_, o_buf.getvalue() + e_buf.getvalue()
+    s24, s17, sE, sEb, sD = (trig_submit(ch24), trig_submit(ch17), trig_submit(chE), trig_submit(chEb, "btagtrig"),
+                             trig_submit(ch17, samples=(DATA,)))
+    s17b, sS, sSb = trig_submit(ch17, "btagtrig"), trig_submit(chS), trig_submit(chSb, "btagtrig")
+    check("H submission: the 2024 JSON goes on (its year printed); a 2017 JSON stops it in every mode (E50, nothing "
+          "submitted); no file or no triggerSF stops main (E50), not btagtrig (a WARN line); Data only: not read",
+          s24[0] is None and "[trigger SF]" in s24[1] and ": year 2024" in s24[1]
+          and s17[0] == 50 and "[FATAL][E50]" in s17[1] and "made for year 2017, the yml is 2024" in s17[1]
+          and "Nothing submitted" in s17[1] and s17b[0] == 50
+          and sE[0] == 50 and "not found" in sE[1] and sEb[0] is None and sD[0] is None and sD[1] == ""
+          and sS[0] == 50 and "no correction 'triggerSF'" in sS[1]
+          and sSb[0] is None and "[trigger SF][WARN]" in sSb[1],
+          str((s24, s17, s17b, sE, sEb, sD, sS, sSb)))
+
+    # ... and through the submitter's own path: process_config_file stops before the first sample (E50), --report /
+    #   --status (report_only) never check it (read-only)
+    def loop_h(cfg_path, report_only):
+        o = object.__new__(sub.CondorJobManager)
+        o.config_file_path, o._cli_only = cfg_path, ""
+        o.report_only, o.resubmit_only, o.report_verbose = report_only, False, False
+        o.condor_files_path = os.path.join(T, "condor_loop_h")
+        os.makedirs(o.condor_files_path, exist_ok=True)
+        seen = []
+        o.parse_config_entry = lambda e, c: seen.append(sub.entry_name(e))
+        o.prepare_output_directory = o.setup_and_submit_job = lambda: None
+        o._print_report_table = lambda: None
+        e_buf, code_ = io.StringIO(), None
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(e_buf):
+            try:
+                o.process_config_file()
+            except SystemExit as e:
+                code_ = e.code
+        return seen, code_, e_buf.getvalue()
+    l17, l17r, l24 = loop_h(ch17, False), loop_h(ch17, True), loop_h(ch24, False)
+    check("H process_config_file: a 2017 JSON stops the submission before the first sample (E50, no sample reached); "
+          "--report/--status go through all samples; a 2024 JSON goes on",
+          l17[1] == 50 and l17[0] == [] and "made for year 2017" in l17[2]
+          and l17r[1] is None and l17r[0] == ["SampleA", "SampleB"] and l24[1] is None and l24[0] == ["SampleA", "SampleB"],
+          str((l17, l17r, l24)))
 
 n_fail = RESULTS.count(False)
 print(f"SUMMARY test_failure_checks {'PASS' if n_fail == 0 else 'FAIL'} ({len(RESULTS) - n_fail}/{len(RESULTS)} checks)")

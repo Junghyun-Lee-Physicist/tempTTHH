@@ -17,6 +17,9 @@ public:
     
     // 1. Triggers
     bool   GetPassTrigger_IsoMu27() const { return passTrigger_HLT_IsoMu27; }
+    // [STEP 26 L] the 2024 reference; the analyzer books the branch for every year but 2017
+    bool   GetPassTrigger_IsoMu24() const { return passTrigger_HLT_IsoMu24; }
+    bool   HasIsoMu24() const { return b_passTrigger_HLT_IsoMu24 != nullptr; }
     bool   GetPassTrigger_PFHT1050() const { return passTrigger_HLT_PFHT1050; }
     bool   GetPassTrigger_6J1T_B() const { return passTrigger_6J1T_B; }
     bool   GetPassTrigger_6J1T_CDEF() const { return passTrigger_6J1T_CDEF; }
@@ -57,6 +60,7 @@ private:
 
     // --- Data Members ---
     Bool_t          passTrigger_HLT_IsoMu27;
+    Bool_t          passTrigger_HLT_IsoMu24 = false;   // [STEP 26 L] absent in 2017 skims
     Bool_t          passTrigger_HLT_PFHT1050;
     Bool_t          passTrigger_6J1T_B;
     Bool_t          passTrigger_6J1T_CDEF;
@@ -95,6 +99,7 @@ private:
     // =========================================================================
     
     TBranch        *b_passTrigger_HLT_IsoMu27 = nullptr;   //!
+    TBranch        *b_passTrigger_HLT_IsoMu24 = nullptr;   //!  [STEP 26 L]
     TBranch        *b_passTrigger_HLT_PFHT1050 = nullptr;  //!
     TBranch        *b_passTrigger_6J1T_B = nullptr;        //!
     TBranch        *b_passTrigger_6J1T_CDEF = nullptr;     //!

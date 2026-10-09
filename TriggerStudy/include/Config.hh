@@ -105,6 +105,47 @@ public:
         return env && *env;
     }
 
+    // ── [STEP 26 L] data-taking year (env TTHH_YEAR; default 2017 = the original setup) ─────────
+    //
+    //   What changes with the year (EventLooper):
+    //     reference trigger   2017: HLT_IsoMu27        2024: HLT_IsoMu24 (PLAN 9.6 D2; unprescaled in 2024)
+    //     hadronic OR         2017: era B uses the _B bits, C-F the _CDEF bits (as before)
+    //                         2024: the _CDEF slots only, which the analyzer fills with the PNet paths
+    //                               (6J1T, 6J2T, 4J3T = PNet, Data also the early DeepJet 4J3T) + HLT_PFHT1050;
+    //                               the _B slots are always 0 in a 2024 skim (checked per event)
+    //   Everything else (Muon CR = 1 muon & 0 electron, the offline selection from ../include/SelectionCuts.h,
+    //   the binning, the SF derivation) is the same for both years. 2018 is not written here yet (its
+    //   DeepCSV path set and IsoMu24): FATAL rather than a 2017 evaluation of 2018 bits.
+    static const std::string& Year() {
+        static const std::string y = [] {
+            const char* env = std::getenv("TTHH_YEAR");
+            const std::string v = (env && *env) ? std::string(env) : std::string("2017");
+            if (v != "2017" && v != "2024") {
+                std::cerr << "\n[FATAL][Config] TTHH_YEAR='" << v << "': only 2017 and 2024 are implemented "
+                             "(2018 needs its own reference and path set here first).\n" << std::endl;
+                std::exit(1);
+            }
+            return v;
+        }();
+        return y;
+    }
+    static bool IsRun3() { return Year() == "2024"; }
+
+    /// the reference (orthogonal) trigger of the muon control region
+    static std::string RefTrigger() { return IsRun3() ? "HLT_IsoMu24" : "HLT_IsoMu27"; }
+
+    /// the hadronic OR whose efficiency is measured (log / JSON description)
+    static std::string HadronicOR() {
+        return IsRun3()
+            ? "HLT_PFHT1050 | 6J1T PNet | 6J2T PNet | 4J3T PNet (Data also 4J3T DeepJet, first 2024C runs)"
+            : "HLT_PFHT1050 | 6J1T | 6J2T | 4J3T (era B: the CSV-named paths)";
+    }
+
+    /// lumi / energy label of the plots
+    static std::string LumiLabel() {
+        return IsRun3() ? "109.8 fb^{-1} (13.6 TeV, 2024)" : "42.1 fb^{-1} (13 TeV, 2017)";
+    }
+
     // TTree path inside ROOT file
     static inline const std::string treePath = "Tree/Tree";
 
@@ -508,6 +549,10 @@ public:
         // Section 1: Paths
         os << "║ [Section 1] Path & I/O Settings                              ║\n";
         os << "╟──────────────────────────────────────────────────────────────╢\n";
+        os << "  Year           : " << Year()
+           << (std::getenv("TTHH_YEAR") && *std::getenv("TTHH_YEAR") ? "   [TTHH_YEAR]" : "   [default]") << "\n";
+        os << "  Reference trig : " << RefTrigger() << "\n";
+        os << "  Hadronic OR    : " << HadronicOR() << "\n";
         os << "  Input base dir : " << InputBaseDir()
            << (SkimDirFromEnv() ? "   [TTHH_SKIM_DIR]" : "   [built-in default]") << "\n";
         os << "  Tree path      : " << treePath << "\n";

@@ -114,7 +114,7 @@ gdb --args ./ttHHanalyzer_unified --mode debug --filelist <list> --output dbg.ro
 |---|---|---|
 | `path_jsonpog` | `TTHH_JSONPOG_PATH` | jsonpog-integration (POG 중앙) |
 | `path_goldenjson` | `TTHH_GOLDENJSON_PATH` | GoldenJson 디렉토리 |
-| `path_trigsf_dir` | `TTHH_TRIGSF_DIR` | trigger SF JSON 디렉토리 |
+| `path_trigsf_dir` | `TTHH_TRIGSF_DIR` | trigger SF JSON 디렉토리(`trigger_sf.json.gz`, TriggerStudy 의 DeriveSF; [STEP 26 L] 그 해의 것이어야 한다 — description 의 `year=`, 없으면 2017; 다른 해면 MC job E50·제출 때 E50. 경로가 있으면 `--trigsf off` 에서도 읽으므로 JSON 이 생긴 뒤에만 넣는다) |
 | `path_btag_reweight_json` | `TTHH_BTAGRW_JSON` | btagNormReweight.json |
 | `path_stitch_json` | `STITCH_FACTORS_JSON` | stitch_factors_2017.json |
 | `path_expanded_ttbarid_dir` | `EXPANDED_TTBARID_DIR` | ttnb_* lookup 디렉토리 |
@@ -418,8 +418,13 @@ python3 plotter/make_plots.py --config <분석 yml> --base <AnalyzerOutput_...> 
 종료 코드는 `docs/reference/ERROR_CODES.md` 끝. `--tree-cut` 의 식은 tree 의 branch 와 파생 열(`jet_pt_<i>`, `btag_<i>` …)의
 RDataFrame 식이고, tree 는 그 run 의 selection(trigger OR 포함)을 통과한 event 라 더 좁히는 것만 된다(make_plots docstring 6).
 2024 Data 의 trigger 는 PD 마다 다르다: JetMET0/1 은 `HLT_PFHT1050`, ParkingHH 는 b-tag 경로 가운데 `HLT_PFHT1050` 이 아닌 것
-(D-2026-10-06-A). 시험: `python3 test/test_failure_checks.py`(56), `python3 test/test_consolidate_prescan.py`(24),
-`python3 tools/stage7/test_btag_eff_maps.py`(26; STEP 25 K).
+(D-2026-10-06-A). 시험: `python3 test/test_failure_checks.py`(63, ClassAd 모듈이 있으면 64), `python3 test/test_consolidate_prescan.py`(24),
+`python3 tools/stage7/test_btag_eff_maps.py`(26; STEP 25 K), `bash test/trigger_study/run_trigstudy_synth.sh $PWD`(26; STEP 26 L: TriggerStudy 를
+합성 skim 으로 — `TriggerStudy/exe_TrigStudy` 를 먼저 빌드).
+
+**[STEP 26 L] trigger SF (TriggerStudy):** 연도는 env `TTHH_YEAR`(없으면 2017); 2024 는
+`env TTHH_SKIM_DIR=<merge 된 btagtrig 출력> bash TriggerStudy/run_analysis.sh --year 2024 --jobs 4` → `TriggerStudy/run_2024/trigger_sf.json.gz`
+(기준 `HLT_IsoMu24`, Data Muon0/1). 상세 `TriggerStudy/README.md` 0 절, [`docs/changes/STEP_26_trigger_sf_2024.md`](docs/changes/STEP_26_trigger_sf_2024.md).
 
 ### 8.4 cross section 확인 (The Barn)
 ```

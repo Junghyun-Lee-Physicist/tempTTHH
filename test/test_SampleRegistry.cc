@@ -133,6 +133,41 @@ int main() {
         check(contains(dt, "BTagCSV_Run2017B"),     "dataSampleNames 에 BTagCSV 포함");
     }
 
+    // [STEP 26 L, 2026-10-09] 2024 Data names go on after the era letter. parseDataName is a pure function, so
+    //   these run with the 2017 DB above (the 2024 xsec_db lookup is exercised by TriggerStudy --year 2024).
+    std::printf("\n=== [6] parseDataName: 2024 names (<PD>_Run<YYYY><E>-<processing>) ===\n");
+    {
+        struct Case { const char* name; bool ok; const char* pd; const char* era; };
+        const Case cases[] = {
+            {"Muon0_Run2024C-MINIv6NANOv15-v1",        true,  "Muon0",      "C"},
+            {"Muon1_Run2024I-MINIv6NANOv15_v2-v2",     true,  "Muon1",      "I"},
+            {"ParkingHH_Run2024I-MINIv6NANOv15_v2-v2", true,  "ParkingHH",  "I"},
+            {"JetMET0_Run2024D-MINIv6NANOv15-v1",      true,  "JetMET0",    "D"},
+            {"SingleMuon_Run2017B",                    true,  "SingleMuon", "B"},   // 2017: unchanged
+            {"SingleMuon_B",                           true,  "SingleMuon", "B"},   // the short form: unchanged
+            {"Muon0_Run2024",                          false, "",           ""},    // no era letter
+            {"Muon0_Run2024CD-MINIv6NANOv15-v1",       false, "",           ""},    // two letters
+            {"Muon0_Run2024c-MINIv6NANOv15-v1",        false, "",           ""},    // lower case
+            {"Muon0_Run2024C_MINIv6NANOv15-v1",        false, "",           ""},    // '_' after the era letter
+        };
+        for (const auto& c : cases) {
+            std::string pd = "?", era = "?";
+            const bool ok = SampleRegistry::detail::parseDataName(c.name, pd, era);
+            if (c.ok)
+                check(ok && pd == c.pd && era == c.era,
+                      std::string(c.name) + " -> (" + c.pd + ", " + c.era + ")  got (" + (ok ? pd + ", " + era : "no match") + ")");
+            else
+                check(!ok, std::string(c.name) + " -> no match" + (ok ? "  got (" + pd + ", " + era + ")" : ""));
+        }
+    }
+
+    // [STEP 26 L] the year markers TriggerStudy checks: the xsec_db's _meta.era and the prescan's year (meta.year, else
+    //   its meta.input_base: AnalyzerOutput_prescan = 2017, AnalyzerOutput_prescan_<YYYY> = that year)
+    std::printf("\n=== [7] xsecEra / prescanYear (the 2017 DB of this checkout) ===\n");
+    check(SampleRegistry::xsecEra() == "2017UL", "xsecEra() == \"2017UL\"  got \"" + SampleRegistry::xsecEra() + "\"");
+    check(SampleRegistry::prescanYear() == "2017", "prescanYear() == \"2017\" (meta.input_base without a year suffix)  got \""
+                                                   + SampleRegistry::prescanYear() + "\"");
+
     std::printf("\n=====================================\n");
     std::printf("  PASS %d / FAIL %d\n", g_pass, g_fail);
     std::printf("=====================================\n\n");

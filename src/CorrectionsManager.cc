@@ -570,6 +570,35 @@ void CorrectionsManager::loadTrigger_() {
         // (1) Central SF correction (필수)
         trigSFCorr_ = trigSFCSet_->at("triggerSF");
 
+        // (1b) [STEP 26 L, 2026-10-09] year check. DeriveSF writes "year=<YYYY>; reference=<HLT path>; hadronic OR:
+        //   ..." into the description of triggerSF since STEP 26. A JSON made for another year is refused: a 2024
+        //   job pointed at the 2017 directory would otherwise apply the 2017 SF without any sign. A JSON without the
+        //   tag was written before STEP 26, when only 2017 had a trigger SF, so it is accepted for 2017 only.
+        {
+            const std::string jobYear = EraConfig::normalizeYear(runYear_);
+            const std::string desc    = trigSFCorr_->description();
+            std::string tagYear;
+            const auto p = desc.find("year=");
+            if (p != std::string::npos) {
+                const auto e = desc.find_first_of("; \t\n", p + 5);
+                tagYear = desc.substr(p + 5, e == std::string::npos ? std::string::npos : e - (p + 5));
+            }
+            const bool sameYear = tagYear.empty() ? (jobYear == "2017") : (tagYear == jobYear);
+            if (!sameYear) {
+                std::cerr << "[FATAL][CorrectionsManager] trigger SF JSON " << fileName << " was made for "
+                          << (tagYear.empty() ? std::string("2017 (no 'year=' tag: written before STEP 26)")
+                                              : "year " + tagYear)
+                          << ", this job is " << jobYear << ".\n"
+                          << "  -> yml common.path_trigsf_dir (TTHH_TRIGSF_DIR) must point at the " << jobYear
+                          << " DeriveSF output (TriggerStudy/run_analysis.sh --year " << jobYear << ").\n";
+                tthh::fatalExit(tthh::TRIGSF_LOAD_FAIL);
+            }
+            std::cout << "[CorrectionsManager] trigger SF JSON made for "
+                      << (tagYear.empty() ? std::string("2017 (no year tag: written before STEP 26)")
+                                          : "year " + tagYear)
+                      << ", job year " << jobYear << ": OK\n";
+        }
+
         // (2) SF error correction (optional)
         //     JSON에 "triggerSF_err"이 포함되어 있으면 로드.
         //     없으면 trigSFErrCorr_는 nullptr로 유지되고,

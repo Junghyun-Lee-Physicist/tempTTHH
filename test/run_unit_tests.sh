@@ -7,7 +7,8 @@
 #
 #  test_EraConfig.cc        year/era tables            -> ALL ERACONFIG ASSERTIONS PASSED
 #  test_EraConfig_fatal.sh  an unknown year is exit 11 -> PASS: unknown year -> exit 11 ...
-#  test_SampleRegistry.cc   aliases, stitch scope, era letter, MC weight
+#  test_SampleRegistry.cc   aliases, stitch scope, era letter, MC weight,
+#                           [STEP 26 L] the 2024 Data names (era letter before '-')
 #                           -> PASS <n> / FAIL 0. It reads data/samples_2017UL.json
 #                           and prescan_summary/prescan_summary.json OF THIS
 #                           CHECKOUT, so a locally modified prescan summary can

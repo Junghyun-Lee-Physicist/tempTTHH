@@ -46,6 +46,12 @@
 #  [10-08 review] one that loads but cannot answer (groups without default, a WP missing, other WPs) stops at load
 #  (E52), a payload whose keys only reach a default gives no variation (said twice), the jet-weight counts, and a
 #  sample weighted with maps not made from it stays finite (the tool never uses an e of 0 or 1).
+#  [STEP 26 L] the trigger SF JSON (fake, shaped as TriggerStudy/DeriveSF.cpp writes it, the SF a function of nbJets,
+#  HT and the 6th jet pT): a 2024 MC job with the JSON made for 2024 loads it (the year line) and records triggerSF /
+#  _up / _down = the JSON at the event's values (4 or more cells), evtWeight(--trigsf on) = evtWeight(--trigsf off) x
+#  triggerSF; the JSON made
+#  for 2017, or one without the year tag (written before STEP 26), stops a 2024 MC job (E50, main and btagtrig); Data
+#  never read it; a 2017 MC job takes the untagged JSON (the KNU 2017 one) and stops on the 2024 one (E50).
 #  Exit: 0 all checks pass; 1 a check failed; 2 bad usage.
 #  The values are random: the checks are about running and stopping, never physics.
 # =============================================================================
@@ -122,7 +128,7 @@ runa() {
   local out="$W/out/${RTAG:-new}_$name"; mkdir -p "$(dirname "$out")"
   tr ',' '\n' <<< "$file" > "$out.filelist"          # file may be a,b,c (one job, several files)
   local args=(--filelist "$out.filelist" --output "$out.root" --weight 1 --year "$year" --dataOrMC "$dom"
-              --sample "$sample" --mode "${MODE:-main}" --trigsf off --btagsf "${BTAGSF:-off}" --btagrw off)
+              --sample "$sample" --mode "${MODE:-main}" --trigsf "${TRIGSF:-off}" --btagsf "${BTAGSF:-off}" --btagrw off)
   [[ -n "$era" ]] && args+=(--era "$era")
   ( cd "$repo" &&
     env LD_LIBRARY_PATH="$repo/lib:${RLIB}:${CLIB}:${LD_LIBRARY_PATH:-}" TNM_PATH="$repo" \
@@ -412,6 +418,89 @@ runa badeff "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root" TTHH_BTAGEFF_JSON="$W/bad
 stops "2024 main with an unreadable efficiency JSON stops (E52; a derived correction given but broken)" 52 "b-tag efficiency JSON"
 MODE=btagtrig runa badeffbt "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root" TTHH_BTAGEFF_JSON="$W/badeff.json"
 ok_run "2024 btagtrig with an unreadable efficiency JSON runs (bootstrap: WARN)"
+# ---- [STEP 26 L] the trigger SF JSON: its year (CorrectionsManager::loadTrigger_) and the SF per event ----------
+#   fake JSONs shaped as TriggerStudy/DeriveSF.cpp writes them (binning nbJets -> multibinning (ht, pt)), the SF a
+#   function of nbJets, HT and the 6th jet pT, so the per-event values can be recomputed from Tree/Tree (nbJets, HT,
+#   jetPt[5]) and inputs given in a wrong order would show. The bin edges are floats, as DeriveSF writes them:
+#   correctionlib refuses integer edges ("Invalid edge type", E50 at load).
+python3 - "$W" >> "$W/synth.log" 2>&1 <<'PY'
+import gzip, json, os, sys
+w = sys.argv[1]
+# nbJets [0,3) [3,4) [4,5] (clamp) x HT [0,700) [700,...) x 6th jet pT [0,60) [60,...); multibinning content is
+#   row-major (the last input, pt, fastest)
+SF  = [[0.93, 0.95, 0.97, 0.99], [0.88, 0.90, 0.92, 0.94], [0.83, 0.85, 0.87, 0.89]]
+ERR = [[0.01] * 4, [0.02] * 4, [0.03] * 4]
+def corr(name, out, table, desc):
+    return {"name": name, "version": 1, "description": desc,
+            "inputs": [{"name": "nbJets", "type": "int"}, {"name": "eta", "type": "real"},
+                       {"name": "ht", "type": "real"}, {"name": "pt", "type": "real"}],
+            "output": {"name": out, "type": "real"},
+            "data": {"nodetype": "binning", "input": "nbJets", "edges": [0.0, 3.0, 4.0, 5.0], "flow": "clamp",
+                     "content": [{"nodetype": "multibinning", "inputs": ["ht", "pt"],
+                                  "edges": [[0.0, 700.0, 5000.0], [0.0, 60.0, 5000.0]], "content": row,
+                                  "flow": "clamp"} for row in table]}}
+for d, tag in (("trigsf24", "; year=2024; reference=HLT_IsoMu24; hadronic OR: FAKE"),
+               ("trigsf17", "; year=2017; reference=HLT_IsoMu27; hadronic OR: FAKE"), ("trigsf_untag", "")):
+    os.makedirs(os.path.join(w, d), exist_ok=True)
+    js = {"schema_version": 2, "description": "FAKE trigger SF (offline smoke)" + tag,
+          "corrections": [corr("triggerSF", "weight", SF, "FAKE central" + tag),
+                          corr("triggerSF_err", "error", ERR, "FAKE error" + tag)]}
+    with gzip.open(os.path.join(w, d, "trigger_sf.json.gz"), "wt") as fh:
+        json.dump(js, fh)
+print("trigger SF JSONs written")
+PY
+TRIGSF=on runa ts24 "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root" TTHH_TRIGSF_DIR="$W/trigsf24"
+ok_run "2024 MC with a trigger SF JSON made for 2024 runs (--trigsf on)"
+check "... its load line: made for year 2024, job year 2024" \
+      "$(grep -q 'trigger SF JSON made for year 2024, job year 2024: OK' "$LAST.log" && echo 1)"
+TSV=$( cd "$W" && python3 - "$LAST.root" 2>> "$W/synth.log" <<'PY'
+import sys, ROOT
+SF  = [[0.93, 0.95, 0.97, 0.99], [0.88, 0.90, 0.92, 0.94], [0.83, 0.85, 0.87, 0.89]]
+ERR = [[0.01] * 4, [0.02] * 4, [0.03] * 4]
+f = ROOT.TFile.Open(sys.argv[1]); t = f.Get("Tree/Tree"); n = bad = 0; seen = set()
+for i in range(t.GetEntries()):
+    t.GetEntry(i)
+    pt6 = t.jetPt[5]                               # the 6th selected jet (getTriggerSF's pt)
+    if abs(t.HT - 700.0) < 0.01 or abs(pt6 - 60.0) < 0.01:
+        continue                                   # floats in the tree: no bin decision at an edge
+    nb = 0 if t.nbJets < 3 else (1 if t.nbJets < 4 else 2)
+    k = (0 if t.HT < 700.0 else 2) + (0 if pt6 < 60.0 else 1)
+    want = (SF[nb][k], SF[nb][k] + ERR[nb][k], SF[nb][k] - ERR[nb][k])
+    got = (t.triggerSF, t.triggerSF_up, t.triggerSF_down)
+    n += 1; seen.add((nb, k))
+    bad += any(abs(g - x) > 1e-5 for g, x in zip(got, want))
+print(n, bad, len(seen))
+PY
+)
+read -r ts_n ts_bad ts_cells <<< "${TSV:-}"
+check "... triggerSF / _up / _down of every Tree/Tree event = the JSON at its nbJets, HT and 6th jet pT (${ts_n:-?} events, ${ts_cells:-?} of 12 cells, ${ts_bad:-?} differ)" \
+      "$([[ "${ts_n:-0}" -gt 0 && "${ts_bad:-1}" == 0 && "${ts_cells:-0}" -ge 4 ]] && echo 1)"
+runa ts24off "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root" TTHH_TRIGSF_DIR="$W/trigsf24"
+ok_run "2024 MC --trigsf off with the same JSON runs (triggerSF recorded, evtWeight without it)"
+TSW=$( cd "$W" && python3 - "$W/out/new_ts24off.root" "$W/out/new_ts24.root" 2>> "$W/synth.log" <<'PY'
+import sys, ROOT
+def rows(fn):
+    f = ROOT.TFile.Open(fn); t = f.Get("Tree/Tree"); d = {}
+    for i in range(t.GetEntries()):
+        t.GetEntry(i); d[(int(t.runNumber), int(t.eventNumber))] = (t.evtWeight, t.triggerSF)
+    return d
+off, on = rows(sys.argv[1]), rows(sys.argv[2])
+worst = max(abs(on[k][0] - off[k][0] * on[k][1]) / max(abs(on[k][0]), 1e-12) for k in on) if on else 1.0
+same_sf = all(abs(off[k][1] - on[k][1]) < 1e-7 for k in on)
+print(len(on), int(set(off) == set(on) and same_sf), "%.3g" % worst)
+PY
+)
+read -r tw_n tw_same tw_worst <<< "${TSW:-}"
+check "2024: --trigsf on selects the same events, the same triggerSF, and evtWeight(on) = evtWeight(off) x triggerSF (${tw_n:-?} events; ${tw_worst:-?})" \
+      "$([[ "${tw_same:-0}" == 1 && "${tw_n:-0}" -gt 0 ]] && awk -v x="${tw_worst:-1}" 'BEGIN{exit !(x < 2e-6)}' && echo 1)"
+runa ts24w17 "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root" TTHH_TRIGSF_DIR="$W/trigsf17"
+stops "2024 MC with the trigger SF JSON made for 2017 stops (E50, also with --trigsf off)" 50 "was made for year 2017, this job is 2024"
+runa ts24un "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root" TTHH_TRIGSF_DIR="$W/trigsf_untag"
+stops "2024 MC with a JSON without the year tag (written before STEP 26: the 2017 SF) stops (E50)" 50 "no 'year=' tag: written before STEP 26"
+MODE=btagtrig runa ts24bt "$NEW" MC TTbar_Hadronic "" 2024 "$IN/mc24.root" TTHH_TRIGSF_DIR="$W/trigsf17"
+stops "... and in btagtrig (a JSON of another year is no bootstrap case)" 50 "was made for year 2017, this job is 2024"
+runa ts24d "$NEW" Data JetMET0_Run2024C-MINIv6NANOv15-v1 C 2024 "$IN/jetmet24C.root" TTHH_TRIGSF_DIR="$W/trigsf17"
+ok_run "2024 Data with the 2017 trigger SF directory runs (Data never read the trigger SF)"
 runa nopu "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root" TTHH_PU_JSON=; stops "2024 without TTHH_PU_JSON stops (E12)" 12 "TTHH_PU_JSON"
 runa noeff "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root" TTHH_BTAGEFF_JSON=; stops "2024 without TTHH_BTAGEFF_JSON stops (E12)" 12 "TTHH_BTAGEFF_JSON"
 runa pd "$NEW" Data EGamma0_Run2024C-MINIv6NANOv15-v1 C 2024 "$IN/jetmet24C.root"; stops "2024 unknown Data PD stops (E11)" 11 "PD not recognised"
@@ -502,6 +591,13 @@ for repo in "$NEW" $OLD; do
 done
 check "2017 TTbar_Hadronic used the tt+nb lookup" "$(grep -q 'loaded rows (map size)      : 40' "$W/out/new_y1_mc.log" && echo 1)"
 runa tt17null "$NEW" MC TTbar_Hadronic "" 2017 "$IN/mc17.root"; stops "2017 TTbar_Hadronic without a lookup still stops (E11)" 11 "no tt+nb lookup for 'TTbar_Hadronic'"
+# [STEP 26 L] 2017 takes a trigger SF JSON without the year tag (the KNU DerivedCorr/TriggerSF one) and refuses 2024's
+TRIGSF=on runa ts17un "$NEW" MC TTbar_Hadronic "" 2017 "$IN/mc17.root" EXPANDED_TTBARID_DIR="$W/ttnb2017" TTHH_TRIGSF_DIR="$W/trigsf_untag"
+ok_run "2017 MC with a trigger SF JSON without the year tag runs (--trigsf on)"
+check "... its load line: the 2017 SF (no year tag), job year 2017" \
+      "$(grep -q 'trigger SF JSON made for 2017 (no year tag: written before STEP 26), job year 2017: OK' "$LAST.log" && echo 1)"
+runa ts17w24 "$NEW" MC TTbar_Hadronic "" 2017 "$IN/mc17.root" EXPANDED_TTBARID_DIR="$W/ttnb2017" TTHH_TRIGSF_DIR="$W/trigsf24"
+stops "2017 MC with the trigger SF JSON made for 2024 stops (E50)" 50 "was made for year 2024, this job is 2017"
 if [[ -n "$OLD" ]]; then
   python3 "$REPO/tools/stage1/y1_compare.py" "$W/y1_old" "$W/y1_new" > "$W/y1_compare.log" 2>&1
   check "2017 outputs identical to the older build (y1_compare.py)" "$(grep -q '^RESULT PASS' "$W/y1_compare.log" && echo 1)" "($W/y1_compare.log)"

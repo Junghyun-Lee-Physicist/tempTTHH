@@ -33,6 +33,7 @@
 #include <string>
 
 #include "include/Config.hh"
+#include "include/TrigStudyStamp.hh"   // [STEP 26 L] the year of the Step 2 histograms
 
 // ============================================================================
 // Helper: Compute efficiency histogram with proper errors
@@ -127,7 +128,7 @@ TH1D* ComputeRatio(TH1D* hNum, TH1D* hDen, const char* name)
 // ============================================================================
 // Main plotting function for one variable
 // ============================================================================
-void PlotVariable(TFile* dataFile, TFile* mcFile,
+bool PlotVariable(TFile* dataFile, TFile* mcFile,   // [STEP 26 L] true = plotted
                   const std::string& var,
                   const std::string& xTitle,
                   double yMin = 0.0, double yMax = 1.1)
@@ -150,11 +151,11 @@ void PlotVariable(TFile* dataFile, TFile* mcFile,
     // Check if histograms exist
     if (!h_data_total || !h_data_pass) {
         std::cout << "[Skip] " << var << ": Data histograms not found.\n";
-        return;
+        return false;
     }
     if (!h_mc_total_noSF || !h_mc_pass_noSF || !h_mc_total_SF || !h_mc_pass_SF) {
         std::cout << "[Skip] " << var << ": MC histograms not found.\n";
-        return;
+        return false;
     }
     
     std::cout << "[Plot] " << var << "\n";
@@ -168,7 +169,7 @@ void PlotVariable(TFile* dataFile, TFile* mcFile,
     
     if (!eff_data || !eff_mc_noSF || !eff_mc_SF) {
         std::cout << "[Error] Failed to compute efficiencies for " << var << "\n";
-        return;
+        return false;
     }
     
     // ------------------------------------------------------------------------
@@ -270,6 +271,12 @@ void PlotVariable(TFile* dataFile, TFile* mcFile,
     latex.SetNDC();
     latex.SetTextSize(0.045);
     latex.DrawLatex(0.15, 0.85, ("Trigger Efficiency vs " + var).c_str());
+    // [STEP 26 L] year, lumi and the reference trigger on every plot
+    latex.SetTextSize(0.035);
+    latex.SetTextAlign(31);
+    latex.DrawLatex(0.95, 0.92, Config::LumiLabel().c_str());
+    latex.SetTextAlign(11);
+    latex.DrawLatex(0.15, 0.79, ("muon CR, reference " + Config::RefTrigger()).c_str());
     
     // ------------------------------------------------------------------------
     // Draw ratio panel
@@ -315,12 +322,13 @@ void PlotVariable(TFile* dataFile, TFile* mcFile,
     delete eff_mc_SF;
     if (ratio_noSF) delete ratio_noSF;
     if (ratio_SF) delete ratio_SF;
+    return true;
 }
 
 // ============================================================================
 // Main function
 // ============================================================================
-void PlotTriggerEfficiency()
+int PlotTriggerEfficiency()   // [STEP 26 L] 0 = RESULT OK, 1 = RESULT FAIL (root -l -b -q exits with it)
 {
     gStyle->SetOptStat(0);
     gROOT->SetBatch(kTRUE);
@@ -341,23 +349,39 @@ void PlotTriggerEfficiency()
     if (!dataFile || dataFile->IsZombie()) {
         std::cerr << "[ERROR] Cannot open " << dataFileName << "\n";
         std::cerr << "  Did you run EventLooper Step 2 for Data?\n";
-        return;
+        std::cout << "RESULT FAIL (PlotTriggerEfficiency: no data file)" << std::endl;
+        return 1;
     }
     if (!mcFile || mcFile->IsZombie()) {
         std::cerr << "[ERROR] Cannot open " << mcFileName << "\n";
         std::cerr << "  Did you run EventLooper Step 2 for MC?\n";
-        return;
+        std::cout << "RESULT FAIL (PlotTriggerEfficiency: no MC file)" << std::endl;
+        return 1;
     }
     
     std::cout << ">>> Input files:\n";
     std::cout << "    Data: " << dataFileName << "\n";
     std::cout << "    MC  : " << mcFileName << "\n\n";
+
+    // [STEP 26 L review] the Step 2 histograms must be of this run's year (TrigStudyStamp.hh)
+    {
+        int nD = 0, nM = 0;
+        const std::string pD = TrigStudyStamp::Problem(dataFile, nD);
+        const std::string pM = TrigStudyStamp::Problem(mcFile, nM);
+        if (!pD.empty() || !pM.empty()) {
+            std::cerr << "[ERROR] " << dataFileName << " / " << mcFileName << ": " << (pD.empty() ? pM : pD) << "\n";
+            std::cout << "RESULT FAIL (PlotTriggerEfficiency " << Config::Year() << ": not this year's Step 2 output)"
+                      << std::endl;
+            return 1;
+        }
+    }
     
     // ------------------------------------------------------------------------
     // Plot each variable
     // ------------------------------------------------------------------------
-    PlotVariable(dataFile, mcFile, "HT", "HT [GeV]", 0.0, 1.1);
-    PlotVariable(dataFile, mcFile, "pT", "6th jet p_{T} [GeV]", 0.0, 1.1);
+    int nPlotted = 0;   // [STEP 26 L] RESULT OK needs HT and pT
+    nPlotted += PlotVariable(dataFile, mcFile, "HT", "HT [GeV]", 0.0, 1.1);
+    nPlotted += PlotVariable(dataFile, mcFile, "pT", "6th jet p_{T} [GeV]", 0.0, 1.1);
     
     if (Config::useEta) {
         PlotVariable(dataFile, mcFile, "Eta", "6th jet #eta", 0.0, 1.1);
@@ -374,4 +398,7 @@ void PlotTriggerEfficiency()
     mcFile->Close();
     
     std::cout << "\n>>> All validation plots created.\n";
+    std::cout << "RESULT " << (nPlotted >= 2 ? "OK" : "FAIL") << " (PlotTriggerEfficiency " << Config::Year()
+              << ", HT and pT " << (nPlotted >= 2 ? "plotted" : "missing") << ")" << std::endl;   // [STEP 26 L]
+    return nPlotted >= 2 ? 0 : 1;
 }

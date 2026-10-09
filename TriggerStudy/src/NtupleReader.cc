@@ -66,6 +66,10 @@ NtupleReader::NtupleReader(TTree *tree) : fChain(tree) {
 
     // 1. Triggers
     fChain->SetBranchAddress("passTrigger_HLT_IsoMu27", &passTrigger_HLT_IsoMu27, &b_passTrigger_HLT_IsoMu27);
+    // [STEP 26 L] the 2024 reference trigger; 2017 skims do not have it (EventLooper::Init requires it in 2024)
+    if (fChain->GetBranch("passTrigger_HLT_IsoMu24")) {
+        fChain->SetBranchAddress("passTrigger_HLT_IsoMu24", &passTrigger_HLT_IsoMu24, &b_passTrigger_HLT_IsoMu24);
+    }
     fChain->SetBranchAddress("passTrigger_HLT_PFHT1050", &passTrigger_HLT_PFHT1050, &b_passTrigger_HLT_PFHT1050);
     
     fChain->SetBranchAddress("passTrigger_6J1T_B", &passTrigger_6J1T_B, &b_passTrigger_6J1T_B);

@@ -52,7 +52,8 @@ enum ExitCode {
     GOLDENJSON_DATA_MISSING  = 41,  // Data lumi-mask (golden JSON) missing
 
     // 50-59 — derived corrections
-    TRIGSF_LOAD_FAIL         = 50,  // trigger SF JSON missing/corrupt (required)
+    TRIGSF_LOAD_FAIL         = 50,  // trigger SF JSON missing/corrupt (required), or [STEP 26 L] made for
+                                    //   another year (its triggerSF description year= tag; no tag = 2017)
     BTAGRW_LOAD_FAIL         = 51,  // b-tag norm reweight JSON missing/corrupt (req.)
     BTAGEFF_LOAD_FAIL        = 52,  // [STEP 25 K] b-tag efficiency JSON (fixed WP, 2024) given but unreadable
                                     //   (main/debug), or --btagsf on (MC) without it

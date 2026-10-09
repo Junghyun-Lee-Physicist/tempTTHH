@@ -2,10 +2,25 @@
 
 > **Purpose:** one chronological line per change, newest first, linking to the full record. The detail lives in [`changes/STEP_*.md`](changes/); this file is the index, not a copy.
 > **Audience:** anyone tracing when and why something changed.
-> **Status:** append-only · last meaningful update **2026-10-08**.
+> **Status:** append-only · last meaningful update **2026-10-09**.
 > **Links:** decisions [`DECISIONS.md`](DECISIONS.md) · state [`STATUS.md`](STATUS.md).
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
+
+## 2026-10-09: [TriggerStudy][analyzer][제출기] STEP 26 L — 2024 trigger SF: TriggerStudy 의 연도, JSON 의 연도 확인 (Stage 6)
+
+TriggerStudy: env `TTHH_YEAR`(없으면 2017 = 전의 동작; 2017·2024 만) — 2024 는 기준 `HLT_IsoMu24`, hadronic OR 은 `_CDEF` slot(analyzer 가 넣는
+PNet 경로; `_B` 가 켜지면 exit 1), Data 는 xsec_db 의 Muon0/1 16; `run_analysis.sh` 다시 씀(`--year`, `--workdir`(2024 기본 `run_2024/`), `--jobs`,
+절대경로, 표본마다 로그와 `[TrigStudy]` 줄, macro 의 exit code 와 마지막 RESULT); EventLooper 가 다른 해의 입력에 exit 1(2017 인데
+`passTrigger_HLT_IsoMu24` 가 있는 skim, 2024 인데 없는 skim, xsec_db `_meta.era`, prescan 의 해, Data 이름의 해, 기준이 안 켜진 표본, Step 2 의 JSON)
+과 출력마다 `TrigStudyStamp`; DeriveSF 는 int(0/1), 다른 해의 Step 1 출력·map 없는 category·측정 bin 0 개의 category 에 RESULT FAIL, JSON 은
+`.tmp` → OK 일 때만 `trigger_sf.json.gz`(FAIL 이면 `.FAILED`, 있던 것은 `.previous`; 지우지 않음), description 셋에 `year=; reference=; hadronic OR:`;
+PlotTriggerEfficiency 는 lumi 표기·stamp·RESULT. `include/SampleRegistry.hh`: 2024 Data 이름(`<PD>_Run<YYYY><E>-...`), `xsecEra()`, `prescanYear()`.
+analyzer `CorrectionsManager::loadTrigger_`: 다른 해의 trigger SF JSON(태그 없음 = 2017)은 E50(MC, 모든 mode). 제출기: preflight 의 `trigger SF JSON`
+줄, 제출 때 첫 표본 전 E50(다른 해·입력 순서는 모든 mode, 파일 없음·못 읽음은 main/debug). `bTagSF_ReweightStudy`: 모르는 Data PD 는 시작 때 FATAL.
+시험: `test/trigger_study/run_trigstudy_synth.sh` 32/32(합성 skim 의 Data/MC 비를 117 칸에서 되찾음, 2017 은 K2 빌드와 bin 단위로 같음), 오프라인
+smoke 95/95(+12), `test_failure_checks.py` 64/64(+4, H), `test_SampleRegistry` 59(+12). 독립 검토 두 번 반영. `TriggerStudy/Makefile`·
+`bTagSF_ReweightStudy/Makefile` 그대로. 상세 [`changes/STEP_26_trigger_sf_2024.md`](changes/STEP_26_trigger_sf_2024.md).
 
 ## 2026-10-08: [제출기] STEP 25 K2 — condor stall guard: CPU 를 쓰지 않는 'running' job 을 hold 하고 release
 

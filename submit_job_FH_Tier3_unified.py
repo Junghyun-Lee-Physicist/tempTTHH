@@ -47,6 +47,8 @@ EXIT = {
     "CONFIG_PATH_NULL_REQUIRED": 13,   # required correction path set to null
     "XSEC_DB_MISSING":           20,   # sample absent from xsec_db
     "PRESCAN_MISSING":           21,   # sample absent/invalid in prescan_summary
+    "TRIGSF_LOAD_FAIL":          50,   # [STEP 26 L] the analyzer's code, used at submission for a trigger SF JSON the
+                                       #   MC jobs would refuse (another year; no triggerSF; main/debug: no file)
 }
 NULL_SENTINEL = "__NULL__"             # yml null -> this sentinel reaches the analyzer
 
@@ -225,6 +227,59 @@ def btag_eff_json_summary(path, year=""):
         probs.append("its description has no 'year=<YYYY>' (not made by tools/stage7/btag_eff_maps.py?)")
     if eff is not None and not re.search(r"wp=L:[0-9.eE+-]+,M:[0-9.eE+-]+,T:[0-9.eE+-]+", str(eff.get("description", ""))):
         probs.append("btag_eff's description has no 'wp=L:..,M:..,T:..' (the analyzer checks the WPs: E52)")
+    return probs, info
+
+
+# ============================================================================
+# [STEP 26 L] The trigger SF JSON (TriggerStudy/DeriveSF.cpp: trigger_sf.json.gz in common.path_trigsf_dir), as
+#   CorrectionsManager::loadTrigger_ reads it in every MC job whose path_trigsf_dir is not null (any mode, any --trigsf:
+#   the toggle only decides whether evtWeight uses it): the correction triggerSF, evaluated with (nbJets, eta, ht, pt)
+#   in that order (getTriggerSF), and the year -- DeriveSF writes 'year=<YYYY>' into its description since STEP 26 and
+#   the analyzer refuses another year (E50); a JSON without the tag was written before STEP 26: the 2017 SF.
+# ============================================================================
+TRIGSF_FILE = "trigger_sf.json.gz"
+TRIGSF_INPUTS = ("nbJets", "eta", "ht", "pt")
+
+
+def trigger_sf_json_summary(path, year=""):
+    """(problems, info) of a trigger SF JSON file: problems = [text] (empty = usable for `year`); info = {"year": its
+    year= tag ('' = none), "has_err": the correction triggerSF_err is there (the up/down), "description": the triggerSF
+    description, "any_mode": a problem that matters in every mode (another year: the MC jobs stop with E50; inputs in
+    another order: every MC event gets a wrong SF without an error) -- the others (unreadable, no triggerSF) stop the
+    MC jobs in main/debug only (other modes: an error line and triggerSF = 1, CorrectionsManager::loadTrigger_)}.
+    The year tag is read as the analyzer reads it: the text after the first 'year=' up to ';' or a space."""
+    import gzip
+    import json
+    probs, info = [], {"year": "", "has_err": False, "description": "", "any_mode": False}
+    try:
+        opener = gzip.open if str(path).endswith(".gz") else open
+        with opener(path, "rt") as fh:
+            js = json.load(fh)
+    except Exception as e:
+        return ["cannot read it as JSON: %s" % str(e)[:150]], info
+    corr = {c.get("name"): c for c in js.get("corrections", []) if isinstance(c, dict)} if isinstance(js, dict) else {}
+    sf = corr.get("triggerSF")
+    info["has_err"] = "triggerSF_err" in corr
+    if sf is None:
+        return ["no correction 'triggerSF'"], info
+    names = [v.get("name") for v in sf.get("inputs", []) if isinstance(v, dict)]
+    if tuple(names) != TRIGSF_INPUTS:
+        probs.append("triggerSF inputs %s, the analyzer evaluates %s in this order (no error: a wrong SF in every MC "
+                     "event)" % (names, list(TRIGSF_INPUTS)))
+        info["any_mode"] = True
+    desc = str(sf.get("description", ""))
+    info["description"] = desc
+    m = re.search(r"year=([^;\s]*)", desc)
+    tag = m.group(1) if m else ""
+    info["year"] = tag
+    y = str(year).strip()
+    if y and tag and tag != y:
+        probs.append("made for year %s, the yml is %s" % (tag, y))
+        info["any_mode"] = True
+    elif y and not tag and y != "2017":
+        probs.append("no 'year=' tag in its triggerSF description (written before STEP 26: the 2017 SF), the yml is %s"
+                     % y)
+        info["any_mode"] = True
     return probs, info
 
 
@@ -842,6 +897,34 @@ class CondorJobManager:
             elif n_data and fpj_data == 1:
                 ok("2024 Data files per job", str(fpj_data))
 
+        # ---- 5c. [STEP 26 L] the trigger SF JSON (any year): what loadTrigger_ of the MC jobs will say ------------
+        tsd = common.get("path_trigsf_dir")
+        tsd = tsd.strip() if isinstance(tsd, str) else ""
+        n_mc_sel = sum(1 for s in samples if not is_data_name(entry_name(s)))
+        if tsd and tsd.lower() not in ("none", "null", "~") and os.path.isdir(tsd) and n_mc_sel:
+            tsf = os.path.join(tsd, TRIGSF_FILE)
+            if not os.path.isfile(tsf):
+                if self.AnalyzerMode in ("main", "debug"):
+                    bad("trigger SF JSON", f"{tsf} not found -> every MC job E50 (main/debug need it; "
+                                           "TriggerStudy/run_analysis.sh writes it)")
+                else:
+                    warn("trigger SF JSON", f"{tsf} not found -> the MC jobs WARN and record triggerSF = 1")
+            else:
+                tprobs, tinfo = trigger_sf_json_summary(tsf, str(common.get("year", "")).strip())
+                if tprobs and (tinfo["any_mode"] or self.AnalyzerMode in ("main", "debug")):
+                    bad("trigger SF JSON", f"{tsf}: {'; '.join(tprobs)} -> "
+                                           + ("the MC jobs stop (E50) or get a wrong SF" if tinfo["any_mode"]
+                                              else "every MC job E50 (main/debug)") + "; the submission stops (E50)")
+                elif tprobs:
+                    warn("trigger SF JSON", f"{tsf}: {'; '.join(tprobs)} -> mode {self.AnalyzerMode}: the MC jobs log "
+                                            "an error and record triggerSF = 1")
+                else:
+                    ok("trigger SF JSON", f"{tsf} (year {tinfo['year'] or '2017: no tag, written before STEP 26'}; "
+                                          + ("triggerSF_err: up/down" if tinfo["has_err"]
+                                             else "no triggerSF_err: triggerSF_up/_down = central")
+                                          + "; evtWeight " + ("uses it, --trigsf on" if self._cli_trigsf == "on"
+                                                              else "does not use it, --trigsf off") + ")")
+
         # ---- 6. output / condor dirs (생성하지 않고 확인만) -----------------
         note("-" * 84)
         for label, path in (("condor dir", self.condor_files_path),
@@ -995,6 +1078,9 @@ class CondorJobManager:
         # [STEP 24 J] all or nothing: the weight inputs of every sample before the first one (a missing one used to
         #   stop the loop half way, E20/E21 -- 2026-10-07: 76 of 84 samples queued, then E20 at the first ParkingHH)
         self._check_weight_inputs(samples, common, analyzer_mode)
+        # [STEP 26 L] a trigger SF JSON the MC jobs would refuse stops the submission here (E50), not every MC job
+        if not self.report_only:
+            self._check_trigger_sf_json(samples, common, analyzer_mode)
 
         # [cmd log] 제출 시 명령어를 condor 디렉토리에 기록 / report·resubmit 시 조회.
         self._handle_command_log()
@@ -1073,6 +1159,39 @@ class CondorJobManager:
         code = (EXIT["XSEC_DB_MISSING"] if any(k != "prescan" for k, _, _ in probs) else EXIT["PRESCAN_MISSING"])
         _fatal(code, f"{len(probs)} weight-input problem(s) in {len({n for _, n, _ in probs})} sample(s) (listed "
                      f"above): stopped before the first sample, nothing submitted. Fix them, then --preflight.")
+
+    def _check_trigger_sf_json(self, samples, common, analyzer_mode):
+        """[STEP 26 L] common.path_trigsf_dir set and MC samples in the run: the JSON there must be usable for the yml
+        year (trigger_sf_json_summary: the triggerSF correction with its inputs, the year= tag; no tag = 2017), and in
+        main/debug it must exist -- else every MC job would stop at its start (E50). Stops the submission (E50) before
+        the first sample, nothing queued. Data jobs never read it. Not for --report / --status (read-only)."""
+        tsd = common.get("path_trigsf_dir")
+        tsd = tsd.strip() if isinstance(tsd, str) else ""
+        if not tsd or tsd.lower() in ("none", "null", "~"):
+            return
+        if not any(not is_data_name(entry_name(s)) for s in samples):
+            return
+        tsf = os.path.join(tsd, TRIGSF_FILE)
+        if not os.path.isfile(tsf):
+            if str(analyzer_mode).strip() in ("main", "debug"):
+                _fatal(EXIT["TRIGSF_LOAD_FAIL"], f"trigger SF JSON {tsf} not found: every MC job would stop (E50; "
+                                                 f"mode {analyzer_mode} needs it). Fix common.path_trigsf_dir (the "
+                                                 "DeriveSF output: TriggerStudy/run_analysis.sh), then --preflight. "
+                                                 "Nothing submitted.")
+            return
+        probs, info = trigger_sf_json_summary(tsf, str(common.get("year", "")).strip())
+        if probs and (info["any_mode"] or str(analyzer_mode).strip() in ("main", "debug")):
+            _fatal(EXIT["TRIGSF_LOAD_FAIL"], f"trigger SF JSON {tsf}: {'; '.join(probs)} -- "
+                                             + ("the MC jobs would stop (E50) or get a wrong SF" if info["any_mode"]
+                                                else f"every MC job would stop (E50; mode {analyzer_mode})")
+                                             + ". common.path_trigsf_dir must point at the DeriveSF output of the yml "
+                                             "year (TriggerStudy/run_analysis.sh --year <YYYY>). Nothing submitted.")
+        if probs:
+            print(f"  [trigger SF][WARN] {tsf}: {'; '.join(probs)} -- mode {analyzer_mode}: the MC jobs log an error and "
+                  "record triggerSF = 1")
+            return
+        print(f"  [trigger SF] {tsf}: year {info['year'] or '2017 (no tag, written before STEP 26)'}"
+              + ("" if info["has_err"] else " (no triggerSF_err: up/down = central)"))
 
     def _compute_base_weight(self, sample_name, common):
         """[TrackC] base weight 런타임 합성:
