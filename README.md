@@ -186,6 +186,14 @@ MC 의 prescan 기록을 한 번에 보고, 하나라도 없으면 아무것도 
 `--only 'ParkingHH_*'`) — 제출·`--resubmit`·`--report`·`--status`·`--preflight` 모두. 출력 base 와 condor 디렉토리는 yml 전체와 같고 condor
 파일은 표본마다라, 돌고 있는 다른 표본을 건드리지 않고 표본을 더할 때 쓴다. 아무 표본에도 맞지 않는 패턴은 오류(제출 exit 2, preflight FAIL).
 
+**stall guard(2026-10-08, STEP 25 K2; `--stall-guard on|off`, 기본 on).** condor 는 프로세스가 살아 있는지만 보고 진행은 모른다 — 10-08 에 입력
+읽기(/pnfs)에서 멈춘 job 7 개가 12 시간 'running' 이었다(CPU 2–320 s). 그래서 모든 submit 파일(제출·`--resubmit`)에: 지금 run 이 1 시간을 넘고
+CPU(user + system)가 그 시간의 5 % 미만이면 `periodic_hold`(이유 `tthh stall guard: running <분> min with <초> s CPU on <slot@machine>`,
+HoldReasonCode 3, subcode 4201), 그 hold 만 5 분 뒤 `periodic_release`(같은 job 이 처음부터 다시, 같은 출력 — analyzer 가 파일을 새로 만든다;
+모두 3 번 시작까지, 그 뒤에는 held 로 남아 `--report` 의 wait·`--status` 의 이유에 보임), 다시 시작할 때 마지막에 돌던 machine 은 피함
+(`requirements`). preflight 에 `condor stall guard` 줄. **출력 파일 수는 끝난 job 수가 아니다**: analyzer 는 시작할 때 출력 파일을 만든다 —
+완료는 `--report`(종료 마커 `cutflow_w_full`), 큐에 job 이 있는 동안 `--resubmit` 은 하지 않는다(도는 job 도 다시 낸다).
+
 ### 7.0 다른 연도(2018 UL) 실행 — 현재 **차단 상태**
 
 **2018 은 아직 돌릴 수 없다.** 연도 의존 지점 전수 감사(2026-07-27) 결과 P0 7건 +

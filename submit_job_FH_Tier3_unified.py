@@ -298,6 +298,63 @@ def exit_code_names(repo):
     return names
 
 
+# ============================================================================
+# [STEP 25 K2] condor stall guard (2026-10-08). The last 7 analyzer jobs of the 2024 lepton-CR runs stayed 'running'
+#   for 12 h after their input reads hung on /pnfs between 05:24 and 06:05 KST (6 of the 7 on cluster333): the job
+#   .out unchanged since then, 2-320 s of CPU in 42,000-47,000 s, while a healthy job reads 1,000-2,000 events/s and
+#   ends within an hour. Condor sees a live process, not progress, so nothing happened until they were held and
+#   released by hand. Every submit file (submission and --resubmit) now carries:
+#     periodic_hold     a running job that has run STALL_MIN_RUN_S with CPU (user + system) below STALL_CPU_FRAC of
+#                       that time; HoldReasonCode 3 (job policy), HoldReasonSubCode STALL_HOLD_SUBCODE, the reason
+#                       'tthh stall guard: running <min> min with <s> s CPU on <slot@machine>'
+#     periodic_release  that hold only, after STALL_RELEASE_DELAY_S in hold, while NumJobStarts < STALL_MAX_STARTS: the
+#                       same job starts again from the beginning (same arguments, same output; the analyzer recreates
+#                       the file, so nothing is duplicated). After STALL_MAX_STARTS starts it stays held: --report
+#                       counts it under 'wait', --status shows the reason (then look at its input files).
+#     requirements      not on the machine the job last ran on (LastRemoteHost; undefined before the first run)
+#   The numbers of 10-08: a reading job used 25-41 % CPU (tHW_3: 149 s in 10 min, TTbar_Hadronic_1: 320 s in 13 min),
+#   so 2.7 M events take well under an hour; a job that reads at under 5 % CPU for an hour is broken or starved
+#   (ttHToNonbb_14 read at 4 % for 58 min before it stopped), and a new start elsewhere is faster. The ratio is the
+#   whole run's, so a job that stops after a healthy start is caught later: after (its CPU seconds) / 0.05, e.g.
+#   TTbar_Hadronic_1 after 320 / 0.05 s = 1.8 h, 2181320.26 (2 s) at 1 h. --stall-guard off writes none of these.
+# ============================================================================
+STALL_MIN_RUN_S = 3600          # 1 h of the current run
+STALL_CPU_FRAC = 0.05           # CPU below 5 % of the run time
+STALL_RELEASE_DELAY_S = 300     # 5 min in hold before the release (the stuck process is killed meanwhile)
+STALL_MAX_STARTS = 3            # 3 starts in all = 2 automatic restarts
+STALL_HOLD_SUBCODE = 4201       # HoldReasonSubCode of this periodic_hold (HoldReasonCode 3 = a job policy)
+_STALL_RUN = "(time() - EnteredCurrentStatus)"
+_STALL_CPU = ("(ifThenElse(isUndefined(RemoteUserCpu), 0, RemoteUserCpu)"
+              " + ifThenElse(isUndefined(RemoteSysCpu), 0, RemoteSysCpu))")
+
+
+def stall_guard_exprs():
+    """{submit command: ClassAd expression} of the stall guard (comment above)."""
+    return {
+        "periodic_hold": (f"(JobStatus == 2) && ({_STALL_RUN} > {STALL_MIN_RUN_S}) "
+                          f"&& ({_STALL_CPU} < {STALL_CPU_FRAC} * {_STALL_RUN})"),
+        "periodic_hold_reason": (f'strcat("tthh stall guard: running ", string(int({_STALL_RUN} / 60)), " min with ", '
+                                 f'string(int({_STALL_CPU})), " s CPU on ", '
+                                 f'ifThenElse(isUndefined(RemoteHost), "?", RemoteHost))'),
+        "periodic_hold_subcode": str(STALL_HOLD_SUBCODE),
+        "periodic_release": (f"(HoldReasonCode == 3) && (HoldReasonSubCode == {STALL_HOLD_SUBCODE}) "
+                             f"&& (NumJobStarts < {STALL_MAX_STARTS}) "
+                             f"&& ((time() - EnteredCurrentStatus) > {STALL_RELEASE_DELAY_S})"),
+        # LastRemoteHost is 'slot1_5@cluster333.knu.ac.kr' (or the bare machine name); split() / stringListMember() are
+        #   HTCondor extensions that a plain ClassAd library does not have, regexp() would need '$' (a submit-file macro
+        #   character) for an exact end -- so: the name itself, or the name after the last '@'
+        "requirements": ("isUndefined(LastRemoteHost) || ((LastRemoteHost != TARGET.Machine) && "
+                         "(substr(LastRemoteHost, size(LastRemoteHost) - size(TARGET.Machine) - 1) "
+                         '!= strcat("@", TARGET.Machine)))'),
+    }
+
+
+def stall_guard_summary():
+    return (f"hold after {STALL_MIN_RUN_S / 3600:g} h with CPU < {STALL_CPU_FRAC * 100:g}% of the run time, "
+            f"release after {STALL_RELEASE_DELAY_S // 60} min, at most {STALL_MAX_STARTS} starts, "
+            "not again on the machine it last ran on")
+
+
 class CondorJobManager:
 
     def __init__(self):
@@ -360,6 +417,10 @@ class CondorJobManager:
                                  "됨)에 맞는 것만 — 제출·--resubmit·--report·--status·--preflight 모두. 출력 base 와 "
                                  "condor 디렉터리는 yml 전체와 같다(condor 파일은 표본마다라 다른 표본은 건드리지 않음). "
                                  "예) --only 'ParkingHH_*'. 아무 표본에도 맞지 않는 패턴은 오류.")
+        parser.add_argument("--stall-guard", default="on", choices=["on", "off"],
+                            help="[STEP 25 K2] condor stall guard (기본 on): 1 시간 넘게 돌면서 CPU 가 그 시간의 5%% 미만인 "
+                                 "job 을 hold 하고 5 분 뒤 release(처음부터 다시, 같은 출력), 모두 3 번까지, 마지막 "
+                                 "machine 은 피함. off: submit 파일에 그 줄들을 쓰지 않는다")
         args = parser.parse_args()
         self.preflight_only = bool(args.preflight)
         self._cli_only = args.only.strip()
@@ -368,6 +429,7 @@ class CondorJobManager:
         self._cli_trigsf  = args.trigsf
         self._cli_btagsf  = args.btagsf
         self._cli_btagrw  = args.btagrw
+        self._cli_stall_guard = args.stall_guard
 
         # Variables for jobs, please check before running
         self.analyzer_path = f"{script_dir}"
@@ -463,6 +525,9 @@ class CondorJobManager:
             sys.exit(1)
 
         self.print_memory_status()
+        if not self.report_only:
+            print(f"[stall-guard] {getattr(self, '_cli_stall_guard', 'on')}"
+                  + (f": {stall_guard_summary()}" if getattr(self, "_cli_stall_guard", "on") == "on" else ""))
         self.process_config_file()
 
     # -------------------------------------------------------------------------
@@ -802,6 +867,12 @@ class CondorJobManager:
         else:
             bad("condor proxy.cert",
                 f"not found: {proxy} -- copy your grid proxy there (worker nodes need it)")
+        # [STEP 25 K2] the stall guard of the submit files
+        if getattr(self, "_cli_stall_guard", "on") == "on":
+            ok("condor stall guard", stall_guard_summary())
+        else:
+            warn("condor stall guard", "off (--stall-guard off): a job hung on its input stays 'running' until "
+                                       "held or removed by hand")
 
         return self._preflight_finish(rows, lines, log_path)
 
@@ -1671,6 +1742,11 @@ class CondorJobManager:
                 f"{os.path.join(self.condor_files_path, f'log_{sanitized}.$(ClusterId).log')}\n"
             )
             f.write(f"request_memory          = {self.memorySize}\n")
+            # [STEP 25 K2] stall guard (module comment above stall_guard_exprs)
+            if getattr(self, "_cli_stall_guard", "on") == "on":
+                f.write(f"# stall guard [STEP 25 K2]: {stall_guard_summary()}\n")
+                for key, expr in stall_guard_exprs().items():
+                    f.write(f"{key:<23} = {expr}\n")
             f.write(f"queue args from {self.arg_list_file}\n")
 
     # -------------------------------------------------------------------------
@@ -1756,7 +1832,8 @@ class CondorJobManager:
             print("  -> idx 마다 원인(return value, 이름, .err): --status  |  재큐: --resubmit "
                   "(같은 --files-per-job/--region/SF 인자로; wait 이 0 이 된 뒤)")
             if t_wait:
-                print(f"  -> wait {t_wait}: 아직 큐에 있다 (condor_q). held 는 condor_release 또는 condor_rm")
+                print(f"  -> wait {t_wait}: 아직 큐에 있다 (condor_q). held 는 condor_release 또는 condor_rm "
+                      f"('tthh stall guard' 로 held 인 job 은 {STALL_MAX_STARTS} 번 멈춘 것: --status 의 이유, 그 입력 파일을 볼 것)")
             if t_miss - t_fail - t_wait:
                 print(f"  -> {t_miss - t_fail - t_wait}: 시도 기록 없음 (제출되지 않았거나 condor 파일이 지워짐)")
         else:

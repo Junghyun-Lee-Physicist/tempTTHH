@@ -21,10 +21,15 @@
      --btagsf on makes it required for MC (null -> E13 at submission; Data not); the preflight: null + --btagsf on
      FAIL, a usable JSON PASS with its groups, a JSON of another year FAIL, the key absent FAIL, --btagsf off PASS;
      its reading of the JSON node by node (a groups correction without default, a WP missing)
+  G  [STEP 25 K2] the condor stall guard of the submit files (2026-10-08: 7 jobs 'running' 12 h after their /pnfs
+     reads hung): periodic_hold / _reason / _subcode / periodic_release / requirements written as stall_guard_exprs(),
+     none with --stall-guard off, the preflight line; with a ClassAd module (classad2 or classad: pip install
+     htcondor) also their evaluation -- the 10-08 jobs held, healthy or young or idle jobs not, our hold released
+     twice at most and only after 5 min, other holds not, the machine of the last run refused (else 'SKIP G ...')
 
 Run from the repo top after cmsenv (needs PyROOT; part B's merge needs hadd):
     python3 test/test_failure_checks.py
-Last line: SUMMARY test_failure_checks PASS|FAIL (<n>/<m> checks).
+Last line: SUMMARY test_failure_checks PASS|FAIL (<n>/<m> checks): 59 checks, 60 with a ClassAd module.
 """
 import contextlib
 import importlib.util
@@ -35,6 +40,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from array import array
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -579,6 +585,107 @@ with tempfile.TemporaryDirectory(prefix="tthh_fail_") as T:
           and code_17 is None and "TTHH_BTAGEFF_JSON" not in env_17
           and code_n == 12 and "path_btag_eff_json" in err_n,
           str((code_a, env_a.get("TTHH_BTAGEFF_JSON"), code_b, code_d, code_e, code_17, code_n, err_b[-300:])))
+
+    # ---------------- G: [STEP 25 K2] the condor stall guard of the submit files ----------------
+    #   2026-10-08: the last 7 jobs of the 2024 lepton-CR runs stayed 'running' 12 h after their /pnfs reads hung
+    #   (2-320 s of CPU in 42,000-47,000 s); condor saw live processes and did nothing
+    def sub_file(guard):
+        o = object.__new__(sub.CondorJobManager)
+        if guard is not None:
+            o._cli_stall_guard = guard
+        gd = os.path.join(T, "guard")
+        os.makedirs(gd, exist_ok=True)
+        o.output_dir, o.os_version, o.memorySize = "SampleA", "el9", "12 GB"
+        o.condor_submit_name = os.path.join(gd, f"SampleA_{guard}_condor.sub")
+        o.proxy_path, o.script_name = os.path.join(gd, "proxy.cert"), os.path.join(gd, "run_SampleA.sh")
+        o.tmp_folder, o.condor_files_path = os.path.join(gd, "tmp_SampleA_t0"), gd
+        o.arg_list_file = os.path.join(gd, "arguments_SampleA.txt")
+        o.write_condor_submission_file()
+        with open(o.condor_submit_name) as fh:
+            return fh.read()
+    txt_on, txt_off, txt_def = sub_file("on"), sub_file("off"), sub_file(None)
+    kv = {l.split("=", 1)[0].strip(): l.split("=", 1)[1].strip() for l in txt_on.splitlines()
+          if "=" in l and not l.startswith("#") and not l.startswith("queue")}
+    ex = sub.stall_guard_exprs()
+    check("G submit file: periodic_hold / _reason / _subcode / periodic_release / requirements as stall_guard_exprs(), "
+          "the comment line with the thresholds, the queue statement last",
+          sorted(ex) == ["periodic_hold", "periodic_hold_reason", "periodic_hold_subcode", "periodic_release",
+                         "requirements"]
+          and all(kv.get(k) == v for k, v in ex.items())
+          and "# stall guard [STEP 25 K2]: hold after 1 h with CPU < 5% of the run time, release after 5 min, at most "
+              "3 starts" in txt_on
+          and txt_on.rstrip().splitlines()[-1].startswith("queue args from "), txt_on)
+    check("G --stall-guard off: none of those lines (the rest as before); an object without the attribute: on",
+          not any(k in txt_off for k in ("periodic_", "requirements", "stall guard"))
+          and [l for l in txt_on.splitlines() if not l.startswith(("periodic_", "requirements", "#"))]
+          == txt_off.splitlines() and txt_def == txt_on, txt_off)
+    rc, out = run(pf, envp)
+    rc2, out2 = run(pf + ["--stall-guard", "off"], envp)
+    check("G preflight: '[PASS] condor stall guard' with the thresholds; --stall-guard off: a WARN",
+          "[PASS] condor stall guard" in out and "hold after 1 h with CPU < 5% of the run time" in out
+          and "[WARN] condor stall guard" in out2 and "off (--stall-guard off)" in out2, out[-1500:] + out2[-1500:])
+    ca = None
+    for modname in ("classad2", "classad"):
+        try:
+            ca = importlib.import_module(modname)
+            break
+        except Exception:
+            ca = None
+    if ca is None:
+        print("SKIP G ClassAd evaluation of the stall guard (no classad2 / classad module; pip install htcondor)")
+    else:
+        now = int(time.time())
+
+        def ev(key, **attrs):
+            a = ca.ClassAd(attrs)
+            a["X"] = ca.ExprTree(ex[key])
+            return a.eval("X")
+        hrs = lambda h: now - int(h * 3600)
+        got = {
+            "hold 12.6 h / 149 s CPU": ev("periodic_hold", JobStatus=2, EnteredCurrentStatus=hrs(12.6),
+                                         RemoteUserCpu=146.0, RemoteSysCpu=3.0) is True,
+            "hold 1.5 h / CPU undefined": ev("periodic_hold", JobStatus=2, EnteredCurrentStatus=hrs(1.5)) is True,
+            "no hold 3 h at 90 % CPU": ev("periodic_hold", JobStatus=2, EnteredCurrentStatus=hrs(3),
+                                          RemoteUserCpu=9720.0, RemoteSysCpu=60.0) is False,
+            "no hold 3 h at 10 % CPU": ev("periodic_hold", JobStatus=2, EnteredCurrentStatus=hrs(3),
+                                          RemoteUserCpu=1080.0, RemoteSysCpu=0.0) is False,
+            "no hold 0.8 h stuck": ev("periodic_hold", JobStatus=2, EnteredCurrentStatus=hrs(0.8),
+                                      RemoteUserCpu=2.0, RemoteSysCpu=0.0) is False,
+            "hold 1.1 h stuck (2181320.26: 2 s)": ev("periodic_hold", JobStatus=2, EnteredCurrentStatus=hrs(1.1),
+                                                     RemoteUserCpu=2.0, RemoteSysCpu=0.0) is True,
+            "TTbar_Hadronic_1 (320 s): not at 1.5 h, at 2 h": (
+                ev("periodic_hold", JobStatus=2, EnteredCurrentStatus=hrs(1.5), RemoteUserCpu=320.0,
+                   RemoteSysCpu=0.0) is False
+                and ev("periodic_hold", JobStatus=2, EnteredCurrentStatus=hrs(2.0), RemoteUserCpu=320.0,
+                       RemoteSysCpu=0.0) is True),
+            "no hold idle 5 h": ev("periodic_hold", JobStatus=1, EnteredCurrentStatus=hrs(5)) is False,
+            "reason": str(ev("periodic_hold_reason", JobStatus=2, EnteredCurrentStatus=hrs(12.6), RemoteUserCpu=146.0,
+                             RemoteSysCpu=3.0, RemoteHost="slot1_1@cluster333.knu.ac.kr")).startswith(
+                "tthh stall guard: running 75") and str(ev("periodic_hold_reason", JobStatus=2,
+                                                          EnteredCurrentStatus=hrs(12.6), RemoteUserCpu=146.0,
+                                                          RemoteSysCpu=3.0, RemoteHost="slot1_1@cluster333.knu.ac.kr")
+                                                       ).endswith(" min with 149 s CPU on slot1_1@cluster333.knu.ac.kr"),
+            "release 1st / 2nd": all(ev("periodic_release", HoldReasonCode=3, HoldReasonSubCode=4201, NumJobStarts=n,
+                                        EnteredCurrentStatus=now - 400) is True for n in (1, 2)),
+            "no release 3rd": ev("periodic_release", HoldReasonCode=3, HoldReasonSubCode=4201, NumJobStarts=3,
+                                 EnteredCurrentStatus=now - 400) is False,
+            "no release before 5 min": ev("periodic_release", HoldReasonCode=3, HoldReasonSubCode=4201,
+                                          NumJobStarts=1, EnteredCurrentStatus=now - 100) is False,
+            "no release of other holds": all(ev("periodic_release", HoldReasonCode=c, HoldReasonSubCode=s,
+                                                NumJobStarts=1, EnteredCurrentStatus=now - 400) is False
+                                             for c, s in ((1, 0), (3, 0), (34, 0))),
+        }
+        job = ca.ClassAd({"LastRemoteHost": "slot1_5@cluster333.knu.ac.kr"})
+        job["Requirements"] = ca.ExprTree(ex["requirements"])
+        fresh = ca.ClassAd()
+        fresh["Requirements"] = ca.ExprTree(ex["requirements"])
+        mach = lambda m: ca.ClassAd({"Machine": m})
+        got["requirements: not the last machine, others and a first run yes"] = (
+            mach("cluster333.knu.ac.kr").matches(job) is False and mach("cluster348.knu.ac.kr").matches(job) is True
+            and mach("cluster33.knu.ac.kr").matches(job) is True and mach("cluster333.knu.ac.kr").matches(fresh) is True)
+        check(f"G ClassAd evaluation ({ca.__name__}): the 10-08 jobs held, healthy / young / idle jobs not; our hold "
+              "released twice at most and after 5 min, other holds not; the last machine refused",
+              all(got.values()), str({k: v for k, v in got.items() if not v}))
 
 n_fail = RESULTS.count(False)
 print(f"SUMMARY test_failure_checks {'PASS' if n_fail == 0 else 'FAIL'} ({len(RESULTS) - n_fail}/{len(RESULTS)} checks)")

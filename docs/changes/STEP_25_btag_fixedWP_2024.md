@@ -13,6 +13,8 @@
   `docs/reference/{ERROR_CODES.md, CONFIG_PATHS.md}`; 워크스페이스 `RUNBOOK_lxplus_2026-09-16.md` §28, `00_START_HERE.md` (18)
 - KNU: **다시 빌드는 지금의 큐(10-08 03:43 KST 9,890 job)가 빈 뒤**(job 이 실행 파일을 쓴다). header 가 바뀌었으므로 `build_check.sh` 의 clean
   빌드로(최상위 `Makefile` 에 header 의존성이 없다, PLAN §9.3).
+- 커밋 K2(10-08, §10): condor stall guard — 수정 `submit_job_FH_Tier3_unified.py`, `test/test_failure_checks.py`(G), `README.md`,
+  `docs/{STATUS.md, CHANGELOG.md}`, 이 문서 §10; 워크스페이스 RUNBOOK §28. 제출기만이라 KNU 에서 다시 빌드할 필요 없음.
 
 ## DECIDED / 실측
 
@@ -179,9 +181,73 @@ SF 전 weight 를 쓰는 것, `computeBTagWeight` 가 HT 단계 전에 모든 MC
 계산하므로(branch·tier) b jet SF 평가 오류는 E40 이다(load 의 격자 평가 뒤라 일어날 일이 거의 없다); pT > 600 의 SF 는 마지막 칸 값(BTV 관례,
 불확도를 키우지 않음 — 물리 선택, AN 근거와 함께 Stage 9 에서).
 
+### 10. 커밋 K2 — condor stall guard (10-08, 제출기만; analyzer·물리 그대로)
+
+**일어난 일(KNU, 사용자가 붙인 출력).** 17:02 KST 에 세 출력(FH, μCR, eCR; SF 없음) 모두 파일 8,062 개였지만 큐에 analyzer job 7 개가 'running'.
+17:41 의 확인:
+
+| job | 표본 | 시작 | `.out` 마지막 변경 | 마지막 진행 | CPU / 경과 (s) | machine |
+|---|---|---|---|---|---|---|
+| 2181307.855 | μCR ParkingHH_Run2024G (Data) | 04:40 | 06:05 | 30,000 / 197,479 | 6 / 46,867 | cluster333 |
+| 2181314.5 | eCR ttHTobb_dilep | 04:55 | 05:24 | 470,000 / 565,366 | 93 / 45,918 | cluster348 |
+| 2181315.14 | eCR ttHToNonbb | 05:03 | 06:01 | 610,000 / 1,014,362 | 146 / 45,469 | cluster333 |
+| 2181319.3 | eCR tHW | 05:34 | 05:44 | 710,000 / 819,975 | 149 / 43,610 | cluster333 |
+| 2181319.24 | eCR tHW | 05:43 | 05:52 | 510,000 / 668,493 | 114 / 43,068 | cluster333 |
+| 2181320.1 | eCR TTbar_Hadronic | 05:44 | 05:57 | 1,590,000 / 2,697,372 | 320 / 42,987 | cluster333 |
+| 2181320.26 | eCR TTbar_Hadronic | 05:53 | 05:58 | (입력 파일의 branch 확인 단계) | 2 / 42,471 | cluster333 |
+
+모두 05:24–06:05 사이에 멈췄고(입력을 /pnfs 에서 읽다가; 7 개 중 6 개가 cluster333), 그 뒤 12 시간 CPU 를 쓰지 않았다. 정상일 때는 초당 1,000–2,000
+event(tHW_3: 10 분에 71 만, CPU 25 %; TTbar_Hadronic_1: 13 분에 159 만, CPU 41 %). condor 의 'running' 은 프로세스가 살아 있다는 뜻일 뿐이고 submit
+파일에 시간·CPU 규칙이 없었으므로 아무 일도 일어나지 않았다(노드가 죽으면 lease 가 끝난 뒤 Idle 로 돌아가지만, 입력에서 멈춘 프로세스는 계속
+'running'). 파일 수 8,062 는 완료가 아니다: analyzer 는 시작할 때 출력 파일을 RECREATE 로 만들고(`src/tnm.cc`) 내용은 event loop 가 끝난 뒤
+쓴다 — 완료는 `--report`(종료 마커 `cutflow_w_full`; 도는 job 은 `wait`). 워크스페이스 RUNBOOK §28 1·7 의 확인 명령도 고침(전의 `condor_q -totals
+| tail -2` 는 모든 사용자의 합계를 보였다). 조치(사용자에게): 7 개를 `condor_hold` → `condor_qedit` 로 Requirements 에 cluster333 제외 →
+`condor_release`(같은 job 이 처음부터, 같은 출력; `--resubmit` 은 큐의 다른 job 도 다시 내므로 쓰지 않음). **AI 의 실수(18:28 에 드러남):** 그
+명령이 식을 `condor_q -af Requirements` 로 읽었는데 `-af` 는 식을 평가하므로(TARGET 이 없어 `undefined`) Requirements 가 `(undefined) && (TARGET.Machine
+isnt "cluster333.knu.ac.kr")` 가 되어 job 7 개가 Idle 로 멈췄다(`condor_q -better-analyze`: 74 machine 모두 거부). 되살리기: 같은 cluster 의 끝난
+job 에서 `condor_history <cluster> -limit 1 -af:r Requirements`(평가하지 않은 원래 식)를 가져와 cluster333·cluster348 을 빼고 다시 넣음(워크스페이스
+RUNBOOK §28 의 '10-08 18:28'). condor 식을 읽어 다시 쓸 때는 `-af:r`. 18:28 의 cluster333: slot1_2·slot1_24 가 14 시간 넘게 Busy·LoadAv 0.000.
+
+**바꾼 것(`submit_job_FH_Tier3_unified.py`).** 모듈 상수와 `stall_guard_exprs()`·`stall_guard_summary()`; `write_condor_submission_file()` 이
+`--stall-guard on`(기본)일 때 `queue` 앞에 주석 한 줄과 다섯 줄:
+
+```
+periodic_hold           = (JobStatus == 2) && ((time() - EnteredCurrentStatus) > 3600) && ((ifThenElse(isUndefined(RemoteUserCpu), 0, RemoteUserCpu) + ifThenElse(isUndefined(RemoteSysCpu), 0, RemoteSysCpu)) < 0.05 * (time() - EnteredCurrentStatus))
+periodic_hold_reason    = strcat("tthh stall guard: running ", string(int((time() - EnteredCurrentStatus) / 60)), " min with ", string(int((...CPU...))), " s CPU on ", ifThenElse(isUndefined(RemoteHost), "?", RemoteHost))
+periodic_hold_subcode   = 4201
+periodic_release        = (HoldReasonCode == 3) && (HoldReasonSubCode == 4201) && (NumJobStarts < 3) && ((time() - EnteredCurrentStatus) > 300)
+requirements            = isUndefined(LastRemoteHost) || ((LastRemoteHost != TARGET.Machine) && (substr(LastRemoteHost, size(LastRemoteHost) - size(TARGET.Machine) - 1) != strcat("@", TARGET.Machine)))
+```
+
+- hold: 지금 run(EnteredCurrentStatus 부터)이 1 시간을 넘고 CPU(user + system; 아직 값이 없으면 0)가 그 시간의 5 % 미만. 비율은 run 전체의 것이라
+  건강하게 시작한 뒤 멈춘 job 은 (그 CPU 초) / 0.05 뒤에 잡힌다: TTbar_Hadronic_1 은 1.8 h, 2181320.26 은 1 h. CPU 를 다 쓰면서 느린 job
+  (무한 loop)은 잡지 않는다. 앞의 run 의 CPU 가 함께 세어지는 condor 라도 잡는 시점이 늦어질 뿐이다.
+- release: 이 hold(HoldReasonCode 3 = job policy, subcode 4201)만, hold 5 분 뒤(멈춘 프로세스가 죽을 시간), 시작이 3 번 미만일 때 — 같은 job 이 같은
+  인자·출력으로 처음부터(analyzer 가 출력 파일을 지우고 새로 만든다, 중복 없음). 세 번째 run 도 멈추면 held 로 남는다: `--report` 의 wait,
+  `--status` 의 hold 이유, 그 job 의 입력 파일을 볼 것. 사용자 hold(code 1)·메모리 hold(34) 등은 건드리지 않는다.
+- requirements: 마지막에 돈 machine(LastRemoteHost 의 '@' 뒤, 또는 이름 그대로)은 피한다; 처음 run 은 제한 없음. condor_submit 이 기본 조건
+  (Arch, OpSys, Disk, Memory, FileSystemDomain/HasFileTransfer)을 `&&` 로 붙인다(24.0 의 condor_submit 논리로 확인). `split()`·
+  `stringListMember()` 는 HTCondor 확장이라 순수 ClassAd 라이브러리(그리고 시험)에 없고, `regexp()` 로 끝을 정확히 맞추려면 submit 파일의 macro
+  문자 `$` 가 필요해서 `substr`/`size` 로 썼다.
+- `--stall-guard on|off`(기본 on; off 면 위 줄들을 쓰지 않음), preflight 의 `[PASS] condor stall guard ...`(off 면 WARN), 제출 때 `[stall-guard]`
+  줄, `--report` 의 wait 안내에 stall guard 의 held 설명. merge(`outputMerger`)·`tools/runlog/condor_run.sh` 의 job 에는 넣지 않았다.
+
+**시험.** `test/test_failure_checks.py` G: submit 파일의 다섯 줄이 `stall_guard_exprs()` 그대로·주석 줄·`queue` 가 마지막; `--stall-guard off` 면 그
+줄들만 빠짐(나머지 같음), 속성이 없는 객체(전의 호출)는 on; preflight 의 PASS/WARN 줄; ClassAd 모듈(`classad2` 또는 `classad`; `pip install
+htcondor`)이 있으면 식 평가 — 10-08 의 job 들은 hold, 3 h·90 %·10 % CPU·0.8 h·idle 은 아님, TTbar_Hadronic_1(320 s)은 1.5 h 에는 아니고 2 h 에,
+release 는 첫·둘째 뒤에만·5 분 뒤에만·다른 hold 는 아님, requirements 는 cluster333 거부·cluster348·cluster33·첫 run 허용. 컨테이너: 59/59(모듈
+없음), 60/60(HTCondor 25.14.1 `classad2`, 24.0.24 `classad`). 따로: 24.0 의 `htcondor.Submit(...).jobs()`(condor_submit 과 같은 논리)로 submit
+파일을 job ad 로 펼쳐 PeriodicHold/PeriodicHoldReason/PeriodicHoldSubCode/PeriodicRelease 와 기본 조건이 붙은 Requirements 를 확인하고, 그 ad 로
+cluster333 거부·cluster348 허용, 10-08 의 값에서 hold 와 이유 문자열(`tthh stall guard: running 720 min with 149 s CPU on slot1_1@cluster333...`)을
+확인. KNU 의 condor 버전에서의 실제 동작(첫 hold·release)은 다음 제출에서 본다.
+
+**되돌리기.** 이번만: `--stall-guard off`. 전부: 이 커밋을 revert(제출기와 시험·문서뿐; analyzer 는 다시 빌드할 필요 없음).
+
 ## 확인하지 못한 것
 
 - 진짜 `UParTAK4_kinfit` 의 계통 key 이름과 binning 의 flow(코드는 둘 다 견딘다; KNU smoke 의 `BTAGSF` 줄과 jsonpog 목록으로 확인).
 - 진짜 MC 의 효율 값과 fallback 이 얼마나 쓰이는지, main 출력의 closure(효율 map 을 만든 뒤 처음 보인다).
 - KNU 의 ROOT 6.30·correctionlib(CMSSW_14_2_1) 에서의 빌드와 Python 3.9 에서의 도구(컨테이너는 ROOT 6.40, Python 3.11; 문법은 3.9 에 맞춤).
 - KNU 의 `filelistTier3_2024/` 에 Muon0/1 의 filelist 가 있는지(btagtrig preflight 가 본다; 없으면 `make_filelists_v15.py --year 2024`).
+- K2: KNU 의 HTCondor 가 `periodic_hold_reason`·`periodic_hold_subcode` 를 받는지와 첫 실제 hold·release(다음 제출의 job ad:
+  `condor_q <job> -af PeriodicHold PeriodicRelease Requirements`); 10-08 의 /pnfs 멈춤의 원인(KNU 관리자).

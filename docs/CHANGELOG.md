@@ -7,6 +7,16 @@
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
 
+## 2026-10-08: [제출기] STEP 25 K2 — condor stall guard: CPU 를 쓰지 않는 'running' job 을 hold 하고 release
+
+KNU 10-08: 2024 μCR·eCR 의 마지막 analyzer job 7 개가 /pnfs 입력 읽기에서 멈춘 채 12 시간 'running'(CPU 2–320 s / 42,000–47,000 s, `.out` 은
+05:24–06:05 KST 이후 그대로, 6 개가 cluster333); condor 는 프로세스가 살아 있는지만 본다. `submit_job_FH_Tier3_unified.py`: 모든 submit 파일
+(제출·`--resubmit`)에 `periodic_hold`(지금 run > 1 h 이고 CPU(user + system) < 그 시간의 5 %), `periodic_hold_reason`(`tthh stall guard: running
+<min> min with <s> s CPU on <slot@machine>`), `periodic_hold_subcode` 4201, `periodic_release`(그 hold 만, 5 분 뒤, NumJobStarts < 3: 같은 job 이
+처음부터 다시), `requirements`(LastRemoteHost 의 machine 은 피함); `--stall-guard on|off`(기본 on), preflight 의 `condor stall guard` 줄, 제출 때
+`[stall-guard]` 줄, `--report` 의 wait 안내. 시험 `test_failure_checks.py` 59/59(+3), ClassAd 모듈(classad2 / classad)이 있으면 60/60(식 평가).
+상세 [`changes/STEP_25_btag_fixedWP_2024.md`](changes/STEP_25_btag_fixedWP_2024.md) §10.
+
 ## 2026-10-08: [analyzer][도구][제출기][config] STEP 25 K — 2024 b-tag SF 는 fixed WP(method 1a), 효율 map 도구, 2024 btagtrig yml (D-2026-10-08-A)
 
 사용자 결정 D-2026-10-08-A: 2024 는 지금 BTV 의 fixed-WP 방법, shape 방법이 확인되면 전환. analyzer: `EraConfig::btagMethod`(2024 FixedWP,
