@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 ================================================================================
-SCRIPT: merge_outputs.py   [STEP22, STEP 24 checks 2026-10-06, STEP 26 M 2026-10-09]
+SCRIPT: merge_outputs.py   [STEP22, STEP 24 checks 2026-10-06, STEP 26 M / M2 2026-10-09]
 ================================================================================
 
 [ Purpose ]
@@ -42,11 +42,14 @@ AnalyzerOutput 의 flat 레이아웃을 **자동 발견**해서 프로세스별�
     # 실패했거나 아직 합치지 않은 프로세스만 다시 (대기·실행 중인 것은 그대로)
     python3 merge_outputs.py --base ... --resubmit --mode condor [--config yml]
 
-    # [STEP 26 M, 2026-10-09] condor merge job 의 stall guard: analyzer job 과 같은 식
-    # (submit_job_FH_Tier3_unified.py 의 stall_guard_exprs()) — 지금 run 이 1 시간을 넘고 CPU 가
-    # 그 시간의 5 % 미만이면 hold(이유 'tthh stall guard: ...'), 5 분 뒤 같은 merge 가 다른
-    # machine 에서 처음부터 다시(hadd -f 가 파일을 새로 만든다), 모두 3 번 시작까지. 10-09: 입력
-    # 599 개를 읽던 merge 하나가 /pnfs 에서 멈춘 채 4 시간 'running'(CPU 14 s).
+    # [STEP 26 M2, 2026-10-09] condor merge job 의 시간 한도: 지금 run 이 --time-limit 시간(기본 3)을
+    # 넘으면 hold(이유 'tthh time limit: running <분> min (limit <분> min) with <초> s CPU on
+    # <slot@machine>', subcode 4202), 5 분 뒤 같은 merge 가 다른 machine 에서 처음부터 다시(hadd -f
+    # 가 파일을 새로 만든다), 모두 3 번 시작까지. 10-09: 입력 599 개를 읽던 merge 하나가 /pnfs 에서
+    # 멈춘 채 4 시간 'running'(CPU 20 s). CPU 로는 가르지 못한다: 정상 merge 도 CPU 0.0-0.4 %
+    # (파일을 열고 읽는 시간이 대부분; KNU condor_history 10-09) — analyzer job 의 stall guard
+    # (CPU < 5 %, STEP 25 K2)를 그대로 쓴 M 은 1 시간 넘게 걸리는 정상 merge 를 hold 했을 것이다.
+    ... --time-limit 4                  # 한도(시간)
     ... --stall-guard off               # 그 줄들을 쓰지 않는다
     # 합치기 전에(local·condor, --dry-run 도) condor 큐를 본다(condor_q -af:j Args Arguments). 큐의
     # job(어느 상태든, X 도)이 인자로
@@ -118,8 +121,8 @@ _SUBMITTER = None
 
 
 def submitter():
-    """submit_job_FH_Tier3_unified.py as a module (its yml reader, is_data_name, stall_guard_exprs), loaded once and
-    without writing a .pyc next to it"""
+    """submit_job_FH_Tier3_unified.py as a module (its yml reader, is_data_name), loaded once and without writing a
+    .pyc next to it"""
     global _SUBMITTER
     if _SUBMITTER is None:
         sys.dont_write_bytecode = True
@@ -346,12 +349,49 @@ def claim_workdir(base: Path) -> Path:
             time.sleep(1)
 
 
-def stall_guard_lines() -> list[str]:
-    """[STEP 26 M] the submit-file lines of the analyzer jobs' stall guard (submit_job_FH_Tier3_unified.py, STEP 25
-    K2): a merge reads /pnfs and can hang the same way; hadd -f writes the file anew, so a restart is safe"""
-    sub_mod = submitter()
-    return ([f"# stall guard [STEP 26 M, as the analyzer jobs]: {sub_mod.stall_guard_summary()}"]
-            + [f"{k:<23} = {v}" for k, v in sub_mod.stall_guard_exprs().items()])
+# [STEP 26 M2] the time limit of a merge job. A merge that hangs on /pnfs and a healthy one look alike in CPU (both
+#   below 1 %: hadd mostly waits for the files), so not the analyzer jobs' CPU stall guard (STEP 25 K2) but the time of
+#   the current run: healthy merges take minutes (the largest, ParkingHH_Run2024F with 599 inputs, under an hour), the
+#   one that hung on 10-09 was found after 4 h. A restart is safe: hadd -f writes the file anew from the same inputs.
+#   tools/runlog/condor_run.sh --time-limit writes the same expressions (test/test_failure_checks.py part I).
+MERGE_TIME_LIMIT_H = 3.0            # default --time-limit
+TL_HOLD_SUBCODE = 4202              # HoldReasonSubCode of this periodic_hold (4201 = the analyzer jobs' CPU stall guard)
+TL_RELEASE_DELAY_S = 300            # 5 min in hold before the release (the stuck process is killed meanwhile)
+TL_MAX_STARTS = 3                   # 3 starts in all = 2 automatic restarts
+_TL_RUN = "(time() - EnteredCurrentStatus)"
+_TL_CPU = ("(ifThenElse(isUndefined(RemoteUserCpu), 0, RemoteUserCpu)"
+           " + ifThenElse(isUndefined(RemoteSysCpu), 0, RemoteSysCpu))")
+# not again on the machine of the last run: the same text as submit_job_FH_Tier3_unified.py's stall_guard_exprs()
+REQ_NOT_LAST_MACHINE = ("isUndefined(LastRemoteHost) || ((LastRemoteHost != TARGET.Machine) && "
+                        "(substr(LastRemoteHost, size(LastRemoteHost) - size(TARGET.Machine) - 1) "
+                        '!= strcat("@", TARGET.Machine)))')
+
+
+def time_limit_exprs(limit_s: int) -> dict:
+    """{submit command: ClassAd expression} of the time limit (comment above): hold a run longer than limit_s,
+    release that hold after TL_RELEASE_DELAY_S while NumJobStarts < TL_MAX_STARTS, avoid the last machine"""
+    return {
+        "periodic_hold": f"(JobStatus == 2) && ({_TL_RUN} > {int(limit_s)})",
+        "periodic_hold_reason": (f'strcat("tthh time limit: running ", string(int({_TL_RUN} / 60)), " min (limit '
+                                 f'{int(limit_s) // 60} min) with ", string(int({_TL_CPU})), " s CPU on ", '
+                                 f'ifThenElse(isUndefined(RemoteHost), "?", RemoteHost))'),
+        "periodic_hold_subcode": str(TL_HOLD_SUBCODE),
+        "periodic_release": (f"(HoldReasonCode == 3) && (HoldReasonSubCode == {TL_HOLD_SUBCODE}) "
+                             f"&& (NumJobStarts < {TL_MAX_STARTS}) "
+                             f"&& ((time() - EnteredCurrentStatus) > {TL_RELEASE_DELAY_S})"),
+        "requirements": REQ_NOT_LAST_MACHINE,
+    }
+
+
+def time_limit_summary(hours: float) -> str:
+    return (f"hold after {hours:g} h of the current run (any CPU), release after {TL_RELEASE_DELAY_S // 60} min, "
+            f"at most {TL_MAX_STARTS} starts, not again on the machine it last ran on")
+
+
+def time_limit_lines(hours: float) -> list[str]:
+    """the submit-file lines of the time limit"""
+    return ([f"# time limit [STEP 26 M2]: {time_limit_summary(hours)}"]
+            + [f"{k:<23} = {v}" for k, v in time_limit_exprs(round(hours * 3600)).items()])
 
 
 def write_condor(jobs, runner: Path, workdir: Path, proxy: Path,
@@ -376,7 +416,7 @@ def write_condor(jobs, runner: Path, workdir: Path, proxy: Path,
         f.write(f"log                     = {log_dir}/log.$(ClusterId).log\n")
         f.write(f"MY.WantOS               = \"{os_version}\"\n")
         f.write(f"request_memory          = {memory}\n")
-        for line in guard_lines:                               # [STEP 26 M] stall_guard_lines()
+        for line in guard_lines:                               # [STEP 26 M2] time_limit_lines()
             f.write(line + "\n")
         # transfer 불필요 — PNFS 를 worker 가 직접 읽고 쓴다.
         f.write(f"queue args from {args_file}\n")
@@ -608,7 +648,7 @@ def print_report(base: Path, rows) -> int:
         if any(r[1] in ("failed", "not-merged", "removed", "ok?") for r in bad):
             print("  -> 다시: 같은 명령에 --resubmit --mode condor (failed / not-merged / removed 만)")
         if any(r[1] in ("pending", "held") for r in bad):
-            print("  -> pending / held 은 condor_q 로 본다 (held 의 이유가 'tthh stall guard' 면 5 분 뒤 저절로 다시 —"
+            print("  -> pending / held 은 condor_q 로 본다 (held 의 이유가 'tthh time limit' 면 5 분 뒤 저절로 다시 —"
                   " 모두 3 번 시작까지; 그 뒤에도 held 면 condor_rm, condor_q 에서 사라진 뒤 --resubmit)")
     print(bar)
     return 0 if not bad else 1
@@ -659,8 +699,11 @@ def main(argv: list[str]) -> int:
                         "제출하면 자동. 미지정+미cmsenv 이면 job 은 getenv 에 "
                         "의존하며, hadd 없으면 명확히 실패)")
     p.add_argument("--stall-guard", choices=["on", "off"], default="on",
-                   help="[condor] analyzer job 과 같은 stall guard (STEP 26 M): run 이 1 시간을 넘고 CPU 가 그 시간의 "
-                        "5 %% 미만이면 hold, 5 분 뒤 다른 machine 에서 처음부터 다시, 모두 3 번 시작까지 (기본 on)")
+                   help="[condor] merge job 의 시간 한도 (STEP 26 M2; 기본 on): 지금 run 이 --time-limit 을 넘으면 hold, "
+                        "5 분 뒤 다른 machine 에서 처음부터 다시, 모두 3 번 시작까지. CPU 로는 보지 않는다 — 정상 "
+                        "merge 도 CPU 1 %% 미만")
+    p.add_argument("--time-limit", type=float, default=MERGE_TIME_LIMIT_H, metavar="HOURS",
+                   help=f"[condor] 그 한도, 시간 (기본 {MERGE_TIME_LIMIT_H:g}; 정상 merge 는 몇 분, 가장 큰 것도 1 시간 안)")
     p.add_argument("--os-version", default=DEFAULT_OS_VERSION)
     p.add_argument("--memory", default=DEFAULT_MEMORY)
     args = p.parse_args(argv)
@@ -674,6 +717,10 @@ def main(argv: list[str]) -> int:
         return 2
     if args.report and args.resubmit:
         print("[fatal] --report 와 --resubmit 은 따로 쓴다")
+        return 2
+    if not (math.isfinite(args.time_limit) and round(args.time_limit * 3600) >= 60):
+        print(f"[fatal] --time-limit 은 0 보다 큰 시간이어야 한다, 1 분 이상 (받은 값 {args.time_limit:g}; 끄려면 "
+              "--stall-guard off)")
         return 2
 
     expected = None
@@ -766,14 +813,7 @@ def main(argv: list[str]) -> int:
     if args.cmssw_src and not args.cmssw_src.is_dir():
         print(f"[fatal] --cmssw-src 가 디렉토리가 아님: {args.cmssw_src}")
         return 2
-    guard_lines = []
-    if args.stall_guard == "on":
-        try:                                                    # before anything is written (a half work directory
-            guard_lines = stall_guard_lines()                   # would read as 'pending' in --report)
-        except Exception as e:
-            print(f"[fatal] stall guard 를 submit_job_FH_Tier3_unified.py 에서 읽지 못함 ({type(e).__name__}: {e}); "
-                  "없이 내려면 --stall-guard off")
-            return 2
+    guard_lines = time_limit_lines(args.time_limit) if args.stall_guard == "on" else []
     def _term(signum, frame):                                  # SIGTERM (runlog.sh, a lost ssh) as an interrupt
         raise KeyboardInterrupt(f"signal {signum}")
     old_term = signal.signal(signal.SIGTERM, _term)
@@ -785,7 +825,7 @@ def main(argv: list[str]) -> int:
         sub = write_condor(jobs, args.runner, workdir, args.proxy,
                            args.os_version, args.memory, args.cmssw_src, guard_lines)
         print(f"[condor] submit file: {sub}  ({len(jobs)} jobs)")
-        print("[condor] stall guard : " + (guard_lines[0].split(": ", 1)[1] if guard_lines
+        print("[condor] time limit  : " + (guard_lines[0].split(": ", 1)[1] if guard_lines
                                            else "off (--stall-guard off): 멈춘 merge 는 'running' 으로 남는다"))
         print(f"[condor] worker env : "
               + (f"cmsenv from {args.cmssw_src}" if args.cmssw_src

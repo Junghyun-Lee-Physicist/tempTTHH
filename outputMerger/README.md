@@ -5,9 +5,9 @@
 > 저장소 `README.md` §8.3b 와 `python3 outputMerger/merge_outputs.py --help`(`--config` 로 job 수 대조, `--list`, `--report`,
 > `--resubmit`, `--allow-incomplete`, `--mode condor --proxy proxy.cert`), 기록은 `docs/changes/STEP_24_stage1_2_2024.md` §14 를 본다.
 > `run_one_hadd.sh` 의 인자도 바뀌었다(`<indir> <outfile> [<cmssw>|-] [<N>]`, 입력 수 ≠ N 이면 exit 7).
-> 2026-10-09(STEP 26 M): condor merge job 에 analyzer 와 같은 stall guard(`--stall-guard on|off`), 큐에 그 프로세스의 merge 나 analyzer job 이 있으면
-> 멈춤(exit 2), condor_submit 이 실패한 시도는 `--report` 에서 failed, `--dry-run` 의 work 디렉터리는 `--report` 가 보지 않음
-> (`docs/changes/STEP_26_trigger_sf_2024.md` §9).
+> 2026-10-09(STEP 26 M·M2): condor merge job 에 시간 한도(기본 3 h, `--time-limit H`, `--stall-guard off` 로 끔 — CPU 기준이 아님: 정상 merge 도
+> CPU 1 % 미만), 큐에 그 프로세스의 merge 나 analyzer job 이 있으면 멈춤(exit 2), condor_submit 이 실패한 시도는 `--report` 에서 failed, `--dry-run` 의
+> work 디렉터리는 `--report` 가 보지 않음(`docs/changes/STEP_26_trigger_sf_2024.md` §9·§10).
 
 이 디렉토리는 ttHH(4b) Fully Hadronic 분석의 **Step 8 (≥4 b-tag) 영역에서
 Data/MC ratio가 무너지는 원인 진단**을 위한 도구 모음입니다.

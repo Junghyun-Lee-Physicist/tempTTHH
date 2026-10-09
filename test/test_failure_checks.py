@@ -31,21 +31,22 @@
      triggerSF, not JSON; which of them matter in every mode), the preflight line (2024 JSON PASS, 2017 JSON FAIL in
      every mode, no file or no triggerSF FAIL in main / WARN in btagtrig) and the stop at submission (E50 before the
      first sample, through process_config_file; not for --report/--status; Data-only runs do not read it)
-  I  [STEP 26 M] merge and condor_run jobs (2026-10-09: a merge of 599 inputs 'running' 4 h with 14 s of CPU, no guard
-     in merge.sub): merge.sub carries the stall guard as stall_guard_exprs() (none with --stall-guard off), a --dry-run
-     directory is marked and --report skips its unsubmitted jobs (one submitted by hand counts); a job in the queue
-     naming the merged file (a merge of the process) or
-     one of its inputs <proc>/<proc>_<N>.root (an analyzer job of the process) stops the merge (exit 2, nothing written;
-     also through a link), another base / another process / relative paths do not; condor_q failing stops a condor
+  I  [STEP 26 M, M2] merge and condor_run jobs (2026-10-09: a merge of 599 inputs 'running' 4 h with 20 s of CPU, no
+     guard in merge.sub; healthy merges run at 0.0-0.4 % CPU, so the guard is the time of the run): merge.sub carries
+     the time limit as merge_outputs.time_limit_exprs() (default 3 h, --time-limit, none with --stall-guard off; with
+     a ClassAd module also evaluated), a --dry-run directory is marked and --report skips its unsubmitted jobs (one
+     submitted by hand counts); a job in the queue naming the merged file (a merge of the process) or one of its
+     inputs <proc>/<proc>_<N>.root (an analyzer job of the process) stops the merge (exit 2, nothing written; also
+     through a link), another base / another process / relative paths do not; condor_q failing stops a condor
      submission, not --dry-run; a failed or interrupted (SIGTERM) condor_submit is 'failed' in --report (unless the
      job's own log says otherwise) and --resubmit takes it again; condor_run.sh writes the same five expressions with
-     --stall-guard on,
-     none by default. condor_q and condor_submit are fakes in B and I (TTHH_CONDOR_Q / TTHH_CONDOR_SUBMIT and first on
-     PATH; if they cannot be executed here, part I makes no condor run and records a FAIL)
+     --time-limit H, none by default. condor_q and condor_submit are fakes in B and I (TTHH_CONDOR_Q /
+     TTHH_CONDOR_SUBMIT and first on PATH; if they cannot be executed here, part I makes no condor run and records a
+     FAIL)
 
 Run from the repo top after cmsenv (needs PyROOT; part B's merge needs hadd):
     python3 test/test_failure_checks.py
-Last line: SUMMARY test_failure_checks PASS|FAIL (<n>/<m> checks): 76 checks, 77 with a ClassAd module.
+Last line: SUMMARY test_failure_checks PASS|FAIL (<n>/<m> checks): 76 checks, 78 with a ClassAd module.
 """
 import contextlib
 import importlib.util
@@ -860,14 +861,17 @@ with tempfile.TemporaryDirectory(prefix="tthh_fail_") as T:
           and l17r[1] is None and l17r[0] == ["SampleA", "SampleB"] and l24[1] is None and l24[0] == ["SampleA", "SampleB"],
           str((l17, l17r, l24)))
 
-    # ---------------- I: [STEP 26 M] merge and condor_run jobs: the stall guard; one merge of a process at a time -------
-    #   2026-10-09: a merge of 599 inputs stayed 'running' 4 h with 14 s of CPU (merge.sub had no stall guard); and a
-    #   second merge of a process while the first is still in the queue can leave a partial file that --report calls ok
-    #   (it reads only the newest attempt). condor_q and condor_submit are the fakes above (absolute paths through
-    #   TTHH_CONDOR_Q / TTHH_CONDOR_SUBMIT and first on PATH); when they cannot run here, part I makes no condor run.
+    # ---------------- I: [STEP 26 M, M2] merge and condor_run jobs: the time limit; one merge of a process at a time ----
+    #   2026-10-09: a merge of 599 inputs stayed 'running' 4 h with 20 s of CPU (merge.sub had no guard); healthy merges
+    #   run at 0.0-0.4 % CPU too, so the guard of a merge is the time of the run (M2), not the analyzer jobs' CPU rule (M).
+    #   And a second merge of a process while the first is still in the queue can leave a partial file that --report
+    #   calls ok (it reads only the newest attempt). condor_q and condor_submit are the fakes above (absolute paths
+    #   through TTHH_CONDOR_Q / TTHH_CONDOR_SUBMIT and first on PATH); when they cannot run here, part I makes no
+    #   condor run.
     check("I the fake condor_q / condor_submit run here (else: a noexec TMPDIR -- part I's condor runs skipped)", fakes_ok)
     if fakes_ok:
-        ex = sub.stall_guard_exprs()
+        mom = load("tthh_merge_outputs", "outputMerger/merge_outputs.py")
+        ex = mom.time_limit_exprs(10800)                       # the default --time-limit 3
         proxy_i = os.path.join(T, "proxy_i.cert")
         open(proxy_i, "w").close()
         wroot_i = os.path.join(T, "workroot_i")
@@ -887,21 +891,70 @@ with tempfile.TemporaryDirectory(prefix="tthh_fail_") as T:
         fake_q([])
         rc_on, out_on = run(mi + ["--dry-run"], envi)
         sub_on = newest_sub()
+        marked = os.path.isfile(os.path.join(wroot_i, workdirs()[-1], "dry_run.txt"))
+        rc_15, out_15 = run(mi + ["--dry-run", "--time-limit", "1.5"], envi)
+        sub_15 = newest_sub()
         rc_off, out_off = run(mi + ["--dry-run", "--stall-guard", "off"], envi)
         sub_off = newest_sub()
-        kv = kv_of(sub_on)
-        check("I merge.sub: the analyzer jobs' stall guard (the five lines as stall_guard_exprs(), the comment with the "
-              "thresholds, the queue statement last); the queue read first; a --dry-run directory is marked",
-              rc_on == 0 and all(kv.get(k) == v for k, v in ex.items())
-              and "# stall guard [STEP 26 M, as the analyzer jobs]: " + sub.stall_guard_summary() in sub_on
+        n_wd0 = len(workdirs())
+        rc_0, out_0 = run(mi + ["--dry-run", "--time-limit", "0"], envi)
+        kv, kv15 = kv_of(sub_on), kv_of(sub_15)
+        check("I merge.sub: the time limit (the five lines as time_limit_exprs(10800) for the default 3 h, subcode 4202, "
+              "the comment with the numbers, the queue statement last); the queue read first; a --dry-run directory is "
+              "marked",
+              rc_on == 0 and sorted(ex) == ["periodic_hold", "periodic_hold_reason", "periodic_hold_subcode",
+                                            "periodic_release", "requirements"]
+              and all(kv.get(k) == v for k, v in ex.items()) and kv.get("periodic_hold_subcode") == "4202"
+              and "# time limit [STEP 26 M2]: " + mom.time_limit_summary(3.0) in sub_on
+              and "hold after 3 h of the current run (any CPU)" in sub_on
               and sub_on.rstrip().splitlines()[-1].startswith("queue args from ")
               and "[queue] 이 1 프로세스의 merge·analyzer job 은 condor 큐에 없음" in out_on
-              and "[condor] stall guard : hold after 1 h" in out_on
-              and os.path.isfile(os.path.join(wroot_i, workdirs()[-1], "dry_run.txt")), out_on[-1500:] + sub_on)
-        check("I merge.sub --stall-guard off: none of those lines, the rest the same",
-              rc_off == 0 and not any(k in sub_off for k in ("periodic_", "requirements", "stall guard"))
+              and "[condor] time limit  : hold after 3 h" in out_on and marked, out_on[-1500:] + sub_on)
+        check("I merge.sub: --time-limit 1.5 -> 5400 s / 90 min; --stall-guard off: none of those lines, the rest the "
+              "same; --time-limit 0: exit 2, nothing written",
+              rc_15 == 0 and kv15.get("periodic_hold") == mom.time_limit_exprs(5400)["periodic_hold"]
+              and "> 5400)" in kv15.get("periodic_hold", "") and "(limit 90 min)" in kv15.get("periodic_hold_reason", "")
+              and rc_off == 0 and not any(k in sub_off for k in ("periodic_", "requirements", "time limit"))
               and [l for l in sub_on.splitlines() if not l.startswith(("periodic_", "requirements", "#"))]
-              == sub_off.splitlines() and "off (--stall-guard off)" in out_off, out_off[-1500:] + sub_off)
+              == sub_off.splitlines() and "off (--stall-guard off)" in out_off
+              and rc_0 == 2 and "--time-limit 은 0 보다 큰" in out_0 and len(workdirs()) == n_wd0,
+              out_15[-800:] + sub_15 + out_off[-800:] + sub_off + out_0[-500:])
+        # the time limit evaluated as HTCondor does (with a ClassAd module; else part G's SKIP line says why)
+        if ca is not None:
+            now_i = int(time.time())
+
+            def ev_i(expr, **attrs):
+                a = ca.ClassAd(attrs)
+                a["X"] = ca.ExprTree(expr)
+                return a.eval("X")
+            hr = lambda h: now_i - int(h * 3600)
+            reason = str(ev_i(ex["periodic_hold_reason"], JobStatus=2, EnteredCurrentStatus=hr(4.3), RemoteUserCpu=20.0,
+                              RemoteSysCpu=0.0, RemoteHost="slot1_3@cluster309.knu.ac.kr"))
+            gi = {
+                "hold 3.1 h at 0 % CPU": ev_i(ex["periodic_hold"], JobStatus=2, EnteredCurrentStatus=hr(3.1),
+                                             RemoteUserCpu=0.0, RemoteSysCpu=0.0) is True,
+                "hold 3.1 h at 90 % CPU too": ev_i(ex["periodic_hold"], JobStatus=2, EnteredCurrentStatus=hr(3.1),
+                                                  RemoteUserCpu=10000.0, RemoteSysCpu=40.0) is True,
+                "hold 4.3 h, CPU undefined": ev_i(ex["periodic_hold"], JobStatus=2, EnteredCurrentStatus=hr(4.3)) is True,
+                "no hold 2.9 h at 0.4 % (a slow healthy merge)": ev_i(ex["periodic_hold"], JobStatus=2,
+                                                                     EnteredCurrentStatus=hr(2.9), RemoteUserCpu=42.0,
+                                                                     RemoteSysCpu=0.0) is False,
+                "no hold idle 5 h": ev_i(ex["periodic_hold"], JobStatus=1, EnteredCurrentStatus=hr(5)) is False,
+                "reason": reason.startswith("tthh time limit: running 25")
+                          and reason.endswith(" min (limit 180 min) with 20 s CPU on slot1_3@cluster309.knu.ac.kr"),
+                "release 1st / 2nd": all(ev_i(ex["periodic_release"], HoldReasonCode=3, HoldReasonSubCode=4202,
+                                              NumJobStarts=n, EnteredCurrentStatus=now_i - 400) is True for n in (1, 2)),
+                "no release 3rd": ev_i(ex["periodic_release"], HoldReasonCode=3, HoldReasonSubCode=4202, NumJobStarts=3,
+                                       EnteredCurrentStatus=now_i - 400) is False,
+                "no release before 5 min": ev_i(ex["periodic_release"], HoldReasonCode=3, HoldReasonSubCode=4202,
+                                                NumJobStarts=1, EnteredCurrentStatus=now_i - 100) is False,
+                "no release of other holds (4201, user, memory)": all(
+                    ev_i(ex["periodic_release"], HoldReasonCode=c, HoldReasonSubCode=sc, NumJobStarts=1,
+                         EnteredCurrentStatus=now_i - 400) is False for c, sc in ((3, 4201), (1, 0), (34, 0))),
+            }
+            check(f"I time limit evaluated ({ca.__name__}): held after 3 h whatever the CPU, not at 2.9 h nor idle; "
+                  "the reason; released twice at most, after 5 min, only this hold",
+                  all(gi.values()), str({k: v for k, v in gi.items() if not v}) + " reason=" + reason)
         rc_rp, out_rp = run(mo + ["--only", "SampleA", "--report"], envi)
         check("I --report skips the --dry-run directories (no 'PENDING ... no event in the log yet' from them)",
               "PENDING" not in out_rp and "no event in the log yet" not in out_rp, out_rp[-1200:])
@@ -1021,7 +1074,7 @@ with tempfile.TemporaryDirectory(prefix="tthh_fail_") as T:
         check("I a --dry-run directory submitted by hand: its job's log decides (FAILED rc=1), not hidden",
               rc_h == 1 and "FAILED" in out_h and "666.0 rc=1" in out_h, out_h[-1200:])
 
-        # condor_run.sh (tools/runlog): off by default; --stall-guard on writes the same five expressions (held as text)
+        # condor_run.sh (tools/runlog): none by default; --time-limit H writes the same five expressions (held as text)
         crr = os.path.join(T, "crrepo")
         os.makedirs(os.path.join(crr, "tools", "runlog"))
         for f in ("condor_run.sh", "runlog.sh"):
@@ -1039,16 +1092,24 @@ with tempfile.TemporaryDirectory(prefix="tthh_fail_") as T:
                 return pr.returncode, pr.stdout, ""
             with open(os.path.join(jd, d[-1], "job.sub")) as fh:
                 return pr.returncode, pr.stdout, fh.read()
-        rc_g, out_g, jsub = cr_sub("i_guard", "--stall-guard", "on")
+        rc_g, out_g, jsub = cr_sub("i_tl3", "--time-limit", "3")
+        rc_g15, out_g15, jsub15 = cr_sub("i_tl15", "--time-limit", "1.5")
         rc_d, out_d, jsub_d = cr_sub("i_default")
-        kvr = kv_of(jsub)
-        check("I condor_run.sh: --stall-guard on writes the same five expressions and summary as the submitter (the bash "
-              "copy has not drifted); the default writes none",
+        rc_b = [cr_sub("i_bad", *o)[0] for o in (("--time-limit", "0"), ("--time-limit", "abc"), ("--stall-guard", "on"))]
+        kvr, kvr15 = kv_of(jsub), kv_of(jsub15)
+        ex15 = mom.time_limit_exprs(5400)
+        check("I condor_run.sh: --time-limit 3 / 1.5 write the same five expressions and summary as merge_outputs.py's "
+              "time_limit_exprs() (the bash copy has not drifted); none by default; 0, a non-number and the removed "
+              "--stall-guard: exit 2",
               rc_g == 0 and all(kvr.get(k) == v for k, v in ex.items())
-              and "# stall guard [STEP 26 M, as the analyzer jobs]: " + sub.stall_guard_summary() in jsub
+              and "# time limit [STEP 26 M2]: " + mom.time_limit_summary(3.0) in jsub
               and jsub.rstrip().splitlines()[-1] == "queue 1"
-              and rc_d == 0 and jsub_d and not any(k in jsub_d for k in ("periodic_", "requirements")),
-              out_g[-800:] + jsub + str({k: (kvr.get(k), v) for k, v in ex.items() if kvr.get(k) != v}) + jsub_d)
+              and rc_g15 == 0 and all(kvr15.get(k) == v for k, v in ex15.items())
+              and "# time limit [STEP 26 M2]: " + mom.time_limit_summary(1.5) in jsub15
+              and rc_d == 0 and jsub_d and not any(k in jsub_d for k in ("periodic_", "requirements"))
+              and rc_b == [2, 2, 2],
+              out_g[-800:] + jsub + str({k: (kvr.get(k), v) for k, v in ex.items() if kvr.get(k) != v}) + jsub_d
+              + str(rc_b))
 
 n_fail = RESULTS.count(False)
 print(f"SUMMARY test_failure_checks {'PASS' if n_fail == 0 else 'FAIL'} ({len(RESULTS) - n_fail}/{len(RESULTS)} checks)")

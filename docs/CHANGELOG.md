@@ -2,10 +2,21 @@
 
 > **Purpose:** one chronological line per change, newest first, linking to the full record. The detail lives in [`changes/STEP_*.md`](changes/); this file is the index, not a copy.
 > **Audience:** anyone tracing when and why something changed.
-> **Status:** append-only · last meaningful update **2026-10-09** (M).
+> **Status:** append-only · last meaningful update **2026-10-09** (M2).
 > **Links:** decisions [`DECISIONS.md`](DECISIONS.md) · state [`STATUS.md`](STATUS.md).
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
+
+## 2026-10-09: [merge][도구] STEP 26 M2 — merge 의 guard 는 CPU 가 아니라 시간 한도; condor_run.sh 는 `--time-limit H`
+
+KNU condor_history(FH merge 84 개): 정상 merge 도 CPU 0.0–0.4 %(hadd 는 /pnfs 에서 파일을 열고 읽는 시간이 대부분), 멈춘 2181958.19 는 15,582 s 동안
+20 s(0.1 %) — M 이 analyzer 에서 옮긴 기준(1 h 넘게 CPU < 5 %)은 둘을 가르지 못하고 1 시간 넘는 정상 merge 를 hold 한다. `outputMerger/merge_outputs.py`:
+`time_limit_exprs()` — 지금 run 이 `--time-limit` 시간(기본 3; 정상 merge 404 개 중 가장 긴 것 2,082 s)을 넘으면 CPU 와 상관없이 hold(이유 `tthh
+time limit: ...`, subcode 4202), 그 hold 만 5 분 뒤 release(3 번 시작까지), 마지막 machine 피함; `--stall-guard off` 로 끔. `tools/runlog/condor_run.sh`:
+`--stall-guard` 를 없애고 `--time-limit H`(기본 없음; 같은 식). 시험 `test_failure_checks.py` 76/76(ClassAd 모듈이 있으면 78: 시간 한도 식 평가),
+`test_runlog.sh` 85/85; HTCondor 24.0 의 submit 논리로 펼친 job ad 확인(인자는 `Args`). KNU 10-09 저녁: merge 셋 84/84, ParkingHH F 의 사후 대조(Tree
+entries 같음), `--check-only` 셋 MC 56/56, plot 셋, K+L 빌드와 시험(TriggerStudy 합성 26/26 이 KNU ROOT 6.30 을 확인). 상세
+[`changes/STEP_26_trigger_sf_2024.md`](changes/STEP_26_trigger_sf_2024.md) §10.
 
 ## 2026-10-09: [merge][도구] STEP 26 M — merge job 의 stall guard, 큐에 그 프로세스의 merge·analyzer job 이 있으면 merge 하지 않음
 

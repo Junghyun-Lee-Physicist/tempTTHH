@@ -36,18 +36,19 @@ git add runlogs && git commit -m "runlogs: ..." && git push          # 기록 �
   명령이 시작되기 전이었으면 `… before the command started` 이고 명령은 돌지 않는다. SIGTERM 은 명령과 그 자식 전부에 가고, 기록은
   남은 출력까지 쓴 뒤 닫힌다; `RUNLOG_KILL_AFTER` 초(기본 5) 뒤에도 남은 것은 SIGKILL. `nohup` 아래에서는 SIGHUP 을 잡을 수 없다.
 - job 안에서는 ssh 키도 grid 암호도 없다. `git pull`·`git clone`·`voms-proxy-init` 은 제출 전에 직접 한다.
-- **stall guard(2026-10-09, STEP 26 M; `--stall-guard on|off`, 기본 off).** `on` 이면 analyzer job(`submit_job_FH_Tier3_unified.py`, STEP 25 K2)과
-  같은 다섯 줄: 지금 run 이 1 시간을 넘고 CPU(user + system)가 그 시간의 5 % 미만이면 hold(이유 `tthh stall guard: running <분> min with <초> s CPU
-  on <slot@machine>`), 5 분 뒤 다른 machine 에서 **처음부터 다시**, 모두 3 번 시작까지(그 뒤에는 held 로 남음). 그래서 CPU 를 꾸준히 쓰고 처음부터
-  다시 해도 되는 명령에만 준다: plot(`make_plots.py` 는 새 디렉터리), TriggerStudy `run_analysis.sh`, smoke·합성 시험, 빌드(`build_check.sh` 는
-  make clean 부터). /pnfs 훑기(파일 목록·branch signature·lumi 확인)는 건강해도 몇 시간 CPU 5 % 미만일 수 있어 주지 않고,
-  `tools/stage1/y1_reference.sh` 는 있던 출력을 거절하므로 다시 시작하면 실패한다. 시작마다 기록이 하나씩(멈춘 것은 EXIT 143). 식은
-  `condor_run.sh` 안에 글자로 있고, `test/test_failure_checks.py` I 가 제출기의 `stall_guard_exprs()` 와 같은지 본다.
+- **시간 한도(2026-10-09, STEP 26 M2; `--time-limit H`, 기본 없음).** 주면 지금 run 이 H 시간(예 `6`, `1.5`)을 넘을 때 hold(이유 `tthh time limit:
+  running <분> min (limit <분> min) with <초> s CPU on <slot@machine>`, subcode 4202), 5 분 뒤 다른 machine 에서 **처음부터 다시**, 모두 3 번
+  시작까지(그 뒤에는 held 로 남음) — `outputMerger/merge_outputs.py` 가 모든 merge 에 쓰는 것과 같은 식. CPU 로 보지 않는 이유: /pnfs 를 읽는 job 은
+  정상이어도 CPU 1 % 미만일 수 있다(merge 0.0–0.4 %, 10-09 KNU condor_history) — M 의 `--stall-guard`(analyzer 의 CPU 기준)는 그래서 없앴다(주면
+  exit 2). H 는 정상 시간보다 넉넉히, 처음부터 다시 해도 되는 명령에만: plot(`make_plots.py` 는 새 디렉터리), TriggerStudy `run_analysis.sh`,
+  smoke·합성 시험, 빌드(`build_check.sh` 는 make clean 부터). `tools/stage1/y1_reference.sh` 는 있던 출력을 거절하므로 다시 시작하면 실패한다.
+  시작마다 기록이 하나씩(멈춘 것은 EXIT 143). 식은 `condor_run.sh` 안에 글자로 있고, `test/test_failure_checks.py` I 가 `merge_outputs.py` 의
+  `time_limit_exprs()` 와 같은지 본다.
 
 ## 상태 읽기
 
 - 큐에 있으면 condor_q 의 상태(idle, running, held …). `held` 면 HoldReason 이 같이 나온다(메모리 초과면 `--memory` 를 올려 다시;
-  `tthh stall guard: ...` 면 5 분 뒤 저절로 다시 시작 — held·idle 인 동안은 멈춘 시작의 exit code 143, 다시 돌기 시작하면 `-`, 끝나면 새 시작의 것).
+  `tthh time limit: ...` 면 5 분 뒤 저절로 다시 시작 — held·idle 인 동안은 멈춘 시작의 exit code 143, 다시 돌기 시작하면 `-`, 끝나면 새 시작의 것).
 - `done`: 큐에 없고 exit code 가 있다. `gone(no exit)`: 기록은 시작됐는데 exit code 가 없다(강제 종료). `gone`: 기록조차 없다 —
   job 이 `runlog.sh` 전에 죽었다(worker 에 공유 파일 시스템이 없었다 등): `condor/runlog/<dir>/job.out`·`job.err` 를 본다.
 - `unknown(condor_q failed)`: schedd 가 바빠 condor_q 가 실패했다 — 잠시 뒤 다시.

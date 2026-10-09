@@ -18,6 +18,8 @@
 - **커밋 M(같은 날, §9):** merge job 의 stall guard(`condor_run.sh` 는 opt-in), 큐에 그 프로세스의 merge·analyzer job 이 있으면 merge 하지 않음 —
   `outputMerger/merge_outputs.py`, `tools/runlog/condor_run.sh`, `test/test_failure_checks.py`(I), `tools/runlog/test_runlog.sh`(T30), 문서.
   Python·bash 만(빌드 없음).
+- **커밋 M2(같은 날, §10):** merge 의 guard 를 CPU 기준에서 **시간 한도**로(정상 merge 도 CPU 0.0–0.4 %), `condor_run.sh` 는 `--stall-guard` 대신
+  `--time-limit H`; KNU 10-09 저녁의 결과(merge 셋, 사후 확인, plot, K+L 빌드와 시험). 같은 파일들과 문서, Python·bash 만.
 
 ## DECIDED / 실측
 
@@ -143,6 +145,9 @@ pool 쪽. 다음: cms01 에서 40 파일 읽기 시험(`dd`, 파일마다 5 분 
 
 ### 9. 커밋 M (10-09 같은 날): merge job 의 stall guard, 큐에 그 프로세스의 merge·analyzer job 이 있으면 merge 하지 않음
 
+(**M2 가 바꿈, §10:** 아래의 merge·condor_run guard 는 analyzer 의 CPU 기준을 옮긴 것이었는데, 정상 merge 도 CPU 1 % 미만이라 가르지 못한다 —
+merge 는 시간 한도, `condor_run.sh` 는 `--time-limit H`. 큐 확인·제출 기록·dry-run·work 디렉터리는 그대로.)
+
 **무엇이 있었나(사용자 출력).** FH merge(cluster 2181958)의 84 개 중 83 개는 끝났는데 2181958.19 = ParkingHH_Run2024F(입력 599, 572 MB)가 15,294 s 동안
 CPU 14 s, 출력 73,596 byte 가 21:38 이후 그대로 — hadd 가 /pnfs 입력을 읽다 멈춤(10-08 analyzer job 의 멈춤과 같은 모양). K2 의 stall guard 는
 `submit_job_FH_Tier3_unified.py` 가 쓰는 submit 파일에만 있었고 `merge_outputs.py` 의 `merge.sub`, `condor_run.sh` 의 `job.sub` 에는 없었다(AI 가
@@ -195,10 +200,49 @@ job 디렉터리의 `job.sh`·`payload.sh` 와 그대로인 `runlog.sh` 를 쓴�
 확인은 RUNBOOK §30 의 `--dry-run`(큐에 merge 나 analyzer job 이 있는 프로세스를 고르면 exit 2). 건강한 merge 의 CPU 비율과 5 % 문턱의 거리(사용자의
 `condor_history` 출력으로). schedd 가 cms01 하나라는 가정(다른 submit host 에서 낸 job 은 보이지 않는다).
 
+### 10. 커밋 M2 (10-09 같은 날): merge 의 guard 는 시간 한도, KNU 10-09 저녁의 결과
+
+**무엇을 봤나(사용자 출력, KNU 22:38–23:38 KST).** M 의 확인용 `condor_history 2181958`(FH merge 84 개)의 CPU 비율 낮은 순: 2181958.39 49 s 동안
+0 s, .47 15 s 동안 0 s, **.19(멈춘 것) 15,582 s 동안 20 s = 0.1 %**, .74 249 s 동안 1 s, .76 238 s 동안 1 s — 정상 merge 도 0.0–0.4 %. hadd 는 /pnfs 에서
+파일을 열고 읽는 시간이 대부분이다. 그러니 analyzer 의 기준(1 h 넘게 CPU < 5 %, STEP 25 K2: analyzer 는 25–41 %)을 옮긴 M 의 merge guard 는 멈춘
+merge 와 정상 merge 를 가르지 못하고, 1 시간 넘게 걸리는 정상 merge 를 hold·처음부터 다시(3 번 뒤 held)로 만든다(AI 가 merge 의 CPU 를 확인하지 않고
+옮김). M 은 KNU 에서 merge 를 하나도 내기 전에 고친다.
+
+**바꾼 것.**
+- `outputMerger/merge_outputs.py`: merge 의 guard = **시간 한도** `time_limit_exprs()` — `periodic_hold` 는 지금 run 이 `--time-limit` 시간(기본 3)을
+  넘을 때(CPU 와 상관없이), 이유 `tthh time limit: running <분> min (limit <분> min) with <초> s CPU on <slot@machine>`, subcode **4202**(4201 = analyzer 의
+  CPU guard), release 는 그 hold 만 5 분 뒤 3 번 시작까지, `requirements` 는 마지막 machine 을 피함(제출기와 같은 글자). `--stall-guard off` 로 끔,
+  `--time-limit 0` 등은 exit 2. **기본 3 시간 — 확정**(10-09 사용자 출력: merge work 디렉터리의 condor 로그로 잰 merge 405 개): 정상 404 개 중
+  가장 긴 것 2,082 s(ParkingHH_Run2024G, CPU 0.8 %), 그다음 808 s 이하; 다시 한 ParkingHH F 534 s(CPU 3.9 %); 멈춘 2181958.19 는 15,581 s. 3 시간은
+  가장 긴 정상의 5 배쯤이고, 멈춘 것은 3 시간에 잡힌다. 정상 merge 의 CPU 는 0.0–25 %(대부분 4 % 미만). 이제 guard 를 위해 제출기 module 을 읽지
+  않는다(`--config` 때만).
+- `tools/runlog/condor_run.sh`: `--stall-guard on|off`(M) 를 없애고(주면 exit 2 와 안내) **`--time-limit H`**(기본 없음; H 는 6·1.5 처럼) — 같은 다섯
+  식(시험이 `time_limit_exprs()` 와 같은지 본다). 같은 로그로 잰 condor_run job 38 개: /pnfs 훑기는 길고 CPU 가 낮다(`knu_du_store` 54,079 s·0.5 %,
+  `knu_p8_2024_MC` 13,382 s·12.5 %, `knu_d16_branchsig` 10,380 s·0.8 %) — 이것들에는 한도를 주지 않는다(M 의 CPU guard 를 기본으로 켰다면 죽었을
+  것: 검토의 지적이 맞았다). plot 500–777 s(CPU 13–79 %) → `--time-limit 3`; 빌드 1,219 s; TriggerStudy 는 아직 모름 → 처음에는 `--time-limit 6`.
+- 시험: `test/test_failure_checks.py` I 를 시간 한도로(기본 3 h = 10800 s·subcode 4202, `--time-limit 1.5` = 5400 s·90 min, off, 0 은 exit 2,
+  condor_run 의 3·1.5 h 가 같은 식, 기본 없음, 0·문자·`--stall-guard` 는 exit 2) — 76/76; ClassAd 모듈이 있으면 + 식 평가(3.1 h 면 CPU 0 %·90 % 모두
+  hold, 2.9 h·idle 은 아님, 이유 글자, release 두 번까지·5 분 뒤·이 hold 만) = 78/78(컨테이너: HTCondor 25.14 `classad2`). `tools/runlog/test_runlog.sh`
+  T30 둘(85/85). HTCondor 24.0 의 condor_submit 논리로 `merge.sub` 를 펼치면 다섯 식이 그대로 job ad 에 들어가고 `Requirements` 는 기본 조건과 AND,
+  인자는 `Args` 에 — M 의 큐 확인이 읽는 곳.
+
+**KNU 10-09 저녁의 결과(사용자 출력).**
+- merge: FH·μCR·eCR 모두 `--report` 84/84. 다시 한 ParkingHH_Run2024F: 입력 599(bad 0)의 Tree entries 합 2,804,824 = 합친 파일, noCut 합 121,340,087 대
+  121,340,056(차이 31 = 2.6×10⁻⁷, TH1F 의 float) → 겹침·빠짐 없음(§9 의 설명을 실측으로 확인).
+- `make_plots.py --check-only` 셋: `EVENTS MC 56 of 56 ... all equal`, 표본마다 noCut/exp 0.995–1.010, `RESULT OK`. Data/MC(SF 없음): FH 1.30(lepton
+  조건 뒤)·1.44(nb ≥ 2)·2.02(≥ 3)·2.18(≥ 4)·1.40(nTotal); μCR 0.87·0.86·1.19·1.41·0.84; eCR 0.80·0.77·1.07·1.19·0.75. FH 의 MC 는 nTotal 에서 78 % 가
+  LO QCD(nb ≥ 4 에서도 78 %), 20 % 가 tt. 읽기: CR 의 낮은 nb 에서 1 미만 = MC 의 hadronic trigger 효율(trigger SF 가 고칠 것; μCR 은 SF 를 재는 영역이라
+  독립 검증은 eCR·FH)과 lepton ID/iso SF 없음(N4; e 가 μ 보다 0.09 낮은 것은 그 크기와 맞음); nb 가 늘수록 커지는 것은 세 영역 공통(b-tag SF, c·light
+  mistag SF 없음, tt+HF 정규화); FH 의 nb ≥ 3 의 두 배는 QCD 모델링 — SF 만으로는 닫히지 않을 것.
+- plot 셋(condor 2181964–6, 15 분 안) `RESULT OK`, 맥 `plots_2024_full/` 9 파일(compact·detailed PDF 와 YIELDS 셋).
+- K+L 빌드(2181962) exit 0, TriggerStudy 빌드, 단위 PASS, 실패 확인 63/63(M 뒤 76/76), `test_btag_eff_maps` 26/26, smoke_2024 106/106(`BTAGSF` 셋),
+  **TriggerStudy 합성 26/26 — KNU ROOT 6.30 에서 `root -q` 의 exit code 와 hadd 의 TNamed cycle 이 맞음**(아래 '확인하지 못한 것' 의 첫 항목 닫힘).
+- M 은 `d66d98da`(KNU pull, 시험 76/76·85/85). M 의 `--dry-run` 확인은 2181963 이 이미 끝나 exit 0(맞음).
+
 ## 확인하지 못한 것
 
-- KNU 의 ROOT 6.30 에서: `root -l -b -q` 가 macro 의 int 를 exit code 로 돌려주는지, hadd 가 TNamed 를 입력마다 cycle 로 남기는지(컨테이너 6.40 은
-  둘 다 확인). RUNBOOK §29 의 합성 시험이 둘을 본다.
+- ~~KNU 의 ROOT 6.30 에서: `root -l -b -q` 가 macro 의 int 를 exit code 로 돌려주는지, hadd 가 TNamed 를 입력마다 cycle 로 남기는지~~ —
+  **10-09 확인**: KNU 의 합성 시험 26/26(§10).
 - 진짜 2024 btagtrig 의 통계: category 마다 측정 bin 수(특히 nB4p), fallback 이 얼마나 쓰이는지, Data/MC 효율과 SF 의 크기.
 - era C(4J3T 의 DeepJet 판 기간)와 D–I 의 SF 차이; 2024 의 μ turn-on 과 문턱(N2).
 - lepton CR(μCR) 은 SF 를 유도한 표본과 겹친다(같은 1μ 영역) — 독립 검증은 eCR 과 FH 의 Data/MC(PLAN Stage 6 통과 기준).
