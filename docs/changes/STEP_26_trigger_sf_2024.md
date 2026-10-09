@@ -15,6 +15,9 @@
   워크스페이스 `RUNBOOK_lxplus_2026-09-16.md` §29, `00_START_HERE.md`
 - KNU: analyzer 는 **큐가 빈 뒤 다시 빌드**(`src/CorrectionsManager.cc`; K 의 빌드와 한 번에, RUNBOOK §28 4 = §29 2). TriggerStudy 는 따로
   `cd TriggerStudy && make`. 2017 의 출력과 수치는 바뀌지 않는다(§5).
+- **커밋 M(같은 날, §9):** merge job 의 stall guard(`condor_run.sh` 는 opt-in), 큐에 그 프로세스의 merge·analyzer job 이 있으면 merge 하지 않음 —
+  `outputMerger/merge_outputs.py`, `tools/runlog/condor_run.sh`, `test/test_failure_checks.py`(I), `tools/runlog/test_runlog.sh`(T30), 문서.
+  Python·bash 만(빌드 없음).
 
 ## DECIDED / 실측
 
@@ -137,6 +140,60 @@ pool 쪽. 다음: cms01 에서 40 파일 읽기 시험(`dd`, 파일마다 5 분 
 큐가 빈 뒤: 맥 L 커밋 → KNU pull → K+L 빌드(§28 4 와 한 번에)·TriggerStudy `make` → 시험(단위, 실패 확인, 오프라인 smoke, **TriggerStudy 합성
 시험: KNU ROOT 6.30 에서 `root -q` 의 exit code 와 hadd 의 TNamed cycle 확인**) → 2024 btagtrig(§28 6–7) → 효율 map(§28 8)과 **TriggerStudy
 `--year 2024`** → JSON 둘을 DerivedCorr 에·main yml 두 경로 → main 셋 `--trigsf on --btagsf on` → plot 과 2017 v9 비교.
+
+### 9. 커밋 M (10-09 같은 날): merge job 의 stall guard, 큐에 그 프로세스의 merge·analyzer job 이 있으면 merge 하지 않음
+
+**무엇이 있었나(사용자 출력).** FH merge(cluster 2181958)의 84 개 중 83 개는 끝났는데 2181958.19 = ParkingHH_Run2024F(입력 599, 572 MB)가 15,294 s 동안
+CPU 14 s, 출력 73,596 byte 가 21:38 이후 그대로 — hadd 가 /pnfs 입력을 읽다 멈춤(10-08 analyzer job 의 멈춤과 같은 모양). K2 의 stall guard 는
+`submit_job_FH_Tier3_unified.py` 가 쓰는 submit 파일에만 있었고 `merge_outputs.py` 의 `merge.sub`, `condor_run.sh` 의 `job.sub` 에는 없었다(AI 가
+범위를 좁게 잡음). 사용자가 `condor_rm 2181958.19` 뒤 그 하나만 `--only` 로 다시(cluster 2181963).
+
+**다시 merge 해도 겹치지 않는 이유(코드로 확인).** (1) hadd 는 입력 `<proc>/<proc>_<N>.root` 를 읽기만 한다. (2) `run_one_hadd.sh` 는 `hadd -f`(`-a` 아님):
+ROOT 의 RECREATE 는 있던 파일을 지우고 새로 만든다 — 반쪽 파일의 내용은 넘어오지 않는다. (3) `--config` 의 job 번호 대조, worker 의 입력 수 대조(exit 7).
+(4) `--report` 는 프로세스마다 가장 새 시도. 옛 프로세스가 노드에 남았다 깨어나도 쥔 것은 지워진 옛 파일(다른 PNFS-ID)이라 새 파일에 쓰지 못한다.
+남은 위험 둘: 같은 프로세스의 merge job 둘이 함께 큐에 있을 때(옛 시도가 새 시도 뒤에 돌면 좋은 파일을 지우고 다시 쓰고, 그게 멈추면 반쪽이 남는데
+`--report` 는 새 시도만 본다; `--resubmit` 은 pending·held 를 고르지 않지만 손으로 고른 `--only` 와 X 로 남은 job 은 막지 못했다), 그리고 그
+프로세스의 analyzer job 이 아직 큐에 있을 때(출력은 job 이 시작할 때 생겨 `--config` 의 개수 대조를 통과한다 — 지금까지는 "merge 는 analyzer
+`--report` 100 % 뒤에만" 이라는 사람의 규칙뿐). 다시 낼 때 `--skip-existing` 은 반쪽 파일도 건너뛴다(그래서 쓰지 않는다).
+
+**바꾼 것.**
+- `outputMerger/merge_outputs.py`: `merge.sub` 에 제출기의 `stall_guard_exprs()` 다섯 줄과 설명 줄(`--stall-guard on|off`, 기본 on). 식은 제출기에서
+  읽어 한 곳에만 있다(읽지 못하면 아무것도 쓰기 전에 exit 2). 합치기 전에(local·condor·`--dry-run`) `condor_q -af:j Args Arguments`(env
+  `TTHH_CONDOR_Q`·`TTHH_CONDOR_SUBMIT` 은 시험용): 큐(어느 상태든, X 도)의 job 이 합칠 `<base>/<proc>.root`(merge) 나 `<base>/<proc>/<proc>_<N>.root`
+  (analyzer job)를 인자로 가지면 exit 2 와 job 번호·할 일(같은 이름이 같은 디렉터리에 있으면 링크로 닿아도; 상대 경로 인자는 그 job 의 Iwd 기준이라
+  보지 않고, `--base` 는 절대 경로로 바꿔 쓴다). 다른 base 의 같은 프로세스, 같은 base 의 다른 프로세스는 걸리지 않는다. 큐를 못 읽으면 condor 제출은
+  exit 2, local·`--dry-run` 은 note 뒤 계속. condor_submit 이 실패하거나 중단되면(Ctrl-C; SIGTERM 은 runlog.sh 가 ssh 가 끊길 때 보냄; 전에는
+  traceback) work 디렉터리에 `submit_failed.txt` → 로그에 사건이 없는 job 은 `--report` 의 failed(전에는 영원히 pending), `--resubmit` 이 다시 고름
+  (그래도 큐에 들어간 job 은 자기 로그가 정한다). `--dry-run` 의 work 디렉터리에는 먼저 `dry_run.txt` — 로그에 사건이 없는(제출하지 않은) job 은
+  `--report` 가 시도로 보지 않는다(전에는 pending 으로 남아 `--resubmit` 도 고르지 않았다; 그 `merge.sub` 를 손으로 제출하면 그 로그가 정한다). 시도마다
+  work 디렉터리 하나(이름이 있으면 1 초 뒤; 전에는 같은 초의 두 실행이 한 디렉터리를 나눠 썼다). 제출기를 읽을 때 `.pyc` 를 쓰지 않음. `--report` 의
+  held 안내.
+- `tools/runlog/condor_run.sh`: `--stall-guard on` 일 때만 `job.sub` 에 같은 다섯 줄(**기본 off**: 명령이 무엇이든 돌리므로 — /pnfs 훑기(파일 목록,
+  branch signature, lumi 확인)는 건강해도 몇 시간 CPU 5 % 미만일 수 있어 1 시간마다 죽고 3 번 뒤 held 로 남으며, `tools/stage1/y1_reference.sh` 는 있던
+  출력을 거절해 다시 시작하면 실패한다). 켜는 곳: plot, TriggerStudy `run_analysis.sh`, smoke·합성 시험, 빌드. bash 라 식을 글자로 가진다(시험이
+  제출기와 같은지 본다). 시작마다 기록 하나(멈춘 것은 EXIT 143; status.sh 는 held·idle 동안 143, 다시 돌면 `-`).
+- 시험: `test/test_failure_checks.py` I 열셋 → 76/76(ClassAd 모듈이 있으면 77). condor_q·condor_submit 은 가짜(절대 경로 env 와 PATH 맨 앞); 가짜를
+  실행할 수 없으면(noexec TMPDIR) I 의 condor 실행은 하지 않고 FAIL 하나 — KNU 에서도 진짜 condor_submit 에 닿지 않는다. B 의 merge 도 가짜 condor_q.
+  `tools/runlog/test_runlog.sh` T30 둘 → 85/85. 옛 두 스크립트로 돌리면 I 와 T30 이 FAIL(시험이 실제로 잡는지 확인).
+- 문서: `README.md`(stall guard, §7.6, §8.3b, 시험 수), `tools/runlog/README.md`, `outputMerger/README.md`(머리말), `docs/reference/ERROR_CODES.md`,
+  `docs/{STATUS,CHANGELOG}.md`.
+
+**독립 검토(10-09, 반영).** (1) I 의 on/off 비교가 work 디렉터리 이름(초 단위)에 따라 흔들림 → 이름을 지우고 비교, 시도마다 디렉터리 하나. (2)
+`condor_run.sh` 의 기본 on 은 /pnfs 훑기를 죽일 수 있음 → 기본 off, 켜는 곳을 적음. (3) "다시 해도 되는 명령" 에 `y1_reference.sh` 가 아님 → 적음.
+(4) status.sh 의 143 설명이 틀림 → 고침. (5) condor `--dry-run` 이 영원히 pending → `dry_run.txt`. (6) `submit_failed.txt` 가 큐에 들어간 job 의 로그를
+가림 → 사건이 없는 job 에만. (7) 상대 경로 → `--base` 절대, 상대 인자는 보지 않음. (8) 시험의 안전이 PATH 순서에만 기댐 → `TTHH_CONDOR_SUBMIT`·
+`TTHH_CONDOR_Q` 절대 경로, 가짜를 실행할 수 없으면 I 를 하지 않음. 그리고 검토의 제안대로 그 프로세스의 analyzer job 도 확인.
+2 차(고친 것 확인, 아홉 모두 됨; 진짜 condor_q·condor_submit 자리에 기록하는 가짜를 두고 네 경우 — 정상, noexec, 옛 스크립트, test_runlog — 모두 0 번
+불림): (N1) `--dry-run` 디렉터리의 `merge.sub` 를 손으로 제출하면 `--report` 가 못 봄 → 사건이 없는 job 만 숨김. (N2) condor_submit 중의 Ctrl-C·
+SIGTERM 은 표시 없이 traceback → 표시하고 exit 130/143. (N3) analyzer job 안내에 `-forcex`. 남긴 것(N4): 같은 base 의 `merge_outputs.py` 둘을 동시에
+돌리면 둘 다 큐 확인을 통과할 수 있다(잠금 없음; 사람이 한 번에 하나씩 낸다).
+
+**KNU.** Python·bash 만 — 다시 빌드하지 않고, 도는 job 과 상관없이 pull 해도 된다(merge job 은 그대로인 `run_one_hadd.sh` 를, condor_run job 은 자기
+job 디렉터리의 `job.sh`·`payload.sh` 와 그대로인 `runlog.sh` 를 쓴다). btagtrig 의 merge 전에 받는다(워크스페이스 RUNBOOK §30).
+
+**확인하지 못한 것(M).** KNU 의 condor_q 가 merge job 의 인자를 `Args`·`Arguments` 중 어디에 보이는지(둘 다 읽으므로 어느 쪽이든 된다) — 첫 실제
+확인은 RUNBOOK §30 의 `--dry-run`(큐에 merge 나 analyzer job 이 있는 프로세스를 고르면 exit 2). 건강한 merge 의 CPU 비율과 5 % 문턱의 거리(사용자의
+`condor_history` 출력으로). schedd 가 cms01 하나라는 가정(다른 submit host 에서 낸 job 은 보이지 않는다).
 
 ## 확인하지 못한 것
 

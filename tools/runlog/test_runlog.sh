@@ -15,6 +15,7 @@
 #  throw-away repo is made without the user's git configuration, and T22-T28
 #  cover the signal cases (header phase, command tree, nested record, SIGHUP,
 #  footer phase, a command that ignores SIGTERM).
+#  2026-10-09 (STEP 26 M): T30, the stall guard lines of condor_run.sh's job.sub.
 # =============================================================================
 set -u
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
@@ -408,6 +409,17 @@ if [[ -r /proc/$$/task/$$/children ]]; then
 else
   ok "T29 skipped (no /proc children list on this system)"
 fi
+
+# ---- T30 [STEP 26 M] the stall guard in job.sub: off by default, --stall-guard on, a bad value -------------------
+# (that the five expressions equal the analyzer jobs' ones: test/test_failure_checks.py part I)
+( cd "$R" && /bin/bash "$CR" --dry-run --stall-guard on t30_on -- true ) > "$W/t30.out" 2>&1; r30a=$?
+( cd "$R" && /bin/bash "$CR" --dry-run t30_def -- true ) > "$W/t30b.out" 2>&1; r30b=$?
+( cd "$R" && /bin/bash "$CR" --dry-run --stall-guard yes t30_bad -- true ) > /dev/null 2>&1; r30c=$?
+J30="$(ls -d "$R"/condor/runlog/t30_on_* | head -1)"; J30b="$(ls -d "$R"/condor/runlog/t30_def_* | head -1)"
+n30=$(grep -cE '^(periodic_hold|periodic_hold_reason|periodic_hold_subcode|periodic_release|requirements) +=' "$J30/job.sub" 2>/dev/null); n30=${n30:--1}
+n30b=$(grep -cE '^(periodic_|requirements)' "$J30b/job.sub" 2>/dev/null); n30b=${n30b:--1}
+check "T30 --stall-guard on: five lines, subcode 4201, queue 1 last, the note" "[[ $r30a -eq 0 && $n30 -eq 5 ]] && grep -q '^periodic_hold_subcode *= 4201\$' '$J30/job.sub' && [[ \"\$(tail -1 '$J30/job.sub')\" == 'queue 1' ]] && grep -q 'stall guard: on (hold after 1 h' '$W/t30.out'"
+check "T30 default off: none of them, the rest the same; a bad value -> 2" "[[ $r30b -eq 0 && $n30b -eq 0 && $r30c -eq 2 ]] && diff <(grep -vE '^(periodic_|requirements|#)' '$J30/job.sub' | sed 's#t30_on_[0-9_]*#X#g') <(sed 's#t30_def_[0-9_]*#X#g' '$J30b/job.sub') > /dev/null && grep -q 'stall guard: off' '$W/t30b.out'"
 
 echo "RESULT: $NP PASS, $NF FAIL"
 [[ $NF -eq 0 ]]

@@ -17,6 +17,25 @@
 #    --no-proxy     never attach a proxy
 #    --source F     source F (relative to the workdir) after cmsenv, e.g.
 #                   setup.sh when the command runs the analyzer itself
+#    --stall-guard on|off
+#                   (default off; STEP 26 M, 2026-10-09) on: the analyzer
+#                   jobs' stall guard (submit_job_FH_Tier3_unified.py, STEP 25
+#                   K2): a run of more than 1 h with CPU below 5 % of that time
+#                   is held ('tthh stall guard: running <min> min with <s> s
+#                   CPU on <slot@machine>'), 5 min later the job starts again
+#                   from the beginning on another machine, 3 starts in all;
+#                   then it stays held. Only for a command that uses CPU
+#                   steadily AND may start again from the beginning: the plots
+#                   (make_plots.py writes a new directory), TriggerStudy's
+#                   run_analysis.sh, the smoke and synthetic tests, a build
+#                   (build_check.sh does make clean). Not for /pnfs scans
+#                   (file listings, branch signatures, lumi checks: they can
+#                   sit below 5 % CPU for hours while healthy) and not for
+#                   tools/stage1/y1_reference.sh (it refuses existing outputs,
+#                   so a restart fails). Each start leaves its own record (a
+#                   stopped one ends with EXIT 143); status.sh shows 143 while
+#                   the job is held or idle after a stop, '-' once it runs
+#                   again, then the new start's code.
 #    --dry-run      write the job files, do not submit
 #
 #  Memory: 4GB suits the scans and tests; for a build with -j4 give
@@ -32,7 +51,8 @@
 #                  missing on the worker) fails before the record: job.out.
 #    job.sub       KNU conventions copied from submit_job_FH_Tier3_unified.py and
 #                  outputMerger/merge_outputs.py: getenv, MY.WantOS,
-#                  request_memory, x509userproxy (when attached)
+#                  request_memory, x509userproxy (when attached), the stall
+#                  guard (--stall-guard)
 #    job.out/.err/.log   condor's own files; job.log holds the IP addresses and
 #                  ports of the schedd and the worker, one more reason condor/
 #                  stays out of git
@@ -49,10 +69,10 @@
 set -u
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
-usage () { sed -n '2,48p' "$0" | sed 's/^# \{0,2\}//'; }
+usage () { sed -n '2,68p' "$0" | sed 's/^# \{0,2\}//'; }
 die () { echo "condor_run.sh: $*" >&2; exit 2; }
 
-CPUS=1; MEM="4GB"; WORKDIR="$PWD"; WANTOS="el9"; PROXY_OPT=""; NOPROXY=0; DRY=0; SRCFILE=""
+CPUS=1; MEM="4GB"; WORKDIR="$PWD"; WANTOS="el9"; PROXY_OPT=""; NOPROXY=0; DRY=0; SRCFILE=""; GUARD="off"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -h|--help) usage; exit 0 ;;
@@ -63,6 +83,7 @@ while [[ $# -gt 0 ]]; do
     --proxy)   [[ $# -ge 2 ]] || die "--proxy needs a value"; PROXY_OPT="$2"; shift 2 ;;
     --no-proxy) NOPROXY=1; shift ;;
     --source)  [[ $# -ge 2 ]] || die "--source needs a file"; SRCFILE="$2"; shift 2 ;;
+    --stall-guard) [[ $# -ge 2 && ( "$2" == on || "$2" == off ) ]] || die "--stall-guard needs on or off"; GUARD="$2"; shift 2 ;;
     --dry-run) DRY=1; shift ;;
     --) die "missing <step> before '--'" ;;
     -*) die "unknown option $1 (see --help)" ;;
@@ -112,6 +133,19 @@ if [[ $NOPROXY -eq 0 ]]; then
 else
   PROXY_NOTE="none (--no-proxy)"
 fi
+
+# ---- stall guard (STEP 26 M) ----------------------------------------------------
+# The same text as stall_guard_exprs() / stall_guard_summary() of
+# submit_job_FH_Tier3_unified.py (STEP 25 K2: the reasons and the numbers are
+# there); test/test_failure_checks.py part I checks that they stay equal.
+G_SUMMARY='hold after 1 h with CPU < 5% of the run time, release after 5 min, at most 3 starts, not again on the machine it last ran on'
+G_CPU='(ifThenElse(isUndefined(RemoteUserCpu), 0, RemoteUserCpu) + ifThenElse(isUndefined(RemoteSysCpu), 0, RemoteSysCpu))'
+G_RUN='(time() - EnteredCurrentStatus)'
+G_HOLD="(JobStatus == 2) && (${G_RUN} > 3600) && (${G_CPU} < 0.05 * ${G_RUN})"
+G_REASON="strcat(\"tthh stall guard: running \", string(int(${G_RUN} / 60)), \" min with \", string(int(${G_CPU})), \" s CPU on \", ifThenElse(isUndefined(RemoteHost), \"?\", RemoteHost))"
+G_SUBCODE='4201'
+G_RELEASE='(HoldReasonCode == 3) && (HoldReasonSubCode == 4201) && (NumJobStarts < 3) && ((time() - EnteredCurrentStatus) > 300)'
+G_REQ='isUndefined(LastRemoteHost) || ((LastRemoteHost != TARGET.Machine) && (substr(LastRemoteHost, size(LastRemoteHost) - size(TARGET.Machine) - 1) != strcat("@", TARGET.Machine)))'
 
 # ---- job directory -------------------------------------------------------------
 STAMP="$(date -u +%Y%m%d_%H%M%S)"
@@ -170,6 +204,14 @@ chmod 755 "$JOBDIR/payload.sh" "$JOBDIR/job.sh"
   echo "request_memory          = $MEM"
   [[ "$CPUS" -gt 1 ]] && echo "request_cpus            = $CPUS"
   [[ -n "$PROXY" ]] && echo "x509userproxy           = $PROXY"
+  if [[ "$GUARD" == on ]]; then
+    echo "# stall guard [STEP 26 M, as the analyzer jobs]: $G_SUMMARY"
+    echo "periodic_hold           = $G_HOLD"
+    echo "periodic_hold_reason    = $G_REASON"
+    echo "periodic_hold_subcode   = $G_SUBCODE"
+    echo "periodic_release        = $G_RELEASE"
+    echo "requirements            = $G_REQ"
+  fi
   echo "queue 1"
 } > "$JOBDIR/job.sub"
 
@@ -180,6 +222,8 @@ echo "[condor_run] cmsenv   : $CMSSW_SRC"
 echo "[condor_run] request  : cpus $CPUS, memory $MEM, os $WANTOS"
 [[ -n "$SRCFILE" ]] && echo "[condor_run] source   : $SRCFILE (after cmsenv, in the workdir)"
 echo "[condor_run] proxy    : $PROXY_NOTE"
+if [[ "$GUARD" == on ]]; then echo "[condor_run] stall guard: on ($G_SUMMARY)"
+else echo "[condor_run] stall guard: off (a command that hangs stays 'running'; --stall-guard on for a CPU-bound command that may start again)"; fi
 echo "[condor_run] job dir  : $REL/"
 if [[ $DRY -eq 1 ]]; then
   echo "[condor_run] --dry-run: not submitted (submit with: condor_submit $REL/job.sub)"

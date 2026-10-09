@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 ================================================================================
-SCRIPT: merge_outputs.py   [STEP22, STEP 24 checks 2026-10-06]
+SCRIPT: merge_outputs.py   [STEP22, STEP 24 checks 2026-10-06, STEP 26 M 2026-10-09]
 ================================================================================
 
 [ Purpose ]
@@ -42,6 +42,28 @@ AnalyzerOutput 의 flat 레이아웃을 **자동 발견**해서 프로세스별�
     # 실패했거나 아직 합치지 않은 프로세스만 다시 (대기·실행 중인 것은 그대로)
     python3 merge_outputs.py --base ... --resubmit --mode condor [--config yml]
 
+    # [STEP 26 M, 2026-10-09] condor merge job 의 stall guard: analyzer job 과 같은 식
+    # (submit_job_FH_Tier3_unified.py 의 stall_guard_exprs()) — 지금 run 이 1 시간을 넘고 CPU 가
+    # 그 시간의 5 % 미만이면 hold(이유 'tthh stall guard: ...'), 5 분 뒤 같은 merge 가 다른
+    # machine 에서 처음부터 다시(hadd -f 가 파일을 새로 만든다), 모두 3 번 시작까지. 10-09: 입력
+    # 599 개를 읽던 merge 하나가 /pnfs 에서 멈춘 채 4 시간 'running'(CPU 14 s).
+    ... --stall-guard off               # 그 줄들을 쓰지 않는다
+    # 합치기 전에(local·condor, --dry-run 도) condor 큐를 본다(condor_q -af:j Args Arguments). 큐의
+    # job(어느 상태든, X 도)이 인자로
+    #   - 합칠 파일 <base>/<proc>.root 를 가지면 = 같은 프로세스의 merge: 둘이 함께 돌면 늦게 시작한
+    #     쪽이 다른 쪽의 파일을 지우고 다시 쓰고, 옛 시도가 새 시도 뒤에 돌다 멈추면 반쪽 파일이
+    #     남는데 --report 는 가장 새 시도만 본다;
+    #   - 입력 <base>/<proc>/<proc>_<N>.root 를 가지면 = 그 프로세스의 analyzer job: 출력은 job 이
+    #     시작할 때 생기므로 파일 수(--config 대조)는 맞아도 덜 쓴 입력이다 (merge 는 analyzer
+    #     --report 100 % 뒤에만)
+    # 멈춘다(exit 2, 아무것도 쓰지 않음). (--resubmit 은 pending·held 를 고르지 않으므로 merge 쪽에
+    # 걸리는 것은 손으로 고른 --only 나 X 로 남은 job 이다.) 상대 경로 인자는 보지 않는다(그 job 의
+    # Iwd 기준); 이 스크립트는 --base 를 절대 경로로 바꿔 쓴다.
+    # condor --dry-run 의 work 디렉터리에는 dry_run.txt 를 남기고, --report 는 그 디렉터리의 job 중 로그에
+    # 사건이 없는 것(= 제출하지 않은 것)은 시도로 보지 않는다(손으로 condor_submit 한 것은 그 로그가 정한다).
+    # condor_submit 이 실패하거나 중단되면(Ctrl-C, SIGTERM) submit_failed.txt: 사건이 없는 job 은 failed.
+    # 남긴 것: 같은 base 의 merge_outputs.py 둘을 동시에 돌리면 둘 다 큐 확인을 통과할 수 있다(잠금 없음).
+
     # 필터 / 재실행 제어
     ... --only 'QCD_*' 'TTbar_*'        # glob, 여러 개 가능
     ... --exclude 'SingleMuon_*'
@@ -58,7 +80,9 @@ AnalyzerOutput 의 flat 레이아웃을 **자동 발견**해서 프로세스별�
   (x509userproxy, getenv, MY.WantOS, request_memory).
 - 로그/제출 파일: <script_dir>/_merge_workdir/<base명>_<timestamp>/
   (arguments.txt 의 줄 번호 = condor ProcId; --report 가 이것을 읽는다)
-- 종료 코드: 0 정상; 1 실패한 merge 가 있음(local, --report); 2 잘못된 인자·환경.
+- 종료 코드: 0 정상; 1 실패한 merge 가 있음(local, --report); 2 잘못된 인자·환경, 큐에 같은 프로세스의
+  merge 나 analyzer job 이 있음, condor 큐를 읽지 못함(condor 제출 때), condor_submit 실패(그 시도는
+  --report 에서 failed).
 ================================================================================
 """
 
@@ -71,6 +95,7 @@ import math
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -85,6 +110,24 @@ DEFAULT_PROXY_PATH = SCRIPT_DIR / "proxy.cert"
 DEFAULT_OS_VERSION = "el9"
 DEFAULT_MEMORY     = "4GB"
 STAMP_RE           = r"\d{8}-\d{6}"
+CONDOR_Q           = os.environ.get("TTHH_CONDOR_Q", "condor_q")             # env: tests (fakes)
+CONDOR_SUBMIT      = os.environ.get("TTHH_CONDOR_SUBMIT", "condor_submit")
+
+
+_SUBMITTER = None
+
+
+def submitter():
+    """submit_job_FH_Tier3_unified.py as a module (its yml reader, is_data_name, stall_guard_exprs), loaded once and
+    without writing a .pyc next to it"""
+    global _SUBMITTER
+    if _SUBMITTER is None:
+        sys.dont_write_bytecode = True
+        spec = importlib.util.spec_from_file_location("tthh_submitter", str(REPO / "submit_job_FH_Tier3_unified.py"))
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        _SUBMITTER = mod
+    return _SUBMITTER
 
 
 # -----------------------------------------------------------------------------
@@ -94,9 +137,7 @@ def expected_jobs(cfg: Path, filelist_dir: str | None) -> dict:
     """{output dir name: (n_jobs, files_per_job, filelist path)} for every sample of the analyzer yml, chunked as
     submit_job_FH_Tier3_unified.py does: lines of <filelist dir>/<filelist> / files_per_job (Data:
     files_per_job_data), the filelist dir defaulting to filelistTier3[_<year>] like the submitter."""
-    spec = importlib.util.spec_from_file_location("tthh_submitter", str(REPO / "submit_job_FH_Tier3_unified.py"))
-    sub = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(sub)
+    sub = submitter()
     conf = sub.CondorJobManager.load_yaml_config(None, str(cfg))
     common = conf["common"]
     year = str(common.get("year", "")).strip()
@@ -292,9 +333,30 @@ def run_local(jobs, runner: Path, n_workers: int, log_dir: Path) -> int:
 # -----------------------------------------------------------------------------
 # Condor mode — submit_hadd_validation.py 템플릿 컨벤션
 # -----------------------------------------------------------------------------
+def claim_workdir(base: Path) -> Path:
+    """[STEP 26 M] a new work directory _merge_workdir/<base name>_<YYYYmmdd-HHMMSS>/ for this attempt alone (made
+    here, atomically; a second later when the name is taken): two runs in one second used to share one, the later
+    one's files over the earlier one's markers and logs"""
+    while True:
+        wd = WORKROOT / f"{base.name}_{time.strftime('%Y%m%d-%H%M%S')}"
+        try:
+            wd.mkdir(parents=True)
+            return wd
+        except FileExistsError:
+            time.sleep(1)
+
+
+def stall_guard_lines() -> list[str]:
+    """[STEP 26 M] the submit-file lines of the analyzer jobs' stall guard (submit_job_FH_Tier3_unified.py, STEP 25
+    K2): a merge reads /pnfs and can hang the same way; hadd -f writes the file anew, so a restart is safe"""
+    sub_mod = submitter()
+    return ([f"# stall guard [STEP 26 M, as the analyzer jobs]: {sub_mod.stall_guard_summary()}"]
+            + [f"{k:<23} = {v}" for k, v in sub_mod.stall_guard_exprs().items()])
+
+
 def write_condor(jobs, runner: Path, workdir: Path, proxy: Path,
                  os_version: str, memory: str,
-                 cmssw_src: Path | None) -> Path:
+                 cmssw_src: Path | None, guard_lines=()) -> Path:
     log_dir = workdir / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     args_file = workdir / "arguments.txt"
@@ -314,9 +376,71 @@ def write_condor(jobs, runner: Path, workdir: Path, proxy: Path,
         f.write(f"log                     = {log_dir}/log.$(ClusterId).log\n")
         f.write(f"MY.WantOS               = \"{os_version}\"\n")
         f.write(f"request_memory          = {memory}\n")
+        for line in guard_lines:                               # [STEP 26 M] stall_guard_lines()
+            f.write(line + "\n")
         # transfer 불필요 — PNFS 를 worker 가 직접 읽고 쓴다.
         f.write(f"queue args from {args_file}\n")
     return sub
+
+
+# -----------------------------------------------------------------------------
+# [STEP 26 M] a merge of the same process already in the condor queue
+# -----------------------------------------------------------------------------
+_REAL = {}
+
+
+def _same_dir(a: Path, b: Path) -> bool:
+    """the same directory: the same normalised path, else the same real path (cached: thousands of queued analyzer jobs
+    of other bases share a few directories, and each realpath is a few lstat on /pnfs)"""
+    na, nb = os.path.normpath(str(a)), os.path.normpath(str(b))
+    if na == nb:
+        return True
+    for n in (na, nb):
+        if n not in _REAL:
+            _REAL[n] = os.path.realpath(n)
+    return _REAL[na] == _REAL[nb]
+
+
+def queue_conflicts(jobs):
+    """[STEP 26 M] the jobs of this user's condor queue (any state, also X = removed but not yet gone) that touch these
+    merges, read from their arguments (condor_q -af:j Args Arguments):
+      merges   {outfile: [job id]}  a job naming <base>/<proc>.root      -- a merge of the same process
+      writers  {proc: [job id]}     a job naming <base>/<proc>/<proc>_<N>.root -- an analyzer job of the process still
+                                    writing an input (its output exists from its start, so the count check passes)
+    -> (merges, writers, None), or (None, None, why) when the queue cannot be read. Relative paths in a job's arguments
+    are skipped (their base is that job's Iwd); this script writes absolute ones."""
+    by_out, by_proc = {}, {}
+    for j in jobs:
+        by_out.setdefault(Path(j["outfile"]).name, []).append(j)
+        by_proc.setdefault(j["proc"], []).append(j)
+    try:
+        r = subprocess.run([CONDOR_Q, "-af:j", "Args", "Arguments"], capture_output=True, text=True, timeout=300)
+    except FileNotFoundError:
+        return None, None, f"{CONDOR_Q} not found"
+    except (OSError, subprocess.SubprocessError) as e:
+        return None, None, f"{CONDOR_Q}: {e}"
+    if r.returncode != 0:
+        return None, None, f"{CONDOR_Q} exit {r.returncode}: {(r.stderr or r.stdout).strip()[:300]}"
+    merges, writers = {}, {}
+    out_re = re.compile(r"^(.+)_\d+\.root$")
+    for line in r.stdout.splitlines():
+        tok = line.split()
+        if len(tok) < 2:
+            continue
+        jid = tok[0]
+        for t in tok[1:]:
+            if not t.startswith("/"):
+                continue
+            tp = Path(t)
+            for j in by_out.get(tp.name, ()):
+                if _same_dir(tp.parent, Path(j["outfile"]).parent) and jid not in merges.setdefault(j["outfile"], []):
+                    merges[j["outfile"]].append(jid)
+            m = out_re.match(tp.name)
+            if m:
+                for j in by_proc.get(m.group(1), ()):
+                    if _same_dir(tp.parent, Path(j["indir"])) and jid not in writers.setdefault(j["proc"], []):
+                        writers[j["proc"]].append(jid)
+    return ({k: v for k, v in merges.items() if v}, {k: v for k, v in writers.items() if v}, None)
 
 
 # -----------------------------------------------------------------------------
@@ -388,8 +512,10 @@ def merge_attempts(base: Path) -> dict:
         args = wd / "arguments.txt"
         if not args.is_file():
             continue
+        dry_run = (wd / "dry_run.txt").is_file()               # [STEP 26 M] --dry-run: no attempt unless submitted by hand
         rows = [l.split() for l in args.read_text().splitlines() if l.strip()]
         rows = [r for r in rows if len(r) >= 2 and Path(r[0]).parent.resolve() == base.resolve()]
+        submit_failed = (wd / "submit_failed.txt").is_file()  # [STEP 26 M] condor_submit exited non-zero
         if (wd / "merge.sub").is_file():                       # condor: line number = ProcId
             ev = {}
             for lg in sorted((wd / "logs").glob("log.*.log")):
@@ -399,8 +525,14 @@ def merge_attempts(base: Path) -> dict:
                 proc = Path(r[0]).name
                 # the cluster of this work directory (one submission per directory)
                 key = next(((c, pid) for c in reversed(clusters) if (c, pid) in ev), None)
-                if key is None:
-                    best[proc] = (stamp, "condor", "queued", "no event in the log yet", str(wd))
+                if key is None:                                # (a job with events: its log decides, below)
+                    if dry_run:                                # not submitted: not an attempt
+                        continue
+                    if submit_failed:                          # nothing queued
+                        best[proc] = (stamp, "condor", "failed", f"condor_submit failed ({wd / 'submit_failed.txt'})",
+                                      str(wd))
+                    else:
+                        best[proc] = (stamp, "condor", "queued", "no event in the log yet", str(wd))
                     continue
                 state, detail = ev[key]
                 out = wd / "logs" / f"job.{key[0]}.{key[1]}.out"
@@ -416,7 +548,7 @@ def merge_attempts(base: Path) -> dict:
                 else:
                     detail = f"{key[0]}.{key[1]} {detail}".strip()
                 best[proc] = (stamp, "condor", state, detail, str(wd))
-        else:                                                  # local: logs/<proc>.log
+        elif not dry_run:                                      # local: logs/<proc>.log
             for r in rows:
                 proc = Path(r[0]).name
                 lg = wd / "logs" / f"{proc}.log"
@@ -476,7 +608,8 @@ def print_report(base: Path, rows) -> int:
         if any(r[1] in ("failed", "not-merged", "removed", "ok?") for r in bad):
             print("  -> 다시: 같은 명령에 --resubmit --mode condor (failed / not-merged / removed 만)")
         if any(r[1] in ("pending", "held") for r in bad):
-            print("  -> pending / held 은 condor_q 로 본다 (held: condor_release 또는 condor_rm 뒤 --resubmit)")
+            print("  -> pending / held 은 condor_q 로 본다 (held 의 이유가 'tthh stall guard' 면 5 분 뒤 저절로 다시 —"
+                  " 모두 3 번 시작까지; 그 뒤에도 held 면 condor_rm, condor_q 에서 사라진 뒤 --resubmit)")
     print(bar)
     return 0 if not bad else 1
 
@@ -525,10 +658,14 @@ def main(argv: list[str]) -> int:
                         "(기본: 제출 셸의 $CMSSW_BASE/src — cmsenv 된 셸에서 "
                         "제출하면 자동. 미지정+미cmsenv 이면 job 은 getenv 에 "
                         "의존하며, hadd 없으면 명확히 실패)")
+    p.add_argument("--stall-guard", choices=["on", "off"], default="on",
+                   help="[condor] analyzer job 과 같은 stall guard (STEP 26 M): run 이 1 시간을 넘고 CPU 가 그 시간의 "
+                        "5 %% 미만이면 hold, 5 분 뒤 다른 machine 에서 처음부터 다시, 모두 3 번 시작까지 (기본 on)")
     p.add_argument("--os-version", default=DEFAULT_OS_VERSION)
     p.add_argument("--memory", default=DEFAULT_MEMORY)
     args = p.parse_args(argv)
 
+    args.base = Path(os.path.abspath(args.base))     # [STEP 26 M] absolute in arguments.txt and the queue check
     if not args.base.is_dir():
         print(f"[fatal] --base 가 디렉토리가 아님: {args.base}")
         return 2
@@ -576,8 +713,33 @@ def main(argv: list[str]) -> int:
         print("[fatal] 실행하려면 --mode local|condor 지정 (표만 보려면 --list)")
         return 2
 
-    stamp = time.strftime("%Y%m%d-%H%M%S")
-    workdir = WORKROOT / f"{args.base.name}_{stamp}"
+    # [STEP 26 M] no second merge of a process whose merge is in the queue (docstring); local and condor, --dry-run too
+    merges, writers, why = queue_conflicts(jobs)
+    if merges is None:
+        if args.mode == "condor" and not args.dry_run:
+            print(f"[fatal] condor 큐를 읽지 못함 ({why}): 이 프로세스들의 merge·analyzer job 이 큐에 있는지 모르는 "
+                  "채로는 제출하지 않는다 — 잠시 뒤 다시")
+            return 2
+        print(f"[note] condor 큐를 읽지 못함 ({why}): 같은 프로세스의 merge·analyzer job 이 큐에 있는지 확인은 건너뜀")
+    elif merges or writers:
+        if merges:
+            print(f"[fatal] 합칠 파일 {len(merges)} 개를 이미 큐의 merge job 이 쓰고 있다 — 같은 프로세스의 merge 둘이 "
+                  "함께 돌면 반쪽 파일이 남아도 --report 는 ok 라고 할 수 있다:")
+            for o in sorted(merges):
+                print(f"        {Path(o).name}: job {' '.join(merges[o])}")
+            print("        -> 그 job 이 끝나기를 기다리거나, condor_rm <job> 뒤 condor_q 에서 사라진 것을 보고(X 로 남으면 "
+                  "condor_rm -forcex <job>) 같은 명령을 다시 (--resubmit 은 removed·failed 를 고른다)")
+        if writers:
+            print(f"[fatal] {len(writers)} 프로세스의 analyzer job 이 아직 큐에 있다 — 출력 <proc>_<N>.root 는 job 이 "
+                  "시작할 때 생기므로 개수가 맞아도 덜 쓴 입력이다:")
+            for pr in sorted(writers):
+                ids = writers[pr]
+                print(f"        {pr}: job {' '.join(ids[:5])}" + (f" (+{len(ids) - 5})" if len(ids) > 5 else ""))
+            print("        -> 그 job 들이 끝나고 analyzer 의 --report 가 100 % 인 뒤에 merge (멈춘 job 은 condor_rm — X 로 "
+                  "남으면 condor_rm -forcex — 뒤 analyzer --resubmit)")
+        return 2
+    else:
+        print(f"[queue] 이 {len(jobs)} 프로세스의 merge·analyzer job 은 condor 큐에 없음")
 
     if args.mode == "local":
         # [STEP22.1] preflight: local 모드의 ROOT/hadd 환경은 사용자 책임 —
@@ -591,6 +753,7 @@ def main(argv: list[str]) -> int:
         if args.dry_run:
             print("[dry-run] local 실행 생략.")
             return 0
+        workdir = claim_workdir(args.base)
         return run_local(jobs, args.runner, max(1, args.jobs),
                          workdir / "logs")
 
@@ -603,16 +766,54 @@ def main(argv: list[str]) -> int:
     if args.cmssw_src and not args.cmssw_src.is_dir():
         print(f"[fatal] --cmssw-src 가 디렉토리가 아님: {args.cmssw_src}")
         return 2
-    sub = write_condor(jobs, args.runner, workdir, args.proxy,
-                       args.os_version, args.memory, args.cmssw_src)
-    print(f"[condor] submit file: {sub}  ({len(jobs)} jobs)")
-    print(f"[condor] worker env : "
-          + (f"cmsenv from {args.cmssw_src}" if args.cmssw_src
-             else "getenv 전파만 (cmsenv 셸에서 제출했는지 확인)"))
-    if args.dry_run:
-        print("[dry-run] condor_submit 생략.")
-        return 0
-    subprocess.run(["condor_submit", str(sub)], check=True)
+    guard_lines = []
+    if args.stall_guard == "on":
+        try:                                                    # before anything is written (a half work directory
+            guard_lines = stall_guard_lines()                   # would read as 'pending' in --report)
+        except Exception as e:
+            print(f"[fatal] stall guard 를 submit_job_FH_Tier3_unified.py 에서 읽지 못함 ({type(e).__name__}: {e}); "
+                  "없이 내려면 --stall-guard off")
+            return 2
+    def _term(signum, frame):                                  # SIGTERM (runlog.sh, a lost ssh) as an interrupt
+        raise KeyboardInterrupt(f"signal {signum}")
+    old_term = signal.signal(signal.SIGTERM, _term)
+    workdir = None
+    try:
+        workdir = claim_workdir(args.base)
+        if args.dry_run:                                        # first: a --dry-run directory is never an attempt
+            (workdir / "dry_run.txt").write_text("--dry-run: not submitted; --report skips its jobs without an event\n")
+        sub = write_condor(jobs, args.runner, workdir, args.proxy,
+                           args.os_version, args.memory, args.cmssw_src, guard_lines)
+        print(f"[condor] submit file: {sub}  ({len(jobs)} jobs)")
+        print("[condor] stall guard : " + (guard_lines[0].split(": ", 1)[1] if guard_lines
+                                           else "off (--stall-guard off): 멈춘 merge 는 'running' 으로 남는다"))
+        print(f"[condor] worker env : "
+              + (f"cmsenv from {args.cmssw_src}" if args.cmssw_src
+                 else "getenv 전파만 (cmsenv 셸에서 제출했는지 확인)"))
+        if args.dry_run:
+            print("[dry-run] condor_submit 생략 (이 work 디렉터리는 --report 가 보지 않는다).")
+            return 0
+        try:
+            rc = subprocess.run([CONDOR_SUBMIT, str(sub)]).returncode
+        except OSError as e:
+            print(f"[condor] {CONDOR_SUBMIT}: {e}")
+            rc = 127
+    except KeyboardInterrupt as e:                             # [STEP 26 M] else the attempt reads 'pending' forever
+        why = str(e) or "SIGINT"
+        if workdir is not None and not args.dry_run:
+            (workdir / "submit_failed.txt").write_text(f"submission interrupted ({why}) at "
+                                                       f"{time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+        print(f"\n[fatal] 제출이 중단됨 ({why}): 큐에 들어간 것이 없으면 --report 는 이 시도를 failed 로 보고 --resubmit 이 "
+              "다시 고른다 (condor_q 로 확인; 들어간 job 은 그 로그가 정한다)")
+        return 143 if why.startswith("signal") else 130
+    finally:
+        signal.signal(signal.SIGTERM, old_term)
+    if rc != 0:
+        # [STEP 26 M] without this the work directory (arguments.txt, merge.sub, no log) reads as 'pending' forever
+        (workdir / "submit_failed.txt").write_text(f"condor_submit exit {rc} at {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+        print(f"[fatal] condor_submit exit {rc}: 큐에 들어간 것이 없으면 --report 는 이 시도를 failed 로 보고 "
+              "--resubmit 이 다시 고른다 (condor_q 로 확인; 그래도 들어간 job 은 그 로그가 정한다)")
+        return 2
     print("[condor] submitted. 상태: --report (또는 condor_q) / 로그:", sub.parent / "logs")
     return 0
 

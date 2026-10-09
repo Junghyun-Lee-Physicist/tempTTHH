@@ -193,6 +193,14 @@ HoldReasonCode 3, subcode 4201), 그 hold 만 5 분 뒤 `periodic_release`(같�
 모두 3 번 시작까지, 그 뒤에는 held 로 남아 `--report` 의 wait·`--status` 의 이유에 보임), 다시 시작할 때 마지막에 돌던 machine 은 피함
 (`requirements`). preflight 에 `condor stall guard` 줄. **출력 파일 수는 끝난 job 수가 아니다**: analyzer 는 시작할 때 출력 파일을 만든다 —
 완료는 `--report`(종료 마커 `cutflow_w_full`), 큐에 job 이 있는 동안 `--resubmit` 은 하지 않는다(도는 job 도 다시 낸다).
+**merge 와 `condor_run.sh` job(2026-10-09, STEP 26 M).** 10-09 에 입력 599 개를 읽던 merge 하나가 /pnfs 에서 멈춘 채 4 시간 'running'(CPU 14 s)
+— guard 가 analyzer 의 submit 파일에만 있었다. 이제 `outputMerger/merge_outputs.py` 의 `merge.sub` 에도 같은 다섯 줄(`--stall-guard on|off`, 기본
+on; 다시 시작한 merge 는 `hadd -f` 로 파일을 새로 만든다). `tools/runlog/condor_run.sh` 는 `--stall-guard on` 일 때만(기본 off: 명령이 무엇이든 돌리므로
+— CPU 를 꾸준히 쓰고 처음부터 다시 해도 되는 명령, 곧 plot·TriggerStudy·smoke·합성 시험·빌드에만; /pnfs 훑기는 건강해도 CPU 5 % 미만일 수 있고
+`y1_reference.sh` 는 있던 출력을 거절한다). 그리고 `merge_outputs.py` 는 합치기 전에 condor 큐를 보고, 큐의 job 이 합칠 `<proc>.root`(같은 프로세스의
+merge) 나 입력 `<proc>/<proc>_<N>.root`(그 프로세스의 analyzer job — 출력은 시작 때 생기므로 개수는 맞아도 덜 쓴 입력)를 인자로 가지면(X 포함) 멈춘다
+(exit 2): merge 둘이 함께 돌면 반쪽 파일이 남아도 `--report`(가장 새 시도만 봄)가 ok 라고 할 수 있다. 다시 낼 때 `--skip-existing` 은 쓰지 않는다
+(반쪽 파일도 건너뜀).
 
 ### 7.0 다른 연도(2018 UL) 실행 — 현재 **차단 상태**
 
@@ -332,7 +340,9 @@ git pull --ff-only && git add runlogs && git commit -m "runlogs: ..." && git pus
 기록은 `runlogs/run_<step>_<UTC>.log`(머리: 시각·host·git HEAD·명령·CMSSW·ROOT, 본문: 출력, 꼬리: **EXIT**)와
 `runlogs/LEDGER.tsv`. 우리 프로그램의 출력이라 커밋한다(`docs/DECISIONS.md` D-2026-10-04-A; crab 명령은 `runlogs/nocommit/`).
 같은 기록을 지금 셸에서: `/bin/bash tools/runlog/runlog.sh <step> -- <명령>`. 메모리 기본 4GB — `-j4` 빌드는
-`--cpus 4 --memory 12GB`, analyzer 자체를 돌리면 `--source setup.sh`. 자세히: [`tools/runlog/README.md`](tools/runlog/README.md).
+`--cpus 4 --memory 12GB`, analyzer 자체를 돌리면 `--source setup.sh`. `--stall-guard on`(STEP 26 M; 기본 off): analyzer 와 같은 stall guard — 1 시간
+넘게 CPU 5 % 미만이면 hold, 5 분 뒤 처음부터 다시(3 번까지); CPU 를 꾸준히 쓰고 처음부터 다시 해도 되는 명령(plot·TriggerStudy·smoke·빌드)에만.
+자세히: [`tools/runlog/README.md`](tools/runlog/README.md).
 
 ## 8. 전체 워크플로우 (처음부터 끝까지)
 
@@ -407,6 +417,7 @@ python3 outputMerger/merge_outputs.py --base <AnalyzerOutput_...> --config <분�
 python3 outputMerger/merge_outputs.py --base <AnalyzerOutput_...> --config <분석 yml> --mode condor --proxy proxy.cert
 python3 outputMerger/merge_outputs.py --base <AnalyzerOutput_...> --config <분석 yml> --report     # 프로세스마다 최근 시도
 python3 outputMerger/merge_outputs.py --base <AnalyzerOutput_...> --config <분석 yml> --resubmit --mode condor --proxy proxy.cert
+# [STEP 26 M] merge job 에는 stall guard(--stall-guard off 로 끔); 큐에 그 프로세스의 merge 나 analyzer job 이 있으면 합치지 않는다(exit 2)
 # 수율 표와 완결성 (WARN·EVENTS·FLAG 줄까지 본다), 그다음 plot
 python3 plotter/make_plots.py --config <분석 yml> --base <AnalyzerOutput_...> --check-only
 python3 plotter/make_plots.py --config <분석 yml> --base <AnalyzerOutput_...>
@@ -418,7 +429,7 @@ python3 plotter/make_plots.py --config <분석 yml> --base <AnalyzerOutput_...> 
 종료 코드는 `docs/reference/ERROR_CODES.md` 끝. `--tree-cut` 의 식은 tree 의 branch 와 파생 열(`jet_pt_<i>`, `btag_<i>` …)의
 RDataFrame 식이고, tree 는 그 run 의 selection(trigger OR 포함)을 통과한 event 라 더 좁히는 것만 된다(make_plots docstring 6).
 2024 Data 의 trigger 는 PD 마다 다르다: JetMET0/1 은 `HLT_PFHT1050`, ParkingHH 는 b-tag 경로 가운데 `HLT_PFHT1050` 이 아닌 것
-(D-2026-10-06-A). 시험: `python3 test/test_failure_checks.py`(63, ClassAd 모듈이 있으면 64), `python3 test/test_consolidate_prescan.py`(24),
+(D-2026-10-06-A). 시험: `python3 test/test_failure_checks.py`(76, ClassAd 모듈이 있으면 77), `python3 test/test_consolidate_prescan.py`(24),
 `python3 tools/stage7/test_btag_eff_maps.py`(26; STEP 25 K), `bash test/trigger_study/run_trigstudy_synth.sh $PWD`(26; STEP 26 L: TriggerStudy 를
 합성 skim 으로 — `TriggerStudy/exe_TrigStudy` 를 먼저 빌드).
 

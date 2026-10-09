@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Synthetic test of the failure checks added 2026-10-06 (no /pnfs, no condor; a few KB in a temp dir).
+"""Synthetic test of the failure checks added 2026-10-06 (no /pnfs, no real condor -- fakes; a few KB in a temp dir).
 
   A  plotter/make_plots.py --check-only: the merged unweighted noCut must equal the prescan event count (MC);
      a difference is a FLAG and RESULT FAIL
@@ -31,17 +31,30 @@
      triggerSF, not JSON; which of them matter in every mode), the preflight line (2024 JSON PASS, 2017 JSON FAIL in
      every mode, no file or no triggerSF FAIL in main / WARN in btagtrig) and the stop at submission (E50 before the
      first sample, through process_config_file; not for --report/--status; Data-only runs do not read it)
+  I  [STEP 26 M] merge and condor_run jobs (2026-10-09: a merge of 599 inputs 'running' 4 h with 14 s of CPU, no guard
+     in merge.sub): merge.sub carries the stall guard as stall_guard_exprs() (none with --stall-guard off), a --dry-run
+     directory is marked and --report skips its unsubmitted jobs (one submitted by hand counts); a job in the queue
+     naming the merged file (a merge of the process) or
+     one of its inputs <proc>/<proc>_<N>.root (an analyzer job of the process) stops the merge (exit 2, nothing written;
+     also through a link), another base / another process / relative paths do not; condor_q failing stops a condor
+     submission, not --dry-run; a failed or interrupted (SIGTERM) condor_submit is 'failed' in --report (unless the
+     job's own log says otherwise) and --resubmit takes it again; condor_run.sh writes the same five expressions with
+     --stall-guard on,
+     none by default. condor_q and condor_submit are fakes in B and I (TTHH_CONDOR_Q / TTHH_CONDOR_SUBMIT and first on
+     PATH; if they cannot be executed here, part I makes no condor run and records a FAIL)
 
 Run from the repo top after cmsenv (needs PyROOT; part B's merge needs hadd):
     python3 test/test_failure_checks.py
-Last line: SUMMARY test_failure_checks PASS|FAIL (<n>/<m> checks): 63 checks, 64 with a ClassAd module.
+Last line: SUMMARY test_failure_checks PASS|FAIL (<n>/<m> checks): 76 checks, 77 with a ClassAd module.
 """
 import contextlib
 import importlib.util
 import io
 import json
 import os
+import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -147,6 +160,27 @@ with tempfile.TemporaryDirectory(prefix="tthh_fail_") as T:
     cfg_c = os.path.join(T, "cfg_c.yml")
     write_cfg(cfg_c, ["SampleA", "SampleB", "SampleC", DATA])
 
+    # [STEP 26 M] fake condor_q / condor_submit for every merge_outputs.py run here (B and I): merge_outputs.py reads the
+    #   queue before merging; nothing in this test may reach a real condor (KNU's login node has one)
+    fbin = os.path.join(T, "fakebin")
+    os.makedirs(fbin)
+    fq, fsub = os.path.join(fbin, "condor_q"), os.path.join(fbin, "condor_submit")
+
+    def fake_q(lines, rc=0):
+        with open(fq, "w") as fh:
+            fh.write("#!/bin/sh\n" + "".join(f"echo '{l}'\n" for l in lines) + f"exit {rc}\n")
+        os.chmod(fq, 0o755)
+    fake_q([])
+    with open(fsub, "w") as fh:
+        fh.write("#!/bin/sh\necho 'ERROR: fake condor_submit (test_failure_checks)' >&2\nexit 1\n")
+    os.chmod(fsub, 0o755)
+    try:                                      # a noexec TMPDIR: then part I's condor runs are not made at all
+        fakes_ok = (subprocess.run([fq], stdout=subprocess.DEVNULL).returncode == 0
+                    and subprocess.run([fsub], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 1)
+    except OSError:
+        fakes_ok = False
+    fake_env = {"TTHH_CONDOR_Q": fq, "TTHH_CONDOR_SUBMIT": fsub}
+
     # ---------------- A: make_plots --check-only, exact MC event count ----------------
     base = os.path.join(T, "merged")
     os.makedirs(base)
@@ -176,6 +210,8 @@ with tempfile.TemporaryDirectory(prefix="tthh_fail_") as T:
             write_out(os.path.join(mb, name, f"{name}_{i}.root"), 10 * (i + 1), 10.0 * (i + 1))
     env = hadd_env()
     env["TTHH_MERGE_WORKROOT"] = os.path.join(T, "workroot")
+    env.update(fake_env)
+    env["PATH"] = fbin + os.pathsep + env.get("PATH", "")
     mo = [sys.executable, os.path.join(REPO, "outputMerger", "merge_outputs.py"), "--base", mb,
           "--config", cfg_c, "--filelist-dir", fl]
     rc, out = run(mo + ["--list"], env)
@@ -823,6 +859,196 @@ with tempfile.TemporaryDirectory(prefix="tthh_fail_") as T:
           l17[1] == 50 and l17[0] == [] and "made for year 2017" in l17[2]
           and l17r[1] is None and l17r[0] == ["SampleA", "SampleB"] and l24[1] is None and l24[0] == ["SampleA", "SampleB"],
           str((l17, l17r, l24)))
+
+    # ---------------- I: [STEP 26 M] merge and condor_run jobs: the stall guard; one merge of a process at a time -------
+    #   2026-10-09: a merge of 599 inputs stayed 'running' 4 h with 14 s of CPU (merge.sub had no stall guard); and a
+    #   second merge of a process while the first is still in the queue can leave a partial file that --report calls ok
+    #   (it reads only the newest attempt). condor_q and condor_submit are the fakes above (absolute paths through
+    #   TTHH_CONDOR_Q / TTHH_CONDOR_SUBMIT and first on PATH); when they cannot run here, part I makes no condor run.
+    check("I the fake condor_q / condor_submit run here (else: a noexec TMPDIR -- part I's condor runs skipped)", fakes_ok)
+    if fakes_ok:
+        ex = sub.stall_guard_exprs()
+        proxy_i = os.path.join(T, "proxy_i.cert")
+        open(proxy_i, "w").close()
+        wroot_i = os.path.join(T, "workroot_i")
+        envi = dict(env, TTHH_MERGE_WORKROOT=wroot_i)
+        mi = mo + ["--proxy", proxy_i, "--only", "SampleA", "--mode", "condor"]
+
+        def workdirs():
+            return sorted(os.listdir(wroot_i)) if os.path.isdir(wroot_i) else []
+
+        def newest_sub():
+            with open(os.path.join(wroot_i, workdirs()[-1], "merge.sub")) as fh:
+                return re.sub(r"mbase_\d{8}-\d{6}", "mbase_STAMP", fh.read())   # two runs may be a second apart
+
+        def kv_of(txt):
+            return {l.split("=", 1)[0].strip(): l.split("=", 1)[1].strip() for l in txt.splitlines()
+                    if "=" in l and not l.startswith("#") and not l.startswith("queue")}
+        fake_q([])
+        rc_on, out_on = run(mi + ["--dry-run"], envi)
+        sub_on = newest_sub()
+        rc_off, out_off = run(mi + ["--dry-run", "--stall-guard", "off"], envi)
+        sub_off = newest_sub()
+        kv = kv_of(sub_on)
+        check("I merge.sub: the analyzer jobs' stall guard (the five lines as stall_guard_exprs(), the comment with the "
+              "thresholds, the queue statement last); the queue read first; a --dry-run directory is marked",
+              rc_on == 0 and all(kv.get(k) == v for k, v in ex.items())
+              and "# stall guard [STEP 26 M, as the analyzer jobs]: " + sub.stall_guard_summary() in sub_on
+              and sub_on.rstrip().splitlines()[-1].startswith("queue args from ")
+              and "[queue] 이 1 프로세스의 merge·analyzer job 은 condor 큐에 없음" in out_on
+              and "[condor] stall guard : hold after 1 h" in out_on
+              and os.path.isfile(os.path.join(wroot_i, workdirs()[-1], "dry_run.txt")), out_on[-1500:] + sub_on)
+        check("I merge.sub --stall-guard off: none of those lines, the rest the same",
+              rc_off == 0 and not any(k in sub_off for k in ("periodic_", "requirements", "stall guard"))
+              and [l for l in sub_on.splitlines() if not l.startswith(("periodic_", "requirements", "#"))]
+              == sub_off.splitlines() and "off (--stall-guard off)" in out_off, out_off[-1500:] + sub_off)
+        rc_rp, out_rp = run(mo + ["--only", "SampleA", "--report"], envi)
+        check("I --report skips the --dry-run directories (no 'PENDING ... no event in the log yet' from them)",
+              "PENDING" not in out_rp and "no event in the log yet" not in out_rp, out_rp[-1200:])
+
+        # a merge job of SampleA in the queue (X too): the path as submitted, and the same file reached through a link
+        os.symlink(mb, os.path.join(T, "mb_link"))
+        n_wd = len(workdirs())
+        fake_q([f"2181958.19 {mb}/SampleA {mb}/SampleA.root /cms/src 3 undefined"])
+        rc_c1, out_c1 = run(mi + ["--dry-run"], envi)
+        fake_q([f"2181963.0 {T}/mb_link/SampleA {T}/mb_link/SampleA.root /cms/src 3 undefined"])
+        rc_c2, out_c2 = run(mi, envi)
+        rc_c3, out_c3 = run(mo + ["--only", "SampleA", "--mode", "local", "--dry-run"], envi)
+        check("I a merge of the process in the queue stops it (exit 2; condor --dry-run, condor, local), names the job, "
+              "also through a link to the base; nothing written",
+              rc_c1 == 2 and "[fatal] 합칠 파일 1 개를 이미 큐의 merge job 이 쓰고 있다" in out_c1
+              and "SampleA.root: job 2181958.19" in out_c1 and "condor_rm -forcex" in out_c1
+              and rc_c2 == 2 and "SampleA.root: job 2181963.0" in out_c2
+              and rc_c3 == 2 and "[fatal] 합칠 파일 1 개" in out_c3 and len(workdirs()) == n_wd,
+              out_c1[-1200:] + out_c2[-800:] + out_c3[-800:])
+        # an analyzer job of the process still in the queue: its output exists from its start (the count check passes)
+        fake_q([f"100.1 --filelist {T}/x.txt --output {mb}/SampleA/SampleA_2.root --weight 1 --year 2024 undefined",
+                f"100.2 --filelist {T}/y.txt --output {T}/mb_link/SampleA/SampleA_0.root --weight 1 undefined"])
+        rc_w, out_w = run(mi + ["--dry-run"], envi)
+        check("I an analyzer job of the process in the queue (its <proc>_<N>.root, also through a link) stops the merge "
+              "(exit 2, the jobs named, nothing written)",
+              rc_w == 2 and "[fatal] 1 프로세스의 analyzer job 이 아직 큐에 있다" in out_w
+              and "SampleA: job 100.1 100.2" in out_w and len(workdirs()) == n_wd, out_w[-1500:])
+        # what is not a conflict: another base, another process, relative paths, other jobs
+        fake_q(["100.2 undefined undefined",
+                f"200.0 {T}/otherbase/SampleA {T}/otherbase/SampleA.root /cms/src 3 undefined",
+                f"201.0 --output {T}/otherbase/SampleA/SampleA_1.root undefined",
+                f"300.0 {mb}/SampleB {mb}/SampleB.root /cms/src 2 undefined",
+                f"301.0 --output {mb}/SampleB/SampleB_0.root undefined",
+                "400.0 SampleA SampleA.root SampleA/SampleA_0.root undefined"])
+        rc_n, out_n = run(mi + ["--dry-run"], envi)
+        check("I not a conflict: the same process in another base (merge or analyzer), another process of this base, "
+              "relative paths",
+              rc_n == 0 and "[queue] 이 1 프로세스의 merge·analyzer job 은 condor 큐에 없음" in out_n, out_n[-1500:])
+        # the queue cannot be read: no condor submission (exit 2, nothing written); --dry-run notes it and goes on
+        fake_q([], rc=1)
+        n_wd = len(workdirs())
+        rc_f1, out_f1 = run(mi, envi)
+        n_wd_f1 = len(workdirs())
+        rc_f2, out_f2 = run(mi + ["--dry-run"], envi)
+        check("I condor_q fails: a condor submission stops before writing anything (exit 2), --dry-run notes it and "
+              "goes on",
+              rc_f1 == 2 and "[fatal] condor 큐를 읽지 못함" in out_f1 and n_wd_f1 == n_wd
+              and rc_f2 == 0 and "[note] condor 큐를 읽지 못함" in out_f2, out_f1[-1000:] + out_f2[-1000:])
+        # condor_submit fails: the attempt is 'failed' in --report (not 'pending' forever) and --resubmit takes it again
+        fake_q([])
+        rc_s, out_s = run(mi, envi)
+        wd_s = os.path.join(wroot_i, workdirs()[-1])
+        rc_r, out_r = run(mo + ["--only", "SampleA", "--report"], envi)
+        rc_rs, out_rs = run(mo + ["--only", "SampleA", "--resubmit", "--mode", "condor", "--proxy", proxy_i,
+                                  "--dry-run"], envi)
+        check("I condor_submit fails: exit 2, submit_failed.txt in the work directory, --report FAILED 'condor_submit "
+              "failed' (not pending), --resubmit takes SampleA again",
+              rc_s == 2 and "[fatal] condor_submit exit 1" in out_s
+              and os.path.isfile(os.path.join(wd_s, "submit_failed.txt"))
+              and rc_r == 1 and "FAILED" in out_r and "condor_submit failed" in out_r and "PENDING" not in out_r
+              and rc_rs == 0 and "[resubmit] 1 process(es): ['SampleA']" in out_rs,
+              out_s[-800:] + out_r[-800:] + out_rs[-800:])
+        # condor_submit interrupted (SIGTERM, as runlog.sh sends on a lost ssh; Ctrl-C is the same path): the marker too
+        fslow = os.path.join(fbin, "condor_submit_slow")
+        with open(fslow, "w") as fh:
+            fh.write('#!/bin/sh\necho started > "$0.started"\nexec sleep 60\n')
+        os.chmod(fslow, 0o755)
+        before = set(workdirs())
+        pz = subprocess.Popen(mi, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, cwd=REPO,
+                              env=dict(envi, TTHH_CONDOR_SUBMIT=fslow))
+        t0 = time.time()
+        while not os.path.exists(fslow + ".started") and pz.poll() is None and time.time() - t0 < 60:
+            time.sleep(0.2)
+        pz.send_signal(signal.SIGTERM)
+        out_z = pz.communicate(timeout=60)[0]
+        new_z = sorted(set(workdirs()) - before)
+        rc_zr, out_zr = run(mo + ["--only", "SampleA", "--report"], envi)
+        check("I condor_submit interrupted (SIGTERM): exit 143, submit_failed.txt, --report FAILED (not pending)",
+              pz.returncode == 143 and "[fatal] 제출이 중단됨 (signal 15)" in out_z and len(new_z) == 1
+              and os.path.isfile(os.path.join(wroot_i, new_z[0], "submit_failed.txt"))
+              and rc_zr == 1 and "condor_submit failed" in out_zr and "PENDING" not in out_zr,
+              out_z[-1000:] + out_zr[-800:])
+
+        # ... but a job that got into the queue all the same (a client timeout) is judged by its own log
+        wd_t = os.path.join(wroot_i, "mbase_20991231-235959")
+        os.makedirs(os.path.join(wd_t, "logs"))
+        open(os.path.join(wd_t, "merge.sub"), "w").close()
+        open(os.path.join(wd_t, "submit_failed.txt"), "w").close()
+        with open(os.path.join(wd_t, "arguments.txt"), "w") as fh:
+            fh.write(f"{mb}/SampleA {mb}/SampleA.root /cms/src 3\n")
+        with open(os.path.join(wd_t, "logs", "log.555.log"), "w") as fh:
+            fh.write("000 (555.000.000) 2099-12-31 23:59:59 Job submitted from host: <1.2.3.4>\n...\n"
+                     "001 (555.000.000) 2099-12-31 23:59:59 Job executing on host: <1.2.3.5>\n...\n"
+                     "005 (555.000.000) 2099-12-31 23:59:59 Job terminated.\n"
+                     "\t(1) Normal termination (return value 0)\n...\n")
+        with open(os.path.join(wd_t, "logs", "job.555.0.out"), "w") as fh:
+            fh.write("[hadd] OK\n")
+        if not os.path.isfile(os.path.join(mb, "SampleA.root")):
+            write_out(os.path.join(mb, "SampleA.root"), 60, 60.0)
+        rc_t, out_t = run(mo + ["--only", "SampleA", "--report"], envi)
+        check("I submit_failed.txt with a job that has events in the log: the log decides (ok)",
+              rc_t == 0 and "ok=1" in out_t and "FAILED" not in out_t, out_t[-1200:])
+        # a --dry-run directory whose merge.sub was then submitted by hand: an attempt (its log decides), not hidden
+        wd_h = os.path.join(wroot_i, "mbase_21000101-000000")
+        os.makedirs(os.path.join(wd_h, "logs"))
+        open(os.path.join(wd_h, "merge.sub"), "w").close()
+        with open(os.path.join(wd_h, "dry_run.txt"), "w") as fh:
+            fh.write("--dry-run\n")
+        with open(os.path.join(wd_h, "arguments.txt"), "w") as fh:
+            fh.write(f"{mb}/SampleA {mb}/SampleA.root /cms/src 3\n")
+        with open(os.path.join(wd_h, "logs", "log.666.log"), "w") as fh:
+            fh.write("000 (666.000.000) 2100-01-01 00:00:00 Job submitted from host: <1.2.3.4>\n...\n"
+                     "001 (666.000.000) 2100-01-01 00:00:00 Job executing on host: <1.2.3.5>\n...\n"
+                     "005 (666.000.000) 2100-01-01 00:00:00 Job terminated.\n"
+                     "\t(1) Normal termination (return value 1)\n...\n")
+        rc_h, out_h = run(mo + ["--only", "SampleA", "--report"], envi)
+        check("I a --dry-run directory submitted by hand: its job's log decides (FAILED rc=1), not hidden",
+              rc_h == 1 and "FAILED" in out_h and "666.0 rc=1" in out_h, out_h[-1200:])
+
+        # condor_run.sh (tools/runlog): off by default; --stall-guard on writes the same five expressions (held as text)
+        crr = os.path.join(T, "crrepo")
+        os.makedirs(os.path.join(crr, "tools", "runlog"))
+        for f in ("condor_run.sh", "runlog.sh"):
+            shutil.copy(os.path.join(REPO, "tools", "runlog", f), os.path.join(crr, "tools", "runlog", f))
+        os.makedirs(os.path.join(T, "cmssw_i", "src"))
+        envr = dict(os.environ, CMSSW_BASE=os.path.join(T, "cmssw_i"), PATH=fbin + os.pathsep + os.environ.get("PATH", ""))
+
+        def cr_sub(step, *opts):
+            pr = subprocess.run(["/bin/bash", os.path.join(crr, "tools", "runlog", "condor_run.sh"), "--dry-run", *opts,
+                                 step, "--", "true"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                universal_newlines=True, cwd=crr, env=envr)
+            jd = os.path.join(crr, "condor", "runlog")
+            d = [x for x in sorted(os.listdir(jd)) if x.startswith(step + "_")] if os.path.isdir(jd) else []
+            if not d:
+                return pr.returncode, pr.stdout, ""
+            with open(os.path.join(jd, d[-1], "job.sub")) as fh:
+                return pr.returncode, pr.stdout, fh.read()
+        rc_g, out_g, jsub = cr_sub("i_guard", "--stall-guard", "on")
+        rc_d, out_d, jsub_d = cr_sub("i_default")
+        kvr = kv_of(jsub)
+        check("I condor_run.sh: --stall-guard on writes the same five expressions and summary as the submitter (the bash "
+              "copy has not drifted); the default writes none",
+              rc_g == 0 and all(kvr.get(k) == v for k, v in ex.items())
+              and "# stall guard [STEP 26 M, as the analyzer jobs]: " + sub.stall_guard_summary() in jsub
+              and jsub.rstrip().splitlines()[-1] == "queue 1"
+              and rc_d == 0 and jsub_d and not any(k in jsub_d for k in ("periodic_", "requirements")),
+              out_g[-800:] + jsub + str({k: (kvr.get(k), v) for k, v in ex.items() if kvr.get(k) != v}) + jsub_d)
 
 n_fail = RESULTS.count(False)
 print(f"SUMMARY test_failure_checks {'PASS' if n_fail == 0 else 'FAIL'} ({len(RESULTS) - n_fail}/{len(RESULTS)} checks)")

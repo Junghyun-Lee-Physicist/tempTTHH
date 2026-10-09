@@ -2,10 +2,26 @@
 
 > **Purpose:** one chronological line per change, newest first, linking to the full record. The detail lives in [`changes/STEP_*.md`](changes/); this file is the index, not a copy.
 > **Audience:** anyone tracing when and why something changed.
-> **Status:** append-only · last meaningful update **2026-10-09**.
+> **Status:** append-only · last meaningful update **2026-10-09** (M).
 > **Links:** decisions [`DECISIONS.md`](DECISIONS.md) · state [`STATUS.md`](STATUS.md).
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
+
+## 2026-10-09: [merge][도구] STEP 26 M — merge job 의 stall guard, 큐에 그 프로세스의 merge·analyzer job 이 있으면 merge 하지 않음
+
+KNU 10-09: FH merge(cluster 2181958)의 84 개 중 ParkingHH_Run2024F(입력 599)가 /pnfs 에서 멈춘 채 4 시간 'running'(CPU 14 s / 15,294 s, 출력
+73,596 byte 그대로) — K2 의 stall guard 는 analyzer 의 submit 파일에만 있었다. `outputMerger/merge_outputs.py`: `merge.sub` 에 제출기의
+`stall_guard_exprs()` 다섯 줄(`--stall-guard on|off`, 기본 on; 다시 시작한 hadd 는 `-f` 로 파일을 새로 만든다); 합치기 전에(local·condor·`--dry-run`)
+`condor_q -af:j Args Arguments` 로 큐(X 포함)의 job 이 합칠 `<base>/<proc>.root`(같은 프로세스의 merge — 둘이 함께 돌면 반쪽 파일이 남아도
+`--report` 가 ok) 나 입력 `<base>/<proc>/<proc>_<N>.root`(그 프로세스의 analyzer job — 출력은 시작 때 생겨 개수 대조를 통과)를 인자로 가지면 exit 2
+(링크로 닿은 같은 파일도; 상대 경로는 보지 않음, `--base` 는 절대 경로로); 큐를 못 읽으면 condor 제출은 exit 2; condor_submit 이 실패하거나
+중단된(Ctrl-C, SIGTERM) 시도는 `submit_failed.txt` → 로그에 사건이 없는 job 은 `--report` 의 failed(전에는 영원히 pending), `--resubmit` 이 다시 고름;
+`--dry-run` 의 work 디렉터리는 `dry_run.txt` 로 표시, 제출하지 않은 job 은 `--report` 가 보지 않음(전에는 pending 으로 남음; 손으로 제출한 것은 그
+로그가 정함); 시도마다 work 디렉터리 하나(같은 초의 두 실행이 한 디렉터리를 나눠 쓰던 것).
+`tools/runlog/condor_run.sh`: `--stall-guard on` 일 때 `job.sub` 에 같은 다섯 줄(기본 off — /pnfs 훑기는 건강해도 CPU 5 % 미만일 수 있고
+`y1_reference.sh` 는 다시 시작하면 실패; plot·TriggerStudy·smoke·빌드에 켠다). 시험: `test_failure_checks.py` 76/76(+13, I; ClassAd 모듈이 있으면 77;
+condor_q·condor_submit 은 가짜, 실행할 수 없으면 I 의 condor 실행은 하지 않음), `tools/runlog/test_runlog.sh` 85/85(+2, T30). 독립 검토 두 번 반영.
+상세 [`changes/STEP_26_trigger_sf_2024.md`](changes/STEP_26_trigger_sf_2024.md) §9.
 
 ## 2026-10-09: [TriggerStudy][analyzer][제출기] STEP 26 L — 2024 trigger SF: TriggerStudy 의 연도, JSON 의 연도 확인 (Stage 6)
 

@@ -96,7 +96,7 @@ from this list:
 | 127 | shell / condor | the executable was not found (e.g. a job started while a rebuild had removed it) |
 | 134 / 137 / 139 / 143 | shell / condor | SIGABRT / SIGKILL (often memory) / SIGSEGV (after a `[FATAL]` line: an executable older than commit F, section above) / SIGTERM (stopped) |
 | 2 / 3 / 4 / 5 / 6 / 7 | `outputMerger/run_one_hadd.sh` | bad arguments / no `hadd` / no input directory / no `<proc>_*.root` / empty output / **number of inputs is not the expected number of jobs** (`merge_outputs.py --config`) |
-| 0 / 1 / 2 | `outputMerger/merge_outputs.py` | ok / a merge failed (local) or `--report` found a process not merged / bad arguments or environment |
+| 0 / 1 / 2 | `outputMerger/merge_outputs.py` | ok / a merge failed (local) or `--report` found a process not merged / bad arguments or environment; **[STEP 26 M]** also: a job in the condor queue (any state, also X) names a merged file `<base>/<proc>.root` (a merge of the process) or one of its inputs `<base>/<proc>/<proc>_<N>.root` (an analyzer job of the process), the queue could not be read for a condor submission, or condor_submit failed (the attempt is then `failed` in `--report`) |
 | 0 / 1 / 2 | `plotter/make_plots.py` | ok / a check (`MISSING`, `FLAG` incl. the `EVENTS` count) or the plotter failed / bad arguments |
 | 0 / 1 | `consolidate_prescan.py` | no anomaly / at least one (bad or missing job, failed check, warning) — the same samples as its anomaly report |
 | 1 | `submit_job_FH_Tier3_unified.py --preflight` | at least one FAIL row |
