@@ -1,0 +1,434 @@
+% =============================================================================
+% 5 장 b-tagging 과 b-tag SF  (AN_KR v0.1, 2026-10-10)
+% 출처: AN-22-122 v26 §5.2.4, §5.3.4, §8.2.1, App. D; AN-19-094 v20 §4.6, §9, App. A;
+%       Hbb 회의 FH 발표, KCMS 발표; tempTTHH STEP 14·16·24·25·26·27, CHANGELOG 2026-07-29 (2);
+%       DECISIONS(D-2026-10-02-D N7·N8, D-2026-10-08-A, D-2026-10-10-A·B), PLAN_v15 §9.2·§9.6 D10, PLAN_ML_SYST §5–6·§9;
+%       코드(EraConfig.h, BTagEffGroup.h, CorrectionsManager.cc, ttHHanalyzer_unified.{h,cc},
+%       bTagSF_ReweightStudy/, tools/stage7/btag_eff_maps.py)
+% =============================================================================
+\chapter{b-tagging 과 b-tag SF}\label{ch:btag}
+
+ttHH($\to$4b) 의 신호는 b quark 6 개를 가지므로 b-tag 은 신호 영역의 정의(b jet 수)와 배경 분리의 중심이다. Run 2 는 DeepJet 판별값의
+분포 전체를 jet 마다 data 에 맞추는 shape SF 를 쓰고, 그 SF 가 바꾼 b-tag 요구 전의 수율을 과정 묶음마다 jet 수 $\times$ \HT{} 의 함수로
+되돌리는 normalisation reweight 를 곱한다(AN 과 ttH(bb) 의 방법). 2024 는 BTV 가 UParTAK4 의 b jet fixed-WP SF 만 주므로, 우리 선택이
+쓰는 두 WP(L, M)로 BTV ``method 1a'' 의 사건 weight 를 만들고 MC 효율 맵은 우리가 만든다. 2026-10-10 에 BTV 의 다중 WP 안내에 맞춰
+L–M 구간 인자의 음수 분자를 1 로 바꾸고, 참 b jet 수별 closure 와 비교 weight 둘을 기록하게 했다. 2024 의 shape SF 와 c jet 의 처리는
+BTV 의 답을 기다린다.
+
+% -----------------------------------------------------------------------------
+\section{b-tagging 의 원리와 SF}\label{sec:btag-theory}
+
+\paragraph{b jet 의 특징.}
+b hadron 은 수명이 ps 규모라서 실험실계에서 mm 정도 날아간 뒤 붕괴하고, 질량이 커서 붕괴 산물이 많다. 그래서 b jet 에는 (1) 1차 정점에서
+떨어진 궤적(큰 impact parameter 와 그 유의도), (2) 질량과 궤적 수가 큰 2차 정점, (3) 반렙톤 붕괴에서 오는 jet 안의 부드러운 lepton 이 있다.
+c hadron 도 같은 특징을 약하게 가져서 c jet 이 가장 어려운 mistag 이다. MC 에서 jet 의 맛(flavour)은 hadron 기준(\texttt{Jet\_hadronFlavour}:
+b hadron 이 jet 에 묶이면 5, c 이면 4, 아니면 0)으로 정하고, 우리 코드의 SF·효율은 모두 이 값을 쓴다
+\src{ttHHanalyzer\_unified.cc, createObjects}.
+
+\paragraph{tagger.}
+CMS 의 tagger 는 이런 변수를 사람이 고르던 방식에서 jet 구성 입자의 목록을 그대로 읽는 신경망으로 옮겨 왔다: Run 2 의 DeepJet
+(\texttt{Jet\_btagDeepFlavB}), Run 3 의 graph·transformer 계열이다. 우리 2024 는 UParTAK4(\texttt{Jet\_btagUParTAK4B})를 쓴다
+\src{EraConfig.h, btagWP}. 출력은 맛별 확률이고, b 판별값 하나에 문턱을 걸거나(WP) 판별값 분포 전체를 쓴다.
+
+\paragraph{working point(WP).}
+WP 는 light jet 의 mistag 비율이 정해진 값이 되는 판별값 문턱이다. DeepJet 의 loose/medium/tight 는 $\pt\approx80\GeV$ 의 non-b jet 에서
+mistag 약 10\,\%, 1\,\%, 0.1\,\% 에 해당한다\src{AN-22-122 v26, PDF p.44}. 표~\ref{tab:btag-wp} 가 우리가 쓰는 값이다. 우리 선택에서
+b jet 은 점수 $\geq$ M, hadronic W 의 light jet 은 점수 $<$ L 이다\src{ttHHanalyzer\_unified.cc, createObjects}. ttHH AN 의 DL 도
+medium, ``loose 이고 medium 아님'', ``loose 실패''(light)의 세 범주를 쓴다\src{AN-22-122 v26, PDF p.42, Table 33; PDF p.45, Table 37}.
+
+\begin{table}[htbp]
+\caption{우리 코드의 b-tag WP\,\src{EraConfig.h, btagWP; AN-22-122 v26, PDF p.41, Table 32; PLAN\_v15 §9.2}.}
+\label{tab:btag-wp}
+\centering\small
+\begin{tabular}{@{}lllll@{}}
+\toprule
+연도 & tagger(branch) & L & M & T \\
+\midrule
+2016 preVFP & DeepJet(\texttt{btagDeepFlavB}) & 0.0508 & 0.2598 & 0.6502 \\
+2016 postVFP & DeepJet & 0.0480 & 0.2489 & 0.6377 \\
+2017 & DeepJet & 0.0532 & 0.3040 & 0.7476 \\
+2018 & DeepJet & 0.0490 & 0.2783 & 0.7100 \\
+2024 & UParTAK4(\texttt{btagUParTAK4B}) & 0.0246 & 0.1272 & 0.4648 (XT 0.6298, XXT 0.9739) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{왜 data 와 MC 가 다른가, 그리고 SF.}
+tracking 의 효율과 정렬, impact parameter 분해능, b·c 의 fragmentation 과 붕괴, gluon splitting, pileup 은 시뮬레이션이 완벽하지 않다. 그래서
+같은 WP 의 효율이 data 와 MC 에서 다르고, 판별값 분포의 모양도 다르다. 두 종류의 SF 가 있다:
+\begin{itemize}
+\item \textbf{fixed-WP SF}: $\mathrm{SF}_X(f,\pt,\eta) = \varepsilon_X^\text{data}/\varepsilon_X^\text{MC}$ ($X$ = WP, $f$ = 맛). 사건 weight 를
+  만들려면 MC 효율 $\varepsilon_X^\text{MC}$ 이 따로 필요하다(\S\ref{sec:btag-fixedwp}).
+\item \textbf{shape(reshaping) SF}: jet 마다 판별값 $D$ 의 함수 $\mathrm{SF}(D; f,\pt,\eta)$ 로, MC 의 $D$ 분포를 data 의 것으로 바꾼다. HF·LF 가
+  많은 제어 표본에서 다른 맛의 기여를 빼 가며 번갈아 맞추는 iterative fit(tag-and-probe)으로 만들고\src{AN-19-094 v20, PDF p.59, p.154}, 불확도는 \S\ref{sec:btag-run2} 의 출처들로 나뉜다.
+  MC 효율 맵이 필요 없고 모든 WP 와 판별값을 쓰는 입력 변수가 함께 고쳐진다.
+\end{itemize}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=12.5cm,y=1cm,>=Stealth]
+  \fill[black!8]  (0,0) rectangle (0.0246*4,0.55);
+  \fill[orange!20] (0.0246*4,0) rectangle (0.1272*4,0.55);
+  \fill[blue!15]  (0.1272*4,0) rectangle (1,0.55);
+  \draw[->] (0,0) -- (1.04,0) node[right,font=\scriptsize] {점수};
+  \draw (0,0) -- (0,-0.08) node[below,font=\scriptsize] {0};
+  \draw (1,0) -- (1,-0.08) node[below,font=\scriptsize] {1};
+  \draw[thick] (0.0246*4,0) -- (0.0246*4,0.75) node[above,font=\scriptsize] {L};
+  \draw[thick] (0.1272*4,0) -- (0.1272*4,0.75) node[above,font=\scriptsize] {M};
+  \node[font=\scriptsize,align=center] at (0.0246*2,0.27) {$<$L};
+  \node[font=\scriptsize,align=center] at (0.0246*4/2+0.1272*4/2,0.27) {L–M};
+  \node[font=\scriptsize,align=center] at (0.75,0.27) {$\geq$M (b jet)};
+  \node[font=\scriptsize,align=center,below] at (0.05,-0.35) {$\dfrac{1-\mathrm{SF}_L\varepsilon_L}{1-\varepsilon_L}$};
+  \node[font=\scriptsize,align=center,below] at (0.36,-0.35) {$\dfrac{\mathrm{SF}_L\varepsilon_L-\mathrm{SF}_M\varepsilon_M}{\varepsilon_L-\varepsilon_M}$};
+  \node[font=\scriptsize,align=center,below] at (0.75,-0.35) {$\mathrm{SF}_M$};
+  \node[font=\scriptsize,left] at (-0.02,-0.62) {jet weight:};
+\end{tikzpicture}
+\caption{두 WP(L, M)가 나누는 세 칸과 2024 fixed-WP 방법의 jet weight(식~\eqref{eq:btag-method1a}). 칸의 너비는 눈금을 4 배로 늘린
+개념도이다(2024 UParTAK4 의 L 0.0246, M 0.1272).}
+\label{fig:btag-bins}
+\end{figure}
+
+% -----------------------------------------------------------------------------
+\section{Run 2: shape SF 와 b-tag normalisation reweight}\label{sec:btag-run2}
+
+\subsection{Run 2 AN 과 ttH(bb) 의 방법}\label{sec:btag-run2-an}
+
+ttHH AN 의 SL 은 여러 DNN 입력이 DeepJet 점수로 만들어지므로 값보다 모양의 data/MC 차이가 중요하다고 보고 BTV 의 DeepJet shape SF 를
+골랐다. correctionlib 으로 jet 마다 SF(맛, $\eta$, \pt, 판별값)를 읽고 사건 weight 는 선택된 모든 jet 의 곱이다\src{AN-22-122 v26, PDF p.41}:
+\begin{equation}
+  \omega_\text{evt} = \prod_{i\,\in\,\text{jets}} \mathrm{SF}(D_i, p_{\mathrm{T},i}, \eta_i;\, f_i).
+  \label{eq:btag-shape-weight}
+\end{equation}
+불확도의 출처는 ``lf'', ``hf'', ``hfstats1'', ``hfstats2'', ``lfstats1'', ``lfstats2'' 를 b jet 과 light jet 에 함께, c jet 에는
+``cferr1'', ``cferr2'' 를 걸고, ``jes'' 는 JES 를 움직인 사건에 함께 건다\src{AN-22-122 v26, PDF p.41, p.121}. 각 출처의 뜻은 ttH(bb) AN 이
+설명한다\src{AN-19-094 v20, PDF p.153--154}:
+\begin{itemize}
+\item \textbf{hf, lf(purity)}: SF 를 유도한 제어 표본에 섞인 다른 맛(HF 표본의 LF, LF 표본의 HF)의 양을 바꿨을 때의 SF 변화. 유도가 반복적이라
+  다른 맛의 SF 도 조금 움직인다.
+\item \textbf{hfstats1/2, lfstats1/2}: 제어 표본의 통계. 1 차(linear)는 판별값 분포 전체의 기울기, 2 차(quadratic)는 양 끝이 가운데에 대해
+  움직이는 변형이다. 표본이 해마다 독립이므로 연도 간 비상관이다.
+\item \textbf{cferr1/2}: c jet 의 SF 는 1 로 두고 HF SF 의 상대 불확도를 두 배로 키워 두 nuisance 로 만든다.
+\item \textbf{jes}: JES 가 움직이면 SF 의 입력(\pt)이 움직이므로 JES 변형과 함께 한다.
+\end{itemize}
+상관은 AN 본문이 ``hf/lf stats1/2 는 연도 간 비상관, hf/lf·cferr1/2 는 상관''\src{AN-22-122 v26, PDF p.120--121} 이라 하지만 SL 의 impact
+그림에는 \texttt{CMS\_btag\_hf\_2016/2017/2018} 처럼 연도별 이름이 있다\src{AN-22-122 v26, PDF p.128, Fig. 100}. ttH(bb) 는 purity·charm 을
+2017–2018 상관, 2016 은 따로 두었다\src{AN-19-094 v20, PDF p.154}.
+
+\paragraph{jet 마다 어느 변형을 거는가(BTV 의 recipe).}
+사건의 출처 $s$ 변형 weight 는 jet 마다 아래 규칙으로 고른 SF 의 곱이다. payload 가 출처마다 각 맛에 무엇을 하는지 이미 알고 있으므로
+(예: ``hf'' 는 light jet 의 SF 도 조금 바꾼다), 규칙은 c jet 과 c 아닌 jet 의 구분뿐이다.
+\begin{center}\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+jet 의 맛 & $s\in\{$hf, lf, hfstats1/2, lfstats1/2, jes$\}$ & $s\in\{$cferr1, cferr2$\}$ \\
+\midrule
+b(5), light(0) & $\mathrm{SF}_{s,\pm}$ & 중앙값 \\
+c(4) & 중앙값 & $\mathrm{SF}_{s,\pm}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{normalisation reweight.}
+SL 은 SF 전후의 사건 수가 같도록 $R = \sum\omega_\text{before}/\sum\omega_\text{after}$ 를 b-tag 요구 없이 측정했다. 처음에는 중앙 SF 로 구한
+인자 하나를 모든 변형에 썼지만 lf·cferr 등에서 수 \% 의 수율 차이가 남아 변형마다 따로 측정했다\src{AN-22-122 v26, PDF p.41--42, p.170}.
+과정(ttHH, ttH(SL), tt(SL), ttbb(SL), tt4b)과 연도마다 따로이고(App.~D), 본문은 이를 ``jet multiplicity correction'' 이라 부른다. 측정
+위상공간은 본문에 따라 jet 4 개 이상(§5.2.4), 5 개 이상(§8.2.1), b-tag 을 뺀 baseline(App.~D)으로 다르게 적혀 있다\src{AN-22-122 v26, PDF p.41,
+p.121, p.170}. DL 은 jet 수와 \HT{} bin 에서 변형마다 정규화를 맞췄다\src{AN-22-122 v26, PDF p.45}. ttH(bb) 는 SF 뒤에 jet 수와 \HT{} 분포가
+b-tag 요구 전과 달라지는 것(2017 이 가장 큼)을 보고, 과정(ttH, tt+bb, tt+cc, tt+LF; 작은 배경은 tt+LF 값)마다 (jet 수, \HT) 의 함수인
+``b-tag SF patch'' 를 b-tag 요구를 뺀 baseline 에서 유도해 곱했다\src{AN-19-094 v20, PDF p.59--60}.
+
+\begin{note}[shape SF 가 왜 b-tag 요구 전의 수율을 바꾸는가]
+맛·\pt·$\eta$ 가 같은 jet 들에서 SF 의 MC 평균 $\langle\mathrm{SF}\rangle = \int \mathrm{SF}(D)\,p_\text{MC}(D)\,dD$ 를 생각하자. shape SF 는 판별값의
+모양을 맞추도록 유도한 것이고 정규화는 유도한 표본의 것이므로, 분석의 위상공간(jet 구성, 운동학, 맛의 비율이 다름)에서는
+$\langle\mathrm{SF}\rangle = 1+\delta$ 가 1 이 아닐 수 있다. jet 들이 독립이면 사건 weight 의 기댓값은
+\begin{equation}
+  \mathbb{E}[\omega_\text{evt}] = \prod_{i=1}^{N_j} \langle\mathrm{SF}\rangle_i \approx (1+\bar\delta)^{N_j} \approx 1 + N_j\bar\delta
+  \label{eq:btag-shape-bias}
+\end{equation}
+로 jet 수와 함께 커진다. 그래서 b-tag 을 요구하지 않은 수율이 바뀌고 jet 수와 \HT{} 의 분포가 기운다. 이 효과는 SF 가 고치려는 것(b-tag 된
+사건의 비율과 판별값 모양)이 아니므로, b-tag 요구 전의 수율을 jet 수(와 \HT)의 함수로 되돌린다. 변형마다 $\bar\delta$ 가 다르므로 인자도
+변형마다 다시 구한다(AN SL 의 결론과 같다). 되돌린 뒤에도 b-tag 된 사건의 비율과 점수 모양의 보정은 남는다.
+\end{note}
+
+\subsection{우리 FH 분석에서는}\label{sec:btag-run2-ours}
+
+\begin{itemize}
+\item \textbf{payload}: \file{POG/BTV/2017_UL/btagging.json.gz} 의 \code{deepJet_shape}(입력 systematic, flavor, $|\eta|$, \pt, 판별값; $|\eta|$ 는
+  [0, 2.4999], \pt{} 는 [20, 1000]\GeV, 판별값은 [0, 1] 로 자른다). 함수는 c jet 에 cferr 아닌 변형이, c 아닌 jet 에 cferr 변형이 들어오면 중앙값을
+  쓴다\src{CorrectionsManager.cc, loadBTag\_, getBTagSF\_Shape}\tagimpl.
+\item \textbf{중앙 weight}: \code{computeBTagWeight} 가 모든 MC 사건에서 선택 jet 의 SF 를 곱해 \code{bTagWeight} 를 만든다(cut-flow 사슬이
+  쓴다)\src{ttHHanalyzer\_unified.cc, computeBTagWeight}\tagimpl.
+\item \textbf{출처별 weight}: \code{computeBTagShapeVariations_} 가 Tree 에 들어가는 사건에서만 위 recipe 로 8 출처 $\times$ up/down = 16 개를
+  계산해 \code{bTagWeight_<src>_up/_down} 에 쓴다(jes 는 JES 변형 실행과 함께, 아직 없음). STEP 27 전의 analyzer 는 hf 를 b jet 에만, lf 를
+  light jet 에만 걸었는데 그 값은 어디에도 기록되지 않아 결과에는 영향이 없었다. \file{bTagSF_ReweightStudy} 의
+  \code{resolveJetSystematic} 은 처음부터 같은 BTV 규칙이었다\src{STEP 27 결론 4, §O.5}\tagimpl\tagtest.
+\item \textbf{norm reweight 의 정의}(\file{bTagSF_ReweightStudy/}): 과정 묶음 $g$, jet 수 $n_j$, \HT{} 의 bin 마다
+  \begin{equation}
+    r_g(n_j, H_\mathrm{T}) = \frac{\sum_{\text{evt}\in g,\,\text{bin}} \omega_\text{base}\,\mathrm{SF}_\text{trig}}{\sum_{\text{evt}\in g,\,\text{bin}} \omega_\text{base}\,\mathrm{SF}_\text{trig}\,\omega_\text{evt}},
+    \qquad
+    w = \omega_\text{base}\cdot\mathrm{SF}_\text{trig}\cdot\omega_\text{evt}\cdot r_g(n_j, H_\mathrm{T})
+    \label{eq:btag-normrw}
+  \end{equation}
+  이다\src{Hbb 회의 FH 발표 p.23}\src{BTagSFProcessor.cpp, Loop}. $\omega_\text{base}$ = genWeight $\times$ PU $\times$ L1 prefiring $\times$ stitch $\times$ (단면적 weight)
+  이다. 발표의 $r_g$ 식은 합에 trigger SF 를 적지 않았지만 코드는 분자·분모의 사건 weight 에 함께 곱한다. 사건은 btagtrig skim 에서 강입자 trigger 를
+  통과하고 측정 영역(기본 \texttt{FH}: \texttt{nVetoLeptons == 0}; 선택 \texttt{muonCR})에 든 것, b-tag 요구는 없다\src{BTagSFProcessor.cpp, Loop; Config.hh}\tagimpl.
+\item \textbf{묶음과 bin}: tt+LF, tt+cc, tt+B, tt+nb, ttH, ttHH, ttZH4b, ttZZ4b 의 8 묶음. inclusive \ttbar{} 는 사건마다 확장한
+  \texttt{genTtbarId} 로 나누고, QCD·V+jets·single top·VV·ttV 같은 작은 배경은 ttH(bb) 처럼 tt+LF 값을 쓴다. jet 수는 0–25(넘으면 마지막 bin),
+  \HT{} 경계는 500, 550, 600, 700, 800, 1000, 1100, …, 1800, 2100, 2500\GeV(범위 밖 clamp), 빈 bin 은 1 이다. 변형 키는 central 과
+  up/down $\times$ \{lf, hf, hfstats1/2, lfstats1/2, cferr1/2, jes\} 의 19 개다\src{Config\_TtCatGroup.hh; Config.hh; makeReweightJSON.cpp}\tagimpl.
+  출력은 correctionlib JSON \file{btagNormReweight.json}(묶음 8 개)이다\src{Hbb 회의 FH 발표 p.43}.
+\item \textbf{analyzer 의 적용}: \HT{} 단계에서 \code{getBTagReweight("central", processKey, nJets, HT)}; production weight 에는
+  \texttt{--btagrw on} 일 때만 곱하고(기본 off) \code{evtWeight_full} 에는 늘 곱한다. 지금은 중앙값만 쓴다; 변형별 인자는 JSON 에 있고
+  Tree 의 출처별 weight 에 downstream 이 곱하기로 했다\src{STEP 27 §O.4; STEP 16 §1}\tagimpl.
+\item \textbf{2017 의 상태}: 2026-07-29 에 유도 사슬의 무음 오류를 고쳤다(묶음을 확장 \texttt{genTtbarId} 로, \texttt{stitchWeight} 를 곱함,
+  측정 영역에 lepton 조건)\src{CHANGELOG 2026-07-29 (2)}. 8 월의 KCMS 발표는 2017 의 shape SF 와 norm reweight 를 ``derived \& applied'' 로
+  보고했다\src{KCMS 발표 p.3}. 이 저장소의 2017 main yml 은 \texttt{path\_btag\_reweight\_json: null} 이고 저장소의 JSON 은 6 월의 7 묶음
+  판이다 --- KNU 의 설정과 다를 수 있다(아래 미결).
+\end{itemize}
+
+\begin{andiff}[Run 2 b-tag 정규화에서 AN 과 다른 점]
+(1) AN SL 의 단일 인자(또는 jet 수만) 대신 DL·ttH(bb) 처럼 (jet 수, \HT) 2 차원이다. (2) 과정 묶음에 tt+nb(tt+bbb, tt+4b; AN App.~D 가 tt4b
+를 따로 정규화한 것)와 ttZH4b·ttZZ4b 를 더한 8 묶음이다\tagours. (3) FH 의 측정 영역(강입자 trigger 와 trigger SF 포함, lepton veto)에서
+잰다 --- ``쓸 영역에서 잰다''\src{Config.hh, Region}. (4) AN 은 jes 변형의 인자를 JES 를 움직인 표본에서 구했지만, 우리 유도 도구는
+jes 키도 보통 jet 에서 계산한다 --- JES 변형 실행이 생기면 다시 볼 것\tagours.
+\end{andiff}
+
+% -----------------------------------------------------------------------------
+\section{2024(Run 3): fixed-WP 방법(BTV method 1a)}\label{sec:btag-fixedwp}
+
+\subsection{왜 fixed WP 인가}\label{sec:btag-why-fixedwp}
+
+2024 BTV payload(\file{POG/BTV/2024_Summer24}, 2025-09-24 판 그대로, KNU 목록 2026-10-08)에는 UParTAK4 의 WP 값과 SF 하나뿐이다:
+\file{btagging_preliminary.json.gz} 의 \code{UParTAK4_kinfit} --- fixed WP, b jet(flavour 5)만, $|\eta|<2.5$ 한 bin, \pt{} 20–600\GeV{} 8 bin,
+불확도는 fsrdef, hdamp, isrdef, jer, jes, mass, statistic, tune 으로 나뉜다. shape SF 도, c·light SF 도 없어 Run 2 의 방법을 그대로 옮길 수
+없다\src{D-2026-10-08-A; PLAN\_v15 §9.6 D10}. 사용자 결정: ``일단 작업 자체는 fixed WP로 진행하다가 shape correction 방법이 확인되면 그것으로
+전환한다''\src{D-2026-10-08-A}\tagrunthree. 전환은 \code{EraConfig::btagMethod("2024")} 를 \code{Shape} 로 바꾸고 2024 용 shape SF 와 norm
+reweight 를 Run 2 처럼 유도하는 것이다\src{EraConfig.h, btagMethod}.
+
+\subsection{method 1a 의 사건 weight}\label{sec:btag-method1a}
+
+선택된 jet 은 두 WP 로 세 칸 중 하나에 든다(그림~\ref{fig:btag-bins}). jet 마다 그 칸에 있을 확률을 MC 와 data 에서 쓰면, MC 효율
+$\varepsilon_L \geq \varepsilon_M$(그 jet 의 맛·\pt·$|\eta|$·과정 묶음)과 $\varepsilon^\text{data}_X = \mathrm{SF}_X\varepsilon_X$ 로
+\begin{align}
+  P(\text{MC})   &= \prod_{i:\,s_i\geq M} \varepsilon_{M,i} \prod_{i:\,L\leq s_i<M} (\varepsilon_{L,i}-\varepsilon_{M,i}) \prod_{i:\,s_i<L} (1-\varepsilon_{L,i}), \notag\\
+  P(\text{data}) &= \prod_{i:\,s_i\geq M} \mathrm{SF}_{M,i}\varepsilon_{M,i} \prod_{i:\,L\leq s_i<M} (\mathrm{SF}_{L,i}\varepsilon_{L,i}-\mathrm{SF}_{M,i}\varepsilon_{M,i})
+                    \prod_{i:\,s_i<L} (1-\mathrm{SF}_{L,i}\varepsilon_{L,i}), \notag\\
+  w = \frac{P(\text{data})}{P(\text{MC})} &= \prod_{i:\,s_i\geq M} \mathrm{SF}_{M,i}
+     \prod_{i:\,L\leq s_i<M} \frac{\mathrm{SF}_{L,i}\varepsilon_{L,i}-\mathrm{SF}_{M,i}\varepsilon_{M,i}}{\varepsilon_{L,i}-\varepsilon_{M,i}}
+     \prod_{i:\,s_i<L} \frac{1-\mathrm{SF}_{L,i}\varepsilon_{L,i}}{1-\varepsilon_{L,i}}
+  \label{eq:btag-method1a}
+\end{align}
+이다\src{STEP 25 §2; D-2026-10-08-A}\tagimpl. M 하나만 쓰는 두 칸 판은 쓰지 않았다: W 의 jet 이 L 로 정의되므로 L–M 은 따로 셀 칸이다
+\src{D-2026-10-08-A}\tagours. 2024 payload 에는 b jet 의 SF 만 있으므로 c·light jet 의 weight 는 정확히 1 이다
+(\code{btagFixedWPCovers})\src{STEP 25 §2}.
+
+\begin{note}[method 1a 는 왜 b-tag 요구 전의 정규화를 지키는가, 그리고 효율 맵이 왜 중요한가]
+jet 하나의 weight 를 MC 의 칸 확률로 평균하면
+\begin{equation}
+  \mathbb{E}_\text{MC}[w_j] = \varepsilon_M\,\mathrm{SF}_M + (\varepsilon_L-\varepsilon_M)\frac{\mathrm{SF}_L\varepsilon_L-\mathrm{SF}_M\varepsilon_M}{\varepsilon_L-\varepsilon_M}
+  + (1-\varepsilon_L)\frac{1-\mathrm{SF}_L\varepsilon_L}{1-\varepsilon_L} = 1
+  \label{eq:btag-closure}
+\end{equation}
+이다. jet 들의 tag 가 (맛·\pt·$\eta$ 가 주어졌을 때) 독립이면 사건 weight 의 기댓값도 1 이므로, b-tag 요구 전의 수율은 바뀌지 않고 b-tag 칸
+사이의 비율만 data 로 옮겨진다. 그래서 2024 에는 norm reweight 를 쓰지 않는다\src{D-2026-10-08-A (3)}. 이 성질은 $\varepsilon$ 이 그 MC
+표본의 참 효율일 때만 성립한다. 효율이 틀리면 tag 된 jet 의 weight($\mathrm{SF}_M$)는 그대로지만 tag 되지 않은 jet 의 weight 가 움직인다:
+\begin{equation}
+  \frac{\partial}{\partial\varepsilon_L}\,\frac{1-\mathrm{SF}_L\varepsilon_L}{1-\varepsilon_L} = \frac{1-\mathrm{SF}_L}{(1-\varepsilon_L)^2}.
+  \label{eq:btag-sensitivity}
+\end{equation}
+b jet 은 $1-\varepsilon_L\approx 0.05$ 라서 작지 않다: $\mathrm{SF}_L=0.97$ 에서 $\varepsilon_L$ 이 0.95 에서 0.96 으로 바뀌면 weight 가 1.57 에서
+1.72 로 간다(STEP 25 의 ``$(1-\mathrm{SF})$ 배라 작다'' 는 틀린 서술이었고 10-10 에 고쳤다)\src{D-2026-10-10-A; STEP 25 §3}.
+\end{note}
+
+\subsection{BTV 의 다중 WP 안내와 우리 규칙 (D-2026-10-10-A)}\label{sec:btag-btvrule}
+
+BTV 의 자료(cms-talk ``Corrections when using 3 Working Points'', BTV wiki ``Recommendations for fixedWP SFs'', BTV Calibration news
+2026-04-20; 10-09 에 읽음)의 요지는 다음과 같다\src{D-2026-10-10-A}: (a) WP 가 여럿이면 jet 은 서로 배타적인 칸 하나에만 든다(WP $N$ 개면 중간
+항 $N-1$ 개; ``L 이지만 T 는 아님'' 같은 항을 더하면 이중 계산이다); WP 둘인 우리에게는 두 방식(Option A·B)의 차이가 없다. (b) method 1a 가
+기본이고, 중간 칸 인자의 분자 $\mathrm{SF}_\text{lo}\varepsilon_\text{lo}-\mathrm{SF}_\text{hi}\varepsilon_\text{hi}$ 가 음수이면 그 인자를 1 로
+둔다. 분자가 음수라는 것은 더 엄격한 WP 의 data 효율 추정이 더 느슨한 WP 의 것보다 크다는 뜻이라 물리적으로는 있을 수 없다; 두 WP 의 SF 가
+따로 측정되어 각자의 불확도 안에서 움직이기 때문에 생길 수 있다고 우리는 본다. c jet 은 b jet 의 SF 와 그 불확도를 쓴다. 효율은 분석 MC 에서 맛별로, SF 와 비슷한 \pt{}
+bin 과 $|\eta|$ 1–몇 bin, 과정 묶음마다, b-tag 요구만 뺀 분석 선택 뒤에서 잰다. WP 칸 정보는 BDT/DNN 입력이 될 수 있다. (c) ttH(bb) Run 3 은
+높은 $N_b$ 에서 tt+light 의 큰 정규화 효과를 보았고(jet 4 개 이상 영역의 효율을 높은 $N_b$ 로 외삽한 탓일 수 있음), 참 b jet 수의 함수인
+효율을 제안했다; tt dilepton 의 효율은 b jet 0 개 이상과 3 개 이상 사이에서 수 \% 까지 다르다. 우리의 결정은 다음과 같다\src{D-2026-10-10-A;
+STEP 27 §N.1}\tagimpl:
+
+\begin{table}[htbp]
+\caption{2024 jet weight 의 규칙(\texttt{computeBTagWeightFixedWP\_}). up/down 도 같은 규칙이다\,\src{STEP 27 §N.1; ttHHanalyzer\_unified.cc}.}
+\label{tab:btag-rules}
+\centering\small
+\begin{tabularx}{\textwidth}{@{}p{2.3cm}p{4.6cm}L@{}}
+\toprule
+jet 의 칸 & weight & 분자 $<0$ 일 때 \\
+\midrule
+점수 $\geq$ M & $\mathrm{SF}_M$ & --- \\
+L $\leq$ 점수 $<$ M & $(\mathrm{SF}_L\varepsilon_L-\mathrm{SF}_M\varepsilon_M)/(\varepsilon_L-\varepsilon_M)$ & \textbf{1}(BTV 규칙; 커밋 K 에서는 0 이라 사건 weight 0) \\
+점수 $<$ L & $(1-\mathrm{SF}_L\varepsilon_L)/(1-\varepsilon_L)$ & 0 그대로(SF 에 연속; 1 로 두면 up 변형이 반대로 뛴다) --- BTV 에 질문할 것 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{itemize}
+\item 분모가 $10^{-6}$ 이하이면 1, 효율은 $[10^{-4}, 1-10^{-4}]$ 로 자르고 $\varepsilon_M\leq\varepsilon_L$ 로 둔다. SF 는 $|\eta|$ 를 [0, 2.4999],
+  \pt{} 를 [20, 599.9]\GeV{} 로 잘라 읽는다(600\GeV{} 위는 마지막 칸)\src{ttHHanalyzer\_unified.cc, computeBTagWeightFixedWP\_; CorrectionsManager.cc,
+  getBTagSF\_WP}.
+\item \textbf{c jet}: BTV 는 b SF 를 쓰라고 하지만 payload 위치 확인(CIEMAT framework 의 issue(2025-10)에 따르면 BTV 를 포함한 보정 모듈이
+  \file{/cvmfs/cms-griddata.cern.ch/cat/metadata} 로 옮겨졌다; 우리 10-08 목록은 jsonpog rsync 경로만 보았다)과 BTV 의 답 뒤로
+  미뤘다\src{D-2026-10-10-A (3)}\tagopen.
+\item \textbf{비교 weight}(중앙값만): \code{bTagWeight_oldRule} = 커밋 K 의 규칙(L–M 음수 분자 $\to$ 0), \code{bTagWeight_cAsB} = b jet 은 주
+  weight 와 같고 c jet(hadronFlavour 4)은 b-jet SF(flavour 5 로 payload 를 부름)와 우리 c 효율로 같은 식, light 는 1. payload 가 c SF 를 갖게 되면
+  \code{cAsB} 는 주 weight 와 같아진다\src{STEP 27 §N.1}\tagimpl.
+\item \textbf{실제 payload 에서}: L–M 분자가 음수가 되려면 $\mathrm{SF}_M/\mathrm{SF}_L > \varepsilon_L/\varepsilon_M$ 이어야 한다(STEP 27 의
+  예시 숫자로 b jet 의 $\varepsilon_L\approx0.9$, $\varepsilon_M\approx0.8$ 이면 약 1.12). 그래서 중앙값에서는 드물고 up/down 에서 생길 수 있다고
+  본다(추론). job 끝의 \texttt{[btagSF] intermediate ... numerator < 0 -> jet weight 1} 줄이 그
+  수를 센다\src{STEP 27 §N.3}.
+\item \textbf{규칙과 closure}: 분자를 자르면 식~\eqref{eq:btag-closure} 의 항등식이 그 칸에서 깨진다. 분자 $a=\mathrm{SF}_L\varepsilon_L-\mathrm{SF}_M\varepsilon_M<0$
+  인 (맛, \pt, $|\eta|$) 칸의 jet 하나의 기대 weight 는 BTV 규칙(1)에서 $1+|a|+(\varepsilon_L-\varepsilon_M)$, 커밋 K 의 규칙(0)에서 $1+|a|$ 로 둘 다 1 보다
+  크다(우리 계산). 그래서 음수 분자가 생긴 변형에서는 HT 단계의 closure 가 1 에서 그만큼 벗어날 수 있다.
+\end{itemize}
+
+\subsection{MC 효율 맵}\label{sec:btag-effmaps}
+
+\begin{itemize}
+\item \textbf{히스토그램}: 2024 MC(prescan 제외)의 출력에 \texttt{BTagEff/h2\_<b|c|l>\_<all|L|M|T>} --- 선택 jet 의 \pt{} 13 bin
+  (20, 30, 40, 50, 60, 80, 100, 130, 170, 220, 300, 400, 600, 1000\GeV) $\times$ $|\eta|$ 4 bin(0, 0.6, 1.2, 1.8, 2.5), SF 전 사건 weight(base
+  $\times$ PU $\times$ genW $\times$ stitch)로, \HT{} 단계(b-tag 을 뺀 모든 cut 뒤)에서 채운다. \texttt{h\_nevt} 와 WP 를 담은 \texttt{h\_wp} 도
+  쓴다\src{ttHHanalyzer\_unified.cc, bookBTagEff\_, fillBTagEff\_}\tagimpl.
+\item \textbf{과정 묶음}: \texttt{qcd}(\texttt{QCD*}), \texttt{tt}(이름이 tt/TT 로 시작: \ttbar, ttH, ttHH, ttV, tttt …), \texttt{other}(single top,
+  tH, V+jets, VV …)와 모두를 더한 \texttt{all}. 맵에 없는 묶음은 \texttt{all} 을 쓴다\src{BTagEffGroup.h}.
+\item \textbf{맵 만들기}(\file{tools/stage7/btag_eff_maps.py}): yml 의 MC 표본(2024 의 4FS \texttt{TTbb\_*}, \texttt{TT4b} 는 stack 처럼 뺌)을
+  묶음마다 더해 $\varepsilon_X = \sum w(\text{점수}\geq X)/\sum w$. 분모의 $N_\text{eff}=(\sum w)^2/\sum w^2 \geq 50$ 이고 b jet 은 세 칸 각각
+  $N_\text{eff}\geq 10$ 일 때만 그 칸을 쓰고, 아니면 (묶음, $|\eta|$ 합) $\to$ (\texttt{all}, 칸) $\to$ (\texttt{all}, $|\eta|$ 합) $\to$ (\texttt{all},
+  전체)로 내려간다. 음의 weight 때문에 비물리적인 칸도 건너뛴다. correctionlib JSON 의 \code{btag_eff}·\code{btag_eff_groups} 와
+  description 의 \texttt{year=}, \texttt{wp=}, \texttt{flavours\_required=} 를 쓰고, 다시 읽어 확인한다(\texttt{VERIFY ok})\src{STEP 25 §3}\tagimpl.
+\item \textbf{왜 세 칸 규칙인가}: 0 이나 1 에 붙은 효율은 WP 반대편 jet 에 $1/10^{-4}$ 까지의 weight 를 준다. 맵을 만든 표본에는 그런 jet 이 없지만
+  같은 맵을 쓰는 다른 표본에는 있다. 10-08 의 독립 검토가 컨테이너에서 보인 예: QCD 묶음의 b 맵이 $\varepsilon=1$ 이라 다른 파일의 QCD 에서
+  closure $4\times10^{9}$\src{STEP 25 §3, §9}.
+\item \textbf{어디서 재나}: 지금은 2024 btagtrig MC(trigger·lepton 요구 없음). BTV 는 ``분석 선택 뒤, b-tag 요구만 빼고'' 이고, 2024 FH trigger
+  (ParkingHH)는 HLT 에서 PNet b-tag 을 요구하므로 trigger 뒤의 효율이 더 높을 수 있다. 그래서 첫 SF main 의 \texttt{BTagEff/}(trigger 와 lepton 요구
+  뒤)로 맵을 다시 만들어 비교한다\src{D-2026-10-10-A (5); STEP 25 §3 정정}\tagplan.
+\item \textbf{analyzer 의 검사}: \texttt{--btagsf on} 인 2024 MC 에 효율 JSON 이 없으면 E52(제출기는 E13 으로 먼저 막는다), payload 를 못 읽으면
+  E40. 읽히지만 이 job 의 묶음이나
+  \texttt{all} 의 맛·WP 에 답하지 못하는 JSON, 다른 WP 로 만든 JSON 도 load 때 E52 이다\src{STEP 25 §4}\tagimpl.
+\end{itemize}
+
+\subsection{참 b jet 수별 closure}\label{sec:btag-closure}
+
+\HT{} 단계(b-tag cut 전)에서 효율 맵이 준비된 MC 만, 선택 jet 중 hadronFlavour 5 의 수 $k$(0, 1, 2, 3, $\geq 4$)와 M-tag 수(0 … $\geq 6$)마다
+$\sum w$, $\sum w\cdot$\code{bTagWeight}, $\sum w\cdot$\code{_oldRule}, $\sum w\cdot$\code{_cAsB} 를 \texttt{BTagEff/h\_ntrueb\_*}, \texttt{h\_nbM\_*}
+에 채운다(\code{fillBTagClosure_}). merge 뒤 bin 마다
+\begin{equation}
+  C_k = \frac{\sum_{\text{evt}:\,n_\text{true b}=k} w\cdot w_\text{b-tag}}{\sum_{\text{evt}:\,n_\text{true b}=k} w}
+  \label{eq:btag-truebclosure}
+\end{equation}
+이 맵이 맞으면 1 이다\src{STEP 27 §N.2}\tagimpl. job 끝의 \texttt{[btagSF] closure per true b jets ...} 줄도 같은 수를 찍는다. 전체 closure 는
+식~\eqref{eq:btag-closure} 의 확인이고, $k$ 별 closure 는 그 성질이 신호 영역(참 b 가 많음)까지 성립하는지, 곧 BTV 가 경고한 ``효율을 높은
+$N_b$ 로 외삽하는 편향''의 크기다. 편향이 크면 효율 맵에 참 b 축을 더하는 것을 검토한다(D-2026-10-10-A 의 supersede 조건).
+
+\subsection{up/down, 그리고 fixed WP 가 고치는 것과 고치지 못하는 것}\label{sec:btag-fixedwp-limits}
+
+up/down(\code{bTagWeight_up/_down}, 2024 만)은 payload 의 \texttt{up}/\texttt{down} 이 있으면 그것, 없으면 \texttt{correlated}+\texttt{uncorrelated}
+짝, 없으면 kinfit 출처들을 중앙값과의 차의 제곱합으로 쓴다. 두 묶음을 함께 더하지 않는다(한쪽이 다른 쪽의 분해일 수 있음)\src{STEP 25 §2;
+CorrectionsManager.cc, loadBTag\_}\tagimpl. 사용자는 ``SF 가 shape 가 아니라 fixed WP 이므로 Data/MC ratio 는 크게 바뀌지 않을 것'' 으로
+예상했다. 10-08 의 검토에 따르면 b-tag 수별 수율과 운동학 분포에서는 맞다(두 방법 모두 범주를 정하는 WP 의 tag 비율을 고치고, method 1a 는 norm
+reweight 가 필요 없다). 그러나 (a) b-tag 점수 분포는 세 칸 안의 모양이 MC 그대로이고, (b) mistag
+부분 --- nb $\geq 2$ 의 multijet 영역에서는 tag 된 jet 의 상당수가 c·light 이며(2024 HT1050 영역의 Data/MC 1.46 이 중간 점수에 있었다) 2024 에는
+c·light SF 가 없다 --- 은 고쳐지지 않고, (c) 2017 v9(shape SF + norm reweight)와는 점수 모양이 아니라 b-tag 범주·운동학으로 비교해야 하며,
+(d) jet 수의 기울기는 b-tag 효과가 아니다\src{D-2026-10-08-A}.
+
+% -----------------------------------------------------------------------------
+\section{검증한 것}\label{sec:btag-validation}
+
+\begin{itemize}
+\item \textbf{커밋 K(STEP 25)}: 오프라인 smoke 83/83. \texttt{--btagsf on} run 의 \code{bTagWeight}·\code{_up}·\code{_down} 을 Tree 의 jet 에서
+  correctionlib 으로 다시 계산해 588 사건, b jet 1,453 개에서 상대 차 최대 $6\times10^{-8}$; 맵을 만든 합성 표본에서 closure 0.992; 출처만 있는 payload 의
+  제곱합; \code{evtWeight}(on) $=$ \code{evtWeight}(off) $\times$ \code{bTagWeight}; 맵을 만들지 않은 표본(다른 파일의 QCD)에서 jet weight $>10$ 없음,
+  closure 1.04; E52·E40 의 경우들\src{STEP 25 §6}\tagtest. \file{tools/stage7/test_btag_eff_maps.py} 26/26, \file{test/test_EraConfig.cc} 에 2024
+  FixedWP·Run 2 Shape·payload 의 단언 넷\src{STEP 25 §6}.
+\item \textbf{KNU}: 진짜 파일·payload 로 \file{tools/stage3/smoke_2024.sh} 106/106(10-09) --- payload 의 load 줄과 up/down 을 찾았는지의 검사 포함
+  \src{STEP 26 §10; STEP 25 §6}\tagtest.
+\item \textbf{커밋 N(STEP 27)}: 기본 가짜 payload($\mathrm{SF}_M<\mathrm{SF}_L$)에서 \code{_oldRule}·\code{_cAsB} 의 재계산 일치, 음수 0 개, 끝의 줄 셋,
+  \texttt{h\_ntrueb\_*}·\texttt{h\_nbM\_*} 의 비 = 찍힌 closure. $\mathrm{SF}_M\gg\mathrm{SF}_L$ 인 payload(\texttt{fake\_pog.py --btv-interneg})에서
+  음수 분자가 생기고(Tree 사건의 jet 215 개, job 전체 493 개) \code{bTagWeight} = BTV 규칙, \code{_oldRule} = K 규칙이 재계산과 $2\times10^{-6}$ 안에서
+  같고 둘이 다르다. offline smoke 110/110\src{STEP 27 §시험}\tagtest.
+\item \textbf{커밋 O}: 2017 의 출처별 shape weight 16 개를 출처마다 다른 값을 주는 가짜 payload 로 BTV recipe 대로 다시 계산해 대조
+  (\file{test/offline_smoke/treev1_check.py})\src{STEP 27 §시험}\tagtest.
+\item \textbf{아직}: 실제 payload(2017 \code{deepJet_shape} 의 출처 키, 2024 \code{UParTAK4_kinfit})로 STEP 27 의 새 경로를 돌린 결과, 진짜 MC 의
+  효율 값과 fallback 사용 비율, main 출력의 closure\src{STEP 27 확인하지 못한 것; STEP 25 확인하지 못한 것}.
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{b-tag 계통 불확도 개요}\label{sec:btag-syst}
+
+자세한 목록과 상관은 \ref{ch:syst} 장에 둔다. Run 2 는 8 출처 $\times$ up/down 의 Tree branch \code{bTagWeight_<src>_up/_down}(shape SF 를 쓰는
+해에만)과 변형별 norm 인자(JSON 의 19 키 = central + 9 출처 $\times$ up/down)를 곱해 template 을 만들고, jes 는 JES 변형 실행과 함께
+한다\src{STEP 27 §O.1, §O.4, §O.5; bTagSF\_ReweightStudy/include/Config.hh, btagSystematics; PLAN\_ML\_SYST §6}. Tree branch 는 구현되었고\tagimpl,
+변형별 norm 인자를 곱하는 downstream 도구는 아직이다\tagplan. 2024 는 b jet 의 \code{bTagWeight_up/_down} 하나가 있다(payload 의 총 변형 또는
+출처의 제곱합)\src{STEP 25 §2; PLAN\_ML\_SYST §6}\tagimpl. 출처별 분리(연도 간 상관을 정하려면 필요), c jet(BTV 규칙대로 b SF 와 그 불확도), 효율
+맵의 통계적 불확도는 아직 다루지 않는다 --- 필요하다는 것은 우리 판단이다\tagopen. Run 2(DeepJet)와 2024(UParTAK4)는 tagger 와 calibration 이
+달라 b-tag nuisance 를 상관시키지 않는 것이 자연스럽다고 본다\tagours.
+
+\begin{table}[htbp]
+\caption{Run 2 shape 방법과 2024 fixed-WP 방법의 비교\,\src{\S\ref{sec:btag-run2}--\ref{sec:btag-fixedwp}; D-2026-10-08-A; D-2026-10-10-A}.}
+\label{tab:btag-compare}
+\centering\small
+\begin{tabularx}{\textwidth}{@{}p{2.6cm}L L@{}}
+\toprule
+ & Run 2(2016–2018): shape & 2024: fixed WP(method 1a) \\
+\midrule
+tagger·SF & DeepJet, \code{deepJet_shape}(b, c, light) & UParTAK4, \code{UParTAK4_kinfit}(b 만; c·light SF 1) \\
+jet weight & $\mathrm{SF}(D,\pt,\eta;f)$ & 칸마다 $P_\text{data}/P_\text{MC}$(식~\eqref{eq:btag-method1a}) \\
+MC 효율 & 필요 없음 & 필요(우리 맵, 묶음 qcd/tt/other/all) \\
+점수 모양 & 고친다 & 칸 안은 MC 그대로 \\
+b-tag 전 정규화 & 바뀜 $\to$ $r_g(n_j, \HT)$ 8 묶음, 변형마다 & 지켜짐(맵이 맞으면) $\to$ closure 감시, 참 b 별 \\
+불확도 & hf, lf, hf/lfstats1/2, cferr1/2, jes & payload 의 b 변형(출처 8 개 또는 총) \\
+지금 상태 & 2017 유도·적용(KCMS); 2018 v15 는 경로 작업 전 & 코드·시험 끝; 맵·SF main 은 KNU 의 btagtrig 뒤 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% -----------------------------------------------------------------------------
+\section{변경 이력}\label{sec:btag-history}
+
+\begin{center}\begin{minipage}{\textwidth}
+\captionof{table}{b-tag 의 변경 이력.}
+\label{tab:btag-history}
+\small
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{3.3cm}L@{}}
+\toprule
+날짜·기록 & 내용 \\
+\midrule
+2026-06-15 STEP 14, 16 & \code{evtWeight_btagSF}(+shape SF), \code{evtWeight_full}(+norm reweight) tier; \texttt{--btagsf}, \texttt{--btagrw} 토글(기본 off) \\
+2026-07-29 CHANGELOG & reweight 유도의 무음 오류 고침: 묶음을 \texttt{expandedTtbarId} 로(tt+nb), \texttt{stitchWeight} 곱함, lepton 조건이 있는 측정 영역(\texttt{FH}: veto lepton 0, \texttt{muonCR}) \\
+2026-10-02 D-2026-10-02-D N7·N8 & norm reweight 영역에 eCR 추가(계획); 2024 방법은 BTV 자료를 본 뒤 \\
+2026-10-05 STEP 24 & 2024 UParTAK4 WP; shape SF 없음 $\to$ \texttt{--btagsf on} 은 막음(E11) \\
+2026-10-08 D-2026-10-08-A, STEP 25(K) & 2024 fixed-WP method 1a, 우리 효율 맵, norm reweight 없음; 독립 검토로 세 칸 규칙 \\
+2026-10-09 STEP 26 & \file{bTagSF_ReweightStudy} 는 모르는 Data PD(2024 의 Muon0 등)에 시작 때 FATAL(2024 는 fixed WP) \\
+2026-10-10 D-2026-10-10-A, STEP 27(N·O) & L–M 음수 분자 $\to$ 1, 비교 weight 둘, 참 b 별 closure; Run 2 출처별 weight 를 BTV recipe 로 Tree 에 \\
+\bottomrule
+\end{tabularx}\end{minipage}
+\end{center}
+
+% -----------------------------------------------------------------------------
+\section{미결 사항}\label{sec:btag-open}
+
+\begin{openq}
+\begin{enumerate}
+\item \textbf{2024 shape SF}: BTV 의 방법·payload 가 확인되면 \code{EraConfig::btagMethod("2024")} $\to$ \code{Shape} 와 2024 norm reweight. 먼저
+  \file{/cvmfs/cms-griddata.cern.ch/cat/metadata} 에 더 새 2024 payload(comb, light, shape)가 있는지 볼 것\src{D-2026-10-10-A}.
+\item \textbf{c jet}: BTV 의 답 뒤에 b SF 로 할지(\code{bTagWeight_cAsB} 와의 비교로 크기를 먼저 본다); fail-L 음수 분자(0 유지)를 BTV 에 질문.
+\item \textbf{효율 맵}: btagtrig 맵 대 main 영역(trigger·lepton 뒤) 맵, 참 b 축이 필요한지(closure $C_k$), 진짜 MC 의 fallback 비율.
+\item \textbf{2017 norm reweight 의 정본}: KCMS 는 ``derived \& applied'' 인데 저장소의 2017 main yml 은 \texttt{null}, 저장소 JSON 은 6 월의 7 묶음 판 ---
+  KNU 의 실제 파일과 설정을 기록할 것. 2017 v15 생산 뒤에는 다시 유도해야 한다.
+\item \textbf{같은 payload 쓰기}: analyzer 는 \file{POG/BTV/<year>/btagging.json.gz}(jsonpog rsync)를, reweight 도구는 \texttt{TTHH\_BTAG\_JSON} 이 없으면
+  \file{/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/Run2-2017-UL-NanoAODv9/latest/} 를 먼저 찾는다\src{bTagSF\_ReweightStudy/include/Config.hh}.
+  두 파일이 다르면 $r_g$ 가 analyzer 의 SF 를 정확히 되돌리지 못한다 --- \texttt{TTHH\_BTAG\_JSON} 을 analyzer 의 파일로 고정하거나 md5 를 대조할 것
+  \tagours.
+\item \textbf{변형별 norm 인자와 jes}: downstream 에서 출처별 weight 에 변형별 $r_g$ 를 곱하는 도구, jes 변형의 정규화(JES 실행과 함께).
+\item \textbf{eCR 의 norm reweight 영역}(N7, PLAN Stage 7)과 2018(v15) 의 shape SF·reweight 유도.
+\item \textbf{AN 의 2016 postVFP WP}: Table 32(L 0.0480, M 0.2489)와 Table 37(L 0.0816, M 0.3657)이 다르다\src{AN-22-122 v26, PDF p.41, p.45}.
+  우리 코드는 Table 32 를 쓴다.
+\item \textbf{DNN 입력의 b-tag}: QCD template 을 낮은 b-tag 영역에서 가져오므로 b-tag 점수 입력은 TR·CR·SR 의 모양 동등성 검사를 통과한 것만 쓰자는
+  권고, 2024 는 연속 점수 대신 WP 칸(\code{jetBTagWP})\src{ROADMAP\_FH §6 2; PLAN\_ML\_SYST §9.2} --- \ref{ch:mva} 장.
+\end{enumerate}
+\end{openq}

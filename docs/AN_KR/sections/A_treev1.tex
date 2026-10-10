@@ -1,0 +1,161 @@
+% =============================================================================
+% 부록 A — Tree v1 변수 목록 (ch:treev1)
+% 출처: tempTTHH ttHHanalyzer_unified.h initTree / setTreePdf, ttHHanalyzer_unified.cc fillTree·fillTreeV1_,
+%       include/TreeVars.h, include/GenMatch.h, docs/changes/STEP_27_treev1_btv_rule.md (2026-10-10)
+% =============================================================================
+\chapter{Tree v1 변수 목록}\label{ch:treev1}
+
+이 부록은 analyzer 출력의 \code{Tree/Tree} 에 있는 branch 를 빠짐없이 적는다. main 모드에서는 selection 을 모두 통과한 사건이, btagtrig 모드에서는
+강제 cut 을 통과한 사건이 들어간다(\ref{ch:selection} 장). STEP 27 이 더한 Tree v1 은 언제나 booking 되는 76 개(STEP 27 P 의 \code{jetGenTopIdx} 포함)와 연도·옵션에 따라 붙는 것(Run 2 의 b-tag
+shape 출처 16 개, \texttt{-{}-tree-pdf on} 의 PDF weight)으로 이루어지고, 그 전부터 있던 branch 가 58 개(2017 은 57 개)다. 2024 의 비교 weight 2 개(STEP 27 N)는 Tree v1 과 따로 붙는다. analyzer 의 \texttt{-{}-tree-v1 off} 는 Tree v1 전부를 빼고 나머지는 그대로 둔다(저장공간을 아낄 때; \ref{ch:reco} 장)
+\src{STEP 27}\src{ttHHanalyzer\_unified.h, initTree}. 정의는 모두 \file{include/TreeVars.h} 와 \file{include/GenMatch.h} 에 한 번씩 있고, 식은 \ref{ch:reco} 장에 있다.
+
+\paragraph{표기.}
+b jet = 점수 $\ge M$, light jet = 점수 $<L$, non-b = 점수 $<M$(그림~\ref{fig:reco-wp}). jet 벡터의 순서는 \code{jetPt} 와 같다(보정 뒤 \pt{} 내림차순).
+$-1$ = 그 사건에서 정의되지 않음(대상 부족; NaN 은 없다). 형: F = \code{Float_t}, I = \code{Int_t}, U = \code{UInt_t}, O = \code{Bool_t},
+vF/vI = \code{std::vector<float>}/\code{std::vector<int>}. ``MC'' 열의 ● 는 MC 에서만 뜻이 있는 것(Data 는 표지 0·$-1$, weight 1, 벡터는 빈 것)이다.
+``AN'' 열의 T43 은 AN-22-122 Table 43\src{AN-22-122 v26, PDF p.50, Table 43}, 식 번호는 \ref{ch:reco} 장의 것이다.
+
+% -----------------------------------------------------------------------------
+\section{Tree v1: 언제나 있는 76 개}\label{sec:treev1-core}
+
+{\small
+\begin{longtable}{@{}>{\raggedleft\arraybackslash}p{0.75cm}>{\raggedright\arraybackslash}p{3.55cm}>{\centering\arraybackslash}p{0.65cm}%
+>{\raggedright\arraybackslash}p{5.75cm}>{\raggedright\arraybackslash}p{2.75cm}>{\centering\arraybackslash}p{0.55cm}@{}}
+\caption{Tree v1 의 branch(STEP 27 O). 번호는 \texttt{initTree} 의 booking 순서(단 쌍 통계 17–37 과 Fox–Wolfram 38–55 는 묶음 안에서 순서를 바꿔 적었다).}\label{tab:treev1-core}\\
+\toprule
+\# & branch & 형 & 정의 & AN · 식 & MC \\
+\midrule
+\endfirsthead
+\toprule
+\# & branch & 형 & 정의 & AN · 식 & MC \\
+\midrule
+\endhead
+\midrule\multicolumn{6}{r}{\footnotesize 다음 쪽에 계속}\\
+\endfoot
+\bottomrule
+\endlastfoot
+\multicolumn{6}{@{}l}{\textit{jet 벡터와 정답 표지}}\\
+1 & \code{jetPhi} & vF & 선택 jet 의 $\phi$ & T43 4-운동량 & \\
+2 & \code{jetMass} & vF & 선택 jet 의 질량(JEC·JER 뒤) & T43 4-운동량 & \\
+3 & \code{jetBTagWP} & vI & 점수의 칸: 0 $<L$, 1 $[L,M)$, 2 $[M,T)$, 3 $\ge T$ & 그림~\ref{fig:reco-wp}; 2024 의 ML 입력 & \\
+4 & \code{jetGenMatch} & vI & hard-process quark 표지: 0 없음, 1 H$\to$b, 2 t$\to$b, 3 W$\to$q, 4 Z$\to$q; $\Delta R<0.4$ greedy & GATJA 정답(\S\ref{sec:reco-gen}) & ● \\
+5 & \code{jetGenMotherIdx} & vI & 기원 boson·top 의 \emph{첫} 사본의 GenPart 번호(같은 H 의 두 b 가 같음); 없으면 $-1$ & 짝 정답 & ● \\
+6 & \code{jetGenTopIdx} & vI & 그 quark 가 온 top 의 \emph{첫} 사본의 GenPart 번호: t$\to$b 와 t$\to$W$\to$q 의 jet 이 같은 값을 가져 한 hadronic top 의 jet 셋을 묶는다; H·Z 의 quark 와 없음은 $-1$(STEP 27 P) & top 재구성 정답(FH) & ● \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{다중도, HT, 평균 질량}}\\
+7 & \code{lightjetNumber} & I & 점수 $<L$ 인 jet 수 & T43 $N_{\text{light}}$ & \\
+8 & \code{nLooseJets} & I & 점수 $\ge L$ 인 jet 수(b jet 포함) & QCD 영역의 $n_L$ & \\
+9 & \code{bjetHT} & F & $\sum\pt$(b jet) & T43 $\HT^b$ & \\
+10 & \code{lightjetHT} & F & $\sum\pt$(light jet) & T43 $\HT^{\text{light}}$ & \\
+11 & \code{jetAverageMass} & F & $\sum m/n$(선택 jet) & T43 $m_j^{\text{avg}}$ & \\
+12 & \code{bjetAverageMass} & F & $\sum m/n$(b jet) & T43 $m_b^{\text{avg}}$ & \\
+13 & \code{lightjetAverageMass} & F & $\sum m/n$(light jet) & T43 $m_{\text{light}}^{\text{avg}}$ & \\
+14 & \code{bjetAverageMassSqr} & F & $\sum m_b^2/n_b$ & T43 $(m^2)_b^{\text{avg}}$ & \\
+15 & \code{maxPTmassjjj} & F & 서로 다른 세 jet 가운데 합의 \pt{} 가 가장 큰 조합의 질량 & T43 $m_{jjj}^{\max\pt}$ & \\
+16 & \code{maxPTmassjbb} & F & 서로 다른 b jet 둘 + 그 둘이 아닌 jet 하나, 같은 기준 & T43 $m_{jbb}^{\max\pt}$ & \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{쌍 통계(jj = 모든 jet 쌍, bb = b jet 쌍, bj = (b, non-b) 쌍; $\Delta\phi$ 는 $[0,\pi]$)}}\\
+17–19 & \code{averageDeltaRjj}, \code{averageDeltaRbb}, \code{averageDeltaRbj} & F & 쌍의 평균 $\Delta R$ & T43; 식~\eqref{eq:reco-pairs} & \\
+20–22 & \code{minDeltaRjj}, \code{minDeltaRbb}, \code{minDeltaRbj} & F & 최소 $\Delta R$ & T43 $\Delta R^{\min}$ & \\
+23–25 & \code{maxDeltaRjj}, \code{maxDeltaRbb}, \code{maxDeltaRbj} & F & 최대 $\Delta R$ & 식~\eqref{eq:reco-pairs} & \\
+26–28 & \code{averageDeltaEtajj}, \code{averageDeltaEtabb}, \code{averageDeltaEtabj} & F & 평균 $|\Delta\eta|$ & T43 $\overline{\Delta\eta}$ & \\
+29–31 & \code{maxDeltaEtajj}, \code{maxDeltaEtabb}, \code{maxDeltaEtabj} & F & 최대 $|\Delta\eta|$ & T43 $\Delta\eta_{bb}^{\max}$ & \\
+32–34 & \code{minDeltaRMassjj}, \code{minDeltaRMassbb}, \code{minDeltaRMassbj} & F & $\Delta R$ 가 가장 작은 쌍의 질량 & T43 $\Delta R^{\min}_{\cdot,\text{mass}}$ & \\
+35–37 & \code{minDeltaRpTjj}, \code{minDeltaRpTbb}, \code{minDeltaRpTbj} & F & $\Delta R$ 가 가장 작은 쌍의 \pt & T43 $\Delta R^{\min}_{\cdot,\pt}$ & \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{Fox–Wolfram 과 centrality(대상 $<2$ 이면 $-1$)}}\\
+38–42 & \code{H0}, \code{H1}, \code{H2}, \code{H3}, \code{H4} & F & 선택 jet 의 $H_l$, $i=j$ 포함, $s=(\sum E)^2$ & 식~\eqref{eq:reco-fw} & \\
+43–47 & \code{bjetH0}, \code{bjetH1}, \code{bjetH2}, \code{bjetH3}, \code{bjetH4} & F & b jet 의 $H_l$ & 식~\eqref{eq:reco-fw} & \\
+48–51 & \code{R1}, \code{R2}, \code{R3}, \code{R4} & F & $H_l/H_0$(jet) & AN p.53 & \\
+52–55 & \code{bjetR1}, \code{bjetR2}, \code{bjetR3}, \code{bjetR4} & F & $H_l/H_0$(b jet) & AN p.53 & \\
+56 & \code{centrality} & F & $\sum\pt/\sum|\vec p|$(jet; FH 는 lepton 없음) & AN 식 12 & \\
+57 & \code{bjetCentrality} & F & 같은 것(b jet) & AN 식 12 & \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{\chisq{} 쌍 짓기(AN 의 jet 선택, $n_M\ge2$; $m_H=125$, $m_Z=91.2$; 표~\ref{tab:reco-chi2sets})}}\\
+58 & \code{chi2Higgs} & F & $\chi^2_{HH}$ 최소값 & 식~\eqref{eq:reco-chi2}, \eqref{eq:reco-chi2ours} & \\
+59 & \code{invMassH1} & F & HH 최적 짝 가운데 $m_H$ 에 더 가까운 쌍의 질량 & T43 $m_{H,1}$ & \\
+60 & \code{invMassH2} & F & 다른 쌍의 질량 & T43 $m_{H,2}$ & \\
+61 & \code{PTH1} & F & \code{invMassH1} 쌍의 \pt & T43 $\pt(H,1)$ & \\
+62 & \code{PTH2} & F & \code{invMassH2} 쌍의 \pt & T43 $\pt(H,2)$ & \\
+63 & \code{chi2HiggsZ} & F & $\chi^2_{ZH}$ 최소값(두 방향 배정) & 식~\eqref{eq:reco-chi2} & \\
+64 & \code{invMassHiggsZ1} & F & ZH 의 H 후보 질량 & T43 $m_{ZH,H}$ & \\
+65 & \code{invMassHiggsZ2} & F & ZH 의 Z 후보 질량 & T43 $m_{ZH,Z}$ & \\
+66 & \code{chi2Z} & F & $\chi^2_{ZZ}$ 최소값 & 식~\eqref{eq:reco-chi2} & \\
+67 & \code{invMassZ1} & F & ZZ 최적 짝 가운데 $m_Z$ 에 더 가까운 쌍의 질량 & T43 $m_{Z,1}$ & \\
+68 & \code{invMassZ2} & F & 다른 쌍의 질량 & T43 $m_{Z,2}$ & \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{MET 와 $m_{qq}$}}\\
+69 & \code{metPhi} & F & \code{MET_pt} 와 같은 MET 의 $\phi$(Run 2 v9 \code{MET_phi}, 2024 \code{PuppiMET_phi}) & GATJA 입력(DL) & \\
+70 & \code{invMassHadW} & F & cut \code{30<HadW<250} 이 쓰는 $m_{qq}$: light jet 둘 이상이면 그 쌍에서, 아니면 모든 jet 에서 $m_W=80.377$ 에 가장 가까운 dijet 질량 & 식~\eqref{eq:selection-mqq}; QCD 영역의 축 & \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{계통용 weight(Data: 1, 빈 벡터)}}\\
+71 & \code{PUWeight_up} & F & PU weight, 최소 편향 $\sigma$ 위 & \ref{ch:syst} 장 & ● \\
+72 & \code{PUWeight_down} & F & 같은 것, 아래 & & ● \\
+73 & \code{L1PrefiringWeight_up} & F & NanoAOD \code{L1PreFiringWeight_Up}(2016·2017; 그 밖 1) & & ● \\
+74 & \code{L1PrefiringWeight_down} & F & \code{L1PreFiringWeight_Dn}(같음) & & ● \\
+75 & \code{LHEScaleWeight} & vF & NanoAOD 벡터 그대로($\mu_R,\mu_F$; 크기·순서는 표본의 것) & & ● \\
+76 & \code{PSWeight} & vF & NanoAOD 벡터 그대로(ISR, FSR) & & ● \\
+\end{longtable}
+}
+
+% -----------------------------------------------------------------------------
+\section{조건에 따라 붙는 것}\label{sec:treev1-cond}
+
+\begin{table}[htbp]\centering
+\caption{조건부 Tree v1 branch.}\label{tab:treev1-cond}
+\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{5.4cm}>{\centering\arraybackslash}p{0.8cm}>{\raggedright\arraybackslash}p{4.0cm}L@{}}
+\toprule
+branch & 형 & booking 조건 & 정의 \\
+\midrule
+\code{bTagWeight_<src>_up}, \code{bTagWeight_<src>_down}, $\textit{src}\in$\{hf, lf, hfstats1, hfstats2, lfstats1, lfstats2, cferr1, cferr2\} — 16 개 & F &
+\texttt{!\_btagFixedWP \&\& \_hasBTagShapeSF}(Run 2) & 출처 하나만 변형한 DeepJet shape SF 의 곱(BTV recipe: c jet 은 cferr1/2 만, b·light jet 은 그 밖 모두); norm reweight 는 곱하지 않음; Data 1 \\
+\code{bTagWeight_oldRule} & F & \texttt{\_btagFixedWP}(2024); \texttt{-{}-tree-v1 off} 에도 있음 & 커밋 K 의 규칙(L–M 분자 $<0\to0$)으로 계산한 fixed-WP weight(중앙값) \\
+\code{bTagWeight_cAsB} & F & \texttt{\_btagFixedWP}(2024); \texttt{-{}-tree-v1 off} 에도 있음 & c jet 에 b-jet SF 와 우리 c 효율을 쓴 fixed-WP weight(중앙값) \\
+\code{LHEPdfWeight} & vF & \texttt{-{}-tree-pdf on}(\texttt{setTreePdf}; \texttt{-{}-tree-v1 on} 이 필요) & NanoAOD 벡터 그대로(사건당 약 100); MC(Data 는 빈 벡터) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+출처\src{ttHHanalyzer\_unified.h, initTree, setTreePdf}\src{STEP 27 §N.1, §O.4, §O.5}. 2024 의 fixed-WP \code{bTagWeight_up}/\code{_down} 은 STEP 25 부터
+있던 것이라 아래 표에 넣었다.
+
+% -----------------------------------------------------------------------------
+\section{Tree v1 전부터 있던 branch}\label{sec:treev1-old}
+
+\begin{table}[htbp]\centering
+\caption{Tree v1 전의 branch(58 개; 2017 은 \texttt{passTrigger\_HLT\_IsoMu24} 가 없어 57 개, fixed-WP 연도는 2 개 더).}\label{tab:treev1-old}
+\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{2.6cm}>{\centering\arraybackslash}p{0.7cm}L@{}}
+\toprule
+묶음(수) & 형 & branch 와 뜻 \\
+\midrule
+trigger bit (9) & O & \code{passTrigger_HLT_IsoMu27}, \code{passTrigger_HLT_IsoMu24}(2017 에는 없음), \code{passTrigger_HLT_PFHT1050},
+\code{passTrigger_6J1T_B}, \code{_6J1T_CDEF}, \code{_6J2T_B}, \code{_6J2T_CDEF}, \code{_4J3T_B}, \code{_4J3T_CDEF}(2024: CDEF 칸이 PNet 경로, B 칸은 0) \\
+사건 flag (3) & O & \code{failGoldenJson}, \code{passMETFilters}, \code{passHadTrig} \\
+다중도·운동학 (7) & I, F & \code{nMuons}, \code{nElecs}(수집된 lepton 수 — 수집하는 모드에서만), \code{nVetoLeptons}(main 의 veto 와 같은 값), \code{nJets}, \code{nbJets};
+\code{HT}, \code{MET_pt}(lepton CR 의 cut 과 같은 값) \\
+jet 벡터 (6) & vF, vI & \code{jetPt}, \code{jetEta}, \code{bTagScore}(Run 2 DeepJet, 2024 UParTAK4); \code{jetPUids}, \code{hadFlavs}, \code{partonFlavs} \\
+사건 번호 (2) & U & \code{eventNumber}, \code{runNumber} \\
+weight (9) & F & \code{evtWeight}(production, 토글한 SF), \code{evtWeight_btagSF}, \code{evtWeight_full}(식~\eqref{eq:selection-tiers}),
+\code{SampleWeight}($L\sigma\mathcal{B}/\sum w_{\text{gen}}$), \code{PUWeight}, \code{L1PrefiringWeight}, \code{genWeight}, \code{stitchWeight}, \code{bTagWeight}
+(+ fixed-WP 연도의 \code{bTagWeight_up}, \code{bTagWeight_down}) \\
+SF (4) & F & \code{triggerSF}, \code{triggerSF_up}, \code{triggerSF_down}, \code{btagNormReweight} \\
+\ttbar{} 분류 (2) & I & \code{genTtbarId}(NanoAOD), \code{expandedTtbarId}(tt+nb 61/62/71/72 확장; Data $-1$) \\
+event shape (10) & F & \code{aplanarity}, \code{sphericity}, \code{transSphericity}, \code{eventC}, \code{eventD} 와 \code{bjet} 접두 다섯(STEP 5; 식~\eqref{eq:reco-shape}) \\
+cut-flow \chisq{} (6) & F & \code{chi2ZH}, \code{mZcandZH}, \code{mHcandZH}, \code{chi2ZZ}, \code{mZ1ZZ}, \code{mZ2ZZ}(STEP 6; $n_b\ge4$, 125.38/91) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+출처\src{ttHHanalyzer\_unified.h, initTree}\src{PLAN\_ML\_SYST §4}. 옛 FH ntuple 의 \code{b} 접두 이름(\code{bjetPT1} = 첫 jet)과 DL 새 이름(\code{bjetPT1} = 첫 b jet)이
+서로 다른 것을 뜻하므로, 새 branch 는 b jet 양에 \code{bjet} 접두를 붙인다\src{PLAN\_ML\_SYST §3}.
+
+% -----------------------------------------------------------------------------
+\section{연도별 branch 수}\label{sec:treev1-count}
+Tree v1 의 언제나 있는 branch 를 \code{initTree} 에서 세면 76 개다(STEP 27 의 75 개 + P 의 \code{jetGenTopIdx}; 표~\ref{tab:treev1-core}). 연도별 합(\code{--tree-pdf} 없이; 2017·2024 는 offline smoke 의 출력에서 센 수):
+\begin{itemize}
+\item \textbf{2017}(Run 2, shape SF): 57 + 76 + 16 = \textbf{149}; \texttt{-{}-tree-v1 off} 이면 57.
+\item \textbf{2018}(Run 2, shape SF): 58 + 76 + 16 = \textbf{150}; off 이면 58(2016 도 booking 규칙은 같지만 지금 analyzer 는 2016 을 FATAL 로 멈춘다).
+\item \textbf{2024}(fixed WP): 60 + 2 + 76 = \textbf{138}; off 이면 62(전의 60 = 58 + \code{bTagWeight_up/_down}; PLAN\_ML\_SYST §4 의 ``60 branch'' 와 같다).
+\end{itemize}
+\texttt{-{}-tree-pdf on} 이면 하나(\code{LHEPdfWeight}) 더. plotter 의 \texttt{-{}-tree-v1} 은 이 가운데 31 개의 Data/MC 를 그린다\src{plotter/make\_plots.py}.

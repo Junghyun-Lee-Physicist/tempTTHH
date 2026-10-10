@@ -1,0 +1,59 @@
+% =============================================================================
+% 부록 C — 출처 목록
+% =============================================================================
+\chapter{출처 목록}\label{ch:sources}
+
+본문의 회색 괄호 \src{…} 가 가리키는 자료다. AN 은 \textbf{PDF 쪽 번호}로 적었다. AN-22-122 는 인쇄 쪽 = PDF 쪽 $-$ 2, AN-19-094 도
+인쇄 쪽 = PDF 쪽 $-$ 2 다. 발표는 PDF 쪽(= 슬라이드 번호)이며, Hbb 회의 FH 발표의 백업(PDF 39–67)은 슬라이드 꼬리말 번호가 따로 매겨져 있다.
+v0.1 을 쓸 때 원문은 PDF 의 텍스트 추출본으로 읽었고, 표와 그림의 숫자는 원본 렌더링으로 확인했다(그림에서 읽은 값은 본문에 ``그림 판독''이라 적음).
+
+\section{CMS 분석 노트}\label{sec:sources-an}
+
+\begin{description}[style=nextline,leftmargin=0pt]
+\item[AN-22-122 v26] CMS AN-2022/122, ``Search for the ttHH production process at Run 2, with the Higgs bosons decaying each into a b-quark pair''.
+첫 판 2022-09-07, v26 2025-11-27, PDF 214 쪽. 저자 M.~Chertok, O.~M.~Sahin, A.~Savoy-Navarro, S.~Sekmen, G.~Sokmen, W.~Wei.
+Run 2 SL·DL 채널. 모든 결과가 Asimov(blind)이고 §9(실데이터 결과)는 제목만 있다. 맥 워크스페이스 \file{Materials/TTHH/TTHH_AN/ttHH_AN_AN2022_122_v26.pdf}.
+\item[AN-19-094 v20] CMS AN-19-094, ``Measurement of ttH and tH in the H$\to$bb channel with the full Run 2 data sample''. v20(archive 2024-02-13),
+PDF 633 쪽. 이 문서에서는 FH 채널 부분(trigger·trigger SF, 객체, baseline, QCD data-driven 추정, ANN, MEM, \ttbar{}+jets 처리, 계통, 결과)을 쓴다.
+\end{description}
+
+\section{발표}\label{sec:sources-talks}
+
+\begin{description}[style=nextline,leftmargin=0pt]
+\item[사전승인 발표] ``Pre Approval Talk: The ttHH4b non resonant production search with CMS Run 2 data''. Higgs group meeting, 2025-04-15,
+발표 G.~Sokmen(LLR), 42 쪽.
+\item[승인 발표] ``Non Resonant Production of $t\bar{t}HH$, $HH\to4b$ and Top pair decay in SL channel''. SL 채널 승인 발표, 2026-07(자료 안의 날짜 표기가
+7월 16·17·19 일로 섞여 있음), 40 쪽.
+\item[Wei Wei, DPF 2026] ``Non Resonant Production of $t\bar{t}HH$, $HH\to4b$ --- Analysis with full Run 2 data at CMS''. DPF 2026, 2026-07-20,
+W.~Wei(UC Davis), 27 쪽.
+\item[Hbb 회의 FH 발표] J.~Lee, ``$t\bar{t}HH$ in the fully hadronic decay of the top pair and the Higgs pair decay into b-quarks --- First cut-flow and
+data/MC look --- an interim status before the QCD data-driven step''. Hbb group meeting, 2026-07-30(표지에는 16 July 2026), 67 쪽(본편 1–38, 백업 39–67).
+\item[KCMS 발표] J.~Lee, ``Search for $t\bar{t}HH$ production in the fully hadronic channel --- Status report''. KCMS workshop, 2026, 4 쪽.
+\item[GATJA 발표] Ö.~Sahin, S.~Sekmen, G.~Sökmen, ``Graph Attention based jet assignment --- GATJA''. ML group, 2025-12-10, 19 쪽.
+같은 발표의 녹화(맥 \file{GATJA/MLG_10-12-25_1.mp4})는 v0.1 에서 보지 않았다.
+\end{description}
+
+\section{우리 기록(tempTTHH 저장소, \texttt{dev260614})}\label{sec:sources-ours}
+
+\begin{description}[style=nextline,leftmargin=0pt]
+\item[D-YYYY-MM-DD-X] \file{docs/DECISIONS.md} 의 결정. 사용자의 말, 결정, 근거, 대안, 바뀔 조건이 함께 있다.
+\item[STEP n] \file{docs/changes/STEP_n_*.md} 의 코드 변경 기록(무엇·왜·원래 형태·되돌리기·검증). 목록은 \file{docs/changes/README.md}.
+\item[STATUS] \file{docs/STATUS.md} — 날짜별 현재 상태. ``STATUS 10-09 (3)'' 은 그 날짜의 셋째 문단이다.
+\item[ROADMAP\_FH] \file{docs/ROADMAP_FH.md} — 워크스트림, 순서, 결정 대기, 위험.
+\item[PLAN\_ML\_SYST] \file{docs/PLAN_ML_SYST.md} — ML(DNN·GATJA)과 계통 불확도 계획.
+\item[PLAN\_QCD\_DD] \file{docs/PLAN_QCD_DD.md} — QCD 다중 제트의 데이터 기반 추정 계획.
+\item[PLAN\_v15] \file{docs/PLAN_v15_2018UL_2024.md} — v15 ntuple 로 가는 계획(§9 = 2024 단계와 연도별 표).
+\item[LUMI\_SOURCES] \file{docs/reference/LUMI_SOURCES.md} — lumi 의 정본 값과 출처(LUM POG 권고, brilcalc 실측).
+\item[ttbarCategorization\_KR] \file{docs/ttbarCategorization_KR.md} — \ttbar{}+jets 분류와 stitching 의 유도.
+\item[코드] 파일과 함수 이름으로 적는다. 예: \file{include/TreeVars.h} 의 \code{chi2AN}, \file{ttHHanalyzer_unified.cc} 의
+\code{computeBTagWeightFixedWP_}. 저장소 기준은 2026-10-10 의 STEP 27.
+\item[prescan\_summary.json(2017)] \file{prescan_summary/prescan_summary.json} — 2017 prescan 의 표본별 genWeight 합과 genTtbarId 분해.
+\end{description}
+
+\section{그 밖의 자료}\label{sec:sources-other}
+
+\begin{description}[style=nextline,leftmargin=0pt]
+\item[NtupleForge] 우리 NanoAOD skim·slim 도구의 문서(\file{docs/01_STATUS.md}, \file{docs/08_branch_schema_migration.md}, branch 목록 등).
+\item[POG 권고] LUM, BTV, JME, MUO, EGM 의 권고와 payload. v0.1 은 우리 기록(LUMI\_SOURCES, PLAN\_v15 §9.2, D-2026-10-08-A, D-2026-10-10-A)이
+인용한 내용을 옮겼고, 이 판을 쓰며 웹 문서를 다시 열어 보지는 않았다.
+\end{description}

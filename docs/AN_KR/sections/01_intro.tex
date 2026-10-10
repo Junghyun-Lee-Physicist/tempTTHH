@@ -1,0 +1,548 @@
+% =============================================================================
+% 1 장: 물리적 동기와 신호 (AN_KR)
+% 이 장의 라벨은 intro- 로 시작한다. 출처 표기는 preamble.tex 의 \src.
+% =============================================================================
+\chapter{물리적 동기와 신호}\label{ch:intro}
+
+이 장은 왜 \ttHH 를 찾는지, 무엇을 신호로 정의하는지, 그리고 완전 강입자(FH, fully hadronic: 두 W 가 모두 쿼크 쌍으로 붕괴) 채널이
+무엇을 풀어야 하는지를 정리한다. 먼저 Higgs 퍼텐셜과 자기 결합(\kl), top Yukawa 결합(\kt)을 교과서 수준에서 복습하고, LHC 의 HH 생산 과정
+가운데 \ttHH 의 자리와 Run~2 AN(AN-2022/122, SL·DL 채널)이 말하는 결합 감도를 옮긴다. 이어서 신호 $\ttHH$, \HHfourb, \ttbar$\to$ 6 개 쿼크의
+분기비와 Run~2·2024 에서 생성되는 사건 수를 우리 계산으로 어림한다. 그다음 SL·DL 결과와 ttH(bb) FH 의 경험으로 FH 채널이 놓인 자리를 가늠하고,
+FH 고유의 어려움(QCD multijet, 다중 jet trigger, \ttbb, jet 조합)을 뒤의 장과 연결한다. 마지막 절은 NanoAOD 에서 fit 까지의 분석 사슬을 한 그림으로
+보이고 지금(2026-10-10) 무엇이 돌고 무엇이 계획인지 표시한다.
+
+% -----------------------------------------------------------------------------
+\section{Higgs 퍼텐셜과 자기 결합}\label{sec:intro-potential}
+
+\subsection{전기약 대칭 깨짐 뒤의 퍼텐셜}
+
+표준모형(SM)에서 Higgs doublet $\Phi$ 의 퍼텐셜은 재규격화 가능한 가장 일반적인 꼴
+\begin{equation}
+  V(\Phi) = -\mu^{2}\,\Phi^{\dagger}\Phi + \lambda\,\bigl(\Phi^{\dagger}\Phi\bigr)^{2},
+  \qquad \mu^{2}>0,\quad \lambda>0
+  \label{eq:intro-vphi}
+\end{equation}
+이다. 최소점은 $\Phi^{\dagger}\Phi = v^{2}/2$, $v=\mu/\sqrt{\lambda}$ 에 있다. unitary gauge 에서 $\Phi = \tfrac{1}{\sqrt{2}}\,(0,\; v+h)^{T}$ 로 놓고
+펼치면 $h$ 의 1 차 항은 $\mu^{2}=\lambda v^{2}$ 때문에 사라지고
+\begin{align}
+  V(h) &= \lambda v^{2}\,h^{2} + \lambda v\,h^{3} + \frac{\lambda}{4}\,h^{4} + (\text{상수}) \nonumber\\
+       &\equiv \frac{m_{H}^{2}}{2}\,h^{2} + \lambda_{3}\,v\,h^{3} + \frac{\lambda_{4}}{4}\,h^{4},
+  \qquad
+  m_{H}^{2} = 2\lambda v^{2},\quad
+  \lambda_{3}^{\mathrm{SM}} = \lambda_{4}^{\mathrm{SM}} = \lambda = \frac{m_{H}^{2}}{2v^{2}}
+  \label{eq:intro-vh}
+\end{align}
+가 된다. 우리 Hbb 회의 발표는 같은 식을 $\lambda_3$ 하나로 $V(h)=\tfrac{m_h^2}{2}h^2+\lambda_3 v h^3+\tfrac{\lambda_3}{4}h^4$ 로 적었다\src{Hbb 회의 FH 발표 p.4}.
+교과서 값 $m_H=125\GeV$(AN 의 신호 정의도 이 값이다\src{AN-22-122 v26, PDF p.7, Table 1})와 $v\approx 246\GeV$ 를 넣으면 $\lambda\approx 0.13$ 이고,
+삼중 꼭짓점의 Feynman 규칙은 $-i\,6\lambda v = -i\,3m_H^{2}/v$ 이다. 실험은 SM 값에 대한 비
+\begin{equation}
+  \kl \equiv \lambda_{3}/\lambda_{3}^{\mathrm{SM}}
+  \label{eq:intro-kl}
+\end{equation}
+를 잰다. SM 은 $m_H$ 와 $v$ 만으로 $\lambda_3$ 를 완전히 예측하므로, $\kl\neq1$ 의 측정은 곧 퍼텐셜의 모양이 SM 과 다르다는 증거가 된다.
+
+\begin{note}[왜 자기 결합인가]
+\begin{itemize}
+  \item $m_H$ 는 최소점에서의 곡률(2 차 항)만 잰다. 3 차 항 $\lambda_3$ 는 최소점에서 벗어난 퍼텐셜의 모양을 재는 유일한 실험적 손잡이다.
+        4 차 항 $\lambda_4$ 는 HHH 생성이 필요해 LHC 에서는 사실상 닿지 않으므로 실험의 목표는 $\lambda_3$(즉 \kl)이다.
+  \item 진공의 안정성: $\lambda$ 의 고에너지 진화(running)는 top Yukawa 결합의 큰 기여와 겨룬다. 그래서 $y_t$ 와 $\lambda$ 를 함께 재는 과정이 특별히
+        흥미롭다 — \ttHH 가 바로 그런 과정이다(\S\ref{sec:intro-hhprod}).
+  \item 전기약 상전이: 초기 우주에서 상전이가 부드럽게 일어났는지 1 차 상전이였는지는 퍼텐셜의 모양에 달려 있고, 전기약 baryogenesis 같은 시나리오는
+        흔히 SM 과 다른 $\lambda_3$ 를 요구한다. 이 문서에서는 이 점을 동기로만 쓰고 수치를 다루지 않는다.
+\end{itemize}
+\end{note}
+
+\subsection{top Yukawa 결합과 HEFT 의 접촉 결합}
+
+top 질량은 $m_t = y_t v/\sqrt{2}$ 이므로 $y_t\approx1$ 로 모든 Yukawa 결합 가운데 가장 크다. 마찬가지로 $\kt\equiv y_t/y_t^{\mathrm{SM}}$ 를 정의한다.
+\ttH 의 단면적은 $\kt^{2}$ 에 비례한다: AN 은 composite Higgs 모형(MCHM)에서 $\sigma_{\mathrm{MCHM}}(\ttH)=(y_t/y_t^{\mathrm{SM}})^{2}\,\sigma_{\mathrm{SM}}(\ttH)$
+라 적고, 운동학 분포는 바뀌지 않고 전체 수율만 바뀐다고 쓴다\src{AN-22-122 v26, PDF p.9, Eq.~1}. Higgs effective field theory(HEFT, $h$ 를 doublet 이
+아닌 단일항으로 다루는 비선형 EFT)에서는 Higgs 하나가 top 에 붙는 결합과 둘이 붙는 결합이 서로 독립인 계수가 된다. AN 은 후자, 곧
+$t\bar t hh$ 접촉 결합을 $c_2$ 로 쓰고 SM 값은 $c_2=0$ 이다\src{AN-22-122 v26, PDF p.129, Table 58}. 승인 발표는 $c_2$ 를 "dim-6 BSM ttHH interaction" 이라 부른다\src{승인 발표 p.34}. $c_2$ 의 Lagrangian 규격화(인수 1/2 등)는 AN 에
+쓰여 있지 않다(확인 못 함). AN 은 \ttHH 단면적을 세 결합의 다항식으로 쓴다(식~\eqref{eq:intro-heft}).
+
+% -----------------------------------------------------------------------------
+\section{LHC 에서의 HH 생산과 \texorpdfstring{\ttHH}{ttHH}}\label{sec:intro-hhprod}
+
+\subsection{HH 생산 과정들}
+
+가장 큰 HH 생산 과정인 gluon fusion(ggF)에서는 top loop 에서 두 Higgs 가 나오는 box 도형($\propto\kt^2$)과 top loop 가 만든 off-shell Higgs 가
+삼중 결합으로 HH 가 되는 triangle 도형($\propto\kt\kl$)이 상쇄 간섭한다\src{사전승인 발표 p.4}. 그래서 ggF HH 는 \kl 에 민감하지만 SM 근처에서
+단면적이 작아진다. vector boson fusion(VBF), VHH, \ttHH, HHtj 같은 다른 과정은 단면적이 훨씬 작다. AN 의 Table~1 은 ggF 를 뺀 과정들의 단면적을
+표~\ref{tab:intro-hhxsec} 처럼 준다. AN 은 \ttHH 가 (Fig.~1 의 ggF 까지 포함한) HH 생산 과정 가운데 세 번째로 크고 "단일 top Yukawa 꼭짓점이 지배적이라
+$\lambda$ 의 변화에 대한 감도가 전반적으로 작다"고 쓴다\src{AN-22-122 v26, PDF p.7, l.137--139}. 표~\ref{tab:intro-hhxsec} 안에서는 VBF 다음이다.
+
+\begin{table}[htbp]
+\centering
+\caption{HH 생산 과정의 단면적(fb; AN 캡션은 ``NLO QCD'', $\mu_0=\mu_R=\mu_F=M_{hh}/2$, $m_H=125\GeV$). 괄호 안은 scale 과 PDF$+\alpha_s$ 불확도(\ttHH 만).}
+\label{tab:intro-hhxsec}
+\small
+\begin{tabular}{lcccccc}
+\toprule
+$\sqrts$ & HHZ & HHW$^{+}$ & HHW$^{-}$ & VBF HH & \ttHH & HHtj \\
+\midrule
+13\TeV & 0.363 & 0.329 & 0.173 & 1.725 & 0.756 ($^{+4.3}_{-15.0}\%$, $\pm3.4\%$) & 0.0289 \\
+14\TeV & 0.475 & 0.369 & 0.198 & 2.055 & 0.934 ($^{+3.9}_{-13.6}\%$, $\pm3.2\%$) & 0.0367 \\
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize 출처: AN-22-122 v26, PDF p.7, Table~1(PDF4LHC15 nnlo mc). ggF HH 는 이 표에 없다(AN 의 Fig.~1 에 \kl 의 함수로만 있다).
+캡션은 모두 NLO QCD 라 하지만 본문(l.141--144)은 VBF HH 를 N3LO, HHZ·HHW$^{\pm}$ 를 NNLO QCD 로 계산했다고 쓴다(AN 내부 불일치).
+\end{table}
+
+\subsection{\texorpdfstring{\ttHH}{ttHH} 의 LO 도형과 결합 의존성}\label{sec:intro-tthh-diagrams}
+
+AN 은 SM 의 LO \ttHH 생산을 두 종류의 하위 과정으로 나눈다: Yukawa 꼭짓점만 쓰는 도형이 LO 단면적의 약 80\,\%, 삼중 결합을 쓰는 도형이 약
+20\,\% 다\src{AN-22-122 v26, PDF p.8, l.153--158}. AN 은 이어서 "\ttH 와 달리 삼중 결합에 20\,\% 수준으로 접근하고, double Higgs 생산과 달리
+삼중 결합에 접근하는 데 간섭항이 없다"고 쓴다\src{AN-22-122 v26, PDF p.8, l.156--160}. 승인 발표와 우리 발표는 같은 내용을 "음의(상쇄) 간섭 없이"로
+적었다\src{승인 발표 p.4}\src{Hbb 회의 FH 발표 p.4}. 그림~\ref{fig:intro-feyn} 이 대표 도형 셋이다.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[scale=0.82, transform shape]
+\begin{feynman}
+\vertex (i1) at (0,1.8) {\(g\)};
+\vertex (i2) at (0,-1.8) {\(g\)};
+\vertex (a) at (1.8,1.4);
+\vertex (b) at (1.8,-1.4);
+\vertex (h1) at (1.8,0);
+\vertex (h2) at (3.0,1.85);
+\vertex (f1) at (4.4,2.3) {\(t\)};
+\vertex (f2) at (4.4,-1.8) {\(\bar t\)};
+\vertex (H1) at (4.4,0.0) {\(H\)};
+\vertex (H2) at (4.4,1.1) {\(H\)};
+\diagram* {
+ (i1) -- [gluon] (a),
+ (i2) -- [gluon] (b),
+ (f2) -- [fermion] (b) -- [fermion] (h1) -- [fermion] (a) -- [fermion] (h2) -- [fermion] (f1),
+ (h1) -- [scalar] (H1),
+ (h2) -- [scalar] (H2),
+};
+\end{feynman}
+\node at (2.2,-2.7) {(a) 진폭 \(\propto \kappa_t^{2}\)};
+\end{tikzpicture}\hspace{3mm}%
+\begin{tikzpicture}[scale=0.82, transform shape]
+\begin{feynman}
+\vertex (i1) at (0,1.8) {\(g\)};
+\vertex (i2) at (0,-1.8) {\(g\)};
+\vertex (a) at (1.8,1.4);
+\vertex (b) at (1.8,-1.4);
+\vertex (h1) at (1.8,0);
+\vertex [dot] (tri) at (3.1,0) {};
+\vertex (f1) at (4.4,2.0) {\(t\)};
+\vertex (f2) at (4.4,-2.0) {\(\bar t\)};
+\vertex (H1) at (4.4,0.8) {\(H\)};
+\vertex (H2) at (4.4,-0.8) {\(H\)};
+\diagram* {
+ (i1) -- [gluon] (a),
+ (i2) -- [gluon] (b),
+ (f2) -- [fermion] (b) -- [fermion] (h1) -- [fermion] (a) -- [fermion] (f1),
+ (h1) -- [scalar, edge label=\(H^{*}\)] (tri),
+ (tri) -- [scalar] (H1),
+ (tri) -- [scalar] (H2),
+};
+\end{feynman}
+\node at (3.25,-0.45) {\scriptsize\(\lambda_3\)};
+\node at (2.2,-2.7) {(b) 진폭 \(\propto \kappa_t\kappa_\lambda\)};
+\end{tikzpicture}\hspace{3mm}%
+\begin{tikzpicture}[scale=0.82, transform shape]
+\begin{feynman}
+\vertex (i1) at (0,1.8) {\(g\)};
+\vertex (i2) at (0,-1.8) {\(g\)};
+\vertex (a) at (1.8,1.4);
+\vertex (b) at (1.8,-1.4);
+\vertex [square dot] (c) at (1.8,0) {};
+\vertex (f1) at (4.4,2.0) {\(t\)};
+\vertex (f2) at (4.4,-2.0) {\(\bar t\)};
+\vertex (H1) at (4.4,0.8) {\(H\)};
+\vertex (H2) at (4.4,-0.8) {\(H\)};
+\diagram* {
+ (i1) -- [gluon] (a),
+ (i2) -- [gluon] (b),
+ (f2) -- [fermion] (b) -- [fermion] (c) -- [fermion] (a) -- [fermion] (f1),
+ (c) -- [scalar] (H1),
+ (c) -- [scalar] (H2),
+};
+\end{feynman}
+\node at (1.35,0.0) {\scriptsize\(c_2\)};
+\node at (2.2,-2.7) {(c) 진폭 \(\propto c_2\)};
+\end{tikzpicture}
+\caption{\ttHH 의 대표 LO 도형(gg 시작, t-channel top 교환). (a) 두 Higgs 가 모두 top 선에서 방출된다(Yukawa 두 번). (b) top 선에서 나온
+off-shell $H^{*}$ 가 삼중 결합 $\lambda_3$ 로 HH 가 된다. (c) HEFT 의 $t\bar tHH$ 접촉 꼭짓점(SM 에서는 $c_2=0$). 실제 도형은 이 밖에도 $q\bar q$ 시작,
+s-channel gluon, Higgs 방출 위치가 다른 것들이 있다.}
+\label{fig:intro-feyn}
+\end{figure}
+
+세 결합에 대한 의존성은 AN 의 HEFT 해석 식에 모여 있다\src{AN-22-122 v26, PDF p.127, Eq.~22}:
+\begin{equation}
+  \sigma_{\ttHH}(\kl,\kt,c_2) = \kt^{4}A + \kl^{2}\kt^{2}B + c_2^{2}C + \kt^{3}\kl D + \kt^{2}c_2E + \kl\kt c_2F .
+  \label{eq:intro-heft}
+\end{equation}
+승인 발표는 $A$--$F$ 가 도형별 기여와 그 간섭이라 설명하고 Goertz et al.(JHEP04(2015)167)을 인용한다\src{승인 발표 p.34}. $A$--$F$ 의 값은 AN 에 없다(확인 못 함).
+
+\begin{note}[도형과 HEFT 식의 여섯 항]
+전체 진폭을 $\mathcal{M}=\kt^{2}\mathcal{M}_a+\kt\kl\,\mathcal{M}_b+c_2\,\mathcal{M}_c$ 로 쓰면 $|\mathcal{M}|^{2}$ 의 여섯 항이 그대로 식~\eqref{eq:intro-heft} 의
+$A$($|\mathcal{M}_a|^2$), $B$($|\mathcal{M}_b|^2$), $C$($|\mathcal{M}_c|^2$), $D$(a–b 간섭), $E$(a–c 간섭), $F$(b–c 간섭)다. 따라서 \ttHH 에도 Yukawa 도형과
+삼중 결합 도형 사이의 간섭항 $D\propto\kt^{3}\kl$ 은 있다. AN 의 "간섭항이 없다"는 문장은 ggF HH 처럼 SM 근처에서 두 도형이 크게 상쇄하는 일이
+없다는 뜻으로 읽는 것이 맞다(우리 판단; 발표들의 "음의 간섭 없이"라는 표현과 일치한다). 표~\ref{tab:intro-heft} 의 벤치마크에서 $\kl=2,3$ 의
+단면적이 SM 보다 크므로 $\kl>1$ 쪽에서는 $\sigma(\kl)-\sigma(1)=(\kl-1)\,[B(\kl+1)+D]>0$, 곧 $\kl^{2}$ 항의 증가가 간섭항보다 크다($\kt=1$, $c_2=0$).
+세 값을 그대로 풀면 $B\approx0.02$, $D\approx-0.03$(fb, $\times$BR)이지만 값이 두 자리로 반올림되어 있어 $D$ 의 부호는 정해지지 않는다(우리 계산).
+\end{note}
+
+AN 은 HEFT 표본 여덟 개의 13\TeV 단면적$\times$BR(HH$\to$4b)을 표~\ref{tab:intro-heft} 처럼 준다. 오른쪽 열은 SM 대비 비로, 우리가 계산한 것이다.
+\kl 을 두세 배로 바꿔도 단면적은 10--40\,\% 변하지만, \kt 를 두 배로 하면 12 배, $c_2=3$ 이면 16 배가 된다. 곧 \ttHH 는 일차적으로 \kt 와 $c_2$ 를
+재는 과정이고 \kl 에는 약하게만 민감하다 — AN 의 "λ 에 대한 감도가 전반적으로 작다"는 문장의 정량적 내용이다(우리 판단).
+
+\begin{table}[htbp]
+\centering
+\caption{AN 의 HEFT 벤치마크 표본: 13\TeV 단면적$\times\mathrm{BR}(HH\to4b)$, $\mathrm{BR}=0.5824^{2}$. 마지막 열은 SM(0.25\fb) 대비 비(우리 계산).}
+\label{tab:intro-heft}
+\small
+\begin{tabular}{lccccc}
+\toprule
+표본(\texttt{TTHHTo4b\_HEFT\_...}) & $c_2$ & \kt & \kl & $\sigma\times$BR [fb] & SM 대비 \\
+\midrule
+SM (\texttt{TTHHTo4b})   & 0  & 1 & 1   & 0.25  & 1 \\
+\texttt{kl-2}            & 0  & 1 & 2   & 0.28  & 1.12 \\
+\texttt{kl-3}            & 0  & 1 & 3   & 0.35  & 1.40 \\
+\texttt{kt-2}            & 0  & 2 & 1   & 3.11  & 12.4 \\
+\texttt{kl-0p5\_c2-1}    & 1  & 1 & 0.5 & 0.72  & 2.88 \\
+\texttt{c2-m1}           & $-1$ & 1 & 1 & 0.78  & 3.12 \\
+\texttt{c2-3}            & 3  & 1 & 1   & 4.03  & 16.1 \\
+\texttt{c2-6}            & 6  & 1 & 1   & 14.15 & 56.6 \\
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize 출처: AN-22-122 v26, PDF p.129, Table~58(같은 값: 승인 발표 p.34). Table~58 의 POSTFIX 는 \texttt{amcatnlo-pythia8} 인데
+Tables~10--12 의 데이터셋 이름은 \texttt{madgraph-pythia8} 이다(AN 내부 불일치).
+\end{table}
+
+AN 의 HEFT 결합 상수 결과(SL 채널, Asimov)는 $c_2$ 하나를 움직인 scan 에서 기대 95\,\% CL $-5.0<c_2<4.8$\src{AN-22-122 v26, PDF p.127},
+2 차원 우도에서 $c_2=0.00^{+4.13}_{-4.33}$, $\kl=1.00^{+8.64}_{-5.60}$((\(c_2,\kl\)) 평면), $\kt=1.00^{+0.30}_{-0.45}$((\(c_2,\kt\)) 평면)이다\src{AN-22-122 v26, PDF p.130, Fig.~102}.
+\kl 하나만 움직이는 scan 은 AN 에 없다. 승인 발표의 최종(실데이터) 결과는 관측(기대) $-6.6<c_2<6.4$ ($-5.4<c_2<5.2$)다\src{승인 발표 p.35}.
+AN 의 BSM 동기는 MCHM 의 top 부문, $T\to tH$ 로 붕괴하는 전하 2/3 vector-like quark 공명(쌍생성되면 \ttHH 말단 상태), 그리고 HEFT 의
+$hhh$, $tthh$, $gghh$ 유효 꼭짓점이다\src{AN-22-122 v26, PDF p.8--11}. AN 의 목표는 렙톤 채널의 신호 세기 측정과 SL 채널의 HEFT 결합
+연구다\src{AN-22-122 v26, PDF p.11, l.251--253}. FH 에서도 같은 해석을 나중에 할 수 있지만 지금 계획에는 신호 세기 상한이 먼저다\src{ROADMAP\_FH §1}.
+
+% -----------------------------------------------------------------------------
+\section{신호 정의: \texorpdfstring{\ttHH, \HHfourb, \ttbar}{ttHH, HH to 4b, ttbar} 완전 강입자 붕괴}\label{sec:intro-signal}
+
+\subsection{단면적}\label{sec:intro-xsec}
+
+AN 의 신호 단면적은 13\TeV 에서 $\sigma(\ttHH)=0.756\fb$, scale 불확도 $^{+4.3}_{-15.0}\%$, PDF$+\alpha_s$ $\pm3.4\%$(NLO QCD)다\src{AN-22-122 v26, PDF p.23, Table 9}.
+신호 표본 \file{/TTHHTo4b_TuneCP5_13TeV-madgraph-pythia8/} 은 MadGraph5 2.6.5 의 LO 로 만들어졌고\src{AN-22-122 v26, PDF p.19, l.399--401},
+AN 은 XSDB 의 LO 값 0.669\fb 에 k-factor 1.130 을 곱해 NLO 값으로 맞춘다($0.669\times1.130=0.756$)\src{AN-22-122 v26, PDF p.24, Table 10}.
+14\TeV 값은 0.934\fb 다\src{AN-22-122 v26, PDF p.7, Table 1}.
+
+우리 단면적 DB(\file{data/samples_2017UL.json}, \file{data/samples_2018UL.json})도 13\TeV 에 0.756\fb 를 쓰고 HH$\to$4b 분기비를 따로
+곱한다\src{samples\_2017UL.json, TTHHto4b}. 2024(13.6\TeV)에는 \file{data/samples_2024.json} 이 $0.860\fb$(scale $^{+4.2}_{-14.0}\%$,
+PDF$+\alpha_s$ $\pm3.3\%$, NLO QCD)를 쓰는데, 이 값은 우리 자료 가운데 이 DB 에만 있고 출처는 AI 가 2026-10-05 에 공개 자료에서 모은 ATLAS 논문
+(arXiv:2603.13113)의 인용이다\src{samples\_2024.json, TTHHto4b}\src{STEP 24 §7}. DB 는 모든 2024 단면적을 PROVISIONAL 로 표시하고 그 값으로 만든
+plot 에는 "provisional cross sections" 를 적게 한다\src{D-2026-10-05-A}. 13.6/13 의 비는 $0.860/0.756=1.138$ 이다.
+
+\begin{openq}[신호 단면적: 세 값]
+\begin{itemize}
+  \item 승인 발표와 Wei Wei 의 DPF 발표는 $\sigma(\ttHH,13\TeV)=0.775\fb$($^{+1.5}_{-4.3}\%$, $\pm3.2\%$)를 쓰고\src{승인 발표 p.3, p.27}\src{Wei Wei, DPF 2026 p.2},
+        같은 승인 발표의 표본 표와 사전승인 발표는 0.756\fb 를 쓴다\src{승인 발표 p.8}\src{사전승인 발표 p.3}. 우리 계산으로 $0.669\times1.158=0.775$ 이고, 우리 DB 의
+        note 는 "AN Table~10 의 k-factor 1.158" 을 적어 두었다\src{samples\_2017UL.json, TTHHto4b}. 또 AN Table~10 의 "$0.669\fb\times0.5824^{2}=0.263\fb$" 는 산술이
+        맞지 않고($0.669\times0.5824^2=0.227$) $0.775\times0.5824^2=0.263$ 과 같다. 두 값은 k-factor 1.130 과 1.158 의 차이로 보인다(우리 추정; AN 의 다른 판).
+        승인 발표의 상한 37(42)\fb 는 $48.7\times0.756=36.8$, $55.3\times0.756=41.8$ 과 맞으므로 SL 의 최종 결과는 0.756\fb 를 썼다고 본다(우리 계산).
+        \textbf{우리는 0.756\fb 를 쓴다.} 결합할 때 팀과 한 값으로 맞춰야 한다.
+  \item 13.6\TeV 의 0.860\fb 는 CMS·LHC Higgs WG 의 공식 표가 아니다. 결과 전에 LHC Higgs WG(또는 GenXSecAnalyzer + 같은 차수의 k-factor)로 확인한다.
+\end{itemize}
+\end{openq}
+
+\subsection{분기비와 붕괴 채널}\label{sec:intro-br}
+
+AN 은 $\mathrm{BR}(\Hbb)=0.5824$, $\mathrm{BR}(W\to\mathrm{had})=0.6741$, $\mathrm{BR}(W\to\ell\nu)=0.3259$, $\mathrm{BR}(Z\to\bbbar)=0.15$ 를 쓴다\src{AN-22-122 v26, PDF p.38, Table 25}.
+따라서 $\mathrm{BR}(\HHfourb)=0.5824^{2}=0.33918976$ 이고, 이것이 우리 DB 의 신호 \code{br} 값이다\src{samples\_2017UL.json, TTHHto4b}. \ttbar 의 붕괴는
+$W\to\ell\nu$ 를 $1-0.6741$ 로 정의해(τ 포함) 세 채널로 나눈다. 우리 코드는 이 값을 \file{compute_stitch_factors.py} 의 \code{W_HAD}$\,=0.6741$,
+\code{BR_HAD}$\,=$\,\code{W_HAD}$^{2}$ 에서 쓰고\src{compute\_stitch\_factors.py, l.168--172}, 같은 수가 DB 의 \file{TTbar_*}·\file{TTbb_*} 의 \code{br} 에 있다.
+2024 DB 는 $W\to\mathrm{had}=0.6741$ 의 출처를 PDG 2024($67.41\pm0.27\,\%$)로 적었다\src{samples\_2024.json, \_meta}.
+
+\begin{table}[htbp]
+\centering
+\caption{\ttbar 붕괴 채널과 신호의 전체 분기 비율. 가운데 두 열은 우리 코드의 값과 그것에 $\mathrm{BR}(\HHfourb)$ 를 곱한 값(우리 계산).}
+\label{tab:intro-br}
+\small
+\begin{tabularx}{\textwidth}{l c c c L}
+\toprule
+채널 & W 붕괴 & $\mathrm{BR}(\ttbar\to\cdot)$ & $\times\,0.33919$ & 발표·AN 의 표기 \\
+\midrule
+FH & 둘 다 $q\bar q'$ & $0.6741^{2}=0.45441$ & 0.1541 & "largest top-pair branching (≈46\,\%)"\src{Hbb 회의 FH 발표 p.8} \\
+SL & 하나 $\ell\nu$  & $2\times0.6741\times0.3259=0.43938$ & 0.1490 & 11.4\,\%\src{AN-22-122 v26, PDF p.5, l.65}\src{승인 발표 p.6} \\
+DL & 둘 다 $\ell\nu$ & $0.3259^{2}=0.10621$ & 0.0360 & "about 4.2\,\%"\src{AN-22-122 v26, PDF p.5, l.69}; 3.6\,\%\src{사전승인 발표 p.5} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+AN·발표의 SL 11.4\,\% 와 DL 4.2\,\%(또는 3.6\,\%)의 정확한 정의(τ 를 어떻게 셌는지)는 쓰여 있지 않다(확인 못 함). 우리 정의로는 DL 이 3.6\,\% 로
+사전승인 값과 맞고 SL 은 14.9\,\% 로 11.4\,\% 와 맞지 않는다. FH 의 분기 비율은 우리 정의로 $0.45441\times0.33919=15.4\,\%$ 이다(우리 계산).
+
+\begin{note}[신호 표본에는 모든 \ttbar 붕괴가 들어 있다]
+AN 의 표본은 \ttH(bb) 와 \ttbar 만 SL·DL 전용이고 나머지는 \ttbar 붕괴에 대해 inclusive 다\src{AN-22-122 v26, PDF p.21, l.420--422}
+(원문은 ``except ttH(bb), tt, and ttH(bb)'' 로 \ttH(bb) 를 두 번 적었는데, 4FS \ttbb 표본도 SL·DL 전용이다\src{AN-22-122 v26, PDF p.28, Table 15}). 우리 신호 표본
+\file{TTHHto4b} 도 마찬가지라 FH 선택(렙톤 veto)에는 FH 붕괴뿐 아니라 렙톤을 놓친 SL·DL 사건, $\tau_h$ 를 가진 사건도 들어온다. 우리는 이것을 모두 신호로
+센다. FH 채널은 붕괴 채널이 아니라 \emph{재구성된} 렙톤 수(0 개)로 정의되므로, SL·DL 과 결합할 때 직교성은 세 채널의 렙톤 정의가 서로 맞물리는지로
+보장해야 한다(우리 판단; 렙톤 정의는 \ref{ch:objects}~장).
+\end{note}
+
+\subsection{FH 말단 상태와 조합 문제}\label{sec:intro-combinatorics}
+
+FH 의 LO 말단 상태는 HH 에서 b 쿼크 4 개, 두 top 에서 b 쿼크 2 개, 두 W 에서 가벼운 쿼크 4 개, 모두 10 개의 쿼크이고 중성미자가 없어 원리적으로
+완전히 재구성할 수 있다\src{Hbb 회의 FH 발표 p.8}\src{KCMS 발표 p.2}. 실제로는 FSR 이 jet 을 늘리고, 가까운 쿼크가 한 jet 으로 합쳐지고, 일부는
+acceptance 밖으로 나가므로 jet 수는 사건마다 다르다. ttH(bb) FH 는 이 때문에 7, 8, $\geq9$ jet 범주를 썼고\src{AN-19-094 v20, PDF p.99--100},
+우리 SR 계획도 $n_b\geq4$, $n_{\mathrm{jets}}$ 범주 7/8/$\geq9$, Higgs 후보 질량창(예: $100<m(H_1),m(H_2)<140\GeV$)에서 출발한다\src{Hbb 회의 FH 발표 p.14}.
+SL 의 경우 AN 은 "LO 에서 8 개의 jet, 그중 6 개 이상 b-tag" 라고 쓴다\src{AN-22-122 v26, PDF p.5, l.63--65}.
+
+jet 을 부모 입자에 배정하는 경우의 수가 FH 재구성의 핵심 문제다. 10 개의 jet 을 (b, $q\bar q'$)인 top 둘과 b 쌍인 Higgs 둘에 배정하는 서로 다른 방법은
+\begin{equation}
+  N_{\mathrm{assign}} = \frac{10!}{2^{4}\cdot2\cdot2} = 56\,700
+  \label{eq:intro-comb}
+\end{equation}
+이다($2^4$: 네 쌍 안의 순서, $2\cdot2$: 두 top 과 두 Higgs 의 맞바꿈; 우리 계산). b-tag 이 완벽해 6 개의 b jet 과 4 개의 가벼운 jet 을 안다고 해도
+$\binom{6}{2}\cdot3\cdot3\cdot2=270$ 가지가 남고, Higgs 두 개만 고를 때도 b-tag jet 6 개에서 $\binom{6}{4}\cdot3=45$ 가지다(우리 계산). AN 은 이 문제를 HH·ZZ·ZH
+가설의 \chisq 쌍 짓기, SL 의 jet-assignment BDT(JABDT), DL 의 graph-attention 할당(GATJA)으로 풀었다(\ref{ch:reco}·\ref{ch:mva}~장).
+
+\subsection{생성 사건 수 어림}\label{sec:intro-yield}
+
+표~\ref{tab:intro-yield} 는 선택 전에 생성되는 신호 사건 수 $N=\sigma\cdot\mathrm{BR}\cdot L$ 의 어림이다\,\tagours. Run~2 의 루미노시티는 AN 의 연도별 값을,
+2017·2018 은 우리 정규화 값도 함께 적었다(루미노시티의 출처와 차이는 \ref{ch:samples}~장). 2024 는 13\TeV 단면적과 13.6\TeV 임시 단면적 둘로 계산했다.
+
+\begin{table}[htbp]
+\centering
+\caption{생성되는 신호 사건 수의 어림(선택 전; 우리 계산). $\sigma\cdot\mathrm{BR}_{4b}=\sigma\times0.33919$ 는 모든 \ttbar 붕괴, $N_{\mathrm{FH}}$ 는 여기에 0.45441 을 곱한 것.}
+\label{tab:intro-yield}
+\small
+\begin{tabular}{l c c c c}
+\toprule
+기간 & $L$ [\fbinv] & $\sigma$ [fb] & $\sigma\cdot\mathrm{BR}_{4b}\cdot L$ & $N_{\mathrm{FH}}$ \\
+\midrule
+2016 (AN)        & 36.31  & 0.756 & 9.3  & 4.2 \\
+2017 (AN / 우리) & 41.53 / 42.07 & 0.756 & 10.6 / 10.8 & 4.8 / 4.9 \\
+2018 (AN / 우리) & 59.74 / 59.56 & 0.756 & 15.3 / 15.3 & 7.0 / 6.9 \\
+Run~2 (AN)       & 137.60 & 0.756 & 35.3 & 16.0 \\
+2024 C--I        & 109.816 & 0.756 (13\TeV) & 28.2 & 12.8 \\
+2024 C--I        & 109.816 & 0.860 (13.6\TeV, 임시) & 32.0 & 14.6 \\
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize 입력: $L$ — AN-22-122 v26, PDF p.19, Table~4; LUMI\_SOURCES §2, §6. $\sigma$ — AN Table~9; samples\_2024.json.
+\end{table}
+
+Run~2 와 2024 를 합쳐도 FH 로 붕괴하는 신호는 약 30 개(28.8--30.6 개) 생성된다. 우리 결정 기록도 같은 어림(2017 에 약 11 개, 2024 에 약 28 개, 모든 \ttbar 붕괴)을
+blinding 정책의 근거로 썼다\src{D-2026-10-02-E}. 2017 의 첫 cut-flow 에서 baseline 뒤 신호는 4.3 개였고 같은 선택의 MC 배경은 $3.39\times10^{6}$ 개였다
+\src{Hbb 회의 FH 발표 p.25}: $S/B\approx1.3\times10^{-6}$(우리 계산). 발표들이 인용하는 "Run~3 에 약 400 개, HL-LHC 에 약 3000 개"\src{사전승인 발표 p.3}\src{승인 발표 p.3}는
+분기비를 곱하기 전의 생성 수로 보인다(우리 판단: $3000\fbinv\times$ 약 $1\fb$, 발표에는 정의가 없다).
+
+% -----------------------------------------------------------------------------
+\section{연구 현황: 우리 자료가 말하는 것}\label{sec:intro-status}
+
+\subsection{SL·DL 결과}
+
+표~\ref{tab:intro-results} 는 우리 자료에 있는 \ttHH(4b) 결과를 모은 것이다. 모두 신호 세기 $\mu=\sigma/\sigma_{\mathrm{SM}}$ 에 대한 95\,\% CL 상한이다.
+AN v26 의 결과는 모두 Asimov(blind)이고 실데이터 결과 절(§9)은 비어 있다\src{AN-22-122 v26, PDF p.138}. 사전승인(2025-04-15) 때는 SL·DL 결합이 대상이었지만,
+승인(2026-07)은 SL 단독이었다("SL preapproved, SL ARC Green Light")\src{승인 발표 p.2}.
+
+\begin{table}[htbp]
+\centering
+\caption{우리 자료의 \ttHH(\HHfourb) 결과(95\,\% CL 상한, $\times$SM). "기대" 는 신호가 없을 때의 중앙값.}
+\label{tab:intro-results}
+\small
+\begin{tabularx}{\textwidth}{l l c c L}
+\toprule
+시점·자료 & 채널(데이터) & 기대 & 관측 & 비고 \\
+\midrule
+AN v26 (Asimov) & SL, Run~2 & 46.5 & — & stat 만 39.0\src{AN-22-122 v26, PDF p.127, Table 57} \\
+                & DL, Run~2 & 34.63 & — & stat 만 28.63\src{AN-22-122 v26, PDF p.133, Tables 65--66} \\
+                & SL+DL     & 25.13 & — & $\hat\mu=1.0^{+11.68}_{-7.96}$\src{AN-22-122 v26, PDF p.137, Table 67} \\
+사전승인 (2025-04) & SL / DL / 결합 & 42.5 / 34.63 / 25.13 & — & "통계 불확도가 지배"\src{사전승인 발표 p.25--26} \\
+2차 ARC (2025-12, \ttbar 하나) & SL, Run~2 & 50.5 & 79.3 & \src{승인 발표 p.29} \\
+승인 최종 (\ttbar 와 $t\bar tb$ 분리) & SL, Run~2 & 55.3 & 48.7 & $\sigma$ 로 기대 42, 관측 37\fb\src{승인 발표 p.32--33}\src{Wei Wei, DPF 2026 p.12} \\
+HL-LHC 예측 (FTR-21-010) & SL, 3000\fbinv & 3.14 & — & \src{승인 발표 p.5} (그림 판독) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+두 가지가 눈에 띈다. 첫째, SL 의 기대 상한이 사전승인 42.5 에서 최종 55.3 으로 약 30\,\% 나빠졌다(우리 계산); 그 사이에 ARC 와 \ttbar 배경을
+\ttbar(lf, cc)와 $t\bar tb$(mb, nb) 두 template 로 나누고 ttH·\ttbar·$t\bar tb$ 의 정규화를 자유 변수로 두는 fit 모형이 채택되었다\src{승인 발표 p.25, p.27, p.30--32}.
+원인 설명은 슬라이드에 없다. 둘째, 결합 기대 상한 25.13 에서 stat 만이면 23.19 라서\src{사전승인 발표 p.25} 이 분석은 통계 지배다 —
+채널을 늘리는 것(FH)이 곧 감도를 늘리는 길이다(우리 판단).
+
+\subsection{FH 채널의 자리}
+
+AN 에서 FH 는 한 문장뿐이다: "The hadronic decay of the top pair is under study as well and the object of another Analysis Note, in progress."
+\src{AN-22-122 v26, PDF p.5, l.58--60}. 사전승인·승인·Wei Wei 발표에는 FH 언급이 없다. 우리 발표는 FH 를 "같은 분석팀이 HIG-24-016,
+AN-2022/122 의 보완 채널로 개발한다"고 했고\src{Hbb 회의 FH 발표 p.5}, KCMS 에서는 "HIG-24-016 SL/DL 논문의 후속(follow-up) FH 결과"를 목표로
+적었다\src{KCMS 발표 p.4}. SL·DL 과의 결합은 "채널들이 양립 가능하다고 판명되면" 이라는 조건부다\src{Hbb 회의 FH 발표 p.38}. FH 가 더하는 것은 가장
+큰 \ttbar 분기 비율, 중성미자 없는 완전 재구성, SL·DL 과의 통계적 독립이고, 대가는 QCD multijet 이 지배적 배경이 되는 것이다\src{Hbb 회의 FH 발표 p.6, p.8}.
+
+\subsection{참고: ttH(bb) FH 의 감도}
+
+ttH(bb) 의 full Run~2 분석은 FH 채널이 무엇을 줄 수 있는지에 대한 가장 가까운 선례다. FH 단독 fit 의 Asimov 결과는
+$\mu=1.00^{+0.77}_{-0.78}$(stat $\pm0.23$), 기대 유의도 1.3σ 로, 같은 분석의 DL 1.9σ, SL 3.0σ, 결합 4.1σ 와 비교된다\src{AN-19-094 v20, PDF p.243, Table 129}.
+FH 는 tt+B, tt+C 정규화에 대한 감도가 거의 없어 FH 단독 fit 에서는 이 둘을 50\,\% lnN 으로 묶었고, 채널 사이에 nuisance 를 상관시킨 fit 에서는
+FH 의 불확도가 $^{+0.44}_{-0.41}$ 로 줄었다\src{AN-19-094 v20, PDF p.243--244, Fig.~134}. 관측값은 FH 단독 $\mu=-1.31^{+0.82}_{-0.89}$ 였다\src{AN-19-094 v20, PDF p.243, Table 130}.
+SR 의 사전(pre-fit) $S/B$ 와 $S/\sqrt{B}$ 는 Run~2 에서 7 jet 0.0056/1.47, 8 jet 0.0069/1.93, $\geq9$ jet 0.0087/2.14 로 jet 이 많은 범주가 가장 민감했다
+\src{AN-19-094 v20, PDF p.587, Fig.~503}.
+
+\begin{note}[ttH(bb) FH 에서 \ttHH FH 로 옮겨 읽기]
+\ttH 의 FH 는 단독으로는 DL 보다 약간 약했고, 결합에서 nuisance(특히 tt+B)가 다른 채널로 제약될 때 제 몫을 했다. \ttHH FH 도 같은 구조일
+가능성이 크다: FH 단독 결과는 \ttbb 정규화 가정에 크게 좌우될 것이므로 SL·DL 과의 결합 또는 다른 제약이 필요하다\src{ROADMAP\_FH §7}.
+한편 \ttHH 는 \ttH 보다 b 쿼크가 두 개 많아 SR 을 더 높은 b 다중도에 둘 수 있고, 그 영역에서는 QCD 와 \ttbar+light 가 더 줄어든다. 반대로
+QCD 추정의 외삽 거리는 길어진다(\ref{ch:qcd}~장). 이 둘 가운데 무엇이 이길지는 아직 모른다(우리 판단).
+\end{note}
+
+% -----------------------------------------------------------------------------
+\section{FH 가 어려운 이유와 이 분석이 풀어야 할 것}\label{sec:intro-challenges}
+
+\paragraph{QCD multijet.} 렙톤도 \MET 도 요구하지 않으므로 강한 상호작용의 다중 jet 생성이 압도적이다. ttH(bb) FH 의 baseline 에서 2017 QCD(MC)는
+$3.27\times10^{6}$, 전체 배경은 $3.89\times10^{6}$, ttH 는 2649 개였다\src{AN-19-094 v20, PDF p.70, Table 56}: QCD 가 84\,\%, $S/B\approx7\times10^{-4}$(우리 계산).
+SR 에서도 QCD 가 80\,\% 이상이었고\src{AN-19-094 v20, PDF p.100, l.1118}, QCD MC 는 모양과 정규화 모두 잘 맞지 않아 초기 연구에만 쓰였다
+\src{AN-19-094 v20, PDF p.68, l.706--709}. 우리 2017 첫 cut-flow 도 baseline MC $3.39\times10^{6}$ 가운데 QCD 가 $2.60\times10^{6}$ 였고, b-tag 수가 늘수록
+Data/MC 가 커졌다\src{Hbb 회의 FH 발표 p.25--26}. 2024 에서도 SF 없이 본 FH 의 Data/MC 는 1.40(nb $\geq3$ 2.02, $\geq4$ 2.18)이고 MC 의 78\,\% 가
+LO QCD 다\src{STATUS 2026-10-09 (3)}. 그래서 QCD 는 데이터에서 추정한다(\ref{ch:qcd}~장).
+
+\paragraph{trigger.} 렙톤 trigger 를 쓸 수 없어 $\HT$, 다중 jet, online b-tag 을 조합한 trigger 를 쓴다(2017: 6 jet+1 b, 6 jet+2 b, 4 jet+3 b,
+\code{HLT_PFHT1050})\src{Hbb 회의 FH 발표 p.15}. 오프라인 문턱($\HT>500\GeV$, 6 번째 jet $\pt>40\GeV$)이 turn-on 근처라 trigger SF 를 $(\HT, p_{\mathrm T}^{j6})\times n_b$
+에서 따로 잰다\src{Hbb 회의 FH 발표 p.16}. 2024 에는 b-tag 경로가 \file{ParkingHH} PD 에만 기록되어 PD 규칙이 바뀌었다\src{D-2026-10-06-A}(\ref{ch:trigger}~장).
+
+\paragraph{\ttbar+heavy flavour.} 추가 b jet 을 가진 \ttbar, 특히 tt+bb 와 tt+$\geq$3b 는 신호와 같은 말단 상태라 줄일 수 없는(irreducible) 배경이다.
+AN 은 \ttH 에서 중요했던 tt+bb 에 더해 tt+4b 가 \ttHH 에서 중요하다고 쓴다\src{AN-22-122 v26, PDF p.5--6, l.94--97}. 이 배경의 모델링과 5FS·4FS·tt4b 표본의
+stitching 은 \ref{ch:samples}~장.
+
+\paragraph{조합과 높은 b-tag 다중도.} 식~\eqref{eq:intro-comb} 의 조합 수 때문에 질량 재구성이 흐려지고, $n_b\geq4$ 영역에서는 c·light jet 의 mistag 과
+b-tag SF 의 외삽이 중요해진다(\ref{ch:btag}·\ref{ch:reco}~장).
+
+표~\ref{tab:intro-handles} 는 이 어려움과 그것을 다루는 수단, 그리고 해당 장을 짝지은 것이다.
+
+\begin{table}[htbp]
+\centering
+\caption{FH 의 어려움과 다루는 수단.}
+\label{tab:intro-handles}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.0cm} L >{\raggedright\arraybackslash}p{1.5cm}}
+\toprule
+어려움 & 수단(선례 또는 계획) & 장 \\
+\midrule
+QCD multijet & b-tag 영역(TR/CR/SR)과 $m_{qq}$ 창으로 데이터에서 모양을 얻고 정규화는 fit 에서 자유(ttH FH 방법); DNN 의 QCD class; 렙톤 CR 로 MC 배경 점검 & \ref{ch:qcd}, \ref{ch:mva} \\
+다중 jet trigger & 직교 단일 µ 영역에서 $(\HT,p_{\mathrm T}^{j6})\times n_b$ 의 trigger SF; 연도별 PD 규칙 & \ref{ch:trigger} \\
+\ttbar+HF & 5FS \ttbar, 4FS \ttbb, LO tt4b 의 stitching; tt+mb·tt+nb DNN 노드; tt+B 자유 정규화 & \ref{ch:samples}, \ref{ch:stats} \\
+조합 & HH/ZH/ZZ \chisq 쌍 짓기, jet–parton 할당(JABDT/GATJA 의 FH 판), W·top 질량 & \ref{ch:reco}, \ref{ch:mva} \\
+높은 b-tag 다중도 & Run~2 shape SF + 정규화 재가중, 2024 fixed-WP(method 1a); 진짜 b 수별 closure & \ref{ch:btag} \\
+낮은 $S/B$ & 다중 분류 DNN(AN 의 9 노드 + QCD), event shape, binned likelihood fit & \ref{ch:mva}, \ref{ch:stats} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% -----------------------------------------------------------------------------
+\section{분석 사슬 개관}\label{sec:intro-chain}
+
+그림~\ref{fig:intro-chain} 은 NanoAOD 에서 fit 까지의 사슬이다. 상자의 색은 2026-10-10 의 상태다. 아래 설명의 이름은 저장소의 실제 파일과
+모드 이름이다\src{README §1, §8}\src{ROADMAP\_FH §2}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  font=\footnotesize,
+  >={Stealth[length=2mm]},
+  base/.style={draw, rounded corners=2pt, align=left, inner sep=3pt, minimum height=1.35cm},
+  done/.style={base, fill=green!7, draw=green!45!black},
+  part/.style={base, fill=orange!9, draw=orange!70!black},
+  plan/.style={base, fill=blue!4, draw=blue!60!black, dashed},
+  ar/.style={->, thick, gray!70!black}
+]
+% 1 행
+\node[done, text width=4.6cm] (nano) at (2.5,0) {\textbf{입력: CMS NanoAOD}\\
+  Run~2 UL: v9(2017 첫 결과) → v15\\(2018 생산 끝, 2016·2017 계획)\\
+  2024: Summer24 MC, Run2024C--I, v15};
+\node[part, text width=4.6cm] (forge) at (8.1,0) {\textbf{NtupleForge}(CRAB)\\
+  \texttt{run\_postproc.py}: slim(+skim)\\
+  2024: slimB + \texttt{6j20} + audit\\
+  2018 v15: slimB, skim 없음};
+\node[done, text width=4.6cm] (pre) at (13.7,0) {\textbf{\texttt{--mode prescan}}\\
+  + \texttt{consolidate\_prescan.py}\\
+  $\Sigma$genWeight(Runs), genTtbarId 분할\\
+  → \texttt{prescan\_summary.json}};
+% 2 행
+\node[part, text width=4.6cm] (bt) at (2.5,-2.45) {\textbf{\texttt{--mode btagtrig}} → 파생 SF\\
+  TriggerStudy: trigger SF JSON\\
+  b-tag: Run~2 정규화 재가중,\\ 2024 효율 map(fixed WP)};
+\node[part, text width=4.6cm] (stitch) at (8.1,-2.45) {\textbf{\texttt{compute\_stitch\_factors.py}}\\
+  → \texttt{stitch\_factors\_<연도>.json}\\
+  5FS·4FS·tt4b 의 배수 $r$\\
+  2024: 아직 없음};
+\node[done, text width=4.6cm] (db) at (13.7,-2.45) {\textbf{\texttt{data/samples\_<연도>.json}}\\
+  $\sigma$, BR, $k$ (단일 출처)\\
+  제출기: $w=L\sigma\,\mathrm{BR}/\Sigma g$\\
+  (2024 의 $\sigma$ 는 임시)};
+% 3 행
+\node[done, text width=15.7cm, align=center] (main) at (8.1,-4.75) {\textbf{analyzer \texttt{--mode main}}: 영역 FH(렙톤 veto), µCR, eCR\\
+  선택(\texttt{kCutSequence}) · 보정(JEC/JER, PU, 청소) · SF(trigger, b-tag) · weight(base$\times$genW$\times$PU$\times$stitch$\times$SF)
+  · 영역 히스토그램 · event Tree v1(ML 입력, 계통 weight)};
+% 4 행
+\node[done, text width=15.7cm, align=center, minimum height=0.9cm] (plot) at (8.1,-6.55) {\textbf{\texttt{merge\_outputs.py} → \texttt{make\_plots.py}}:
+  수율 표, Data/MC control plot(\texttt{--tree-cut}, \texttt{--tree-v1})};
+% 5 행 (계획)
+\node[plan, text width=3.45cm] (qcd) at (1.95,-8.45) {\textbf{QCD data-driven}\\ TR/CR/SR $\times$ $m_{qq}$,\\ TF\textsubscript{loose}, 자유 정규화};
+\node[plan, text width=3.45cm] (ml) at (6.05,-8.45) {\textbf{DNN·GATJA}\\ AN SL DNN + QCD class,\\ GATJA 의 FH 판};
+\node[plan, text width=3.45cm] (syst) at (10.15,-8.45) {\textbf{계통 불확도}\\ weight 변형, JES/JER\\ 재실행, b-tag 변형};
+\node[plan, text width=3.45cm] (fit) at (14.25,-8.45) {\textbf{binned ML fit}\\ combine, Run~2 + 2024,\\ SL/DL 과 결합};
+% 화살표
+\draw[ar] (nano) -- (forge);
+\draw[ar] (forge) -- (pre);
+\draw[ar] (forge.south) -- (bt.north east);
+\draw[ar] (pre.south west) -- (stitch.north east);
+\draw[ar] (pre) -- (db);
+\draw[ar] (db) -- (stitch);
+\draw[ar] (bt.south) -- (bt.south |- main.north);
+\draw[ar] (stitch.south) -- (stitch.south |- main.north);
+\draw[ar] (db.south) -- (db.south |- main.north);
+\draw[ar] (main) -- (plot);
+\draw[ar] (plot.south -| qcd.north) -- (qcd.north);
+\draw[ar] (qcd) -- (ml);
+\draw[ar] (ml) -- (syst);
+\draw[ar] (syst) -- (fit);
+% 범례
+\node[done, minimum height=0.45cm, text width=2.6cm, align=center] (l1) at (3.2,-9.95) {구현·실행됨};
+\node[part, minimum height=0.45cm, text width=3.6cm, align=center] (l2) at (8.1,-9.95) {일부(연도·기능 일부)};
+\node[plan, minimum height=0.45cm, text width=2.6cm, align=center] (l3) at (13.0,-9.95) {계획};
+\end{tikzpicture}
+\caption{ttHH(4b) FH 분석 사슬과 2026-10-10 의 상태. 위 두 줄은 입력과 정규화·파생 보정, 가운데는 본 분석, 아래 줄은 아직 계획인 단계다.}
+\label{fig:intro-chain}
+\end{figure}
+
+\begin{description}[leftmargin=0pt, labelsep=0.5em, itemsep=0.4ex]
+  \item[입력과 생산.] NanoAOD 를 NtupleForge 가 CRAB 으로 slim(쓰지 않는 branch 제거)하고, 2024 는 저장된 \code{Jet_pt}$>20\GeV$·$|\eta|<2.5$ jet 6 개 이상
+    (\code{6j20})으로 skim 한다\src{NtupleForge D-2026-09-28-volume}. 출력은 \file{forgedNtuple_<N>.root} 이고 \code{Runs} tree 는 skim 전 전체를 갖는다.
+    2018UL·2024 v15 와 2024 ParkingHH 생산은 끝났고, 2016·2017 v15 hadronic 생산은 아직이며 Run~2 v15 에는 신호와 일부 배경이 중앙에 없다\src{ROADMAP\_FH §2, W3}
+    (\ref{ch:samples}~장). 2017 의 첫 결과는 v9(\file{ttHH2017UL_fullNano_v20}) 위에서 나왔고 그 ntuple 은 KNU 에서 지워졌다\src{D-2026-10-05-D}\,\tagimpl.
+  \item[정규화 입력.] analyzer 의 \texttt{-{}-mode prescan} 이 표본마다 $\Sigma$genWeight 와 genTtbarId 별 합을 모으고 \file{consolidate_prescan.py} 가 점검·집계한다.
+    단면적·분기비는 \file{data/samples_<year>.json} 하나에서만 읽는다\src{STEP 11}. 제출기가 base weight 를 만들고, \file{compute_stitch_factors.py} 가 같은 DB 로
+    stitching 배수를 만든다(\ref{ch:samples}~장)\,\tagimpl.
+  \item[파생 보정.] \texttt{-{}-mode btagtrig} 의 skim 으로 TriggerStudy 가 trigger SF 를(2024 판 코드 끝\src{STEP 26}), Run~2 는 b-tag 정규화 재가중을,
+    2024 는 fixed-WP b-tag 용 MC 효율 map(\file{tools/stage7/btag_eff_maps.py})을 만든다\src{STEP 25}. 2024 btagtrig 는 2026-10-10 에 도는 중이다\src{ROADMAP\_FH §2}\,\tagtest.
+  \item[본 분석.] \texttt{-{}-mode main} 이 선택(선언적 표 \code{kCutSequence}; baseline 은 ttH FH 의 $n_{\mathrm{jets}}\geq6$, $p_{\mathrm T}^{j6}>40\GeV$, $\HT>500\GeV$,
+    $n_b\geq2$, 렙톤 veto, $30<m_{qq}<250\GeV$)\src{README §5}, 보정과 SF, weight, 영역 히스토그램과 event tree 를 쓴다(\ref{ch:selection}~장). 영역은 FH 와 두 렙톤 CR
+    (렙톤 하나 + $\MET>20\GeV$)이다\src{STEP 14}. Tree v1 이 DNN·GATJA 입력과 계통 weight 를 갖는다\src{STEP 27}(부록~\ref{ch:treev1})\,\tagimpl.
+  \item[계획.] QCD data-driven(ttH FH 방법; 렙톤 CR 의 Data/MC 가 합리적인 뒤)\src{D-2026-10-10-B}, AN 의 SL DNN 을 FH 에 맞춘 다중 분류와 GATJA 의 FH 판
+    \src{PLAN\_ML\_SYST §9}, 계통 불확도(\ref{ch:syst}~장)와 combine fit(\ref{ch:stats}~장)은 아직 계획이다\,\tagplan. 일정은 2026 하반기 full Run~2 확장과 QCD 방법 확립, 2027 상반기 DNN·SR 최적화·계통·fit 이다
+    \src{KCMS 발표 p.4}(현황과 계획은 \ref{ch:status}·\ref{ch:plan}~장).
+\end{description}
+
+\begin{impl}
+\begin{itemize}
+  \item 분석기: \file{ttHHanalyzer_unified.cc}(모드, \code{kCutSequence}, weight 조립), \file{include/SelectionCuts.h}(cut 상수), \file{include/EraConfig.h}(연도 상수).
+  \item 정규화: \file{submit_job_FH_Tier3_unified.py} 의 \code{_compute_base_weight}, \file{consolidate_prescan.py}, \file{compute_stitch_factors.py}.
+  \item 파생 보정: \file{TriggerStudy/}(\code{run_analysis.sh}, DeriveSF), \file{bTagSF_ReweightStudy/}(Run~2), \file{tools/stage7/btag_eff_maps.py}(2024).
+  \item 출력 처리: \file{outputMerger/merge_outputs.py}, \file{plotter/make_plots.py}. 작업 흐름과 의존성: \file{docs/ROADMAP_FH.md}.
+\end{itemize}
+\end{impl}
+
+\begin{openq}[1 장의 미결 사항]
+\begin{enumerate}
+  \item 신호 단면적의 기준값(0.756 대 0.775\fb, \S\ref{sec:intro-xsec})과 13.6\TeV 값(0.860\fb, 임시)의 공식 출처 — 팀·LHC Higgs WG 확인.
+  \item FH 결과의 문서 경로: 같은 AN(AN-2022/122)의 보완 채널인가, 별도 AN·후속 결과인가 — 두 발표의 표현이 다르다\src{Hbb 회의 FH 발표 p.5}\src{KCMS 발표 p.4}. 팀(Hbb 컨비너) 결정.
+  \item 신호의 정의: TTHHto4b 의 비-FH 붕괴(렙톤을 놓친 SL·DL, $\tau_h$)를 FH 신호로 세는 것은 결합 때 채널 직교성과 함께 정해야 한다.
+  \item SR 정의($n_b$, $n_{\mathrm{jets}}$ 범주, Higgs 질량창)는 아직 연구 전이다\src{Hbb 회의 FH 발표 p.14}. Hbb 발표 p.14 는 baseline 을 "AN-2022/122 Tab.~55" 로 적었으나
+        그 baseline 은 AN-19-094 의 Table~55 다\src{README §5}.
+  \item HEFT 해석(\kl, \kt, $c_2$)을 FH 에서도 할지 — 지금 계획(ROADMAP)은 신호 세기 상한이 먼저다.
+\end{enumerate}
+\end{openq}

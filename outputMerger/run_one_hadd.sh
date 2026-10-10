@@ -22,6 +22,16 @@
 #   * runs `hadd -f -j 1` (single-thread; outer parallelism is via condor)
 #   * exits non-zero if hadd fails, if no input files were found, or if
 #     their number is not <expected>
+#   * [STEP 27 P, 2026-10-10] exits 8 before hadd when the inputs' Tree/Tree
+#     branch sets differ (outputs of two analyzer builds, e.g. jobs resubmitted
+#     after a rebuild): hadd itself does not fail then -- an older file first
+#     gives a merged tree without the new branches, a newer file first drops
+#     every entry of the older files ("One of the export top level branches ...
+#     is not present in the import TTree") while the histograms still add up
+# Exit codes: 2 usage, 3 hadd/root not on PATH, 4 no input directory, 5 no
+#   input files, 6 empty result, 7 input count != expected, 8 Tree/Tree branch
+#   sets differ (or an input cannot be opened), 9 the branch-set check did not
+#   run, else hadd's own
 # =============================================================================
 set -e
 
@@ -106,6 +116,79 @@ if [ -n "${EXPECTED}" ] && [ "${NFILES}" -ne "${EXPECTED}" ]; then
     echo "[fatal] ${NFILES} input files, ${EXPECTED} expected (the analyzer jobs of this process):"
     echo "        a job output is missing, or files of another submission are in ${INDIR}"
     exit 7
+fi
+
+# ── Tree/Tree branch sets [STEP 27 P] ──────────────────────────────────────
+#   one set for all inputs (files without a Tree/Tree count as one set of their own); see the header
+if ! command -v root >/dev/null 2>&1; then
+    echo "[fatal] root not on PATH (needed for the Tree/Tree branch-set check)"
+    exit 3
+fi
+SCHEMA_DIR=$(mktemp -d)
+trap 'rm -f "${TMPLIST}"; [ -n "${SCHEMA_DIR}" ] && [ -d "${SCHEMA_DIR}" ] && rm -rf -- "${SCHEMA_DIR}"' EXIT
+cat > "${SCHEMA_DIR}/tthh_tree_schema.C" <<'MACRO'
+#include <TFile.h>
+#include <TTree.h>
+#include <TObjArray.h>
+#include <TSystem.h>
+#include <fstream>
+#include <iostream>
+#include <memory>
+#include <set>
+#include <string>
+void tthh_tree_schema(const char* list) {
+    std::ifstream in(list);
+    std::string path, refPath;
+    std::set<std::string> ref;
+    bool haveRef = false;
+    int n = 0, nBad = 0;
+    while (std::getline(in, path)) {
+        if (path.empty()) continue;
+        ++n;
+        std::unique_ptr<TFile> f(TFile::Open(path.c_str(), "READ"));
+        if (!f || f->IsZombie()) {
+            std::cout << "[schema] cannot open " << path << std::endl;
+            gSystem->Exit(8);
+        }
+        std::set<std::string> names;
+        TTree* t = nullptr;
+        f->GetObject("Tree/Tree", t);
+        if (t) {
+            TObjArray* br = t->GetListOfBranches();
+            for (int i = 0; i < br->GetEntriesFast(); ++i) names.insert(br->At(i)->GetName());
+        } else {
+            names.insert("(no Tree/Tree)");
+        }
+        if (!haveRef) { ref = names; refPath = path; haveRef = true; continue; }
+        if (names == ref) continue;
+        if (++nBad <= 3) {
+            std::cout << "[schema] DIFFERS: " << path << " vs " << refPath << ":";
+            int shown = 0;
+            for (const auto& x : names) if (!ref.count(x) && shown++ < 6) std::cout << " +" << x;
+            for (const auto& x : ref) if (!names.count(x) && shown++ < 12) std::cout << " -" << x;
+            std::cout << std::endl;
+        }
+    }
+    if (nBad) {
+        std::cout << "[schema] " << nBad << " of " << n << " inputs have another Tree/Tree branch set than " << refPath
+                  << std::endl;
+        gSystem->Exit(8);
+    }
+    std::cout << "[schema] OK: " << n << " inputs, one Tree/Tree branch set (" << ref.size() << " branches)" << std::endl;
+}
+MACRO
+RCS=0
+root -l -b -q "${SCHEMA_DIR}/tthh_tree_schema.C(\"${TMPLIST}\")" > "${SCHEMA_DIR}/out.txt" 2>&1 || RCS=$?
+grep '^\[schema\]' "${SCHEMA_DIR}/out.txt" || true
+if [ "${RCS}" -eq 8 ]; then
+    echo "[fatal] the inputs in ${INDIR} come from analyzer builds with different Tree/Tree branches"
+    echo "        (or one cannot be opened): run the jobs of this process again with one executable, then merge"
+    exit 8
+fi
+if [ "${RCS}" -ne 0 ] || ! grep -q '^\[schema\] OK' "${SCHEMA_DIR}/out.txt"; then
+    echo "[fatal] the Tree/Tree branch-set check did not run (root exit ${RCS}):"
+    tail -5 "${SCHEMA_DIR}/out.txt"
+    exit 9
 fi
 
 echo "[hadd] inputs: ${NFILES} files${EXPECTED:+ (= ${EXPECTED} expected)}"

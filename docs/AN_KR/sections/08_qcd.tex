@@ -1,0 +1,321 @@
+% =============================================================================
+% 8 장 — QCD 다중 제트 배경의 데이터 기반 추정 (ch:qcd)
+% 출처: AN-19-094 v20 §8.1(ttH(bb) FH 의 QCD 추정), §9(불확도), §10.1(입력 검증), 결과 장;
+%       tempTTHH docs/PLAN_QCD_DD.md, ROADMAP_FH.md, DECISIONS.md, STEP 24·27, Hbb 회의 FH 발표
+% =============================================================================
+\chapter{QCD 다중 제트 배경의 데이터 기반 추정}\label{ch:qcd}
+
+FH 채널의 지배적 배경인 QCD multijet 은 MC 로 믿을 만하게 예측할 수 없어 데이터에서 추정한다. 이 장은 먼저 왜 그런지를 우리 control plot 과
+선례로 보이고, 방법의 통계적 바탕(ABCD 식 논리와 그 가정, jet 운동학 보정의 뜻, MC 차감의 오차 전파)을 정리한다. 이어 선례인 ttH(bb) FH 의
+방법(AN-19-094 §8.1: b-tag 다중도 $\times$ $m_{qq}$ 의 직교 영역, loose jet 의 운동학 보정 TF$_{\text{loose}}$, fit 에서 자유로운 정규화, 사이드밴드와
+MediumLoose 폐쇄 검정)을 쪽 번호와 함께 자세히 적는다. 마지막으로 ttHH FH 로 옮기는 우리 계획(\file{docs/PLAN_QCD_DD.md})을 적는다 — 이 부분은
+Tree 의 재료(STEP 27)를 빼면 모두 \tagplan{} 이다. 사용자 결정에 따라 이 작업은 lepton CR 의 Data/MC 가 합리적으로 나온 뒤에 한다
+\src{D-2026-10-10-B}.
+
+% -----------------------------------------------------------------------------
+\section{왜 데이터 기반인가}\label{sec:qcd-why}
+
+\paragraph{물리.}
+$\ge6$ jet 과 b-tag 2 개 이상을 요구해도 QCD 의 단면적이 워낙 커서 QCD 가 남는다. 그 b jet 은 주로 gluon 분열($g\to b\bar b$)과 c·light jet 의
+mistag 에서 온다. LO 다중 jet MC 에서 높은 jet 다중도는 matrix element 와 parton shower 의 matching·tune 에, heavy flavour 함량은 gluon 분열의
+모델링에, mistag 은 detector simulation 에 달려 있어 셋 다 불확실하다. ttH(bb) FH 는 QCD MC 를 초기 연구에만 썼다: 모양과 정규화가 모두
+나빴고, 2017·2018 은 PS tune 차이로 jet 다중도가 틀려서 2016 의 모양으로 재가중하고 수율을 data 에 맞췄다\src{AN-19-094 v20, PDF p.68--69}.
+신호 영역에서는 QCD MC 가 통계도 모자라 ANN 학습에 쓰지 않았다\src{AN-19-094 v20, PDF p.113}.
+
+\paragraph{우리 control plot 이 보인 것.}
+\begin{itemize}
+\item 2017 baseline 의 Data/MC 는 $n_b$ 와 함께 커져 $n_b\ge4$ 에서 약 1.55 였고(그림 판독 근사), QCD 를 누른 +1$\mu$ 영역에서는 나아졌지만 $n_b$ 에
+      따른 경향이 남았다\src{Hbb 회의 FH 발표 p.25--26, p.29}.
+\item 2024 \code{HLT_PFHT1050} \& $\HT>1200\GeV$ 영역(SF 없음)은 Data/MC 1.46 이고 넘침은 중간 b-tag 점수(light·c mistag 영역)에 있으며, jet 수의
+      비는 6 에서 1.38, 13 에서 약 2 다\src{STEP 24 §18}. SF 없는 2024 main 의 $n_b\ge4$ Data/MC 는 FH 2.18, $\mu$CR 1.41, $e$CR 1.19 다
+(전체로는 FH 1.40, $\mu$CR 0.84, $e$CR 0.75)\src{STATUS 10-09 (3)}.
+\end{itemize}
+QCD 가 MC 의 78\,\% 인 영역에서\src{STEP 24 §18}\src{STATUS 10-09 (3)} 이 정도의 어긋남을 MC 의 정규화 하나로 고칠 수 없다(우리 판단: 모양이 $n_b$,
+$n_{\text{jets}}$ 에 따라 달라진다).
+
+\paragraph{MC 통계.}
+HT 로 나눈 QCD 표본에서 낮은 HT bin 의 사건 weight 가 크다. 2017 의 $\sigma L/N$ 은 HT 200–300\GeV{} 가 약 $1.1\times10^3$, 300–500 이 약
+$2.5\times10^2$ 이다(발표 표의 $\sigma$, $N$ 과 42.07\fbinv{} 로 계산, $\sum w_{\text{gen}}\simeq N$ 가정)\src{Hbb 회의 FH 발표 p.46, p.49}. reco HT 가 크게 올라간
+낮은 HT 사건 하나가 높은 $n_b$·$n_{\text{jets}}$ 영역에 튀는 bin 을 만든다: 2024 의 $\HT>1200$ 영역에 QCD\_HT200to400 사건 셋(weight 합 4,330)이
+있었다\src{STEP 24 §18}.
+
+\paragraph{trigger 수준의 치우침(우리 판단).}
+FH trigger 는 online b-tag 를 쓰므로 QCD 사건은 mistag 된 jet 으로 trigger 를 통과하는 일이 많다. 우리 trigger SF 는 single-muon 기준 영역에서
+data 와 \ttbar{} MC 로 잰다\src{Hbb 회의 FH 발표 p.16} — b jet 이 진짜인 \ttbar{} 형 사건의 효율을 고치는 것이므로 QCD 의 mistag 경로에 그대로
+맞는다는 보장이 없다. 데이터 기반 추정은 이것까지 흡수한다.
+
+% -----------------------------------------------------------------------------
+\section{통계적 바탕}\label{sec:qcd-stats}
+
+\subsection{ABCD 식 논리와 그 가정}
+QCD 사건을 두 변수로 나눈다: $x$ = b-tag 칸(낮음 / 높음), $y$ = $m_{qq}$(중심창 / 사이드밴드). QCD 에서 두 변수가 독립이면
+($P(x,y)=P(x)P(y)$) 네 영역의 수 사이에
+\begin{equation}
+N_{\text{SR}}=N_{\text{CR}}\times\frac{N_{\text{VR}}}{N_{\text{ValCR}}}
+\label{eq:qcd-abcd}
+\end{equation}
+가 성립한다(SR, CR: 중심창의 높은·낮은 b-tag; VR, ValCR: 사이드밴드의 높은·낮은 b-tag). ttH(bb) FH 의 방법은 이 식으로 \emph{정규화}를 정하지
+않는다 — 정규화는 fit 이 정한다. 대신 같은 논리를 \emph{모양}에 쓴다: SR 의 판별변수 모양을 CR 에서 가져오고, 그 옮김이 맞는지를 사이드밴드의 같은 옮김
+(ValCR → VR)으로 시험한다. 이 시험이 SR 에 대해 뜻이 있으려면 ``낮음 → 높음 b-tag 의 옮김''이 $m_{qq}$ 와 무관해야 한다. 그래서 $m_{qq}$ 는 b-tag 로
+영역을 정의하는 데 쓰인 jet 을 빼고 계산한다(\S\ref{sec:qcd-regions}). 우리 \code{invMassHadW} 는 점수 $<L$ 인 jet 만 쓰므로, 한 사건에서 loose jet
+하나가 M 으로 승격되어도 $m_{qq}$ 값이 그대로다(light jet 이 둘 이상일 때) — 독립성을 구성으로 보장하는 성질이다(우리 판단).
+
+\subsection{jet 단위 운동학 보정이 필요한 이유}
+CR(3M + $\ge$1L)의 사건이 SR(${\ge}$4M)의 사건과 다른 점은 ``넷째 jet 이 M 이 아니라 L–M 칸에 있다''는 것이다. 그런데 tag 확률은 jet 의 $\pt$,
+$\eta$, 그리고 주변 b jet 과의 거리(gluon 분열의 가까운 b 쌍)에 달려 있다. 그래서 L–M jet 의 운동학 분포는 M jet 의 것과 다르고, CR 의 모양을 그대로
+쓰면 SR 의 모양이 틀린다. 운동학 $k=(\pt,\eta,\Delta R_{\min})$ 에서 ``L 이상인 jet 이 M 일'' 조건부 확률을 $\varepsilon(k)$ 라 하면, M jet 과 L–M jet 의 수의 비는
+\begin{equation}
+\text{TF}(k)\equiv\frac{N_M(k)}{N_{L\neg M}(k)}=\frac{\varepsilon(k)}{1-\varepsilon(k)}
+\label{eq:qcd-tfdef}
+\end{equation}
+이다. L–M jet 이 하나인 CR 사건에 $\text{TF}(k)$ 를 weight 로 주면, 그 사건이 같은 운동학으로 SR 에 있었을 확률의 비가 된다. 정규화가 fit 에서 자유이므로
+TF 의 전체 크기는 상관없고 $k$ 에 따른 \emph{모양}만 중요하다. 세 변수에 대한 곱 꼴 $f(\pt)g(\eta)h(\Delta R_{\min})$ 은 세 변수의 효과가 서로 독립이라는 근사이고,
+남는 상관이 계통 불확도가 된다(\S\ref{sec:qcd-tth-unc}).
+
+\begin{note}[L–M jet 이 여럿일 때 — 우리 판단]
+ttH(bb) AN 은 ``곱 $f g h$ 를 사건의 loose b jet 에 적용한다''고만 적었다\src{AN-19-094 v20, PDF p.110, l.1230}. jet 마다 독립이라고 보면, L–M jet
+$n$ 개를 가진 CR 사건이 SR(M 하나 이상 승격)로 갈 확률과 CR 에 남을 확률의 비는
+\begin{equation}
+w=\frac{1-\prod_i(1-\varepsilon_i)}{\prod_i(1-\varepsilon_i)}=\prod_{i=1}^{n}\bigl(1+\text{TF}_i\bigr)-1
+\;\xrightarrow{\;n=1\;}\;\text{TF}_1
+\label{eq:qcd-multi}
+\end{equation}
+이다. 반면 jet 마다의 곱 $\prod_i\text{TF}_i$ 는 ``모든 L–M jet 이 승격''의 비다. 두 식은 $n$ 에 따라 다른 모양을 주므로(TF$<1$ 이면 곱은 jet 이 많은 사건을
+깎고 식~\eqref{eq:qcd-multi} 는 키운다) $n_{\text{jets}}$ 분포에서 갈린다. 우리 계획은 ``곱으로 시작하고 폐쇄 검정으로 판정''\src{PLAN\_QCD\_DD §3.3}
+이므로 식~\eqref{eq:qcd-multi} 도 같은 검정에 넣는 것이 좋겠다. 또 TF 는 baseline 의 jet 묶음(맛의 섞임)에서 재므로 CR 의 L–M jet 의 맛 섞임이 다르면
+치우친다 — MediumLoose 폐쇄 검정이 이런 치우침을 잡는 장치다.
+\end{note}
+
+\subsection{MC 차감의 오차와 template 통계}
+CR 의 QCD 는 $Q=D-M$(data 에서 \ttbar{} 등 MC 를 뺀 것)이다. MC 정규화에 상대 오차 $\delta_M$ 이 있고 MC 분율이 $f=M/D$ 이면
+\begin{equation}
+\frac{\delta Q}{Q}=\frac{M}{D-M}\,\delta_M=\frac{f}{1-f}\,\delta_M
+\label{eq:qcd-subtr}
+\end{equation}
+이다. ttH(bb) FH 의 TR 처럼 QCD 가 80\,\% 를 넘으면($f<0.2$) $\delta Q/Q<0.25\,\delta_M$ 이다. 정규화가 자유이므로 이 오차는 전체 크기보다 \emph{bin 사이의
+모양}(MC 모양이 bin 마다 다른 비율로 빠짐)으로 들어온다. template 의 통계는 CR data 와 MC 의 $\sum w^2$ 로 $\text{Var}(Q_b)=D_b+\sum_{\text{MC}}w^2$ 이다.
+fit 은 이를 bin 별 nuisance(Barlow–Beeston 식)로 다룰 수 있지만, AN 이 data 에서 만든 template 에도 그것을 걸었는지는 적혀 있지 않다(\S\ref{sec:qcd-tth-unc}).
+
+\subsection{자유 정규화}
+fit 에서 QCD 정규화를 사전 제약 없는 rate parameter $\mu_{\text{QCD}}$ 로 두면, SR 판별변수의 QCD 가 많은 bin(낮은 점수)이 사실상 그 control 영역이
+된다. 범주를 늘릴수록 범주마다의 $\mu_{\text{QCD}}$ 가 덜 고정된다 — ttH(bb) FH 에서는 9 개가 data 로 $\pm1$–3.5\,\% 로 고정되었다(\S\ref{sec:qcd-tth-fit}).
+
+% -----------------------------------------------------------------------------
+\section{선례: ttH(bb) FH 의 방법 (AN-19-094 §8.1)}\label{sec:qcd-tth}
+
+\subsection{영역}\label{sec:qcd-regions}
+ttH(bb) FH 는 표준 방법(medium 대신 loose b-tag 사건으로 control 영역을 만들어 SR 로 외삽)을 출발점으로 삼았다\src{AN-19-094 v20, PDF p.100}.
+b-tag 축(DeepJet; $n_L$ 은 L 이상인 jet 수, M 포함)과 $m_{qq}$ 축의 직교 영역은 표~\ref{tab:qcd-regions} 와 그림~\ref{fig:qcd-regions} 이다
+\src{AN-19-094 v20, PDF p.101, Table 63, Fig.~50}. 영역은 범주(7, 8, $\ge9$ jet)마다 따로 쓴다\src{AN-19-094 v20, PDF p.101}.
+
+\begin{table}[htbp]\centering
+\caption{ttH(bb) FH 의 직교 영역(AN-19-094 Table 63). 괄호는 9 jet 사건의 $m_{qq}$ 경계[GeV].}\label{tab:qcd-regions}
+\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{3.6cm}LL@{}}
+\toprule
+b-tag (DeepJet) & 중심창 $60(72)<m_{qq}<100(90)$ & 사이드밴드 $30<m_{qq}<60(72)$ 또는 $100(90)<m_{qq}<250$ \\
+\midrule
+$n_M=2$, $n_L\ge4$ (2M + $\ge$2L) & \textbf{TR}: ANN 의 배경 학습 표본 & ValTR: 입력 변수 검증 \\
+$n_M=3$, $n_L\ge4$ (3M + $\ge$1L) & \textbf{CR}: SR 의 QCD 모양을 여기서 & ValCR: VR 모양 검증용 \\
+$n_M\ge4$ & \textbf{SR}: 최종 분석 영역(fit) & VR: 추정과 data 를 비교 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[htbp]\centering
+\begin{tikzpicture}[x=1cm,y=1cm,font=\small,
+  cell/.style={draw,minimum height=1.15cm,align=center,inner sep=2pt},
+  arr/.style={-{Latex[length=2.2mm]},thick}]
+  % columns: left sideband [0,3], central [3,7.4], right sideband [7.4,10.4]
+  \foreach \y/\c/\cc in {0/blue!8/blue!18, 1.2/orange!10/orange!25, 2.4/red!8/red!22}{
+    \fill[\c] (0,\y) rectangle (3,\y+1.2); \fill[\cc] (3,\y) rectangle (7.4,\y+1.2); \fill[\c] (7.4,\y) rectangle (10.4,\y+1.2);}
+  \draw (0,0) grid[xstep=10.4,ystep=1.2] (10.4,3.6);
+  \draw (3,0)--(3,3.6); \draw (7.4,0)--(7.4,3.6);
+  \node at (1.1,0.6) {ValTR}; \node at (8.5,0.6) {ValTR}; \node at (4.3,0.6) {\textbf{TR}};
+  \node at (1.1,1.8) {ValCR}; \node at (8.5,1.8) {ValCR}; \node at (4.3,1.8) {\textbf{CR}};
+  \node at (1.1,3.0) {VR};    \node at (8.5,3.0) {VR};    \node at (4.3,3.0) {\textbf{SR}};
+  \draw[arr] (5.9,1.75)--(5.9,2.85) node[midway,right,font=\scriptsize,align=left]{QCD 모양\\$\times$TF$_{\text{loose}}$};
+  \draw[arr,densely dashed] (2.3,1.75)--(2.3,2.85) node[midway,left,font=\scriptsize]{검증};
+  \draw[arr,densely dashed] (9.7,1.75)--(9.7,2.85) node[midway,left,font=\scriptsize]{검증};
+  \node[font=\scriptsize,align=left] at (6.3,0.6) {ANN 배경 학습\\(TR 의 data)};
+  \node[anchor=east,align=right] at (-0.15,0.6) {$n_M=2,\ n_L\ge4$};
+  \node[anchor=east,align=right] at (-0.15,1.8) {$n_M=3,\ n_L\ge4$};
+  \node[anchor=east,align=right] at (-0.15,3.0) {$n_M\ge4$};
+  \node[below] at (1.5,0) {30--60}; \node[below] at (5.2,0) {60--100 (9j: 72--90)}; \node[below] at (8.9,0) {100--250};
+  \node[below] at (5.2,-0.45) {$m_{qq}$ [GeV]};
+  \node[anchor=south] at (5.2,3.65) {\scriptsize fit 에 들어가는 곳: SR(범주 7, 8, $\ge9$ jet $\times$ 연도)};
+\end{tikzpicture}
+\caption{ttH(bb) FH 의 영역(AN-19-094 Fig.~50 을 다시 그림). 실선 화살표: CR 의 QCD 모양을 SR 로; 점선: 같은 절차를 사이드밴드에서 시험(ValCR → VR).}
+\label{fig:qcd-regions}
+\end{figure}
+
+\paragraph{$m_{qq}$.}
+W 질량에 가장 가까운 dijet 질량이고, 계산할 때 ``b-tag 값으로 영역을 정의하는 데 쓰인 jet'' 은 빼서 두 축이 구성상 무상관이 되게 했다
+\src{AN-19-094 v20, PDF p.101, l.1171--1174}. 어떤 jet 을 빼는지(예: DeepJet 상위 몇 개)는 적혀 있지 않다(확인 못 함). baseline 에 $30<m_{qq}<250\GeV$
+가 이미 들어 있다(\ref{ch:selection} 장).
+
+\begin{openq}[AN 안의 불일치: 9 jet 의 중심창]
+본문은 9 jet 의 중심창을 $70<m_{qq}<92\GeV$ 라 하고\src{AN-19-094 v20, PDF p.101, l.1162} Table 63 과 Table 65 는 $72<m_{qq}<90\GeV$ 다
+\src{AN-19-094 v20, PDF p.101, p.105}. 어느 쪽이 최종인지 확인 못 함. 우리는 범주가 정해진 뒤 다시 본다\src{PLAN\_QCD\_DD §3.2}.
+\end{openq}
+
+\subsection{절차}\label{sec:qcd-tth-proc}
+AN 의 네 단계\src{AN-19-094 v20, PDF p.101--103, Fig.~52}:
+\begin{enumerate}
+\item \textbf{CR 의 QCD}: CR 의 data 에서 \ttbar{}+jets 와 그 밖의 소수 배경(MC)을 뺀다.
+\item \textbf{모양 보정}: CR 의 loose b jet 에 $\pt$, $\eta$, $\Delta R$ 기반 보정 TF$_{\text{loose}}$ 를 곱한다(\S\ref{sec:qcd-tth-tf}).
+\item \textbf{SR 로}: 보정된 CR 의 QCD 모양을 SR 의 QCD 모양으로 본다. 범주마다 수율은 fit 에서 자유이고 시작값은 SR 의 (data $-$ simulation),
+      simulation 은 다른 모든 배경과 신호다.
+\item \textbf{검증}: 같은 1–3 을 ValCR 에 적용해 VR 의 data 와 (추정 QCD + MC) 를 비교한다.
+\end{enumerate}
+이를 식으로 옮기면(우리 표기; AN 에 식은 없다) 판별변수 $x$ 의 SR template 은
+\begin{align}
+T^{\text{SR}}_{\text{QCD}}(x)&=\mu_{\text{QCD}}\,N^{\text{SR}}_{\text{init}}\;\hat Q_{\text{CR}}(x),\qquad
+N^{\text{SR}}_{\text{init}}=N^{\text{SR}}_{\text{data}}-N^{\text{SR}}_{\text{MC}},\label{eq:qcd-template}\\
+\hat Q_{\text{CR}}(x)&=\frac{\sum_{e\in\text{CR,data}}w_{\text{TF}}(e)\,\delta(x-x_e)-\sum_{e\in\text{CR,MC}}w_e\,w^{t\bar t}_{\text{TF}}(e)\,\delta(x-x_e)}
+{\sum_{e\in\text{CR,data}}w_{\text{TF}}(e)-\sum_{e\in\text{CR,MC}}w_e\,w^{t\bar t}_{\text{TF}}(e)}\nonumber
+\end{align}
+이고 $\mu_{\text{QCD}}$ 는 연도 $\times$ 범주마다 자유다.
+
+\subsection{TF\texorpdfstring{$_{\text{loose}}$}{loose}}\label{sec:qcd-tth-tf}
+M 을 통과하는 jet 은 통과하지 못하는 jet 과 $\pt$, $\eta$, $\Delta R_{\min}$(처음 두 b-tag jet 까지의 최소 거리)의 분포가 다르다 — b jet 의 운동학과 tagger
+자체 때문이다. WP 가 연도마다 다르므로 연도별로 유도한다\src{AN-19-094 v20, PDF p.103, l.1215--1223}. baseline 뒤 \emph{DeepJet 값 상위 두 jet 을 뺀} jet 에서
+M jet 과 L–M jet 의 수의 비를 $\pt$–$\eta$–$\Delta R_{\min}$ 공간에서 만들고, 각 축의 사영에 1 차원 함수를 차례로($\pt\to\eta\to\Delta R_{\min}$) 맞춘다
+\src{AN-19-094 v20, PDF p.103--110}(AN 의 표기는 ``DeepJetM jet 대 DeepJetL jet'' 이고, 분모를 L–M 칸으로 읽은 것은 ML 검정의 같은 보정을
+``L–ML 대 ML–M'' 으로 적은 서술에 맞춘 우리 해석이다\src{AN-19-094 v20, PDF p.102, l.1207--1210}). 함수는
+\begin{align}
+f(\pt)&=p_0+\operatorname{erf}\bigl(p_1(\pt-p_2)\bigr)\,(p_3+p_4\,\pt), \label{eq:qcd-f}\\
+g(\eta)&=\sum_{i=0}^{16}p_i\,\eta^i,\qquad h(\Delta R_{\min})=\sum_{i=0}^{6}p_i\,\Delta R_{\min}^i \label{eq:qcd-gh}
+\end{align}
+(AN 식 13–15)이고 곱 $f(\pt)g(\eta)h(\Delta R_{\min})$ 을 사건의 loose b jet 에 적용한다\src{AN-19-094 v20, PDF p.110, eq.\ 13--15}. 보정은 data 와 \ttbar{}+jets MC 에서
+따로 유도해, data 의 것은 CR 의 data 에, \ttbar{} 의 것은 CR 의 \emph{모든} MC 에 적용한다(소수 배경은 CR 에서 작고 QCD 보다 \ttbar{} 에 가깝다는 가정)
+\src{AN-19-094 v20, PDF p.110, l.1235--1239}. ANN 학습 표본(TR)에도 적용한다\src{AN-19-094 v20, PDF p.113}. 보정 전후 그림은 Figs.~57–60, 2D 비는
+App.\ E.1 에 있다\src{AN-19-094 v20, PDF p.108--112, p.348--353}.
+
+\subsection{fit 에서의 QCD}\label{sec:qcd-tth-fit}
+fit 에는 SR(7, 8, $\ge9$ jet $\times$ 3 년)만 들어가고, QCD 정규화는 범주마다 사전 제약 없는 nuisance
+\code{CMS_ttHbb_bgnorm_ddQCD_{year}_fh_j{7,8,9}_t4} 9 개다\src{AN-19-094 v20, PDF p.235--237}. FH 단독 data fit 의 사후값은 0.912–0.974
+(불확도 $\pm1.3$–3.5\,\%)이고, FH 단독 Asimov fit 의 impact 상위 10 개 가운데 9 개가 이 정규화다\src{AN-19-094 v20, PDF p.237}. 정규화는 사전 제약
+없이도 SR 의 data 가 단단히 고정한다.
+
+\subsection{검증}
+\begin{itemize}
+\item \textbf{$m_{qq}$ 사이드밴드(VR).} ValCR → VR 의 추정과 data 를 최종 ANN 출력에서 비교했다(전체 불확도 모델; tt+B·tt+C 는 자유 대신 50\,\% rate)
+      \src{AN-19-094 v20, PDF p.104, Fig.~53}; 입력 변수는 App.\ E.2 에 있다. VR 의 QCD 는 data $-$ MC 로 맞춰져 있어 정규화는 구성상 맞고 \emph{모양만}
+      검증한다 — 예: 2016 7 jet VR 은 Data 10,584, 추정 QCD 9,055, \ttbar{} 1,327, 소수 배경과 ttH 203(그림 범례)\src{AN-19-094 v20, PDF p.354--371}.
+\item \textbf{MediumLoose(ML) 폐쇄 검정.} 낮은 b-tag 영역($n_M=3$, $n_L\ge4$) 안을 새 WP 로 다시 나눈다. ML WP 는 이 영역을 \ttbar{}+jets 포괄 MC 에서 둘로
+      똑같이 나누는 값으로 2016 0.11185, 2017 0.101, 2018 0.093 이다\src{AN-19-094 v20, PDF p.102--103, Table 64}. CRx($n_{ML}=3$) → SRx($n_{ML}\ge4$)(사이드밴드는
+      ValCRx → VRx)로 ``낮은 칸에서 높은 칸으로의 외삽''을 SR 외삽의 대리로 시험하고, 이를 위해 TF$_{\text{loose}}$ 와 같은 방식의 보정(L–ML jet 대 ML–M jet)을
+      따로 유도했다\src{AN-19-094 v20, PDF p.102, l.1201--1210; p.105, Table 65}. VRx 와 SRx 두 영역에서 data 와 (추정 + MC) 의 일치가 비슷하다는 데서
+      ``SR 에서도 유효한 모양''이라 결론지었다(불확도 띠는 통계만)\src{AN-19-094 v20, PDF p.103, l.1211--1214}\src{AN-19-094 v20, PDF p.106--107, Figs.~55--56}.
+\item \textbf{SR 그림}은 blind: ``Data'' 는 MC 합 + CR 의 QCD 추정의 의사 data 다\src{AN-19-094 v20, PDF p.105, Fig.~54}.
+\end{itemize}
+
+\subsection{불확도}\label{sec:qcd-tth-unc}
+\begin{table}[htbp]\centering
+\caption{ttH(bb) FH 에서 QCD 추정에 걸린 불확도(AN-19-094 Table 79 와 본문).}\label{tab:qcd-tth-unc}
+\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{3.6cm}>{\raggedright\arraybackslash}p{3.0cm}L@{}}
+\toprule
+항목 & 종류 & 내용 \\
+\midrule
+QCD 정규화 & rate, 자유 & 연도 $\times$ 범주 9 개; 사후 $\pm1$–3.5\,\% \\
+TF$_{\text{loose}}$ 보정 & shape, 단측 & up = 보정된 분포에 둘째 $\eta$ 보정 $g_2(\eta)=\sum_{i=0}^{4}p_i\eta^i$(AN 식 16)를 한 번 더 적용, down = nominal; 연도 간 비상관
+      (\code{CMS_ttHbb_FH_TFLoose_{year}}); 크기 수치는 AN 에 없음 \\
+template 통계 & — & data template 에 autoMCStats 를 걸었는지 명시 없음(확인 못 함) \\
+비폐쇄(non-closure) & — & 별도 항목 없음(VR·ML 검증으로 정당화) \\
+차감한 MC 의 불확도 & — & 전파 여부 명시 없음(확인 못 함) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+단측 계통의 근거: 완벽한 보정은 변수마다의 보정을 수렴할 때까지 되풀이해야 하지만 한 번으로 끊었으므로, 그 다음 $\eta$ 재보정을 up 으로 둔다($\eta$ 와
+$\Delta R_{\min}$ 사이의 약한 의존)\src{AN-19-094 v20, PDF p.110, l.1230--1234}\src{AN-19-094 v20, PDF p.154, l.1978--1985}. 표의 출처\src{AN-19-094 v20, PDF p.147, Table 79}.
+
+\subsection{판별변수와 결과}
+FH 의 판별변수는 범주마다 ttH 대 QCD 의 이진 ANN 이고, QCD 쪽 학습 표본은 TR 의 data(TF 적용; TR 은 80\,\% 넘게 QCD)다\src{AN-19-094 v20, PDF p.113}.
+입력은 b-tag 값과 직접 상관된 것을 피했고\src{AN-19-094 v20, PDF p.114}, TR·CR·SR 에서 모양이 같아야 한다는 검사를 $m_{qq}$ 중심창과 사이드밴드 모두에서
+통과한 변수만 썼다(예: 평균 b-tag 값은 TR 이 b-tag 로 정의되므로 탈락)\src{AN-19-094 v20, PDF p.156}. FH 단독 결과는 기대 $\mu=1.00^{+0.77}_{-0.78}$(1.3$\sigma$),
+관측 $\mu=-1.31^{+0.82}_{-0.89}$ 이고 FH 단독 fit 에서는 tt+B·tt+C 정규화를 50\,\% lnN 으로 묶었다(FH 의 민감도가 약해서)\src{AN-19-094 v20, PDF p.243}.
+
+\begin{andiff}[ttHH AN 과 다른 점]
+ttHH AN(SL/DL)에는 QCD multijet 추정이 없다. DL 의 $\MET>40\GeV$ 가 QCD 억제 목적이라는 언급뿐이다\src{AN-22-122 v26, PDF p.42}. 그래서 FH 의 QCD 방법은
+ttHH AN 이 아니라 ttH(bb) FH 를 선례로 쓴다\src{ROADMAP\_FH §1}.
+\end{andiff}
+
+% -----------------------------------------------------------------------------
+\section{ttHH FH 로 옮기기 — 우리 계획}\label{sec:qcd-plan}
+아래는 \file{docs/PLAN_QCD_DD.md}(PROPOSED, 2026-10-10)의 내용이다. 따로 표시한 것 말고는 모두 \tagplan{} 이다.
+
+\subsection{선행 조건과 순서}
+\begin{enumerate}
+\item \textbf{선행(사용자)}: trigger SF 와 b-tag SF 를 켠 2024 $\mu$CR·$e$CR 의 Data/MC 가 합리적일 것 — CR·SR 에서 data 에서 빼는 것이 그 MC 이기 때문이다.
+      지금은 SF 를 켠 CR 이 없고 W$\to\ell\nu$·DY 표본도 없다(D13)\src{PLAN\_QCD\_DD 결론 2}\src{D-2026-10-10-B}.
+\item \code{tools/qcd/region_yields.py}(새): Tree 에서 ($n_M$, \code{nLooseJets}, \code{invMassHadW} 중심창/사이드밴드, jet 범주)별 Data·MC(과정별) 수율과
+      $\sum w^2$ — TR/CR/SR/ValTR/ValCR/VR 표, QCD 비율(MC 참고), light jet 이 둘 미만인 사건의 비율.
+\item \code{tools/qcd/derive_tf_loose.py}(새): baseline jet(상위 두 b-tag jet 제외)의 M/(L$-$M) 비를 $\pt$, $\eta$, $\Delta R_{\min}$ 에 차례로 맞춤; data·\ttbar{} MC
+      따로, 연도별 → correctionlib JSON.
+\item template 도구: CR(data $\times$ TF $-$ MC $\times$ TF$_{t\bar t}$) → SR 모양; VR 비교 그림; ML 폐쇄 검정.
+\item datacard 의 QCD 과정(자유 rateParam, TF 계통, 비폐쇄 shape)\src{PLAN\_QCD\_DD §4}.
+\end{enumerate}
+
+\subsection{영역}
+\ttHH{} 신호는 b quark 가 6 개라 SR 의 b 다중도가 높아질 수 있다. 그래서 SR 최적화(W5)가 어떤 $N$ 을 고르든 받아들이도록 영역을 일반화한다
+\src{PLAN\_QCD\_DD §3.1}:
+\begin{equation}
+\text{SR}:\ n_M\ge N,\qquad \text{CR}:\ n_M=N-1,\ n_L\ge N,\qquad \text{TR}:\ n_M=N-2,\ n_L\ge N
+\label{eq:qcd-general}
+\end{equation}
+이고 $N=4$ 가 ttH 와 같은 기준선이다.
+jet 범주는 ttH 에서 $\ge9$ jet 이 가장 민감했으므로(Run 2 의 S/$\sqrt{B}$: 7j 1.47, $\ge9$j 2.14)\src{AN-19-094 v20, PDF p.587} parton 이 10 개인 \ttHH{} 는
+$\ge9$, $\ge10$ jet 쪽으로 — 그 범주의 TR·CR 통계를 먼저 본다. $m_{qq}$ 는 \code{invMassHadW} 를 쓰고(점수 $<L$ 인 jet 둘 이상에서; 아니면 모든 jet) 중심창
+60–100\GeV{} 로 시작한다\src{PLAN\_QCD\_DD §3.2}.
+
+\subsection{TF, template, 2024 의 b-tag}
+TF$_{\text{loose}}$ 는 연도별로 유도한다(Run 2 는 DeepJet, 2024 는 UParTAK4 의 L·M). 여러 L–M jet 의 결합(AN 에 없음)은 jet 마다의 곱으로 시작하고 ML
+폐쇄 검정으로 판정한다(위 note 의 식~\eqref{eq:qcd-multi} 도 후보). template 은 CR 의 (data $\times$ TF) $-$ (MC $\times$ TF$_{t\bar t}$) 의 모양이고 정규화는
+자유다. 신호를 뺄지(AN 에 없음)는 신호 오염을 재서 정한다(\ttHH{} 는 작을 것). 2024 의 CR·SR MC 는 fixed-WP b-tag weight 를 쓰므로(D-2026-10-08-A,
+D-2026-10-10-A) TR·CR 의 MC 효율 map 이 그 영역에 맞는지(true-b closure, STEP 27 N)가 차감의 질을 정한다\src{PLAN\_QCD\_DD §3.3}.
+
+\subsection{검증과 불확도}
+\begin{itemize}
+\item VR($m_{qq}$ 사이드밴드)과 ML 폐쇄 검정을 그대로. Run 3 tagger 에도 $[L,M)$ 를 \ttbar{} MC 에서 둘로 나누는 ML WP 를 새로 정한다.
+\item \textbf{비폐쇄를 shape 불확도로 넣는 것을 권고}(ttH 는 넣지 않음): b 다중도가 높을수록 외삽이 길어 리뷰에서 물을 것이다.
+\item TF$_{\text{loose}}$ 의 단측 계통(둘째 $\eta$ 보정), 차감한 MC 의 불확도 전파(AN 에 없음 → MC 변형으로 template 을 다시 만들어 전파), template 통계(CR data;
+      autoMCStats 가 data template 을 덮는지 확인)\src{PLAN\_QCD\_DD §3.4}.
+\end{itemize}
+
+\subsection{DNN 의 QCD class}
+ttH(bb) FH 처럼 TR 의 data(TF 적용)를 QCD class 로 쓴다(QCD MC 는 SR 통계와 모델링이 나쁘다). AN-22-122 의 다중 분류 구조(SL 9 node)에 QCD node 를 더하는
+형태이고, 입력은 TR·CR·SR 모양 동등성 검사를 통과한 것만이다\src{PLAN\_QCD\_DD §3.5}\src{PLAN\_ML\_SYST §9.2}(\ref{ch:mva} 장). QCD node 로 분류된 사건은
+QCD 가 많은 범주로 fit 에 들어가 QCD 정규화를 잡는 데 쓰인다.
+
+\subsection{이미 있는 것\,\tagimpl}
+STEP 27 의 Tree v1 에 영역 정의와 TF 유도에 필요한 것이 다 있다: \code{invMassHadW}($m_{qq}$), \code{nLooseJets}, jet 마다의 \code{jetBTagWP}·\code{jetPt}·\code{jetEta}·\code{jetPhi}·
+\code{bTagScore}, \code{nbJets}, 그리고 $n_M=2$ 에서도 정의되는 \chisq{} 변수(\ref{ch:reco} 장)\src{STEP 27}\src{PLAN\_QCD\_DD 결론 4}. 다음은 영역별 수율 표 도구와
+TF 유도 도구다(ROADMAP W7).
+
+\begin{note}[ttHH 에서 특히 위험한 것]
+\begin{itemize}
+\item \textbf{외삽 길이}: SR 이 $\ge5$M 이면 CR(4M + $\ge$1L 또는 3M + $\ge$2L)에서 승격되는 jet 이 많아지고 TF 의 곱과 2 차 효과가 쌓인다 — 승격 jet 수별 폐쇄 검정.
+\item \textbf{SR 통계}: 자유 정규화가 data 로 덜 고정된다 — 정규화 파라미터의 공유(연도·범주)나 CR 동시 fit 을 검토.
+\item \textbf{tt+bb}: FH 단독은 tt+B 정규화에 약하다(ttH: 50\,\% lnN) — SL/DL 결합 또는 외부 제약.
+\item \textbf{data 만의 결함을 template 이 흡수}: ttH(bb) FH 에서는 MEM 계산 버그가 data 에만 영향을 줬는데 data 기반 추정이 그것을 가려 보이지 않았다
+      \src{AN-19-094 v20, PDF p.67} — 입력 변수의 MC–data 를 따로 점검한다\src{PLAN\_QCD\_DD §5}.
+\end{itemize}
+\end{note}
+
+% -----------------------------------------------------------------------------
+\section{미결 사항}\label{sec:qcd-open}
+\begin{openq}
+\begin{enumerate}
+\item \textbf{시작 시점}: lepton CR(SF 적용)의 Data/MC 판정 — 사용자\src{D-2026-10-10-B}. W$\to\ell\nu$·DY 표본(D13)과 lepton SF(N4) 없이 판정할지.
+\item \textbf{$N$ 과 jet 범주}: SR 최적화(W5)와 함께. TR·CR 의 통계를 영역 수율 표로 먼저 본다.
+\item \textbf{여러 L–M jet 의 TF 결합}: 곱 대 식~\eqref{eq:qcd-multi}(우리 판단) — ML 폐쇄 검정과 $n_{\text{jets}}$ 분포로 판정.
+\item \textbf{$m_{qq}$ 의 대체 규칙}: light jet 이 둘 미만인 사건은 독립성이 깨진다 — 비율을 센 뒤 그 사건을 빼거나 다른 규칙으로.
+\item \textbf{신호 차감}과 \textbf{비폐쇄 불확도}(권고: 넣음)의 결정; 차감 MC 의 불확도 전파 방식.
+\item \textbf{정규화의 시작값과 blinding}: AN 은 SR 의 (data $-$ MC) 를 시작값으로 썼다. 우리 blinding(D-2026-10-02-E: 최종 판별변수의 민감 bin 만 가림)과 맞추려면
+      시작값을 무엇으로 할지(우리 판단: 민감하지 않은 bin 의 수율 또는 Asimov).
+\item AN-19-094 에서 확인하지 못한 것: 9 jet 의 중심창(70–92 대 72–90), $m_{qq}$ 에서 빼는 jet, CR 차감에 신호를 넣었는지, TF 계통의 크기, template 통계의 처리.
+\item DNN 입력: b-tag 점수·BLR·$n_M=2$ \chisq{} 를 쓰려면 TR/CR/SR 모양 동등성을 통과해야 한다(\ref{ch:reco} 장)\src{ROADMAP\_FH §6}.
+\end{enumerate}
+\end{openq}

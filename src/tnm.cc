@@ -235,6 +235,8 @@ commandLine::decode(int argc, char** argv)
   externalweight = -999.0; // Impossible weight to check initialization
   region = "";  // [lepton-CR] 기본 FH (lepton veto). "muon"/"electron" 이면 1ℓ+MET CR
   sfTrig = ""; sfBtag = ""; sfBtagRw = "";  // [SF toggle] 빈 값이면 analyzer default 사용
+  treePdf = "";  // [STEP 27 O] --tree-pdf on|off (default off)
+  treeV1 = "";   // [STEP 27 P] --tree-v1 on|off (default on)
   runYear = "";
   DataOrMC = "";
   sampleName = "";
@@ -260,6 +262,8 @@ commandLine::decode(int argc, char** argv)
           else if (arg == "--trigsf")      sfTrig   = argv[++i]; // [SF toggle]
           else if (arg == "--btagsf")      sfBtag   = argv[++i];
           else if (arg == "--btagrw")      sfBtagRw = argv[++i];
+          else if (arg == "--tree-pdf")    treePdf  = argv[++i];   // [STEP 27 O]
+          else if (arg == "--tree-v1")     treeV1   = argv[++i];   // [STEP 27 P]
 
       }
   }
@@ -329,6 +333,8 @@ commandLine::decode(int argc, char** argv)
             << (sfTrig.empty()   ? "def" : sfTrig)   << " / "
             << (sfBtag.empty()   ? "def" : sfBtag)   << " / "
             << (sfBtagRw.empty() ? "def" : sfBtagRw) << std::endl;
+  std::cout << "  Tree PDF       : " << (treePdf.empty() ? "off (default)" : treePdf) << std::endl;
+  std::cout << "  Tree v1        : " << (treeV1.empty() ? "on (default)" : treeV1) << std::endl;
   std::cout << "==================================================\n" << std::endl;
 
 }

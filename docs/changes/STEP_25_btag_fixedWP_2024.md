@@ -91,6 +91,10 @@ event weight 는 모든 선택 jet 의 곱(`bTagWeight`). M 하나만 쓰는 두
 - **어디서 만드나**: 2024 btagtrig 의 MC(§5) — trigger 와 lepton 요구 없는 FH preselection. BTV 권고는 "분석의 phase space 에서" 이고 SR 은 trigger
   뒤라 b-tag trigger 가 효율을 조금 바꿀 수 있다; 그러나 tag 된 jet 의 weight(SF_M)는 효율과 무관하고 나머지 칸의 효율 민감도는 (1 − SF) 배라
   작다. main 출력의 closure 줄이 1 에서 1–2 % 넘게 벗어나면 main MC 의 `BTagEff/`(trigger·lepton 요구 뒤)로 map 을 다시 만든다(결정의 supersede).
+  **[10-10 정정, D-2026-10-10-A]** 위의 "(1 − SF) 배라 작다" 는 틀렸다: 효율이 바뀔 때 tag 되지 않은 jet 의 weight 는 (1 − SF)/(1 − ε)² 배로
+  움직여, b jet 의 L 실패 칸(1 − e_L ≈ 0.05)에서는 작지 않다(SF_L = 0.97 에서 e_L 0.95 → 0.96 이면 1.57 → 1.72). 그리고 2024 FH trigger
+  (ParkingHH)는 HLT 에서 PNet b-tag 을 요구해 trigger 뒤의 효율이 btagtrig 보다 높을 수 있다. 그래서 첫 SF main 의 `BTagEff/`(BTV 가 말하는
+  영역: 분석 selection 뒤, b-tag 요구만 빼고)로 map 을 다시 만들어 btagtrig map 과 비교한다 — closure 줄과 상관없이.
 
 ### 4. 실패 처리
 

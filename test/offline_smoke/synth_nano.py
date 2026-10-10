@@ -15,6 +15,10 @@ b-tag scores: b jets above the medium WP, the others below 0.08 -- unless [STEP 
 is, with probability F/2 each, between the loose and the medium WP or below the loose WP (so the b efficiencies
 are inside (0, 1), as the fixed-WP weight needs; the default F = 0 draws no extra random numbers: the files of
 the other checks stay what they were).
+[STEP 27 O] Tree v1 inputs: MET_phi / PuppiMET_phi, L1PreFiringWeight_Up/_Dn (2017 MC), LHEScaleWeight (9),
+PSWeight (4), LHEPdfWeight (103) for MC, and a gen record whose b quarks (t, tbar, H) sit on the b jets and whose
+four W quarks sit on other jets (so the jet-parton matching has something to find). Their values come from a SECOND
+random stream (seed + 7919), so every value drawn before STEP 27 is the same as it was.
 """
 import argparse
 import json
@@ -56,8 +60,12 @@ GENJ = ["GenJet_pt", "GenJet_eta", "GenJet_phi", "GenJet_mass", "GenJet_hadronFl
 GENP = ["GenPart_pt", "GenPart_eta", "GenPart_phi", "GenPart_mass", "GenPart_pdgId", "GenPart_statusFlags",
         "GenPart_genPartIdxMother"]
 SCAL = {"common": ["run", "luminosityBlock", "event", "PV_npvsGood"],
-        "2017": ["fixedGridRhoFastjetAll", "MET_pt", "PuppiMET_pt"], "2024": ["Rho_fixedGridRhoFastjetAll", "PuppiMET_pt"],
-        "mc": ["genWeight", "Pileup_nTrueInt", "genTtbarId"], "mc2017": ["L1PreFiringWeight_Nom"]}
+        "2017": ["fixedGridRhoFastjetAll", "MET_pt", "MET_phi", "PuppiMET_pt", "PuppiMET_phi"],
+        "2024": ["Rho_fixedGridRhoFastjetAll", "PuppiMET_pt", "PuppiMET_phi"],
+        "mc": ["genWeight", "Pileup_nTrueInt", "genTtbarId"],
+        "mc2017": ["L1PreFiringWeight_Nom", "L1PreFiringWeight_Up", "L1PreFiringWeight_Dn"]}
+# [STEP 27 O] the theory-weight vectors of MC (NanoAOD: a float array with its own counter) and their lengths here
+THEORY = {"LHEScaleWeight": ("nLHEScaleWeight", 9), "PSWeight": ("nPSWeight", 4), "LHEPdfWeight": ("nLHEPdfWeight", 103)}
 
 # leaf types (the KNU inventories); anything not listed in YEAR_TYPES is in COMMON_TYPES
 COMMON_TYPES = {"run": "UInt_t", "luminosityBlock": "UInt_t", "event": "ULong64_t", "genTtbarId": "Int_t",
@@ -82,6 +90,8 @@ def leaf_type(year, name):
     """(ROOT type name, counter or None) of a branch"""
     yt = YEAR_TYPES[year]
     counter = None
+    if name in THEORY:
+        return "Float_t", THEORY[name][0]
     if "_" in name and not name.startswith(("HLT_", "Flag_", "Pileup_", "PV_", "L1PreFiring", "Rho_", "MET_",
                                              "PuppiMET_", "fixedGrid", "gen")):
         counter = "n" + name.split("_")[0]
@@ -137,8 +147,9 @@ def main(argv=None):
     names += [h for h in HLT[y]] + FLAGS[y]
     names += JET["common"] + JET[y] + (JET["mc"] if mc else []) + MUON + ELE["common"] + ELE[y]
     if mc:
-        names += GENJ + GENP
+        names += GENJ + GENP + list(THEORY)
     rng = np.random.default_rng(a.seed)
+    rng2 = np.random.default_rng(a.seed + 7919)   # [STEP 27 O] the second stream (the first keeps its draws)
 
     out = ROOT.TFile(a.o, "RECREATE")
     tree = ROOT.TTree("Events", "Events")
@@ -159,7 +170,7 @@ def main(argv=None):
                 ccode, cdt = CODE[YEAR_TYPES[y]["counter"]]
                 counters[cnt] = np.zeros(1, dtype=cdt)
                 tree.Branch(cnt, counters[cnt], "%s/%s" % (cnt, ccode))
-            bufs[n] = np.zeros(MAXN, dtype=dt)
+            bufs[n] = np.zeros(max(MAXN, THEORY.get(n, (None, 0))[1]), dtype=dt)
             tree.Branch(n, bufs[n], "%s[%s]/%s" % (n, cnt, code))
         else:
             bufs[n] = np.zeros(1, dtype=dt)
@@ -307,6 +318,37 @@ def main(argv=None):
             setv("GenPart_eta", rng.uniform(-2.5, 2.5, ng))
             setv("GenPart_phi", rng.uniform(-math.pi, math.pi, ng))
             setv("GenPart_mass", [172.5, 172.5, 125.0, 4.8, 4.8, 4.8, 4.8, 80.4, 80.4])
+            # [STEP 27 O] (second stream only) the four W quarks, and the quarks put on jets: b from t -> 1st b jet,
+            #   b from tbar -> 4th, the H b quarks -> 2nd and 3rd; the W quarks -> the first non-b jets
+            gpt = np.concatenate([bufs["GenPart_pt"][:ng].astype(float), rng2.uniform(20, 200, 4)])
+            geta = np.concatenate([bufs["GenPart_eta"][:ng].astype(float), rng2.uniform(-2.5, 2.5, 4)])
+            gphi = np.concatenate([bufs["GenPart_phi"][:ng].astype(float), rng2.uniform(-math.pi, math.pi, 4)])
+            bj = [i for i in range(nj) if isb[i]]
+            oj = [i for i in range(nj) if not isb[i]]
+            for q, k in ((3, 0), (5, 1), (6, 2), (4, 3)):
+                if k < len(bj):
+                    geta[q] = eta[bj[k]] + rng2.normal(0, 0.03)
+                    gphi[q] = phi[bj[k]] + rng2.normal(0, 0.03)
+            for q, k in ((9, 0), (10, 1), (11, 2), (12, 3)):
+                if k < len(oj):
+                    geta[q] = eta[oj[k]] + rng2.normal(0, 0.03)
+                    gphi[q] = phi[oj[k]] + rng2.normal(0, 0.03)
+            gphi = (gphi + math.pi) % (2 * math.pi) - math.pi
+            setc("nGenPart", ng + 4)
+            setv("GenPart_pdgId", pdg + [2, -1, 1, -2])
+            setv("GenPart_genPartIdxMother", mom + [7, 7, 8, 8])
+            setv("GenPart_statusFlags", [256 + 8192] * (ng + 4))
+            setv("GenPart_pt", gpt)
+            setv("GenPart_eta", geta)
+            setv("GenPart_phi", gphi)
+            setv("GenPart_mass", [172.5, 172.5, 125.0, 4.8, 4.8, 4.8, 4.8, 80.4, 80.4, 0.0, 0.0, 0.0, 0.0])
+            setv("L1PreFiringWeight_Up", float(bufs["L1PreFiringWeight_Nom"][0]) * 1.01 if "L1PreFiringWeight_Nom" in bufs else 1.0)
+            setv("L1PreFiringWeight_Dn", float(bufs["L1PreFiringWeight_Nom"][0]) * 0.99 if "L1PreFiringWeight_Nom" in bufs else 1.0)
+            for tn, (tc, tl) in THEORY.items():
+                setc(tc, tl)
+                setv(tn, rng2.uniform(0.8, 1.2, tl))
+        setv("MET_phi", float(rng2.uniform(-math.pi, math.pi)))
+        setv("PuppiMET_phi", float(rng2.uniform(-math.pi, math.pi)))
         tree.Fill()
     tree.Write()
     lbt = ROOT.TTree("LuminosityBlocks", "LuminosityBlocks")

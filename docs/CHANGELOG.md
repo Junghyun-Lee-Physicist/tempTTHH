@@ -2,10 +2,45 @@
 
 > **Purpose:** one chronological line per change, newest first, linking to the full record. The detail lives in [`changes/STEP_*.md`](changes/); this file is the index, not a copy.
 > **Audience:** anyone tracing when and why something changed.
-> **Status:** append-only · last meaningful update **2026-10-09** (M2).
+> **Status:** append-only · last meaningful update **2026-10-10 (3)** (STEP 27 P: 검토 반영; AN_KR v0.1; D-2026-10-10-C PROPOSED) · 2026-10-10 (2) (STEP 27: BTV 다중 WP 규칙 + Tree v1; 문서 D-2026-10-10-B, ROADMAP_FH, PLAN_QCD_DD, AN_KR) · 2026-10-10 (문서: D-2026-10-10-A, PLAN_ML_SYST.md) · 2026-10-09 (M2).
 > **Links:** decisions [`DECISIONS.md`](DECISIONS.md) · state [`STATUS.md`](STATUS.md).
 
 > Append-only: add new entries at the top; do not rewrite history. "Detail" links point to the full per-step record.
+
+## 2026-10-10 (3): [analyzer][도구][문서] STEP 27 P — 독립 검토 반영; 한국어 AN v0.1 과 그 과정에서 찾은 문제(D-2026-10-10-C PROPOSED)
+
+**P(검토: BUG 0, RISK 4, NIT 10):** MC 의 jet top 표지 `jetGenTopIdx`(t→b 와 t→W→q 가 같은 top 의 첫 사본 — FH 의 hadronic top 둘을 가름; Tree v1 core
+76), analyzer·제출기 `--tree-v1 on|off`(기본 on; Tree v1 이 압축 전 tree byte 의 56–59 %), Run 2 `deepJet_shape` 의 출처 키를 load 에서 한 번씩 계산해 모르는
+키가 있으면 E40(전에는 1.0 으로 조용히), 병합기 `run_one_hadd.sh` 가 hadd 전에 입력의 `Tree/Tree` branch 집합을 비교해 다르면 exit 8(두 빌드의 출력이 섞이면
+hadd 가 branch·사건을 조용히 잃는다), cAsB 의 jet weight > 10 수, NaN 점수의 WP 칸, `--memory '0 GB'` 거부, GenMatch 의 Δη 를 double 로. 시험: 단위 30/30,
+offline smoke 116/116, failure checks 81/81. **AN_KR v0.1**(0–13장, 부록 A–C, 122 쪽; 장 초안은 AI 에이전트 넷, 사실 확인은 다른 둘이 62 곳 고침) —
+쓰는 중에 드러난 것: stitching 의 r 에 p_own 이 빠져 stitched tt+bb 가 목표의 약 1/9([`DECISIONS.md`](DECISIONS.md) **D-2026-10-10-C PROPOSED**; 지금은
+어떤 main 도 stitching 을 쓰지 않음), 51/52 의 소유가 AN 과 다름, veto μ iso 0.15, jet–lepton cleaning 없음 — [`ROADMAP_FH.md`](ROADMAP_FH.md) §6 의 7–10.
+문서 고침: plotter `--tree-v1` 의 plot 은 31 개. 상세 [`changes/STEP_27_treev1_btv_rule.md`](changes/STEP_27_treev1_btv_rule.md) §P.
+
+## 2026-10-10 (2): [analyzer][도구][문서] STEP 27 — BTV 다중 WP 규칙(N) + Tree v1: ML 입력·jet 정답 표지·계통 weight(O); 방향 결정 D-2026-10-10-B
+
+**N (D-2026-10-10-A 의 구현):** 2024 fixed-WP weight 의 L–M 인자에서 분자 < 0 이면 jet weight **1**(BTV; 전 0), fail-L 음수는 0 그대로; 비교 weight
+`bTagWeight_oldRule`·`bTagWeight_cAsB`(c jet 에 b SF); HT 단계의 true-b 별·M-tag 다중도별 closure 히스토그램(`BTagEff/h_ntrueb_*`, `h_nbM_*`)과 job 끝
+줄 셋. 실제 payload 에서 바뀌는 event 는 그 분자가 음수일 때뿐(job 줄이 센다). **O (Tree v1):** `Tree/Tree` 에 jet φ·질량·WP 칸, MC 의 jet ↔ hard-process quark
+표지(H→b, t→b, W→q, Z→q; GATJA 정답), AN-2022/122 Table 43 의 FH 용 변수(χ² 는 AN 의 jet 선택을 nM ≥ 2 로, ΔR·Δη 21, Fox-Wolfram AN 식, centrality, 평균
+질량, max-pT 질량, b/light HT), m_qq(`invMassHadW`), 계통 weight(PU·L1 up/down, LHE scale·PS 벡터, Run 2 b-tag shape 출처 8 × 2 — BTV recipe; PDF 는
+`--tree-pdf on`). 옛 helper 의 결함(Δφ 미접기, FW 의 i = j 누락, bj 의 자기 짝, jjj 중복, (Σm)²/n)은 새 함수(`include/TreeVars.h`, `GenMatch.h`)로 피함.
+**도구:** 제출기 `--memory`(기본 2 GB; 전 12 GB 고정 — 2024 job 최대 286 MB), `--tree-pdf`; plotter `--tree-v1`(ML 입력 30 개와 m_qq, 모두 31 개의 Data/MC). selection·cutflow·
+기존 branch 값은 그대로(2017 Y1 동일). 시험: 단위 27/27(새), offline smoke 110/110(새 15: 다섯 출력의 Tree v1 을 독립 재계산, BTV 규칙이 작동하는 payload),
+failure checks 76/76, runlog 85/85, btag_eff_maps 26/26, consolidate 24/24, stage0 19/19. KNU: btagtrig analyzer job 이 끝난 뒤 `make clean && make -j4`.
+**문서:** [`DECISIONS.md`](DECISIONS.md) D-2026-10-10-B(사용자 방향 8 개 원문과 해석), [`ROADMAP_FH.md`](ROADMAP_FH.md)(워크스트림 W1–W8, Run 2 v15 의 목록),
+[`PLAN_QCD_DD.md`](PLAN_QCD_DD.md)(ttH(bb) FH 방법과 ttHH 판), [`PLAN_ML_SYST.md`](PLAN_ML_SYST.md) §9–10(AN 기반 FH DNN·GATJA, 학습 데이터 — Run 2 v15 신호 부재),
+[`AN_KR/`](AN_KR/)(한국어 분석 노트 v0.1, XeLaTeX). 상세 [`changes/STEP_27_treev1_btv_rule.md`](changes/STEP_27_treev1_btv_rule.md).
+
+## 2026-10-10: [문서] BTV 다중 WP 검토의 결정 D-2026-10-10-A, ML(GATJA·DNN)·계통 자료 정리 PLAN_ML_SYST.md, STEP_25 §3 정정
+
+코드 변경 없음. BTV 자료(cms-talk "Corrections when using 3 Working Points", wiki "Recommendations for fixedWP SFs", Calibration news 2026-04-20,
+`btag_sf.py`)를 우리 2024 fixed-WP weight 와 대조 → [`DECISIONS.md`](DECISIONS.md) D-2026-10-10-A(사용자 결정: 음수 분자의 중간 항은 1, true b jet
+수별 closure, 옛 규칙·"c jet 에 b SF" 비교 weight; c jet 은 BTV 답 뒤 — 구현은 커밋 N). STEP_25 §3 의 효율 민감도 설명 정정((1 − SF)/(1 − ε)²).
+AN-2022/122 v26 §6–8, GATJA 발표(2025-12-10)·gatja-studio 코드, SWAN 의 FH DNN(입력 112, 13 class)·DL DNN 코드와 DL ntuple 을 읽고 지금
+`Tree/Tree` 와 비교 → [`PLAN_ML_SYST.md`](PLAN_ML_SYST.md)(PROPOSED: 다음 빌드에 "Tree v1" — jet φ·질량, gen 매칭, HH χ²·W 후보, DL 식 event
+변수, weight 변형; 이름은 DL 새 규칙). [`STATUS.md`](STATUS.md) 10-10: btagtrig 이 느린 원인(제출기의 `request_memory` 12 GB, 측정 최대 286 MB).
 
 ## 2026-10-09: [merge][도구] STEP 26 M2 — merge 의 guard 는 CPU 가 아니라 시간 한도; condor_run.sh 는 `--time-limit H`
 

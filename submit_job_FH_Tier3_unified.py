@@ -472,6 +472,17 @@ class CondorJobManager:
                                  "됨)에 맞는 것만 — 제출·--resubmit·--report·--status·--preflight 모두. 출력 base 와 "
                                  "condor 디렉터리는 yml 전체와 같다(condor 파일은 표본마다라 다른 표본은 건드리지 않음). "
                                  "예) --only 'ParkingHH_*'. 아무 표본에도 맞지 않는 패턴은 오류.")
+        parser.add_argument("--memory", default="2 GB",
+                            help="[STEP 27] condor request_memory (기본 2 GB). 근거: 2024 analyzer job 25,313 개의 최대 "
+                                 "286 MB, 중앙값 125 MB (KNU 10-09 측정; docs/STATUS.md 10-10). 그 전의 12 GB 고정은 "
+                                 "KNU pool 1,728 slot 중 10 개에만 맞아 job 이 거의 돌지 못했다. 형식: '<수> MB|GB'")
+        parser.add_argument("--tree-pdf", default="off", choices=["on", "off"],
+                            help="[STEP 27 O] analyzer --tree-pdf: LHEPdfWeight(약 100 float/event)를 Tree/Tree 에 "
+                                 "(MC; 기본 off — 계통 단계에서 필요한 표본만). --tree-v1 off 와 함께 쓸 수 없다")
+        parser.add_argument("--tree-v1", default="on", choices=["on", "off"],
+                            help="[STEP 27 P] analyzer --tree-v1: Tree v1 branch(ML 입력·jet 정답·계통 weight; 비압축 tree "
+                                 "byte 의 55-60 %%). 기본 on. off: STEP 26 의 Tree/Tree(와 fixed-WP 비교 weight 둘) — ML 입력이 "
+                                 "필요 없는 실행(btagtrig, lepton CR)에서 저장공간을 아낄 때")
         parser.add_argument("--stall-guard", default="on", choices=["on", "off"],
                             help="[STEP 25 K2] condor stall guard (기본 on): 1 시간 넘게 돌면서 CPU 가 그 시간의 5%% 미만인 "
                                  "job 을 hold 하고 5 분 뒤 release(처음부터 다시, 같은 출력), 모두 3 번까지, 마지막 "
@@ -485,6 +496,17 @@ class CondorJobManager:
         self._cli_btagsf  = args.btagsf
         self._cli_btagrw  = args.btagrw
         self._cli_stall_guard = args.stall_guard
+        self._cli_tree_pdf = args.tree_pdf
+        self._cli_tree_v1 = args.tree_v1
+        if self._cli_tree_pdf == "on" and self._cli_tree_v1 == "off":   # [STEP 27 P] the analyzer would stop (E11)
+            print("[FATAL] --tree-pdf on needs --tree-v1 on (LHEPdfWeight is a Tree v1 branch)")
+            sys.exit(2)
+        _mem = args.memory.strip()
+        _mm = re.fullmatch(r"([0-9]+(\.[0-9]+)?)\s*(MB|GB)", _mem)
+        if not _mm or float(_mm.group(1)) <= 0:    # [STEP 27 P] '0 GB' too (review)
+            print(f"[FATAL] --memory '{args.memory}': '<number> MB' or '<number> GB' above 0 (e.g. '2 GB')")
+            sys.exit(2)
+        self._cli_memory = _mem
 
         # Variables for jobs, please check before running
         self.analyzer_path = f"{script_dir}"
@@ -549,7 +571,7 @@ class CondorJobManager:
             f"AnalyzerOutput_{self.AnalyzerMode}{self._dir_suffix}{self._year_suffix}"
         )
         self.os_version = "el9"
-        self.memorySize = "12 GB"
+        self.memorySize = self._cli_memory   # [STEP 27] --memory (default 2 GB; was a fixed 12 GB)
         self.proxy_path = os.path.join(self.analyzer_path, "proxy.cert")
         self.condor_files_path = os.path.join(
             self.analyzer_path,
@@ -622,6 +644,8 @@ class CondorJobManager:
         note(f"  config      : {self.config_file_path}")
         note(f"  analyzer    : {self.analyzer_path}")
         note(f"  SF toggles  : trigsf={self._cli_trigsf} btagsf={self._cli_btagsf} btagrw={self._cli_btagrw}")
+        note(f"  condor      : request_memory {self._cli_memory}; Tree v1 {getattr(self, '_cli_tree_v1', 'on')}; "
+             f"tree PDF weights {getattr(self, '_cli_tree_pdf', 'off')}")
         if self._cli_only:
             note(f"  only        : {self._cli_only}  (--only: the matching yml samples)")
         note(f"  time        : {datetime.datetime.now().isoformat(timespec='seconds')}")
@@ -1800,6 +1824,10 @@ class CondorJobManager:
             args += (f" --trigsf {self._cli_trigsf}"
                      f" --btagsf {self._cli_btagsf}"
                      f" --btagrw {self._cli_btagrw} ")
+            if getattr(self, "_cli_tree_pdf", "off") == "on":   # [STEP 27 O] only when asked: older executables do not know it
+                args += " --tree-pdf on "
+            if getattr(self, "_cli_tree_v1", "on") == "off":    # [STEP 27 P] the same: on is the analyzer's default
+                args += " --tree-v1 off "
 
             arg_lines.append(args)
             n_written += 1

@@ -40,6 +40,8 @@
 #include "SelectionCuts.h"        // [STEP3] selection 상수 단일 소스 (cut map 대체)
 #include "EventShape/Class/interface/EventShape.h"  // [STEP5] event shape (라이브러리 링크)
 #include "HiggsReconstructor.h"   // [STEP6] di-mother(HH/ZH/ZZ) chi2 재구성 클래스
+#include "TreeVars.h"            // [STEP 27 O] Tree v1 event variables (AN-2022/122 §6.2, Table 43)
+#include "GenMatch.h"            // [STEP 27 O] jet <-> hard-process quark labels (MC; ML truth)
 #include <map>
 
 #include <nlohmann/json.hpp>
@@ -1308,6 +1310,7 @@ class ttHHanalyzer_unified {
     }
     // [STEP 24] the v9 / v15 names in one place (Run 2 = the code as it was)
     float metPt_() const { return _isRun3 ? _ev->PuppiMET_pt : _ev->MET_pt; }
+    float metPhi_() const { return _isRun3 ? _ev->PuppiMET_phi : _ev->MET_phi; }   // [STEP 27 O] the same MET
     bool  eleWP90_(const eventBuffer::Electron_s& e) const {
         return _isRun3 ? static_cast<bool>(e.mvaIso_WP90) : static_cast<bool>(e.mvaFall17V2Iso_WP90);
     }
@@ -1382,6 +1385,24 @@ class ttHHanalyzer_unified {
     void bookBTagEff_();
     void fillBTagEff_(event* thisEvent);
     void computeBTagWeightFixedWP_(event* thisEvent);
+    // [STEP 27 N] docs/DECISIONS.md D-2026-10-10-A: the weight above follows BTV's rule (an intermediate L-M factor
+    //   whose numerator SF_L e_L - SF_M e_M is negative becomes 1; a negative fail-L numerator stays 0) and the same
+    //   jet loop makes two comparison weights (central only): _oldRule = the commit-K rule (that intermediate case 0)
+    //   and _cAsB = c jets weighted with the b-jet SF and our c-jet efficiencies (BTV's wiki; waits for BTV's answer).
+    float bTagWeight_oldRule_ = 1.0f, bTagWeight_cAsB_ = 1.0f;
+    long long _btagNInterNeg[3] = {0, 0, 0};   // jets whose intermediate numerator was < 0 (-> 1): central, up, down
+    long long _btagNJetCAsB = 0;               // c jets weighted in _cAsB
+    long long _btagNBigCAsB = 0;               // [STEP 27 P] of those, jet weight > 10 (thin c-efficiency bins; review R4)
+    // HT-step closure histograms in BTagEff/ (every cut but the b-tag ones): the number of true b jets among the
+    //   selected jets (hadronFlavour 5: 0, 1, 2, 3, >= 4) and the M-tag multiplicity (0 ... >= 6), each summed with
+    //   [0] w, [1] w x bTagWeight, [2] w x bTagWeight_oldRule, [3] w x bTagWeight_cAsB (w = the weight before SFs).
+    //   [1]/[0] per true-b bin is the closure BTV asks about (efficiencies extrapolated in N_b, cms-talk 2026-04).
+    TH1D* _hBTagTrueB[4] = {nullptr, nullptr, nullptr, nullptr};
+    TH1D* _hBTagNbM[4]   = {nullptr, nullptr, nullptr, nullptr};
+    double _btagTrueBW[5]  = {0, 0, 0, 0, 0};
+    double _btagTrueBWB[5] = {0, 0, 0, 0, 0};
+    double _btagClosureWOld = 0.0, _btagClosureWCB = 0.0;
+    void fillBTagClosure_(event* thisEvent);
     std::vector<const bool*> _metFilterPtrs;
     long long _nCleanAll = 0, _nCleanMETFail = 0, _nCleanVetoFail = 0;
     // [D-2026-10-06-A] hadronic trigger counts (every event that reaches the trigger decision): HLT_PFHT1050,
@@ -1592,6 +1613,37 @@ public:
                   << "  btagNormRW=" << (_applyBtagRW ? "ON" : "off")
                   << "  (tier branches always recorded)\n";
     }
+
+    // [STEP 27 O] CLI --tree-pdf on|off (default off): LHEPdfWeight (about 100 floats per event) in Tree/Tree for MC.
+    //   Called after the constructor (main), before the event loop: the branch is added to the booked tree.
+    void setTreePdf(const std::string& v) {
+        if (v.empty() || v == "off") return;
+        if (v != "on") {
+            std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO << "] --tree-pdf '" << v << "': on or off.\n" << std::endl;
+            tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
+        }
+        if (!_treeV1) {   // [STEP 27 P] LHEPdfWeight is a Tree v1 branch
+            std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO << "] --tree-pdf on needs --tree-v1 on.\n" << std::endl;
+            tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
+        }
+        if (!_inputTree || _inputTree->GetEntries() != 0) {
+            std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO << "] --tree-pdf on: the tree is not booked or already filled.\n"
+                      << std::endl;
+            tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
+        }
+        _treePdf = true;
+        _inputTree->Branch("LHEPdfWeight", &_tv.LHEPdfWeight);
+        if (_DataOrMC == "Data")
+            std::cout << "[treeV1] --tree-pdf on: the LHEPdfWeight branch is booked; Data leaves it empty" << std::endl;
+        else
+            std::cout << "[treeV1] --tree-pdf on: LHEPdfWeight is stored (MC)" << std::endl;
+    }
+
+    // [STEP 27 P] CLI --tree-v1 on|off (default on). The Tree v1 branches are booked by the constructor (initTree),
+    //   so main() sets this flag before it constructs the analyzer; off = the tree of STEP 26 plus the two STEP 27 N
+    //   comparison weights (fixed-WP years) -- for runs where the size matters (Tree v1 is about 55-60 % of the
+    //   uncompressed tree bytes, review R3) and no ML input is needed (btagtrig, the lepton CRs).
+    static bool& treeV1Flag() { static bool on = true; return on; }
 private:
 
     // [debug-only] b-tag norm reweight 임시 우회 (env TTHH_SKIP_BTAGRW=1).
@@ -1652,6 +1704,38 @@ private:
     float triggerSF_up_       = 1.0f;   // Trigger SF +1σ variation
     float triggerSF_down_     = 1.0f;   // Trigger SF -1σ variation
     float btagNormReweight_   = 1.0f;   // B-tag 정규화 비율 (normalization ratio)
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // [STEP 27 O] Tree v1 (docs/PLAN_ML_SYST.md §5.2): ML inputs (AN-2022/122 Table 43 for FH), jet truth labels,
+    //   and the per-event systematic weights. Filled in fillTreeV1_() for the events that reach the tree.
+    // ═══════════════════════════════════════════════════════════════════════
+    struct TreeV1 {
+        std::vector<float> jetPhi, jetMass;
+        std::vector<int>   jetBTagWP, jetGenMatch, jetGenMotherIdx, jetGenTopIdx;   // jetGenTopIdx: [STEP 27 P]
+        int   lightjetNumber = 0, nLooseJets = 0;
+        float bjetHT = 0.f, lightjetHT = 0.f;
+        float jetAverageMass = -1.f, bjetAverageMass = -1.f, lightjetAverageMass = -1.f, bjetAverageMassSqr = -1.f;
+        float maxPTmassjjj = -1.f, maxPTmassjbb = -1.f, centrality = -1.f, bjetCentrality = -1.f, metPhi = 0.f;
+        TreeVars::PairStats  jj, bb, bj;
+        TreeVars::FoxWolfram fwJet, fwB;
+        TreeVars::Chi2Result chi2;
+        float PUWeight_up = 1.f, PUWeight_down = 1.f, L1PrefiringWeight_up = 1.f, L1PrefiringWeight_down = 1.f;
+        std::vector<float> LHEScaleWeight, PSWeight, LHEPdfWeight;
+        float bTagShapeVar[8][2] = {{1.f, 1.f}, {1.f, 1.f}, {1.f, 1.f}, {1.f, 1.f},
+                                    {1.f, 1.f}, {1.f, 1.f}, {1.f, 1.f}, {1.f, 1.f}};   // Run 2 shape SF [source][up, down]
+    } _tv;
+    // the Run 2 deepJet shape SF sources of AN-2022/122 Table 53 (jes goes with the JES variation runs)
+    static constexpr const char* kBTagShapeSrc[8] = {"hf", "lf", "hfstats1", "hfstats2", "lfstats1", "lfstats2",
+                                                     "cferr1", "cferr2"};
+    // the AN's target masses for the Tree v1 χ² (AN §6.2.1 l.741-742); the cut-flow reconstruction keeps
+    //   cHiggsMass / cZMass (125.38 / 91) as before
+    static constexpr float kTreeMH = 125.0f, kTreeMZ = 91.2f;
+    float _hadWMassTree = -1.f;            // the hadronic-W candidate mass of the 30<HadW<250 cut (selectObjects)
+    bool _treePdf = false;                 // --tree-pdf on: LHEPdfWeight in the tree (MC; about 100 floats per event)
+    bool _treeV1 = true;                   // [STEP 27 P] --tree-v1 on|off: the Tree v1 branches booked and filled
+    bool _treeWeightInfoDone = false;      // the one-time [treeV1] line of the weight vector sizes
+    void fillTreeV1_(event* thisEvent);
+    void computeBTagShapeVariations_(event* thisEvent);
 
 
     outputFile * _of;
@@ -3015,6 +3099,96 @@ private:
         _inputTree->Branch("triggerSF_up",       &triggerSF_up_,       "triggerSF_up/F");
         _inputTree->Branch("triggerSF_down",     &triggerSF_down_,     "triggerSF_down/F");
         _inputTree->Branch("btagNormReweight",   &btagNormReweight_,   "btagNormReweight/F");
+
+        // ──────────────────────────────────────────────────────────────────────────
+        // [STEP 27 O] Tree v1 — docs/PLAN_ML_SYST.md §5.2, include/TreeVars.h, include/GenMatch.h.
+        //   Names: AN-2022/122 Table 43 / the DL ntuple; a b-jet quantity carries a `bjet` prefix (bjetH0, not bH0).
+        //   b jet = score >= M, light jet = score < L, "nonB" = score < M. -1 = undefined for the event.
+        // ──────────────────────────────────────────────────────────────────────────
+        // [STEP 27 P] --tree-v1 off (main() sets treeV1Flag before the constructor): none of the Tree v1 branches
+        //   below; the comparison weights after this block stay (STEP 27 N, not ML inputs).
+        _treeV1 = treeV1Flag();
+        if (_treeV1) {
+            // per selected jet (the order of jetPt): phi, mass, the WP bin of the score (0 < L, 1 [L,M), 2 [M,T), 3 >= T),
+            //   and (MC) the hard-process quark it matches: 0 none, 1 H->b, 2 t->b, 3 W->q, 4 Z->q; the GenPart index of
+            //   the mother's first copy (-1 none); [STEP 27 P] the GenPart index of the first copy of its top (t->b and
+            //   t->W->q; -1 otherwise), which groups the three jets of one hadronic top. Data: 0, -1 and -1.
+            _inputTree->Branch("jetPhi",          &_tv.jetPhi);
+            _inputTree->Branch("jetMass",         &_tv.jetMass);
+            _inputTree->Branch("jetBTagWP",       &_tv.jetBTagWP);
+            _inputTree->Branch("jetGenMatch",     &_tv.jetGenMatch);
+            _inputTree->Branch("jetGenMotherIdx", &_tv.jetGenMotherIdx);
+            _inputTree->Branch("jetGenTopIdx",    &_tv.jetGenTopIdx);       // [STEP 27 P]
+            _inputTree->Branch("lightjetNumber",  &_tv.lightjetNumber, "lightjetNumber/I");
+            _inputTree->Branch("nLooseJets",      &_tv.nLooseJets,     "nLooseJets/I");    // score >= L (incl. the b jets)
+            _inputTree->Branch("bjetHT",          &_tv.bjetHT,          "bjetHT/F");
+            _inputTree->Branch("lightjetHT",      &_tv.lightjetHT,      "lightjetHT/F");
+            _inputTree->Branch("jetAverageMass",      &_tv.jetAverageMass,      "jetAverageMass/F");
+            _inputTree->Branch("bjetAverageMass",     &_tv.bjetAverageMass,     "bjetAverageMass/F");
+            _inputTree->Branch("lightjetAverageMass", &_tv.lightjetAverageMass, "lightjetAverageMass/F");
+            _inputTree->Branch("bjetAverageMassSqr",  &_tv.bjetAverageMassSqr,  "bjetAverageMassSqr/F");
+            _inputTree->Branch("maxPTmassjjj",    &_tv.maxPTmassjjj,    "maxPTmassjjj/F");
+            _inputTree->Branch("maxPTmassjbb",    &_tv.maxPTmassjbb,    "maxPTmassjbb/F");
+            {   // ΔR / Δη statistics: jj = all jet pairs, bb = b-jet pairs, bj = (b jet, non-b jet) pairs
+                struct PS { const char* tag; TreeVars::PairStats* p; };
+                for (const PS& x : {PS{"jj", &_tv.jj}, PS{"bb", &_tv.bb}, PS{"bj", &_tv.bj}}) {
+                    const std::string t = x.tag;
+                    _inputTree->Branch(("averageDeltaR"   + t).c_str(), &x.p->averageDeltaR,   ("averageDeltaR"   + t + "/F").c_str());
+                    _inputTree->Branch(("minDeltaR"       + t).c_str(), &x.p->minDeltaR,       ("minDeltaR"       + t + "/F").c_str());
+                    _inputTree->Branch(("maxDeltaR"       + t).c_str(), &x.p->maxDeltaR,       ("maxDeltaR"       + t + "/F").c_str());
+                    _inputTree->Branch(("averageDeltaEta" + t).c_str(), &x.p->averageDeltaEta, ("averageDeltaEta" + t + "/F").c_str());
+                    _inputTree->Branch(("maxDeltaEta"     + t).c_str(), &x.p->maxDeltaEta,     ("maxDeltaEta"     + t + "/F").c_str());
+                    _inputTree->Branch(("minDeltaRMass"   + t).c_str(), &x.p->minDeltaRMass,   ("minDeltaRMass"   + t + "/F").c_str());
+                    _inputTree->Branch(("minDeltaRpT"     + t).c_str(), &x.p->minDeltaRpT,     ("minDeltaRpT"     + t + "/F").c_str());
+                }
+            }
+            for (int l = 0; l < 5; ++l) {   // Fox-Wolfram (AN eq. 16): H0..H4, R1..R4 = H_l/H0, jets and b jets
+                _inputTree->Branch(TString::Format("H%d", l),     &_tv.fwJet.H[l], TString::Format("H%d/F", l));
+                _inputTree->Branch(TString::Format("bjetH%d", l), &_tv.fwB.H[l],   TString::Format("bjetH%d/F", l));
+                if (l == 0) continue;
+                _inputTree->Branch(TString::Format("R%d", l),     &_tv.fwJet.R[l], TString::Format("R%d/F", l));
+                _inputTree->Branch(TString::Format("bjetR%d", l), &_tv.fwB.R[l],   TString::Format("bjetR%d/F", l));
+            }
+            _inputTree->Branch("centrality",      &_tv.centrality,      "centrality/F");      // AN eq. 12, jets (FH: no lepton)
+            _inputTree->Branch("bjetCentrality",  &_tv.bjetCentrality,  "bjetCentrality/F");
+            // χ² pairing with the AN's choice of the 4 jets (TreeVars::chi2AN; nM >= 2), m_H 125, m_Z 91.2 (AN); the
+            //   STEP 6 branches chi2ZH / chi2ZZ (cut-flow reconstruction, b jets >= 4, 125.38 / 91) stay as they were
+            _inputTree->Branch("chi2Higgs",       &_tv.chi2.chi2HH,     "chi2Higgs/F");
+            _inputTree->Branch("invMassH1",       &_tv.chi2.mH1,        "invMassH1/F");       // closest to m_H
+            _inputTree->Branch("invMassH2",       &_tv.chi2.mH2,        "invMassH2/F");
+            _inputTree->Branch("PTH1",            &_tv.chi2.ptH1,       "PTH1/F");
+            _inputTree->Branch("PTH2",            &_tv.chi2.ptH2,       "PTH2/F");
+            _inputTree->Branch("chi2HiggsZ",      &_tv.chi2.chi2ZH,     "chi2HiggsZ/F");
+            _inputTree->Branch("invMassHiggsZ1",  &_tv.chi2.mZH_H,      "invMassHiggsZ1/F");  // ZH: the H candidate
+            _inputTree->Branch("invMassHiggsZ2",  &_tv.chi2.mZH_Z,      "invMassHiggsZ2/F");  // ZH: the Z candidate
+            _inputTree->Branch("chi2Z",           &_tv.chi2.chi2ZZ,     "chi2Z/F");
+            _inputTree->Branch("invMassZ1",       &_tv.chi2.mZ1,        "invMassZ1/F");       // closest to m_Z
+            _inputTree->Branch("invMassZ2",       &_tv.chi2.mZ2,        "invMassZ2/F");
+            _inputTree->Branch("metPhi",          &_tv.metPhi,          "metPhi/F");          // the MET of MET_pt
+            // m_qq: the dijet mass closest to m_W (80.377) among the light jets (score < L) when there are two, else among
+            //   all selected jets -- the value the 30<HadW<250 cut uses; the m_qq axis of the ttH(bb) FH QCD regions
+            _inputTree->Branch("invMassHadW",     &_hadWMassTree,       "invMassHadW/F");
+            // systematic weights (MC; Data 1 and empty vectors). LHEScaleWeight / PSWeight: NanoAOD's vectors as they are
+            //   (their size and order are the sample's; the one-time [treeV1] line prints the sizes).
+            _inputTree->Branch("PUWeight_up",            &_tv.PUWeight_up,            "PUWeight_up/F");
+            _inputTree->Branch("PUWeight_down",          &_tv.PUWeight_down,          "PUWeight_down/F");
+            _inputTree->Branch("L1PrefiringWeight_up",   &_tv.L1PrefiringWeight_up,   "L1PrefiringWeight_up/F");
+            _inputTree->Branch("L1PrefiringWeight_down", &_tv.L1PrefiringWeight_down, "L1PrefiringWeight_down/F");
+            _inputTree->Branch("LHEScaleWeight", &_tv.LHEScaleWeight);
+            _inputTree->Branch("PSWeight",       &_tv.PSWeight);
+            if (!_btagFixedWP && _hasBTagShapeSF) {   // Run 2: the deepJet shape SF per source (BTV recipe), no norm reweight
+                for (int k = 0; k < 8; ++k) {
+                    const std::string b = std::string("bTagWeight_") + kBTagShapeSrc[k];
+                    _inputTree->Branch((b + "_up").c_str(),   &_tv.bTagShapeVar[k][0], (b + "_up/F").c_str());
+                    _inputTree->Branch((b + "_down").c_str(), &_tv.bTagShapeVar[k][1], (b + "_down/F").c_str());
+                }
+            }
+        }
+
+        if (_btagFixedWP) {   // [STEP 27 N] D-2026-10-10-A comparison weights (central)
+            _inputTree->Branch("bTagWeight_oldRule", &bTagWeight_oldRule_, "bTagWeight_oldRule/F");
+            _inputTree->Branch("bTagWeight_cAsB",    &bTagWeight_cAsB_,    "bTagWeight_cAsB/F");
+        }
 
 	_treeDirs = tmpDirs;
     }

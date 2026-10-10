@@ -1,0 +1,310 @@
+% =============================================================================
+% 10 장 — 계통 불확도
+% 작성 2026-10-10 (AN_KR v0.1). 근거: AN-2022/122 v26 §8.2(Table 52–53, Table 9, App. C);
+% AN-19-094 v20 §3.1, §9(Table 79), §11; docs/PLAN_ML_SYST.md §5–§6; docs/reference/LUMI_SOURCES.md;
+% DECISIONS D-2026-10-05-A, D-2026-10-08-A, D-2026-10-10-A/B; STEP 26, STEP 27; 코드(ttHHanalyzer_unified.{h,cc},
+% src/CorrectionsManager.cc, plotter/stack_plotter.C, TriggerStudy/docs/ARCHITECTURE.md).
+% =============================================================================
+\chapter{계통 불확도}\label{ch:syst}
+
+계통 불확도(systematic uncertainty)는 측정값을 예측과 비교할 때 "예측 자체가 얼마나 틀릴 수 있는가" 를 fit 에 넣는 장치다. 이 장은 먼저 개념 —
+정규화(lnN)와 모양(template morphing) 불확도, 연도·과정 사이 상관, weight 로 만드는 변형과 다시 돌려야 하는 변형(JES·JER), data 와 MC 의 통계
+불확도 — 을 정리한다. 이어서 Run 2 ttHH AN 의 전체 목록(Table 53)과 지배적인 항목, ttH(bb) FH 가 더한 FH 고유 항목(QCD 추정, hadronic trigger SF,
+tt+B 정규화)을 옮긴다. 그다음 출처마다 우리 코드의 지금 상태(STEP 27 의 Tree weight)와 계획을 표로 보이고, 지금 control plot 의 통계 오차가
+어떻게 그려지는지와 미결 사항을 적는다. 요약하면 weight 로 만드는 변형은 Tree 에 기록되기 시작했고(\tagimpl\tagtest, 실제 표본 실행 전),
+JES·JER 변형, datacard, QCD 추정의 불확도는 \tagplan 이다.
+
+% -----------------------------------------------------------------------------
+\section{개념}\label{sec:syst-concepts}
+
+\subsection{nuisance parameter: 정규화와 모양}\label{sec:syst-np}
+
+\ref{ch:stats}장의 binned likelihood 에서 계통 불확도의 원천 $k$ 마다 nuisance parameter $\theta_k$ 를 두고, 보조 측정(calibration)의 결과를
+제약항 $p(\tilde\theta_k|\theta_k)$ 로 곱한다. 관례상 $\theta_k$ 는 단위 Gaussian 으로 정규화해 $\theta_k=\pm1$ 이 원천의 $\pm1\sigma$ 변형이 되게 한다.
+예측 수율 $\nu_i$(bin $i$)가 $\theta_k$ 에 어떻게 의존하는지가 두 종류를 가른다.
+
+\textbf{정규화(rate) 불확도}는 과정의 총 수율만 바꾼다. combine 의 \code{lnN} 은
+\begin{equation}
+  \nu(\theta)=\nu_0\,\kappa^{\theta},\qquad \theta\sim\mathcal{N}(0,1)
+  \quad\Longrightarrow\quad \ln\nu\ \text{가 Gaussian(log-normal)},
+  \label{eq:syst-lnN}
+\end{equation}
+이고, 비대칭(datacard 의 \code{0.95/1.05} 꼴)이면 $\theta>0$ 에서 $\kappa_{\mathrm{up}}^{\theta}$, $\theta<0$ 에서 $\kappa_{\mathrm{down}}^{-\theta}$ 를 쓴다
+($\theta=-1$ 이면 $\nu_0\kappa_{\mathrm{down}}$). 곱셈 꼴이라 수율이 음이 되지 않고, $\kappa-1$ 이
+작으면 상대 불확도 $\kappa-1$ 의 Gaussian 과 같다. 예: 2017 lumi 0.82 \% 는 두 성분 \code{lumi_13TeV_151617_l} = 1.0055,
+\code{lumi_13TeV_15161718_l} = 1.0061 로 들어간다(제곱합 0.82 \%)\src{LUMI\_SOURCES §2}.
+
+\textbf{모양(shape) 불확도}는 bin 마다 다르게 움직인다. 원천을 $\pm1\sigma$ 바꾼 template $\nu_i^{\pm}$ 를 만들고, 그 사이를 bin 마다 보간한다
+(vertical template morphing). 가장 단순한 꼴은
+\begin{equation}
+  \nu_i(\theta)=
+  \begin{cases}
+    \nu_i^0+\theta\,(\nu_i^{+}-\nu_i^{0}), & \theta\ge0,\\
+    \nu_i^0+\theta\,(\nu_i^{0}-\nu_i^{-}), & \theta<0,
+  \end{cases}
+  \label{eq:syst-morph}
+\end{equation}
+이다(그림~\ref{fig:syst-morph}). combine 은 $|\theta|<1$ 에서 미분이 이어지도록 다항식으로 매끄럽게 잇고 바깥은 선형으로 외삽한다. template 의
+총 수율이 변하면 정규화 효과도 함께 들어간다. 한쪽 template 만 있으면(예: ttH FH 의 TF\textsubscript{loose}, 아래) "단측" 불확도가 된다.
+AN 의 SL 은 rate 계통을 datacard 에 직접, shape 계통은 up/down template 으로 넣었다\src{AN-22-122 v26, PDF p.119}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\footnotesize, >=Stealth, x=1.35cm, y=1.25cm]
+\draw[->] (-2.4,0) -- (2.5,0) node[right]{$\theta$};
+\draw[->] (0,-0.1) -- (0,3.1) node[above]{$\nu_i(\theta)$};
+\foreach \x in {-2,-1,1,2} \draw (\x,0.05) -- (\x,-0.05) node[below]{$\x$};
+\draw[accent, thick] (-2,0.8) -- (0,1.6) -- (2,2.8);
+\draw[gray, dashed, domain=-1:1, samples=40] plot (\x, {1.6+0.5*\x+0.1*\x*\x});
+\fill (-1,1.2) circle (1.6pt) node[below right]{$\nu_i^-$};
+\fill (0,1.6) circle (1.6pt) node[above left]{$\nu_i^0$};
+\fill (1,2.2) circle (1.6pt) node[below right]{$\nu_i^+$};
+\node[accent, anchor=west, font=\scriptsize] at (-2.3,3.0) {실선: 식~\eqref{eq:syst-morph}(선형, $\theta=0$ 에서 꺾임)};
+\node[gray, anchor=west, font=\scriptsize] at (-2.3,2.65) {점선: $|\theta|<1$ 의 매끄러운 보간(개념)};
+\end{tikzpicture}
+\caption{한 bin 의 template morphing. $\theta=\pm1$ 에서 변형 template 과 같고, 바깥은 외삽이다. 비대칭($\nu^+-\nu^0\ne\nu^0-\nu^-$)이면 $\theta=0$ 에서 꺾인다.}
+\label{fig:syst-morph}
+\end{figure}
+
+\subsection{상관}\label{sec:syst-corr}
+
+같은 이름의 nuisance 는 그것이 들어간 모든 bin·과정·연도·채널에서 하나의 $\theta$ 로 함께 움직인다(완전 상관). 이름이 다르면 독립이다.
+부분 상관은 공통 성분과 독립 성분으로 나눠 표현한다 — Run 2 lumi 의 분해(연도 묶음별 성분)가 그 예다\src{LUMI\_SOURCES §2}. 상관은 원인으로
+정한다: 이론(단면적, PDF, scale)은 연도에 무관하므로 연도 사이 상관, 보정 측정의 통계 성분(b-tag 의 stats, trigger SF 의 bin 통계)은 연도마다
+독립, 검출기 조건(JER, L1 prefiring)은 연도마다 독립이 보통이다. AN 은 b-tag 의 hf/lf·cferr 를 상관, hfstats/lfstats 를 비상관으로 둔다
+\src{AN-22-122 v26, PDF p.120--121}. 대체로 상관이어야 할 것을 비상관으로 두면 연도 결합에서 불확도가 평균되어 과소평가되고, 반대로 두면
+과대평가된다. 또 상관된 nuisance 는 한 연도의 data 가 다른 연도의 예측까지 제약하므로, 상관 방식은 fit 결과 자체를 바꾼다.
+
+\subsection{weight 로 만드는 변형과 다시 돌려야 하는 변형}\label{sec:syst-weight-vs-rerun}
+
+\textbf{weight 변형}: 같은 event 에 다른 weight 를 주어 template 을 만든다 — PU(참 상호작용 수 재가중의 up/down), L1 prefiring, b-tag SF 의 출처,
+trigger SF $\pm1\sigma$, LHE scale($\mu_R,\mu_F$), parton shower(ISR, FSR), PDF. event 집합이 같으므로 nominal 과 변형의 통계 요동이 서로 상관되어
+차이가 매끄럽고, event 마다 weight 몇 개만 저장하면 된다. \textbf{object 변형}: JES·JER 은 jet \pt 자체를 바꾼다. 그러면 어떤 jet 이 $\pt>30\GeV$ 를
+넘는지, jet 수, \HT, 6 번째 jet \pt, $\chi^2$ 쌍짓기, DNN 입력이 모두 바뀌고 event 가 선택 안팎으로 이동한다. 그래서 선택과 재구성을 처음부터 다시
+돌려야 한다 — AN SL 도 JES·JER 은 ntuple 생성부터 다시 하고 학습된 DNN 에 통과시켰다\src{AN-22-122 v26, PDF p.119}. FH 는 $\ge6$ jet,
+$p_{\mathrm{T}}^{j6}>40\GeV$, $\HT>500\GeV$ 가 trigger turn-on 근처라 jet 에너지에 특히 민감하다(우리 판단).
+
+\begin{impl}[우리 코드에서 — JES·JER 변형의 배선]
+\file{ttHHanalyzer_unified.h} 에는 \texttt{enum sysName}(\code{kJES}, \code{kJER}, \code{kbTag}, \code{noSys})이 있고 \code{initTree}·\code{initHistograms} 는 변형이면 출력
+디렉터리 이름을 \code{Tree_JES_up} 처럼 바꾼다. 그러나 \code{performAnalysis()} 는 \texttt{loop(noSys, false)} 하나만 부르고, JER 은
+\texttt{smearJER(..., "nom")} 으로만 적용한다. \code{CorrectionsManager} 에 Run 2 JEC 의 Total 불확도를 읽는 \code{loadJECUncertainty_()} 와
+\code{getJECUncertainty()} 가 정의되어 있으나 어디서도 부르지 않는다. 즉 JES·JER 변형은 \tagplan 이다: sysType 을 jet 보정까지 배선하고, 변형마다
+main MC 를 다시 돌린다(실행 ×4)\src{PLAN\_ML\_SYST §5.1}. b-tag 의 \code{jes} 출처는 이 JES 실행과 함께 건다\src{STEP 27}\src{AN-22-122 v26, PDF p.41, 121}.
+\end{impl}
+
+\subsection{통계 불확도: data 와 MC}\label{sec:syst-stat}
+
+data 의 통계 요동은 likelihood 의 Poisson 항 자체다(\ref{ch:stats}장) — 따로 nuisance 를 두지 않는다. MC 표본의 크기가 유한한 것은 따로 넣는다.
+bin $i$ 의 예측 $\nu_i=\sum_e w_e$ 의 통계 오차는 $\sqrt{\sum_e w_e^2}$ 이고, 유효 event 수는 $N_{\mathrm{eff}}=(\sum w)^2/\sum w^2$ 이다.
+Barlow–Beeston 방법은 bin·과정마다 nuisance 를 하나씩 두고, 그 간이판(Barlow–Beeston-lite)은 bin 마다 총 예측에 하나를 둔다.
+combine 의 \texttt{autoMCStats 10 0 1} 은 유효 entry 가 10 개보다 많은 bin 에는 총 수율을 바꾸는 Gaussian nuisance 하나를, 적은 bin 에는 과정마다
+Poisson 을 쓰고, 그 판단에서 신호 template 의 통계는 빼며, morphing 에서 rate 와 shape 효과를 따로 다룬다\src{AN-19-094 v20, PDF p.154}.
+ttHH AN 도 같은 설정이다\src{AN-22-122 v26, PDF p.121}. FH 에서는 data 로 만든 QCD template(CR 의 data 수에서 옴)의 통계도 들어가야 한다 —
+ttH FH 가 이것을 autoMCStats 로 다뤘는지는 AN 에 적혀 있지 않다(확인 못 함)\src{PLAN\_QCD\_DD §3.4}.
+
+% -----------------------------------------------------------------------------
+\section{Run 2 AN(ttHH SL·DL)의 계통 불확도}\label{sec:syst-an}
+
+표~\ref{tab:syst-an} 는 AN 의 Table 53 과 본문(§8.2.1)을 합친 것이다. Table 53 의 아래 네 줄($\mu_R$, $\mu_F$, ISR, FSR)은 SL 에만 있다
+\src{AN-22-122 v26, PDF p.122}. DL 도 SL 의 방법을 따르되 correctionlib 를 쓰고, shape 변형은 analyzer 단계에서 만든다\src{AN-22-122 v26, PDF p.122}.
+
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{30mm}>{\raggedright\arraybackslash}p{17mm}>{\raggedright\arraybackslash}p{62mm}>{\raggedright\arraybackslash}p{38mm}@{}}
+\caption{AN-2022/122 의 계통 불확도(Table 53, Table 52, §8.2.1; PDF p.119--122).}\label{tab:syst-an}\\
+\toprule
+원천 & 형식 & 크기·방법 & 상관 \\
+\midrule
+\endfirsthead
+\toprule
+원천 & 형식 & 크기·방법 & 상관 \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+적분 lumi & rate & 2016 1.2 \%, 2017 2.3 \%, 2018 2.5 \%, 2016--18 1.6 \%(Table 52, LUM POG) & 본문에 없음 \\
+lepton ID/iso & shape & e: reco·ID(EGM), μ: reco·ID·iso(MUO); Rochester·전자 scale/smearing 은 넣지 않음 & 같은 flavour 끼리, 연도 사이 상관 \\
+trigger & shape & μ: MUO SF 불확도를 weight 로; e: ttH 연구(단일 μ 기준 trigger, SingleMuon data + tt DL MC) & 연도 사이 비상관 \\
+L1 prefiring & shape(표), rate(본문) & Run 2 권고; 2016·2017 & 연도 사이 비상관 \\
+pileup & shape & 최소 편향 단면적 ±4.6 \% & 모든 연도 상관 \\
+JES & shape & jet 을 $\pm1\sigma$; '11 scheme' 의 출처를 모두 합쳐 하나로; 2018 HEM 영역 20 \%/35 \% 변형 & 연도 사이 상관(본문) \\
+JER & shape & 중앙 SF, reco–gen 차이를 이동 & 연도 사이 비상관 \\
+b-tag hf, lf, hfstats1/2, lfstats1/2, cferr1/2 & shape & shape SF 의 출처별 $\pm1\sigma$; \code{jes} 출처는 JES 변형과 함께; 정규화 인자를 변형마다(≥5 jet, b-tag 요구 없음) & stats 는 비상관, hf/lf·cferr 는 상관 \\
+단면적 scale & rate & Table 9(표~\ref{tab:syst-xsec}) & 연도 사이 상관 \\
+PDF+$\alpha_S$(gg, $q\bar q$, $qg$) & rate & Table 9; 초기 상태별 묶음 & 연도 사이 상관 \\
+PDF shape & shape & 변형 template 과 nominal 의 bin 별 차이의 포락선: 4FS 는 RMS, 5FS·ttH(Hessian)는 제곱합 & 연도 사이 상관, 표본 사이 비상관 \\
+$\mu_R$, $\mu_F$(SL) & shape/rate* & ×0.5, ×2; 정규화는 단면적 불확도가 맡아 shape 만, 더해 tt 대비 tt+B 비율 변화 & ttH, ttbb(4FS), tt(5FS) 사이 비상관 \\
+PS ISR, FSR(SL) & shape/rate* & PS 의 $\alpha_S$ 척도 ×0.5, ×2; shape 만 + tt+B 비율 & 같음 \\
+MC 통계 & shape & \texttt{autoMCStats 10 0 1} & bin 마다 독립 \\
+자유 정규화 & rateParam & SL: \code{mu_ttbar}, \code{mu_ttH} $\in[-5,5]$ & — \\
+\end{longtable}
+
+\begin{table}[htbp]
+\centering
+\caption{단면적과 이론 불확도(13\TeV; AN-2022/122 v26 Table 9, PDF p.23). 첫 불확도는 QCD scale, 둘째는 PDF+$\alpha_S$.}
+\label{tab:syst-xsec}
+\small
+\begin{tabular}{@{}lrl@{\qquad}lrl@{}}
+\toprule
+과정 & $\sigma$ [fb] & 불확도 & 과정 & $\sigma$ [fb] & 불확도 \\
+\midrule
+ttHH(HH→4b 전) & 0.756 & $^{+4.3}_{-15.0}\,\%$, $\pm3.4\,\%$ & tt+4b & 296 & $\pm30.0\,\%$, $\pm3.5\,\%$(LO) \\
+ttH & 507.1 & $^{+5.9}_{-9.3}\,\%$, $\pm3.6\,\%$ & ttZ & 841 & $^{+9.6}_{-11.3}\,\%$, $\pm2.8\,\%$ \\
+tt+jets & 831760 & $^{+2.4}_{-3.5}\,\%$, $\pm4.2\,\%$ & ttZZ & 1.98 & $^{+5.2}_{-9.0}\,\%$, $\pm2.6\,\%$ \\
+tt+bb & 1452 & $^{+37.6}_{-27.5}\,\%$, $\pm3.2\,\%$ & ttZH & 1.535 & $^{+1.9}_{-6.8}\,\%$, $\pm3.0\,\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{지배적인 항목}. SL Run 2 Asimov fit 에서 영향(impact)이 가장 큰 것은 heavy-flavour b-tag 불확도이고($\ge4$ b 를 요구하니 예상대로), JER 이
+제약(constrain)되었다\src{AN-22-122 v26, PDF p.126}. 부록 C 의 시험에서 JES, JER, b-tag hf 는 tt 의 변형이 커서 제약되었다: tt 에서 셋을 빼면 제약이
+사라지고, 과정별로 나누면 tt 에서만 제약된다\src{AN-22-122 v26, PDF p.161--166}. 사전승인 발표는 "Statistical uncertainties are dominated" 라고
+했다\src{사전승인 발표 p.25}. 승인 발표의 최종 fit(tt 와 ttb 분리)에서 영향 상위는 \code{mu_ttH}(1.3 ± 0.5), \code{mu_ttbar}(0.96$^{+0.17}_{-0.14}$),
+\code{CMS_btag_hf}, 높은 DNN bin 의 MC 통계, b-tag cferr1/2, JES, \code{QCDscale_ttHH}, \code{mu_ttb}(1.4$^{+0.6}_{-0.4}$)였다(그림 판독)
+\src{승인 발표 p.32}. 즉 \textbf{자유 정규화(ttH, tt, ttb), b-tag HF·charm, 높은 점수 bin 의 MC 통계, JES} 가 상위다.
+
+\begin{note}[AN 안의 엇갈림과 빠진 것]
+L1 prefiring 은 본문에서 rate, Table 53 에서 shape 다\src{AN-22-122 v26, PDF p.120, 122}. JES 와 b-tag hf 는 본문에서 연도 사이 상관인데 impact 그림의
+이름은 \code{CMS_scale_j_2016/2017/2018}, \code{CMS_btag_hf_2016/2017/2018} 처럼 연도별이다(그림 판독)\src{AN-22-122 v26, PDF p.128, Fig.~100}. b-tag 정규화 인자의 위상 공간은 ≥4 jet(p.41)과
+≥5 jet(p.121)으로 다르게 적혀 있다. tt 의 hdamp(ME–PS matching), underlying event, top \pt 재가중은 목록에 없고, tt+bb 전용 rate 불확도도 따로 없다
+(tt+bb 단면적 불확도와 자유 정규화로 다룸).
+\end{note}
+
+% -----------------------------------------------------------------------------
+\section{참고: ttH(bb) FH 의 계통 불확도}\label{sec:syst-tth}
+
+AN-19-094 의 Table 79 는 세 채널 공통이고, FH 에 고유하거나 FH 에서 다르게 다룬 것은 다음이다.
+\begin{itemize}
+\item \textbf{hadronic trigger SF}: 단일 μ 기준 trigger 로 $(\HT, n_b, p_{\mathrm{T}}^{j6})$ 의 함수로 유도하고, \textbf{bin 별 통계 오차만} 넣었다 —
+  오차가 통계 지배이고, 기준 trigger 와 신호 trigger 의 상관은 1 \% 미만이라는 근거다\src{AN-19-094 v20, PDF p.32}. 형식 shape, 연도 사이 비상관
+  \src{AN-19-094 v20, PDF p.147, Table 79}.
+\item \textbf{QCD 추정}: 정규화는 연도 × 범주(7, 8, $\ge9$ jet) 9 개의 자유 parameter(\code{CMS_ttHbb_bgnorm_ddQCD_<연도>_fh_j<n>_t4}).
+  TF\textsubscript{loose} 보정은 한 번씩만 맞춘 근사이므로 다음 단계의 $\eta$ 재보정을 up, nominal 을 down 으로 둔 \textbf{단측} shape 불확도
+  (\code{CMS_ttHbb_FH_TFLoose_<연도>}, 연도 사이 비상관)\src{AN-19-094 v20, PDF p.154}\src{AN-19-094 v20, PDF p.147, Table 79}. CR→SR 외삽의 non-closure
+  불확도는 따로 넣지 않았다(검증 영역으로 정당화, \ref{ch:qcd}장).
+\item \textbf{tt+B, tt+C 정규화}: 전체 결합 fit 에서는 자유지만, FH 단독 fit 에서는 FH 의 민감도가 약해 \textbf{50 \% lnN} 으로 묶었다
+  \src{AN-19-094 v20, PDF p.243}.
+\item \textbf{tt 모델링}: hdamp(ME–PS matching)와 UE 는 변형 표본의 통계가 모자라 tt+X 과정·범주별 \textbf{rate} 불확도로 넣었다 — 보통 3--10 \%, 드물게
+  20 \%. 모양 변화가 없다는 가정은 tag-rate-function(TRF) 방법으로 따로 확인했다\src{AN-19-094 v20, PDF p.149, 151}. 4FS tt+2b 에는 collinear gluon
+  splitting 으로 100 \% rate 불확도를 더했다\src{AN-19-094 v20, PDF p.147, Table 79}.
+\item \textbf{공통 항목의 상관}: JES(11 scheme)·b-tag HF/LF 와 charm 은 부분 상관, JER 과 trigger·L1 은 비상관, 이론은 상관\src{AN-19-094 v20, PDF p.147, Table 79}.
+\end{itemize}
+FH 단독 Asimov fit 의 영향 상위 10 개 가운데 9 개가 QCD 정규화이고(나머지 하나는 tt+bb 정규화), TF\textsubscript{loose} 는 13 위(2018)와 17 위(2017)다
+\src{AN-19-094 v20, PDF p.237, Fig.~128}. FH 단독 기대 결과는 $\mu=1.00^{+0.77}_{-0.78}$ 에 통계 성분 $\pm0.23$ 뿐이라\src{AN-19-094 v20, PDF p.243, Table 129}
+\textbf{계통 지배}다 — 통계 지배인 ttHH SL 과 반대다. ttHH FH 는 신호가 훨씬 작아 통계의 몫이 커지겠지만, QCD 정규화와 tt+B 모델링이 같은 방식으로
+상위를 차지할 것으로 본다(우리 판단).
+
+% -----------------------------------------------------------------------------
+\section{우리 FH 분석: 출처별 상태와 계획}\label{sec:syst-ours}
+
+표~\ref{tab:syst-ours} 의 "지금" 은 2026-10-10 의 코드다. STEP 27 의 weight branch 는 컨테이너 시험(offline smoke 110/110)을 통과했지만 실제 표본으로는 아직
+돌지 않았다(KNU 빌드는 btagtrig 뒤)\src{STEP 27}.
+
+{\setlength{\tabcolsep}{3pt}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{19mm}>{\raggedright\arraybackslash}p{11mm}>{\raggedright\arraybackslash}p{33mm}>{\raggedright\arraybackslash}p{53mm}>{\raggedright\arraybackslash}p{36mm}@{}}
+\caption{출처별 상태(2026-10-10). "AN" 은 AN-2022/122, "ttH" 는 AN-19-094 FH.}\label{tab:syst-ours}\\
+\toprule
+원천 & 형식 & AN 처리 & 우리 지금 & 계획 \\
+\midrule
+\endfirsthead
+\toprule
+원천 & 형식 & AN 처리 & 우리 지금 & 계획 \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+lumi & lnN & 1.2/2.3/2.5 \% & 2017 0.82 \%, 2018 0.84 \%(LUM 의 legacy 값과 분해 nuisance); 2016 은 미정리; 2024 는 값 109.816\fbinv 만, 불확도 확인 못 함 & datacard; LUM 의 상관 방식 \\
+pileup & shape & ±4.6 \% & \code{PUWeight_up/_down} \tagimpl: Run 2 는 LUM payload, 2024 는 우리 JSON(69.2 mb, down/up 66.0/72.4 mb) & template \\
+L1 prefiring & shape & 2016·2017 & \code{L1PrefiringWeight_up/_down} \tagimpl(2016·2017, 그 외 1) & template, 연도 비상관 \\
+trigger SF & shape & 연도 비상관 & \code{triggerSF_up/_down} \tagimpl: 2017 은 SF 있음, 2024 는 유도 도구 준비(STEP 26). 오차는 통계(아래) & 연도 비상관; 한 덩어리 $\pm1\sigma$ 대 bin 별 \tagopen \\
+JES & shape & 11 scheme 합 하나(재실행) & 없음(Total 을 읽는 함수만, 호출 없음) & sysType 배선 + 재실행 ×2; 출처 묶음은 JME 권고·2024 payload 로 \\
+JER & shape & 연도 비상관(재실행) & 없음(\texttt{smearJER(..., "nom")}) & 재실행 ×2 \\
+b-tag(Run 2 shape) & shape & 8 출처 + jes, 정규화 인자 변형별 & \code{bTagWeight_<출처>_up/_down} 16 개 \tagimpl\tagtest; 변형별 정규화 인자는 Tree weight 에 곱하지 않음(저장소의 옛 7 묶음 JSON 에는 출처별 키가 있으나 2017 main 은 norm reweight 를 끔 — tt+nb 키 판 미재생성) & reweight study 가 변형마다 유도; jes 는 JES 실행과 \\
+b-tag(2024 fixed WP) & shape & — & \code{bTagWeight_up/_down}(payload 의 b jet 변형: total, 없으면 부분의 제곱합) \tagimpl; c·light 는 SF 1, 불확도 없음; 비교 weight \code{_oldRule}, \code{_cAsB} & c·light SF 가 오면 그 불확도; shape SF 확인 시 전환 \\
+lepton ID/iso & shape & e·μ SF & FH 는 lepton veto; lepton CR 에서도 SF 미적용(N4) & CR 의 SF 측정 뒤 \\
+$\mu_R,\mu_F$ & shape & SL 만, shape + tt+B 비율 & \code{LHEScaleWeight} 벡터 \tagimpl(순서는 실제 파일 제목으로 확인 필요) & 정규화 보존 template \\
+ISR, FSR & shape & 같음 & \code{PSWeight} 벡터 \tagimpl & 같음 \\
+PDF & shape & 포락선 & \code{LHEPdfWeight}, \texttt{-{}-tree-pdf on} 일 때만(~100 개) \tagimpl & 필요한 표본만 \\
+단면적 이론 & lnN & Table 9 & Run 2 는 Table 9; 2024 는 $\sigma$ 자체가 임시값(PROVISIONAL), 불확도 확인 못 함 & 13.6\TeV 값과 불확도 \\
+tt+HF 정규화·모델링 & lnN / free & \code{mu_ttbar} 자유(승인: tt·ttb 분리) & Run 2 stitching 도구(지금 main 에는 꺼짐, $p_{\text{own}}$ 문제 — D-2026-10-10-C); 2024 는 tt+nb lookup 없음 & FH 단독은 ttH 처럼 50 \% lnN 또는 결합; hdamp·UE(ttH: rate 3--10 \%), tt+2b 100 \% \\
+QCD(data) & free + shape & AN 에 없음 & 계획(PLAN\_QCD\_DD) & 자유 rateParam(연도 × 범주), TF\textsubscript{loose} 단측, non-closure shape(권고), 차감 MC 전파, template 통계 \\
+MC 통계 & BB-lite & \texttt{autoMCStats 10 0 1} & plot 에서 $\sqrt{\sum w^2}$(\S\ref{sec:syst-plots}) & \code{autoMCStats} \\
+\end{longtable}
+}
+
+출처: lumi\src{LUMI\_SOURCES §2, §6}; PU\src{D-2026-10-05-A}\src{STEP 27}; trigger\src{STEP 26}; b-tag 2024\src{D-2026-10-08-A}\src{D-2026-10-10-A};
+2024 단면적\src{data/samples\_2024.json, \_meta}; 나머지 코드\src{ttHHanalyzer\_unified.h, initTree}\src{PLAN\_ML\_SYST §6}.
+
+\begin{note}[trigger SF 의 오차는 어떻게 만들어지나]
+TriggerStudy 는 bin 마다 data 효율의 오차를 Clopper–Pearson 1$\sigma$ 구간의 반폭으로, MC 효율의 오차를 $N_{\mathrm{eff}}$ 이항 오차
+$\sqrt{\epsilon(1-\epsilon)/N_{\mathrm{eff}}}$ 로 잡는다. 통계가 모자란 bin 은 이웃에서 채우고 상대 오차 하한 max(5 \%, 측정 bin 의 중앙값)을 주며, 마지막
+대안은 SF $=1\pm0.5$ 다\src{TriggerStudy/docs/ARCHITECTURE.md, §3}. analyzer 는 correctionlib 의 \code{triggerSF_err} 로 \code{triggerSF_up/_down}
+= SF ± err 를 event 마다 계산한다\src{ttHHanalyzer\_unified.cc, selectObjects}\src{STEP 26}. 즉 지금의 변형은 모든 bin 이 함께 움직이는 한 덩어리다 —
+ttH FH 의 "bin 별 통계 오차" 를 nuisance 로 어떻게 구현했는지는 AN 에 없다.
+\end{note}
+
+\subsection{연도 사이 상관 — 제안}\label{sec:syst-corr-plan}
+
+표~\ref{tab:syst-corr} 는 Run 2 의 연도 사이와 Run 2 ↔ 2024 의 상관 제안이다. 모두 \tagours\tagopen 이다.
+
+\begin{table}[htbp]
+\centering
+\caption{상관 제안(우리 판단; 확정 전).}
+\label{tab:syst-corr}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l L L L@{}}
+\toprule
+원천 & Run 2 의 연도 사이 & Run 2 ↔ 2024 & 근거·남은 것 \\
+\midrule
+lumi & LUM 분해(부분 상관) & LUM 권고를 따름 & 2024 의 권고·불확도 확인 못 함 \\
+pileup & 상관(AN) & 비상관 후보 & 최소 편향 단면적은 같은 양이나 $\sqrt{s}$ 와 방법이 다름 \\
+trigger SF & 비상관 & 비상관 & 해마다 따로 잰 통계 \\
+JES / JER & JME 권고(AN 본문은 JES 상관) / 비상관 & 비상관 후보 & 다른 jet 알고리즘(CHS 대 PUPPI)·보정 \\
+b-tag & 출처별(AN) & 비상관 & tagger(DeepJet 대 UParTAK4)와 방법(shape 대 fixed WP)이 다름 \\
+단면적·PDF & 상관 & 상관 후보 & 같은 이론 계산이나 $\sqrt{s}$ 가 다름 \\
+tt+HF 모델링 & 상관 & 미정 & Run 3 표본의 생성 설정 확인 \\
+QCD(data) & 연도 × 범주 독립 & 독립 & data 에서 따로 정함 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% -----------------------------------------------------------------------------
+\section{지금 control plot 의 통계 오차}\label{sec:syst-plots}
+
+\begin{itemize}
+\item \textbf{data}: \file{plotter/stack_plotter.C} 는 data 를 \code{EP} 로 그린다 — weight 1 인 event 의 히스토그램이라 오차 막대는 $\sqrt{N}$ 이다
+  \src{stack\_plotter.C}. event 가 적은 bin(높은 $n_b$)에서는 Poisson 의 비대칭 구간(Garwood)이 더 맞다(계획).
+\item \textbf{MC}: weight 로 채운 히스토그램은 bin 마다 $\sqrt{\sum w^2}$ 를 가진다(analyzer 의 cut-flow 는 \code{Sumw2()}, Tree 에서 만드는 control
+  히스토그램은 RDataFrame 의 오차를 그대로 복사; \src{make\_plots.py}). 그러나 지금 plot 에는 \textbf{MC 통계 band 가 없고}, ratio 패널은
+  \code{hRatio->Divide(hMcSum)} 이라 ratio 점의 오차 막대에 data 와 MC 의 통계 오차가 함께(제곱합) 들어간다\src{stack\_plotter.C}.
+\item \textbf{계통}: 아직 band 가 없다. control plot 의 Data/MC 차이를 볼 때 계통 크기를 알 수 없다는 뜻이다.
+\end{itemize}
+계획 \tagplan: stack 과 ratio 에 MC 통계 band(빗금)를 그리고 ratio 점은 data 오차만 갖게 한다(ROADMAP W6 "plotter 의 MC 통계 band 확인"); 다음에
+weight 변형의 template 으로 계통 band(출처별 차이의 제곱합, 상관 무시의 근사)를 더하고, fit 뒤에는 post-fit band 를 쓴다\src{ROADMAP\_FH §2 W6}.
+QCD-HT MC 는 낮은 \HT 구간의 event weight 가 커서(2017, HT 200--300 ≈ $1.1\times10^{3}$, 300--500 ≈ $2.5\times10^{2}$; 표본표로 계산) 높은 $n_b$·jet 수
+bin 의 $N_{\mathrm{eff}}$ 가 작다\src{PLAN\_QCD\_DD §1} — MC band 가 이를 바로 보여 줄 것이다.
+
+% -----------------------------------------------------------------------------
+\section{변경 이력}\label{sec:syst-history}
+
+\begin{itemize}
+\item D-2026-10-05-A: 2024 PU weight 는 DQM 의 공식 data 히스토그램(69.2 mb; 66.0/72.4 mb 를 down/up, ±4.6 \%)과 skim 없는 MC 분포로 만든다.
+\item D-2026-10-08-A: 2024 b-tag 은 fixed-WP(method 1a); up/down 은 payload 의 b-jet 변형. D-2026-10-10-A(STEP 27 N): L--M 구간 인자의 음수 분자 → 1,
+  비교 weight 둘.
+\item STEP 26: trigger SF JSON 에 \code{triggerSF_err}, 연도 표지. STEP 27 O: Tree 에 PU·L1 up/down, LHE scale·PS 벡터, Run 2 b-tag 출처 16 개, PDF(선택).
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{미결 사항}\label{sec:syst-open}
+
+\begin{openq}
+\begin{enumerate}
+\item \textbf{연도 사이 상관}(표~\ref{tab:syst-corr}): 특히 Run 2 ↔ 2024 의 PU, JES, 이론, tt 모델링. AN 의 본문과 impact 이름이 다른 JES·b-tag hf 를 어느 쪽으로.
+\item \textbf{JES·JER 의 구현 순서}: sysType 배선 → 재실행. JES 를 Total 하나(AN) 대 출처 묶음(JME 권고)으로; 2024 payload 의 불확도 구성.
+  변형별 b-tag 정규화 인자(Run 2)도 함께.
+\item \textbf{13.6\TeV 이론 불확도}: 2024 의 ttHH, ttZH, ttZZ, tt+bb 단면적과 그 scale·PDF 불확도 — 지금은 단면적도 임시값이다.
+\item \textbf{trigger SF}: 한 덩어리 ±1$\sigma$ 대 bin 별(또는 $n_b$ 범주별) nuisance; 2024 SF 의 유도.
+\item \textbf{2024 b-tag}: c·light jet 의 SF 와 불확도가 없다(BTV 답 대기); fail-L 음수 분자 문제.
+\item \textbf{tt+B 정규화}: FH 단독은 민감도가 약하다 — ttH FH 처럼 50 \% lnN, 승인 SL 처럼 자유(ttb), 또는 SL/DL 과의 결합. hdamp·UE 를 넣을지(AN 에 없음, ttH 에 있음).
+\item \textbf{QCD 추정}: non-closure 불확도(권고), 차감한 MC 의 계통 전파, template 통계의 처리.
+\item \textbf{세부}: \code{LHEScaleWeight}/\code{PSWeight} 의 순서 확인; PDF weight 가 필요한 표본; 2016 lumi 값과 그 분해(LUMI\_SOURCES 에 없음).
+\end{enumerate}
+\end{openq}

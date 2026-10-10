@@ -56,6 +56,8 @@ What it does (in cmsenv: PyROOT and root):
      flavour (b = 5, c = 4, light = the rest), the Data count and Data/MC -- where in the score the Data/MC moves.
      The tree holds the events after the whole selection of the run (its trigger OR included), so EXPR can only
      narrow it: a path of that OR, a higher HT, more b-tags ...
+     [STEP 27 O] --tree-v1: also TREE_HISTS_V1, the Tree v1 ML inputs (χ² pairing, HT^b, average masses, ΔR/Δη
+     statistics, Fox-Wolfram, centrality), from trees of an analyzer with Tree v1 only.
 Output: --out (default <repo>/condor/plots/<base name>[_tree]_<UTC>/; condor/ is gitignored): YIELDS.txt, the two
 yml, plotter_<grouping>.log, plots_<grouping>/*.pdf (and tree/*.root with --tree-cut).
 Lines: SAMPLE / EXCLUDED / MISSING, YIELD ..., [TREECUT, TREEYIELD ..., TREEFLAV ...,] HIST n=..., PLOTS <grouping> pdf=<n>
@@ -109,6 +111,43 @@ TREE_HISTS = (
        ("nJets_nb3p", "number of jets (n_{b} #geq 3)", "njet_nb3p_", 10, 5.5, 15.5),
        ("btag_alljets", "b-tag score, every selected jet", "bTagScore", 20, 0.0, 1.0)])
 FLAV_BINS = 10      # TREEFLAV: b-tag score bins of 0.1 in [0, 1]
+# [STEP 27 O] --tree-v1 (with --tree-cut): the Tree v1 ML inputs (AN-2022/122 Table 43 for FH; tempTTHH docs/PLAN_ML_SYST.md
+#   §5.2) -- the Data/MC check of the DNN inputs that the AN shows after the baseline (AN §6.3-6.4). Only trees written by
+#   an analyzer with Tree v1 have these columns (an older tree: TREE FAIL with the missing column). -1 = undefined
+#   (fewer objects than the quantity needs) lands in the underflow.
+TREE_HISTS_V1 = [
+    ("invMassHadW", "m_{qq} [GeV] (closest to m_{W}; the QCD-region axis)", "invMassHadW", 44, 30.0, 250.0),
+    ("chi2Higgs", "#chi^{2}_{HH} (AN jet choice)", "chi2Higgs", 50, 0.0, 500.0),
+    ("invMassH1", "m_{H1} [GeV] (closest to m_{H})", "invMassH1", 30, 0.0, 300.0),
+    ("invMassH2", "m_{H2} [GeV]", "invMassH2", 30, 0.0, 300.0),
+    ("PTH1", "p_{T}(H1) [GeV]", "PTH1", 30, 0.0, 600.0),
+    ("PTH2", "p_{T}(H2) [GeV]", "PTH2", 30, 0.0, 600.0),
+    ("chi2Z", "#chi^{2}_{ZZ}", "chi2Z", 50, 0.0, 500.0),
+    ("chi2HiggsZ", "#chi^{2}_{ZH}", "chi2HiggsZ", 50, 0.0, 500.0),
+    ("bjetHT", "H_{T}^{b} [GeV]", "bjetHT", 40, 0.0, 2000.0),
+    ("lightjetHT", "H_{T}^{light} [GeV]", "lightjetHT", 40, 0.0, 2000.0),
+    ("lightjetNumber", "number of light jets (score < L)", "lightjetNumber", 12, -0.5, 11.5),
+    ("nLooseJets", "number of jets with score #geq L", "nLooseJets", 13, -0.5, 12.5),
+    ("jetAverageMass", "m_{j}^{avg} [GeV]", "jetAverageMass", 30, 0.0, 60.0),
+    ("bjetAverageMass", "m_{b}^{avg} [GeV]", "bjetAverageMass", 30, 0.0, 60.0),
+    ("bjetAverageMassSqr", "(m^{2})_{b}^{avg} [GeV^{2}]", "bjetAverageMassSqr", 30, 0.0, 3000.0),
+    ("maxPTmassjjj", "m_{jjj}^{max p_{T}} [GeV]", "maxPTmassjjj", 30, 0.0, 1500.0),
+    ("maxPTmassjbb", "m_{jbb}^{max p_{T}} [GeV]", "maxPTmassjbb", 30, 0.0, 1500.0),
+    ("averageDeltaRjj", "#DeltaR_{jj}^{avg}", "averageDeltaRjj", 25, 0.0, 5.0),
+    ("averageDeltaRbb", "#DeltaR_{bb}^{avg}", "averageDeltaRbb", 25, 0.0, 5.0),
+    ("minDeltaRjj", "#DeltaR_{jj}^{min}", "minDeltaRjj", 30, 0.0, 3.0),
+    ("minDeltaRbb", "#DeltaR_{bb}^{min}", "minDeltaRbb", 40, 0.0, 4.0),
+    ("averageDeltaEtajj", "#Delta#eta_{jj}^{avg}", "averageDeltaEtajj", 30, 0.0, 3.0),
+    ("averageDeltaEtabb", "#Delta#eta_{bb}^{avg}", "averageDeltaEtabb", 30, 0.0, 3.0),
+    ("maxDeltaEtabb", "#Delta#eta_{bb}^{max}", "maxDeltaEtabb", 30, 0.0, 5.0),
+    ("minDeltaRMassbb", "m_{bb}^{min #DeltaR} [GeV]", "minDeltaRMassbb", 30, 0.0, 300.0),
+    ("minDeltaRpTbb", "p_{T,bb}^{min #DeltaR} [GeV]", "minDeltaRpTbb", 30, 0.0, 800.0),
+    ("H2", "Fox-Wolfram H_{2} (jets)", "H2", 25, 0.0, 1.0),
+    ("H3", "Fox-Wolfram H_{3} (jets)", "H3", 25, -0.5, 0.5),
+    ("bjetH2", "Fox-Wolfram H_{2} (b jets)", "bjetH2", 25, 0.0, 1.0),
+    ("centrality", "centrality (jets)", "centrality", 25, 0.0, 1.0),
+    ("bjetCentrality", "centrality (b jets)", "bjetCentrality", 25, 0.0, 1.0),
+]
 
 
 def submitter():
@@ -187,7 +226,7 @@ def th1_paths(ROOT, path, inc, exc):
     return out
 
 
-def tree_hists(ROOT, path, out_path, cut, is_data):
+def tree_hists(ROOT, path, out_path, cut, is_data, v1=False):
     """[D-2026-10-06-A] TREE_HISTS from Tree/Tree of path for the events passing cut, into out_path (directory
     Control/, TH1F like the analyzer's histograms). Returns (events, weighted sum, flavour table input) or the reason
     it could not. The table input [STEP 24 I]: {"all": per score bin the weighted count of every selected jet} and, for
@@ -223,7 +262,7 @@ def tree_hists(ROOT, path, out_path, cut, is_data):
                   .Define("btag_flav_l_", "bTagScore[hadFlavs != 5 && hadFlavs != 4]"))
         d = d.Filter(cut, "tree_cut")
         booked = [(name, title, d.Histo1D(ROOT.RDF.TH1DModel("tree_" + name, "", nb, lo, hi), col, "w_tree_"))
-                  for name, title, col, nb, lo, hi in TREE_HISTS]
+                  for name, title, col, nb, lo, hi in TREE_HISTS + (TREE_HISTS_V1 if v1 else [])]
         flav = {"all": d.Histo1D(ROOT.RDF.TH1DModel("flav_all_", "", FLAV_BINS, 0.0, 1.0), "bTagScore", "w_tree_")}
         if has_flav and not is_data:
             for k, col in (("b", "btag_flav_b_"), ("c", "btag_flav_c_"), ("light", "btag_flav_l_")):
@@ -300,7 +339,11 @@ def main(argv=None):
     ap.add_argument("--tree-cut", help="control plots from Tree/Tree: the events passing this RDataFrame expression "
                                        "(docstring 6)")
     ap.add_argument("--tree-label", help="with --tree-cut: one more line of the plot note (TLatex)")
+    ap.add_argument("--tree-v1", action="store_true", help="with --tree-cut: also the Tree v1 ML inputs (TREE_HISTS_V1)")
     a = ap.parse_args(argv)
+    if a.tree_v1 and not a.tree_cut:
+        print("ERROR --tree-v1 needs --tree-cut (use --tree-cut 'true' for every event of the tree)")
+        return 2
     if a.tree_label and not a.tree_cut:
         print("ERROR --tree-label needs --tree-cut")
         return 2
@@ -449,7 +492,7 @@ def main(argv=None):
         flav_tab = {"MC": [], "DATA": []}
         for n, kind, p, cf in samples:
             tp = os.path.join(tdir, n + ".root")
-            r = tree_hists(ROOT, p, tp, a.tree_cut, kind == "DATA")
+            r = tree_hists(ROOT, p, tp, a.tree_cut, kind == "DATA", a.tree_v1)
             if isinstance(r, str):
                 print("\n".join(tl))
                 print("TREE FAIL %s: %s" % (n, r))

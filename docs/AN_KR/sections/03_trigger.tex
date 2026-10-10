@@ -1,0 +1,357 @@
+% =============================================================================
+% 3 장 트리거와 트리거 SF  (AN_KR v0.1, 2026-10-10)
+% 출처: AN-22-122 v26 §4.3, AN-19-094 v20 §3.1, Hbb 회의 FH 발표, KCMS 발표,
+%       tempTTHH STEP 14·16·24·26, DECISIONS(D-2026-06-30-E, D-2026-10-05-A·B, D-2026-10-06-A, D-2026-10-07-A),
+%       PLAN_v15 §9, ROADMAP_FH §3·§6, LUMI_SOURCES §6, 코드(EraConfig.h, SelectionCuts.h,
+%       ttHHanalyzer_unified.cc, src/CorrectionsManager.cc, TriggerStudy/)
+% =============================================================================
+\chapter{트리거와 트리거 SF}\label{ch:trigger}
+
+FH 사건에는 lepton 이 없으므로 다중 jet, 큰 \HT, 온라인 b-tag 을 요구하는 강입자(hadronic) trigger 경로들의
+OR 로 사건을 모은다. 오프라인 문턱(\HT{} $>500\GeV$, jet 6 개 이상, 여섯째 jet $\pt>40\GeV$)은 ttH(bb) FH 분석을
+따르지만 이 OR 의 효율이 평탄해지는 영역(plateau) 위에 완전히 있지는 않다. 그래서 단일 muon trigger 를 기준(reference)으로
+data 와 MC 의 trigger 효율을 재고, 그 비인 scale factor(SF, data/MC 효율 비)를 \HT{} $\times$ 여섯째 jet \pt{} $\times$ b-tag
+수의 함수로 MC 에 곱한다. 2017 은 이 SF 를 유도해 적용했다. 2024 는 경로가 ParticleNet(PNet) 판으로 바뀌었고 b-tag 경로가
+\texttt{ParkingHH} PD 에만 기록된다는 것이 확인되어 PD 규칙을 새로 정했으며, SF 유도 도구는 연도를 지원하도록 고쳤지만 2024 SF
+자체는 아직 없다(2026-10-10). Run 2 ttHH AN(SL·DL)은 lepton trigger 를 쓰므로, 이 장의 방법은 대부분 ttH(bb) FH AN 에서 온다.
+
+% -----------------------------------------------------------------------------
+\section{물리적 배경: 강입자 trigger, turn-on, SF}\label{sec:trigger-theory}
+
+\paragraph{왜 다중 jet + \HT{} + 온라인 b-tag 인가.}
+QCD multijet 의 단면적은 신호보다 일곱–여덟 자릿수 크다(예: 2017 표본 \texttt{QCD\_HT500to700} 의 $3.02\times10^{7}\fb$\src{Hbb 회의 FH 발표 p.49} 대 $\sigma(\ttHH)=0.756\fb$\src{AN-22-122 v26, PDF p.23, Table 9}). jet 수와 \HT{} 만으로 rate 를 감당하려면 문턱을 아주 높여야 하고
+(예: \code{HLT_PFHT1050} 은 온라인 \HT{} 1050\GeV), 그러면 FH ttHH 의 대부분이 빠진다. 온라인 b-tag 을 1–3 개 요구하면
+QCD 의 rate 가 크게 줄어 운동학 문턱을 낮출 수 있다. ttH(bb) FH 를 위해 만든 경로들이 바로 이 구조다: jet 6 개와 b-tag 1 개
+(6J1T), jet 6 개와 b-tag 2 개(6J2T), 그리고 b-tag 을 3 개로 늘리는 대신 jet 문턱을 낮춘 jet 4 개 경로(4J3T)이며, 여기에 b-tag
+없는 \code{HLT_PFHT1050} 을 OR 로 더한다\src{AN-19-094 v20, PDF p.32, p.34, p.36}.
+
+\paragraph{효율과 turn-on.}
+trigger 의 효율은 오프라인 변수 $x$(여기서는 \HT, 여섯째 jet 의 \pt, b-tag 수)의 함수로 정의한다:
+\begin{equation}
+  \varepsilon(x) \;=\; \frac{N(\text{offline} \wedge \text{ref} \wedge \text{target} \,|\, x)}
+                              {N(\text{offline} \wedge \text{ref} \,|\, x)} .
+  \label{eq:trigger-eff}
+\end{equation}
+분모는 오프라인 선택과 기준 trigger 를 통과한 사건, 분자는 그중 측정 대상(target) trigger 도 통과한 사건이다(ttHH AN 의 식 2 와
+같은 정의\src{AN-22-122 v26, PDF p.23, Eq. 2}). 온라인 \HT{} 와 jet \pt{} 는 HLT 의 PF jet 과 온라인 보정으로 계산되므로
+오프라인 값과 사건마다 다르다. 그래서 온라인 문턱 하나가 오프라인 변수에서는 계단이 아니라 완만하게 오르는 곡선(turn-on)이 되고,
+충분히 높은 곳에서 평탄해진다(plateau). 온라인 b-tag 판별자(2017 CSVv2, 2018 DeepCSV, 2024 PNet)와 오프라인 판별자(DeepJet,
+UParTAK4)가 다르면 b-tag 다리(leg)의 turn-on 도 오프라인 b-tag 수의 함수로 번진다\src{AN-19-094 v20, PDF p.33}.
+그림~\ref{fig:trigger-turnon} 은 이 구조를 개념적으로 보인다.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=0.0062cm,y=2.5cm,>=Stealth]
+  % 축
+  \draw[->] (300,0) -- (1650,0);
+  \node[font=\small] at (975,-0.24) {오프라인 $x$ (예: \HT{} [GeV])};
+  \draw[->] (300,0) -- (300,1.12) node[left,font=\small] {$\varepsilon$};
+  \foreach \v in {0.5,1.0} \draw (295,\v) -- (305,\v) node[left,font=\scriptsize] {\v};
+  \foreach \t in {400,600,800,1000,1200,1400,1600} \draw (\t,0) -- (\t,-0.025) node[below,font=\scriptsize] {\t};
+  % turn-on: data 와 MC (logistic, 개념도)
+  \fill[orange!20] (500,0) rectangle (900,1.0);
+  \draw[thick,blue!70!black,domain=320:1640,samples=120] plot (\x,{0.97/(1+exp(-(\x-640)/55))});
+  \draw[thick,red!70!black,dashed,domain=320:1640,samples=120] plot (\x,{0.99/(1+exp(-(\x-600)/48))});
+  % 오프라인 문턱과 plateau
+  \draw[gray,densely dotted] (500,0) -- (500,1.05) node[above,font=\scriptsize,black] {오프라인 문턱};
+  \draw[gray,densely dotted] (900,0) -- (900,1.05) node[above,font=\scriptsize,black] {plateau 시작};
+  % 범례
+  \fill[orange!20] (1150,0.62) rectangle (1230,0.68); \node[right,font=\scriptsize] at (1230,0.65) {SF 가 1 에서 벗어나기 쉬운 곳};
+  \draw[thick,blue!70!black] (1150,0.52) -- (1230,0.52) node[right,font=\scriptsize,black] {data $\varepsilon_\text{data}(x)$};
+  \draw[thick,red!70!black,dashed] (1150,0.40) -- (1230,0.40) node[right,font=\scriptsize,black] {MC $\varepsilon_\text{MC}(x)$};
+\end{tikzpicture}
+\caption{trigger turn-on 의 개념도(수치는 예시이며 측정값이 아니다). 오프라인 문턱이 plateau 보다 낮으면 data 와 MC 의 turn-on
+위치·폭 차이가 그대로 수율 차이가 되므로 SF 가 필요하다.}
+\label{fig:trigger-turnon}
+\end{figure}
+
+\paragraph{SF 와 그 적용.}
+MC 의 trigger 모사(emulation)는 온라인 보정, 온라인 b-tag 의 성능, L1 seed 등을 완벽히 재현하지 못한다. 그래서
+\begin{equation}
+  \mathrm{SF}(x) = \frac{\varepsilon_\text{data}(x)}{\varepsilon_\text{MC}(x)}, \qquad
+  w_\text{MC} \;\to\; w_\text{MC}\cdot \mathrm{SF}(x)\quad(\text{trigger 를 통과한 MC 사건에만})
+  \label{eq:trigger-sf}
+\end{equation}
+로 고친다. SF 는 효율의 보정이므로 trigger 를 통과한 사건(효율의 분자)에만 곱한다. 분모와 분자에 같이 곱하면 효율은 그대로이고,
+분모에만 곱하면 반대로 고친다\src{TriggerStudy/docs/ARCHITECTURE.md §5}. 신호 영역에서는 trigger 를 요구하므로 신호 영역의
+모든 MC 사건에 곱하는 것과 같다.
+
+\begin{note}[기준 trigger 방법이 성립하는 조건]
+식~\eqref{eq:trigger-eff} 의 효율이 신호 영역의 효율과 같으려면, $x$ 가 주어졌을 때 기준 trigger 의 통과 여부가 측정 대상
+trigger 의 통과 여부와 상관이 없어야 한다: $P(\text{target}\,|\,\text{ref}, \text{offline}, x) = P(\text{target}\,|\,\text{offline}, x)$.
+단일 muon trigger 는 muon 하나로 결정되고 강입자 trigger 는 jet 으로 결정되므로 이 가정이 잘 맞는다. ttH(bb) FH 는 두 trigger 의
+상관을 1\,\% 미만으로 추정했다\src{AN-19-094 v20, PDF p.32}. 다른 가정은 SF 가 $x$ 에만 의존한다는 것이다. 측정 표본은
+$\ttbar\to\mu+$jets 가 많은 영역이고 적용 표본은 jet 이 더 많고 b 가 더 많은 FH 신호 영역이므로, 둘의 차이가 $x$ 로 대부분
+설명되어야 한다. ttH 는 pileup 의존이 \HT{} 에 흡수되고 여섯째 jet \pt{} 와 b-tag 수가 주된 효과를 덮는다고 논증했다
+\src{AN-19-094 v20, PDF p.33}.
+\end{note}
+
+% -----------------------------------------------------------------------------
+\section{Run 2 ttHH AN(SL·DL)에서는}\label{sec:trigger-an}
+
+SL 은 연도별 단일 전자·단일 muon trigger(예: 2017 \code{HLT_Ele32_WPTight_Gsf_L1DoubleEG}, \code{HLT_IsoMu27})를 쓴다
+\src{AN-22-122 v26, PDF p.31, Tables 19--21}.
+muon 의 SF 는 MUO POG 의 것, 전자의 SF 는 ttH(SL) 분석이 전자 \pt{} 와 supercluster $\eta$ 의 함수로 유도한 것을 그대로 쓰고,
+ttHH 위상공간(jet 5 개 이상)에서 2018 \ttbar{} DL MC 와 SingleMuon data 로(기준 \code{HLT_IsoMu24}) 통계 오차 안에서 같음을
+확인했다\src{AN-22-122 v26, PDF p.22--25}. DL 은 dilepton 과 단일 lepton trigger 를 stream 별로 OR 하고, ttH 가 MET 기준
+trigger 로 잰 SF 를 가져오며, ttH 가 쓴 pre-legacy 표본과 UL 표본의 효율 차이로 1\,\% 계통을 더했다\src{AN-22-122 v26, PDF p.26--28}.
+trigger 계통은 shape 이고 연도 간 비상관이다\src{AN-22-122 v26, PDF p.120}.
+
+\begin{andiff}[ttHH AN(SL·DL)과 FH 의 차이]
+SL·DL 은 POG 나 ttH 의 lepton trigger SF 를 재사용할 수 있지만, FH 는 강입자 trigger 의 SF 를 직접 재야 한다. ttHH AN 에는 FH 의
+trigger 에 관한 내용이 없다(FH 는 ``another Analysis Note, in progress'' 라고만 쓴다\src{AN-22-122 v26, PDF p.5}). 그래서 이 장의
+방법은 ttH(bb) FH AN 을 선례로 삼는다\tagours.
+\end{andiff}
+
+% -----------------------------------------------------------------------------
+\section{참고: ttH(bb) FH AN 에서는}\label{sec:trigger-tth}
+
+\begin{table}[htbp]
+\caption{ttH(bb) FH 의 연도별 강입자 trigger 경로(OR)와 PD. 이름의 b-tag 숫자는 온라인 mistag rate 를 뜻한다(2017 Run B 는 판별값
+컷)\,\src{AN-19-094 v20, PDF p.32--39, Tables 24--29}.}
+\label{tab:trigger-tth-paths}
+\centering\small
+\begin{tabularx}{\textwidth}{@{}p{2.0cm}L p{2.6cm}@{}}
+\toprule
+연도·기간 & 경로 & PD \\
+\midrule
+2016 & \code{HLT_PFHT450_SixJet40_BTagCSV_p056}, \code{HLT_PFHT400_SixJet30_DoubleBTagCSV_p056}, \code{HLT_PFJet450} & JetHT \\
+2017 Run B & \code{HLT_PFHT430_SixJet40_BTagCSV_p080}, \code{HLT_PFHT380_SixJet32_DoubleBTagCSV_p075}, \code{HLT_HT300PT30_QuadJet_75_60_45_40_TripeCSV_p07}, \code{HLT_PFHT1050} & JetHT, BTagCSV(4J3T) \\
+2017 C--F, MC & \code{HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5}, \code{HLT_PFHT380_SixPFJet32_DoublePFBTagCSV_2p2}, \code{HLT_PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0}, \code{HLT_PFHT1050} & JetHT, BTagCSV(4J3T) \\
+2018 (run $\geq$ 317509), MC & \code{HLT_PFHT450_SixPFJet36_PFBTagDeepCSV_1p59}, \code{HLT_PFHT400_SixPFJet32_DoublePFBTagDeepCSV_2p94}, \code{HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5}, \code{HLT_PFHT1050} & JetHT \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{itemize}
+\item \textbf{경로}: 표~\ref{tab:trigger-tth-paths}. 2016 Run H 에서 L1 \HT{} 가 포화된 jet 을 빠뜨려 높은 \HT{} 의 효율이 떨어진 것을
+  \code{HLT_PFJet450} 로 대부분 되찾았다\src{AN-19-094 v20, PDF p.33}. 2017 은 \HT{} turn-on 의 효율 저하 때문에 prescale 없는
+  \code{HLT_PFHT1050} 을 더했다\src{AN-19-094 v20, PDF p.36}. 2018 초기 run(315252–317509)은 6J1T·6J2T 의 이름이 다르다
+  (Table 29)\src{AN-19-094 v20, PDF p.39}.
+\item \textbf{PD 중복 제거(2017)}: 4J3T 가 (어떤 조합으로든) 발화한 사건은 BTagCSV 에서, 나머지 6J1T·6J2T 사건과
+  \code{HLT_PFHT1050} 만 발화한 사건은 JetHT 에서 가져온다(Table 27)\src{AN-19-094 v20, PDF p.36}.
+\item \textbf{오프라인 문턱}: lepton 0, jet 6 개 이상($\pt>30\GeV$, $|\eta|<2.4$), 여섯째 jet $\pt>40\GeV$(``due to HLT performance''),
+  \HT{} $>500\GeV$, DeepJet medium b-tag 2 개 이상, $30<m_{qq}<250\GeV$\src{AN-19-094 v20, PDF p.68, Table 55}.
+  2017 오프라인 baseline(원문은 ``pT of sixth jet $<50$ GeV'' 로 적혀 있다)에서 모든 경로가 prescale 없다면 OR 의 효율은 약 82\,\%
+  이고, 한 경로의 prescale 때문에 80\,\% 로 줄었다\src{AN-19-094 v20, PDF p.36}.
+\item \textbf{효율 측정}: 기준 trigger 는 2016 \code{HLT_IsoMu24}, 2017·2018 \code{HLT_IsoMu27} 이고, 오프라인 muon 이 정확히 하나이며
+  lepton veto 를 뺀 FH baseline 을 통과한 사건을 쓴다\src{AN-19-094 v20, PDF p.32}. SF 는 연도별로 \HT{} $\times$ DeepJet medium
+  b-tag 수 $\times$ 여섯째 jet \pt{} 의 함수이고, 경로가 run 중에 다시 조정된 2017·2018 은 run 평균 효율로 유도했다. 그림의 bin 은
+  b-tag 수 2, 3, $\geq 4$, \HT{} 500/550/600/700/800/1000/1500/2500, 여섯째 jet \pt{} 40/45/50/60/70/120/200\GeV{}(그림 판독)이며,
+  사건이 빈 bin 에 들어가면 SF 1 을 쓴다\src{AN-19-094 v20, PDF p.35, Fig. 3}.
+\item \textbf{불확도}: bin 별 통계 오차만. 근거는 SF 오차가 통계 지배이고, 기준·대상 trigger 의 상관이 1\,\% 미만이며, pileup 의존은
+  \HT{} 로, 주된 효과는 여섯째 jet \pt{} 와 b-tag 수로 덮이고, 2018 의 run 의존이 작다는 것이다\src{AN-19-094 v20, PDF p.32--33}.
+  fit 에서는 ``Trigger efficiency'' 가 shape, 연도 간 비상관으로 들어간다\src{AN-19-094 v20, PDF p.147, Table 79}.
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{우리 FH 분석에서는}\label{sec:trigger-ours}
+
+\subsection{연도별 경로와 PD 규칙}\label{sec:trigger-paths}
+
+경로의 정의와 PD 규칙은 \file{ttHHanalyzer_unified.cc} 의 \code{createObjects} 한 곳에 있고, 결과는 cut-flow 의
+\texttt{HadTrigger} 단계와 Tree 의 \code{passHadTrig}·\code{passTrigger_*} 에 남는다. 연도별 상수는 \file{include/EraConfig.h} 가
+갖는다(모르는 연도는 FATAL)\tagimpl.
+
+\begin{table}[htbp]
+\caption{우리 analyzer 의 강입자 trigger OR 와 Data PD 규칙\,\src{ttHHanalyzer\_unified.cc, createObjects; D-2026-10-06-A}.}
+\label{tab:trigger-ours}
+\centering\small
+\begin{tabularx}{\textwidth}{@{}p{1.25cm}L L@{}}
+\toprule
+연도 & 경로(6J1T, 6J2T, 4J3T, \HT) & Data PD 규칙 / MC \\
+\midrule
+2017 & 표~\ref{tab:trigger-tth-paths} 의 2017(era B 는 옛 이름, C--F 와 MC 는 PF 이름) &
+BTagCSV: 4J3T; JetHT: (6J1T $\vee$ 6J2T $\vee$ HT) $\wedge\,\neg$4J3T; SingleMuon: OR(SF 측정용); MC: OR \tagimpl \\
+2018 & DeepCSV 판(\code{..._PFBTagDeepCSV_1p59}, \code{..._DoublePFBTagDeepCSV_2p94}, \code{..._TriplePFBTagDeepCSV_4p5}), \code{HLT_PFHT1050} &
+JetHT 단독 OR(2018 에는 BTagCSV PD 가 없다), SingleMuon: OR; 2018A 초기 run 의 다른 이름은 아직 없음 \tagopen \\
+2024 & \code{HLT_PFHT450_SixPFJet36_PNetBTag0p35}, \code{HLT_PFHT400_SixPFJet32_PNet2BTagMean0p50}, 4J3T = \code{..._PNet3BTag_4p3}(Data 는 초기 \code{..._TriplePFBTagDeepJet_4p5} 와 OR), \code{HLT_PFHT1050} &
+JetMET0/1: \code{HLT_PFHT1050}; ParkingHH: (4J3T $\vee$ 6J1T $\vee$ 6J2T) $\wedge\,\neg$HT; Muon0/1: OR; MC: OR(4J3T 는 PNet 판만) \tagimpl\tagrunthree \\
+2016 & 정의 안 됨(FATAL) & --- \tagopen \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+2017 의 규칙은 ttH(bb) FH 의 Table 27 과 같다. 2024 의 규칙은 같은 구조에서 두 PD 의 역할을 바꾼 것이다(\S\ref{sec:trigger-run3}).
+2018 은 지금 코드가 v9 이름으로만 읽고, 주 구성(run $\geq$ 317509)의 경로 이름만 필수 branch 로 검사하므로 2018A Data 는 멈춘다
+\src{ttHHanalyzer\_unified.cc, requireTriggerBranches2018\_; PLAN\_v15 §2 \#9}.
+
+\subsection{오프라인 문턱}\label{sec:trigger-offline}
+
+\file{include/SelectionCuts.h} 의 \code{Cuts::nJets} = 6, \code{Cuts::sixthJetPt} = 40\GeV, \code{Cuts::HT} = 500\GeV{} 는 ttH(bb) FH 의
+Table 55 그대로이고, 2017 HLT(\code{SixPFJet40}, \code{PFHT380})의 plateau 를 근거로 한 값이다\src{SelectionCuts.h}\tagimpl.
+같은 파일의 머리 주석은 2018(\code{SixPFJet36}, \code{PFHT400}, \code{PFHT330PT30})의 plateau 재확인과, 2018 기준을 \code{HLT_IsoMu24} 로
+할 때 lead muon 문턱 29 → 26\GeV{} 를 미결로 적어 둔다\src{SelectionCuts.h; STATUS OPEN 6 P1}. 2024 에서도 \HT{} $>500$ 을 분석 컷으로
+둔다: b-tag 경로의 \HT{} 다리(330/400/450\GeV)보다 위이고 ttH(bb) FH 와 같으며, OR 의 turn-on 은 trigger SF 가 맡는다
+\src{D-2026-10-06-A (4)}\tagours.
+
+\subsection{trigger SF 의 유도 (\texttt{TriggerStudy/})}\label{sec:trigger-derive}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[node distance=4mm and 5mm, every node/.style={font=\scriptsize},
+  box/.style={draw,rounded corners=1.5pt,align=center,fill=blue!4,minimum height=8mm,text width=2.45cm},
+  >=Stealth]
+  \node[box] (skim) {analyzer\\ \texttt{--mode btagtrig}\\ (trigger·lepton veto 미적용)};
+  \node[box,right=of skim] (s1) {Step 1 \texttt{exe\_TrigStudy}\\ $\mu$ CR: Total/Pass 맵\\ (\HT{} $\times$ $p_{\mathrm{T},6}$, nb 3)};
+  \node[box,right=of s1] (der) {\texttt{DeriveSF.cpp}\\ $\varepsilon$, SF, $\sigma$, 빈 bin 채움};
+  \node[box,right=of der] (json) {\texttt{trigger\_sf.json.gz}\\ \texttt{triggerSF}, \texttt{triggerSF\_err}\\ (\texttt{year=} 태그)};
+  \node[box,below=7mm of json] (ana) {analyzer main\\ HT 단계에서 SF 곱함\\ (E50: 연도 확인)};
+  \node[box,below=7mm of der] (s2) {Step 2 + 검증 plot\\ closure: data vs MC$\times$SF};
+  \draw[->] (skim) -- (s1); \draw[->] (s1) -- (der); \draw[->] (der) -- (json);
+  \draw[->] (json) -- (ana); \draw[->] (json) -- (s2);
+\end{tikzpicture}
+\caption{trigger SF 의 흐름\,\src{TriggerStudy/README.md; STEP 26}. 같은 btagtrig skim 이 b-tag 효율 맵(\ref{ch:btag} 장)에도 쓰인다.}
+\label{fig:trigger-flow}
+\end{figure}
+
+\begin{itemize}
+\item \textbf{표본}: analyzer 의 \texttt{btagtrig} 모드 skim. 이 모드는 MET filter, PV, jet 6 개 이상, 여섯째 jet $\pt>40$, \HT{} $>500$ 은
+  걸지만 강입자 trigger 와 lepton veto 는 걸지 않고 trigger bit 만 기록한다\src{ttHHanalyzer\_unified.cc, kCutSequence}. lead muon
+  ($\pt>29\GeV$, tight ID, PF 상대 isolation $<0.15$)이 있는 사건만 lepton 을 모은다(\texttt{requireLeadMuonOnly})\tagimpl.
+\item \textbf{측정 영역}: muon 정확히 1 개, 전자 0 개, 기준 trigger 통과. 기준은 2017 \code{HLT_IsoMu27}, 2024 \code{HLT_IsoMu24}
+  이고, Data 는 2017 \texttt{SingleMuon\_Run2017B..F}, 2024 \texttt{Muon0/1\_Run2024*} 16 개, MC 는 \texttt{TTbar\_\{DiLep, Hadronic, SemiLep\}}
+  이다\src{STEP 26 §1; TriggerStudy/include/Config.hh}. MET 컷은 없다(\code{Config::metCut} = 0): 적용 영역인 FH 에 MET 컷이 없기
+  때문이다\src{TriggerStudy/include/Config.hh}\tagours. 사건마다 OR 를 다시 계산해 skim 의 \code{passHadTrig} 와 다르면 멈춘다\src{TriggerStudy/README.md §8}.
+\item \textbf{binning}: \HT{} = \{500, 550, 600, 700, 800, 1000, 1500, 2500\}\GeV, 여섯째 jet \pt{} = \{40, 45, 50, 60, 70, 120, 200\}\GeV,
+  b-tag 수(오프라인 medium) = \{0--2, 3, $\geq 4$\}, $\eta$ 는 구분하지 않는다(\code{useEta} = false). ttH 의 bin 과 같고, 다만 첫 b-tag 칸이
+  0--2 이다(SF 를 b-tag 컷 전, \HT{} 단계에서 곱하기 때문)\src{TriggerStudy/README.md §4-D; Hbb 회의 FH 발표 p.44}\tagimpl.
+\item \textbf{효율 오차}: data 는 Clopper--Pearson 68.27\,\% 구간의 반폭, MC(가중 사건)는 유효 사건 수 $N_\text{eff} = (\sum w)^2/\sum w^2$ 로
+  $\sigma_\varepsilon = \sqrt{\varepsilon(1-\varepsilon)/N_\text{eff}}$ 이고, SF 의 오차는
+  \begin{equation}
+    \frac{\sigma_\mathrm{SF}}{\mathrm{SF}} = \sqrt{\Big(\frac{\sigma_{\varepsilon,\text{data}}}{\varepsilon_\text{data}}\Big)^2
+    + \Big(\frac{\sigma_{\varepsilon,\text{MC}}}{\varepsilon_\text{MC}}\Big)^2}
+    \label{eq:trigger-sferr}
+  \end{equation}
+  이다\src{TriggerStudy/docs/ARCHITECTURE.md §3; DeriveSF.cpp}. 효율의 오차를 분자(Pass)·분모(Total)의 오차로 독립 전파하는 방식은 같은 사건이
+  양쪽에 있어 상관을 무시하므로 쓰지 않았다(data 와 MC 는 서로 독립인 표본이므로 식~\eqref{eq:trigger-sferr} 의 제곱합은 그대로 맞다).
+\item \textbf{통계가 적은 bin}: data 통과 $<10$ 사건이거나 MC 통과의 $N_\text{eff}<20$ 이면 한 칸 낮은 \pt{}, 그다음 한 칸 낮은 \HT{} 의
+  값으로 채우고(2D log-quadratic fit 은 선택), 상대 오차는 측정 bin 의 중앙값과 5\,\% 중 큰 것 이상, 못 채우면 SF $=1\pm0.5$ 이다
+  \src{TriggerStudy/docs/ARCHITECTURE.md §3-B, §3-C}.
+\item \textbf{출력}: correctionlib JSON \file{trigger_sf.json.gz} 의 \code{triggerSF}(중앙값)와 \code{triggerSF_err}(오차), 입력
+  (\code{nbJets}, \code{eta}, \code{ht}, \code{pt}), \code{nbJets} 경계 [0, 3, 4, 5], (\HT, \pt) multibinning, 범위 밖은 clamp. STEP 26 부터
+  description 에 \texttt{year=<YYYY>; reference=...; hadronic OR: ...} 가 들어가고, 측정 bin 이 하나도 없는 범주가 있으면 RESULT FAIL 로
+  끝나며 좋은 JSON 을 지우지 않는다\src{STEP 26 §2--3}\tagimpl.
+\end{itemize}
+
+\subsection{analyzer 에서의 적용과 weight 의 tier}\label{sec:trigger-apply}
+
+SF 는 \code{applyEventScaleFactors} 에서, 즉 \HT{} $>500$ 을 통과한 직후·b-tag 컷 전에 MC 에만 계산한다. 입력은 선택된 jet 의 medium
+b-tag 수, 여섯째 jet 의 $\eta$·\pt, 선택 jet 의 \HT{} 로, TriggerStudy 가 쓰는 Tree 의 같은 양이다. 변동은 $\mathrm{SF}\pm\sigma_\mathrm{SF}$
+이며(\code{getTriggerSF} 의 \texttt{syst} $=\pm1$), 모든 bin 이 한꺼번에 움직인다. SF $\leq 0$ 이면 1 을 쓴다
+\src{ttHHanalyzer\_unified.cc, applyEventScaleFactors; CorrectionsManager.cc, getTriggerSF}\tagimpl. JSON 의 \texttt{year=} 가 job 의 해와
+다르거나, 태그가 없는(STEP 26 전, 곧 2017) JSON 을 2017 이 아닌 job 이 읽으면 E50 으로 멈춘다\src{STEP 26 §3}.
+production weight 와 비교용 tier 는 다음과 같다\src{STEP 14 §2; STEP 16 §1}:
+\begin{equation}
+  w = \underbrace{\frac{L\,\sigma\,B\,k}{\sum w_\text{gen}}\, w_\text{gen}\, w_\text{PU}\, w_\text{L1}\, w_\text{stitch}}_{\text{SF 전}}
+  \times [\mathrm{SF}_\text{trig}]_\texttt{--trigsf} \times [w_\text{b-tag}]_\texttt{--btagsf} \times [r_\text{b-tag}]_\texttt{--btagrw},
+  \label{eq:trigger-weight}
+\end{equation}
+기본값은 \texttt{--trigsf on}, \texttt{--btagsf off}, \texttt{--btagrw off} 이고, 기본에서 벗어난 조합은 출력 디렉터리 이름에
+\texttt{\_notrig}, \texttt{\_btagsf}, \texttt{\_btagrw} 가 붙는다. 토글과 상관없이 Tree 에는 \code{evtWeight_btagSF}(SF 전 $\times$ b-tag
+$\times$ trigger SF)와 \code{evtWeight_full}(여기에 b-tag norm reweight)이 늘 기록된다. trigger SF 경로가 \texttt{null} 인데
+\texttt{--trigsf on} 이면 main 은 E13 으로 멈춘다\src{D-2026-06-30-E}. 그래서 2024 의 첫 plot 들은 \texttt{--trigsf off}
+(출력 \texttt{AnalyzerOutput\_main\_notrig\_2024})로 만들었다\src{D-2026-10-05-A}.
+
+\subsection{지금까지의 결과와 시험}\label{sec:trigger-tests}
+
+\begin{itemize}
+\item \textbf{2017}: 2017 UL(NanoAODv9)에서 SF 를 유도·적용했다. 기준 \code{HLT_IsoMu27}, $n_\mu=1$, $n_e=0$, data = SingleMuon, MC = \ttbar,
+  ttH(bb) FH 방법\src{Hbb 회의 FH 발표 p.16}. 그림에서 읽은 SF 는 b-tag 0--2 칸에서 약 0.56–1.00(낮은 \HT·낮은 $p_{\mathrm{T},6}$ 에서 작다),
+  3 개 칸 약 0.81–1.02, 4 개 이상 칸 약 0.72–1.03 이다\src{Hbb 회의 FH 발표 p.16, 그림 판독}. SF 를 곱한 MC 는 같은 muon 영역의
+  data 를 \HT, $p_{\mathrm{T},6}$, b-tag 범주에서 재현한다(data/MC $\approx 1$)\src{Hbb 회의 FH 발표 p.17; KCMS 발표 p.3}. 이는 SF 를 유도한
+  영역과 같은 영역의 closure 이고 독립 검증은 아니다\tagours.
+\item \textbf{합성 시험}(\file{test/trigger_study/run_trigstudy_synth.sh}): TriggerStudy binning 의 칸마다 고르게 만든 btagtrig skim 에 data 의
+  OR 효율 = MC 효율 $\times r(n_b)$ 를 넣었다(2024 $r$ = 0.97/0.92/0.86, 2017 0.95/0.90/0.85). 가능한 117 칸이 모두 측정되고 SF 가 $r$ 을
+  되찾았으며(평균 pull $-0.22$/$-0.17$, $|$pull$|<3$ 이 99.1\,\%/100\,\%; SF$/r-1 = -0.0067\pm0.0052$), JSON 과 \file{TriggerSF.root} 가
+  같고, SF 를 곱한 MC 효율/data 가 1.0012·0.9995(곱하지 않으면 1.102·1.118)이다. 2017 출력은 이전 빌드와 bin 단위로 같다
+  \src{STEP 26 §5}\tagtest. KNU 의 ROOT 6.30 에서도 26/26 이 통과했다\src{STEP 26 §10}.
+\item \textbf{analyzer 쪽}: 가짜 JSON 으로 사건마다 \code{triggerSF}·\code{_up}·\code{_down} 을 다시 계산해 일치, \code{evtWeight}(on) $=$
+  \code{evtWeight}(off) $\times$ \code{triggerSF}(상대 차 $5.4\times10^{-8}$), 다른 해의 JSON 에 E50(오프라인 smoke 95/95)\src{STEP 26 §5}\tagtest.
+\item \textbf{2024 의 SF 없는 Data/MC}(ParkingHH 를 넣어 다시 돌린 뒤, 10-09): FH 1.30(lepton veto 뒤), 1.44(nb $\geq 2$), 2.02($\geq 3$),
+  2.18($\geq 4$); $\mu$CR 0.87, 0.86, 1.19, 1.41; eCR 0.80, 0.77, 1.07, 1.19. 낮은 nb 의 CR 에서 1 보다 작은 것은 MC 의 강입자 trigger
+  효율(trigger SF 가 고칠 것)과 lepton SF 부재로, nb 와 함께 커지는 것은 세 영역 공통의 b-tag 효과로 읽었다\src{STEP 26 §10}.
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{Run 3(2024) 조정과 그 근거}\label{sec:trigger-run3}
+
+\begin{itemize}
+\item \textbf{경로}: 2017 네 경로의 PNet 짝(표~\ref{tab:trigger-ours})으로 시작했다. 후보들은 모두 prescale 이 없다: prescale 없는 경로의
+  유효 lumi 는 C--I 합의 0.9936 으로 같다(normtag\_BRIL)\src{LUMI\_SOURCES §6.3; PLAN\_v15 §9.6 D4}\tagrunthree.
+  normtag\_PHYSICS 로 \code{HLT_PFHT1050} 109.144, \code{HLT_IsoMu24} 109.157\fbinv{} 이고, 정규화 lumi 는 109.816\fbinv{} 로 정했다
+  \src{LUMI\_SOURCES §6.4; D-2026-10-05-A}.
+\item \textbf{4J3T 의 두 판}: 처음 38 run(BRIL 6.354\fbinv, 5.8\,\%)은 \code{..._TriplePFBTagDeepJet_4p5} 만, 그 뒤는
+  \code{..._PNet3BTag_4p3} 만 돌았다. Data 는 둘의 OR, MC 는 PNet 판만 쓴다. MC 에서 OR 를 쓰면 어떤 Data run 도 가질 수 없는 사건을
+  세기 때문이고, 남은 5.8\,\% 의 차이는 C--I 전체로 유도하는 SF 가 평균으로 흡수한다\src{D-2026-10-05-B; STEP 26 §1}\tagrunthree.
+  이 결정은 PROPOSED 이고 era C 와 D--I 를 나눈 SF 비교는 아직 없다.
+\item \textbf{PD: b-tag 경로는 ParkingHH 에만 있다.} 2024 의 HLT 메뉴(run 380115, 382913, 386604)를 보면 우리 OR 중 JetMET0/1 에는
+  \code{HLT_PFHT1050} 하나뿐이고, b-tag 경로 넷은 ParkingHH 에만 기록된다\src{STEP 24 §17; D-2026-10-06-A}. 처음의 2024 Data 는
+  JetMET 만 생산해서, b-tag 경로로만 들어온 사건이 Data 에 거의 없었다. 첫 plot 의 Data/MC 가 trigger 직후 0.43–0.44 이고 그 모자람이
+  \HT{} $<1000\GeV$ 에 몰렸던 것이 이것이다\src{STEP 24 §16--17}. 규칙은 2017 BTagCSV/JetHT 규칙의 역할을 바꾼 것이다:
+  JetMET0/1 은 \code{HLT_PFHT1050}, ParkingHH 는 b-tag 경로 중 \code{HLT_PFHT1050} 이 아닌 사건, 두 PD 에 모두 있는 사건은 JetMET 에서
+  한 번만. 그 뒤 ParkingHH C--I(2,771 파일)를 생산하고 main 전체(8,062 job)를 다시 돌렸다\src{D-2026-10-07-A}\tagrunthree\tagimpl.
+\item \textbf{신호는 대부분 b-tag 경로로 들어온다.} KNU smoke 에서 OR 를 통과한 TTHHto4b 21,426 사건 중 17,718(83\,\%)은
+  \code{HLT_PFHT1050} 없이 b-tag 경로로만 들어왔다\src{STEP 24 §18}. 그래서 분석 OR 를 \code{HLT_PFHT1050} 으로 줄이는 안은 버렸다
+  \src{D-2026-10-06-A}.
+\item \textbf{\code{HLT_PFHT1050} 만의 control plot}: ParkingHH 생산 전에는 생산된 Data 가 온전히 가진 경로로만 비교했다:
+  \texttt{passTrigger\_HLT\_PFHT1050 \&\& HT > 1200} 을 이미 있는 main 출력의 event tree 에 Data·MC 똑같이 걸었다
+  (\file{plotter/make_plots.py} \texttt{--tree-cut}; 1200\GeV{} 는 plateau 쪽의 임시 값). Data/MC 는 1.46 이고, 운동학의 비는 평평하며
+  넘침은 nb $\geq 2$ 의 중간 b-tag 점수에 몰려 있었다\src{STEP 24 §18}. analyzer 에 \texttt{--hadtrig ht1050} 모드를 두는 안은 tree 로
+  같은 사건을 얻을 수 있어 버렸다\src{D-2026-10-06-A}.
+\item \textbf{기준 trigger 와 측정 영역}: 2024 는 \code{HLT_IsoMu24}(prescale 없음, Muon0/1). 측정 영역의 lead muon 문턱은 btagtrig skim 의
+  29\GeV(\code{HLT_IsoMu27} 의 plateau)를 그대로 둔다. \code{HLT_IsoMu24} 의 plateau 위이므로 편향은 없고 통계만 조금 준다
+  \src{STEP 26 §1; D-2026-10-02-D N2}\tagrunthree.
+\end{itemize}
+
+\begin{andiff}[ttH(bb) FH 방법과 다른 점]
+(1) 첫 b-tag 칸이 2 가 아니라 0--2 다(SF 를 b-tag 컷 전에 곱한다). (2) 빈 bin 은 SF 1 대신 이웃 bin 값으로 채우고 오차를 키운다.
+(3) 2024 는 경로가 PNet 판이고 PD 가 JetMET0/1 과 ParkingHH 로 나뉜다. (4) 2018 기준 trigger 는 ttH 의 \code{HLT_IsoMu27} 대신
+\code{HLT_IsoMu24} 로 적혀 있다(코드의 필수 branch 목록)\src{STEP 24 §6} --- 결정은 아직이다(아래). (5) SF 의 변동은 모든 bin 을 함께
+$\pm1\sigma$ 움직이는 하나의 변형이다. ttH 가 bin 별 독립 nuisance 를 썼는지는 원문에서 확인 못 함.
+\end{andiff}
+
+% -----------------------------------------------------------------------------
+\section{변경 이력}\label{sec:trigger-history}
+
+\begin{center}\begin{minipage}{\textwidth}
+\captionof{table}{트리거와 trigger SF 의 변경 이력.}
+\label{tab:trigger-history}
+\small
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{3.3cm}L@{}}
+\toprule
+날짜·기록 & 내용 \\
+\midrule
+2026-06-15 STEP 14, 16 & weight 의 세 tier(\code{evtWeight}, \code{evtWeight_btagSF}, \code{evtWeight_full}), \texttt{--trigsf/--btagsf/--btagrw} 토글과 출력 디렉터리 꼬리표 \\
+2026-06-30 D-2026-06-30-E & 새 데이터셋(v20)용 trigger SF 경로는 다시 유도할 때까지 \texttt{null}; \texttt{--trigsf on} 이면 E13 \\
+2026-07-29 CHANGELOG & 2017 SF 재유도 준비: \texttt{SampleRegistry}(정규화를 제출기와 같은 식으로), era 판정(\texttt{Run2017B} $\to$ B) 수정 \\
+2026-07-30 Hbb 회의 발표 & 2017 SF 와 closure 공개(p.16--17, p.44) \\
+2026-10-05 STEP 24, D-2026-10-05-A·B & 2024 경로(PNet)와 PD; 첫 2024 plot 은 trigger SF 없이; MC 의 4J3T 는 PNet 판만(PROPOSED) \\
+2026-10-06 D-2026-10-06-A (커밋 G) & b-tag 경로는 ParkingHH: PD 규칙, ParkingHH 생산, \code{HLT_PFHT1050} control plot 은 tree 에서 \\
+2026-10-07 D-2026-10-07-A & ParkingHH 를 넣어 2024 main 전체를 다시 \\
+2026-10-09 STEP 26 (커밋 L) & TriggerStudy 의 연도(\texttt{TTHH\_YEAR}; 2017/2024), JSON 의 \texttt{year=} 태그, analyzer·제출기의 E50, 합성 시험 \\
+\bottomrule
+\end{tabularx}\end{minipage}
+\end{center}
+
+% -----------------------------------------------------------------------------
+\section{미결 사항}\label{sec:trigger-open}
+
+\begin{openq}
+\begin{enumerate}
+\item \textbf{2024 SF}: btagtrig(Muon0/1 + MC)가 KNU 에서 도는 중(2026-10-10)이고, 그 뒤 \texttt{run\_analysis.sh --year 2024} 로 유도한다
+  \src{STEP 26 §4, §8}. 측정 bin 수(특히 nb $\geq 4$), 채운 bin 의 비율, SF 의 크기는 아직 모른다.
+\item \textbf{MC 의 4J3T 모사}(D-2026-10-05-B, PROPOSED): era C 와 D--I 를 나눈 SF 비교로 정한다.
+\item \textbf{독립 검증}: $\mu$CR 은 SF 를 유도한 영역과 겹친다. eCR 과 FH 의 Data/MC 로 보아야 한다\src{STEP 26 확인하지 못한 것}.
+\item \textbf{2018}: TriggerStudy 는 2017·2024 만 받는다(\code{Config::Year}). 기준 trigger 를 \code{HLT_IsoMu24} 로 할지 ttH 처럼
+  \code{HLT_IsoMu27} 로 할지\src{ROADMAP\_FH §3 K, §6 4}, 2018A 초기 run 의 경로(PLAN D1), plateau 재확인과 lead muon 문턱이 남아 있다.
+\item \textbf{2016}: 경로 집합이 정의되지 않았다(FATAL). ttH 의 2016 경로는 모두 JetHT PD 에 있다(Table 24)\src{AN-19-094 v20, PDF p.33}.
+  그대로 따르면 BTagCSV 2016 은 필요 없을 것이다\tagours. 결정은 ROADMAP\_FH §6 5.
+\item \textbf{SF 불확도 모형}: 지금은 bin 통계 오차로 만든 하나의 coherent 변형이다. bin 별 독립 nuisance, 채운 bin 의 오차, 기준 trigger 상관
+  (Run 3 에서 다시 재지 않음)을 어떻게 넣을지 정해야 한다(\ref{ch:syst} 장)\tagopen.
+\item \textbf{적용 표본}: SF 는 $\ttbar$($\mu$+jets)에서 재고 jet·b 가 더 많은 ttHH 와 QCD MC 에도 곱한다 --- $x$ 만으로 충분한지 신호 MC 로
+  확인하는 것이 좋겠다\tagours.
+\item \textbf{2017 의 다음 판}: KNU 의 2017 JSON 은 STEP 26 전 것(태그 없음)이고 입력 v20 ntuple 은 지워졌다\src{D-2026-10-05-D} ---
+  2017 v15 생산 뒤 다시 유도한다\tagours.
+\end{enumerate}
+\end{openq}

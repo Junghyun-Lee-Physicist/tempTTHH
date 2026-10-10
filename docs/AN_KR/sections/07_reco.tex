@@ -1,0 +1,353 @@
+% =============================================================================
+% 7 장 — 사건 재구성과 Tree 변수(Tree v1) (ch:reco)
+% 출처: AN-22-122 v26 §6.2(χ², event shape, Fox-Wolfram, Table 43, JABDT, GATJA), GATJA 발표(2025-12-10),
+%       tempTTHH include/TreeVars.h, include/GenMatch.h, include/HiggsReconstructor.h, STEP 5·6·27, PLAN_ML_SYST
+% =============================================================================
+\chapter{사건 재구성과 Tree 변수(Tree v1)}\label{ch:reco}
+
+이 장은 선택된 사건에서 무엇을 다시 만들고(Higgs·Z 후보, W 후보) 어떤 사건 변수를 계산해 \code{Tree/Tree} 에 남기는지 정리한다.
+ttHH AN(AN-22-122)의 \chisq{} 쌍 짓기(HH, ZH, ZZ 가설)와 그 jet 선택 규칙을 식과 함께 적고, 우리 코드가 AN 과 같은 곳과 다른 곳
+(\chisq{} 의 분모, $n_M=2$ 확장, Fox–Wolfram 의 $s$)을 표시한다. 이어 event-shape·운동학 변수의 정의, AN Table 43 의 변수 목록과
+Tree v1(STEP 27)의 대응, GATJA 같은 jet 배정 ML 에 필요한 jet 단위 정보와 MC 정답 표지, 계통용 weight, 그리고 이 모두를 확인한
+시험을 다룬다. branch 의 전체 목록은 부록~\ref{ch:treev1} 에 있다.
+
+% -----------------------------------------------------------------------------
+\section{왜 재구성하는가}\label{sec:reco-why}
+
+\paragraph{조합의 문제.}
+FH \ttHH{} 사건에는 LO 에서 quark 10 개가 있다(b 6 개, light 4 개; \ref{ch:selection} 장). b jet 6 개를 두 Higgs 후보로 나누는 방법은
+$\binom{6}{4}\times3=45$ 가지이고(넷을 고르고 세 가지로 짝짓기), jet 10 개를 $H_1, H_2$(쌍 둘), 두 top 의 b, 두 W(쌍 둘)에 배정하는 방법은
+$10!/(2!^4\cdot2\cdot2)=56{,}700$ 가지다(계산: 쌍 안의 순서와 $H_1\leftrightarrow H_2$, $t\leftrightarrow\bar t$ 의 대칭을 뺌). 실제 사건은
+jet 이 빠지거나(acceptance, 병합), ISR jet 이 더해지거나, light·c jet 이 b-tag 되어 조합이 더 많고 맞는 조합이 아예 없을 수도 있다.
+
+\paragraph{무엇을 얻으려 하나.}
+\begin{itemize}
+\item \textbf{Higgs 후보}: 신호에서는 두 $b\bar b$ 쌍의 질량이 $m_H$ 근처에 모이고 tt+bb 처럼 추가 b 가 gluon 분열에서 온 배경에서는 모이지 않는다.
+      $m_{H_1}, m_{H_2}$, $\chi^2_{HH}$, $\pt(H_{1,2})$ 가 그 정보를 담는다.
+\item \textbf{Z 후보}: \ttZH{}, \ttZZ{}(Z$\to b\bar b$)는 b 다중도가 신호와 같아 b-tag 로는 갈리지 않는다. $m_Z=91.2$ 와 $m_H=125\GeV$ 의 차이가
+      dijet 질량 분해능과 비슷한 크기라 한 가설만으로는 약하고, $\chi^2_{ZZ}$, $\chi^2_{ZH}$ 를 함께 쓴다. GATJA 의 동기도 이 구분이었다
+      \src{AN-22-122 v26, PDF p.72}.
+\item \textbf{hadronic W·top}: FH 에는 W$\to q\bar q'$ 가 둘 있다. W 후보 질량 $m_{qq}$ 는 QCD 추정의 검증 축이고(\ref{ch:qcd} 장),
+      가장 큰 \pt{} 의 3-jet 질량 $m_{jjj}^{\max\pt}$ 는 top 과 비슷한 대상을 본다.
+\end{itemize}
+\chisq{} 재구성만으로 맞는 배정을 고르는 비율은 높지 않다. AN 은 2017 \ttHH{}(SL)에서 ``선행 Higgs 의 b 두 개를 모두 맞게'' 고르는 비율이
+\chisq{} 0.289, JABDT 0.445 라고 보였다\src{AN-22-122 v26, PDF p.60, Table 47}(같은 표의 ``두 top 의 b 모두''·``완전 재구성'' 행은 \chisq{} 가 더
+높아 본문 서술과 맞지 않는다 — AN 의 불일치). 그래서 AN 은 SL 에 BDT(JABDT), DL 에 graph-attention(GATJA) 배정을 더했다
+\src{AN-22-122 v26, PDF p.56--73}. FH 발표는 SL(BDT)·DL(graph attention)의 배정을 소개할 뿐 FH 의 배정 방법은 아직 정하지 않았다
+\src{Hbb 회의 FH 발표 p.9, p.40}.
+
+\paragraph{jet 의 세 칸.}
+이 장과 QCD 장의 모든 정의는 jet 의 b-tag 점수를 세 칸으로 나눠 쓴다(그림~\ref{fig:reco-wp}): b jet(점수 $\ge M$), loose-not-medium($L\le$ 점수 $<M$),
+light jet(점수 $<L$). ``non-b'' 는 점수 $<M$ 이다. Tree 의 \code{jetBTagWP} 는 이를 T 까지 나눈 칸 번호다.
+
+\begin{figure}[htbp]\centering
+\begin{tikzpicture}[x=0.86cm,y=1cm,font=\small]
+  \fill[gray!15]  (0,0) rectangle (3.0,0.55);
+  \fill[orange!20](3.0,0) rectangle (6.8,0.55);
+  \fill[blue!15]  (6.8,0) rectangle (10.6,0.55);
+  \fill[blue!30]  (10.6,0) rectangle (13.6,0.55);
+  \draw (0,0) rectangle (13.6,0.55);
+  \foreach \x/\l in {3.0/L,6.8/M,10.6/T}{\draw[thick] (\x,-0.1)--(\x,0.7); \node[above] at (\x,0.7) {$\l$};}
+  \node at (1.5,0.27) {0}; \node at (4.9,0.27) {1}; \node at (8.7,0.27) {2}; \node at (12.1,0.27) {3};
+  \node[left] at (-0.1,0.27) {\texttt{jetBTagWP}};
+  \node[left,font=\scriptsize] at (0,0) {0}; \node[right,font=\scriptsize] at (13.6,0) {1};
+  \draw[decorate,decoration={brace,amplitude=4pt,mirror}] (0.05,-0.2)--(2.95,-0.2) node[midway,below=4pt,align=center,font=\footnotesize]{light jet\\$m_{qq}$, $\HT^{\text{light}}$};
+  \draw[decorate,decoration={brace,amplitude=4pt,mirror}] (3.05,-0.2)--(6.75,-0.2) node[midway,below=4pt,align=center,font=\footnotesize]{loose-not-medium\\$n_M\le3$ 의 넷째 jet};
+  \draw[decorate,decoration={brace,amplitude=4pt,mirror}] (6.85,-0.2)--(13.55,-0.2) node[midway,below=4pt,align=center,font=\footnotesize]{b jet\\$n_b$, $\HT^b$, \chisq{} 후보};
+  \draw[decorate,decoration={brace,amplitude=4pt}] (0.05,1.25)--(6.75,1.25) node[midway,above=4pt,font=\footnotesize]{non-b (bj 쌍의 짝)};
+  \draw[decorate,decoration={brace,amplitude=4pt}] (3.05,1.95)--(13.55,1.95) node[midway,above=4pt,font=\footnotesize]{\texttt{nLooseJets}};
+\end{tikzpicture}
+\caption{b-tag 점수의 칸(눈금은 비례하지 않음). WP 는 2017 DeepJet $L/M/T=0.0532/0.3040/0.7476$, 2024 UParTAK4 $0.0246/0.1272/0.4648$ (EraConfig::btagWP).}
+\label{fig:reco-wp}
+\end{figure}
+
+% -----------------------------------------------------------------------------
+\section{\texorpdfstring{$\chi^2$}{chi2} 쌍 짓기}\label{sec:reco-chi2}
+
+\subsection{AN 의 정의}
+AN 은 jet 넷을 두 쌍으로 나눠 두 boson 의 질량과 비교한다\src{AN-22-122 v26, PDF p.49, eq.\ 3--5}:
+\begin{equation}
+\chi^2_{XY}=\frac{(m_{j_1j_2}-m_X)^2}{\sigma_{j_1j_2}^2}+\frac{(m_{j_3j_4}-m_Y)^2}{\sigma_{j_3j_4}^2},\qquad XY\in\{HH,\,ZZ,\,ZH\}
+\label{eq:reco-chi2}
+\end{equation}
+이고 $m_H=125\GeV$, $m_Z=91.2\GeV$ 다. $\sigma$ 는 ``JER 의 함수''라고만 적혀 있고 식이나 수치는 없다\src{AN-22-122 v26, PDF p.49, l.741--743}. jet 넷은 b-tag 다중도에 따라 고른다
+\src{AN-22-122 v26, PDF p.51, l.744--751}: medium b jet 이 4 개면 그 넷, 5 개 이상이면 모든 b jet 조합에서 \chisq{} 가 가장 작은 넷, medium 3 개 +
+loose 가 있으면 넷째는 loose 에서, loose 도 없으면 light jet 에서. 모든 후보와 순열을 돌아 가장 작은 \chisq{} 를 고른다. 출력은 세 \chisq{} 와
+그 질량이다: $\chi^2_{HH}$ 의 $m_{H,1}, m_{H,2}$ 는 $m_H$ 에 가장 가까운/두 번째로 가까운 쌍의 질량, $\chi^2_{ZZ}$ 도 같은 방식, $\chi^2_{ZH}$ 는
+H 후보와 Z 후보의 질량이다\src{AN-22-122 v26, PDF p.51, l.752--757}.
+
+\begin{table}[htbp]\centering
+\caption{\chisq{} 의 jet 넷 고르기(\texttt{TreeVars::chi2AN}). $n_M$ = 점수 $\ge M$ 인 jet 수.}\label{tab:reco-chi2sets}
+\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{1.6cm}L>{\raggedright\arraybackslash}p{2.6cm}@{}}
+\toprule
+$n_M$ & 후보 jet 넷 & 출처 \\
+\midrule
+$\ge4$ & M jet 가운데 모든 4 개 조합(\code{HiggsReconstructor} 가 안에서 $\binom{n_M}{4}\times3$ 쌍 짓기) & AN \tagan \\
+3 & M 셋 + $[L,M)$ jet 하나(그런 jet 이 없으면 $<L$ jet 하나); 넷째 jet 의 모든 선택 & AN \tagan \\
+2 & M 둘 + $[L,M)$ jet 둘(하나뿐이면 그것과 $<L$ 하나, 없으면 $<L$ 둘); 모든 선택 & 우리 확장 \tagours \\
+$<2$ & 없음(모든 출력 $-1$) & \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{우리 구현과 AN 과 다른 점}
+\paragraph{$n_M=2$ 확장\,\tagours.}
+AN 의 규칙은 $n_M\ge3$ 까지다. ttH(bb) FH 의 QCD 방법은 TR(2M + $\ge$2L)과 CR(3M + $\ge$1L)에서 DNN 입력을 계산해야 하므로(\ref{ch:qcd} 장),
+$n_M=2$ 에서도 정의되게 넓혔다\src{STEP 27 §O.3}. 이때 넷째·셋째 jet 이 L–M 칸에서 오므로 이 변수는 b-tag 정의와 상관이 생긴다 —
+QCD template 과 함께 쓰려면 TR/CR/SR 모양 검사를 통과해야 한다(\S\ref{sec:reco-anlist}).
+
+\paragraph{\chisq{} 의 분모\,\tagopen.}
+지금의 한 항은
+\begin{equation}
+\chi^2_{\text{항}}=\frac{(m_{ij}-m_X)^2}{\sqrt{0.2\,(p_{T,i}+p_{T,j})/2}}=\frac{(m_{ij}-m_X)^2}{\sqrt{0.1\,(p_{T,i}+p_{T,j})}}\quad(\pt\text{ 은 GeV 단위의 수})
+\label{eq:reco-chi2ours}
+\end{equation}
+이다(코드 주석: ``20\,\% 분해능 가정'')\src{HiggsReconstructor.h}. 2026-06 의 인라인 코드와 비트 단위로 같게 옮긴 역사적 식이며\src{STEP 6},
+STEP 27 도 그대로 두었다\src{TreeVars.h, chi2AN}. 분모가 질량의 제곱이 아니라 $\sqrt{\text{GeV}}$ 의 차원을 가지므로 이 값은 확률 해석이 있는
+\chisq{} 가 아니고, 한 사건 안에서 쌍을 고르는 순위와 DNN 입력으로만 뜻이 있다. 쌍마다 분모가 $(\sum\pt)^{1/2}$ 로 커지므로 \pt{} 가 큰 쌍의 질량
+차이를 덜 벌한다는 방향은 분해능과 맞는다.
+
+\begin{note}[AN 의 ``JER 의 함수''를 식으로 — 우리 판단]
+질량이 작은 두 jet 의 불변질량은 $m^2\simeq2p_1p_2(1-\cos\theta_{12})$ 이다. 각도 오차를 무시하고 오차 전파를 하면
+\begin{equation}
+\frac{\sigma_m}{m}=\frac12\sqrt{\left(\frac{\sigma_{p_1}}{p_1}\right)^2+\left(\frac{\sigma_{p_2}}{p_2}\right)^2}
+\;\Longrightarrow\;
+\sigma_{j_1j_2}=\frac{m_{j_1j_2}}{2}\sqrt{r_1^2+r_2^2},\qquad r_i=\frac{\sigma_{\pt}}{\pt}(p_{T,i},\eta_i,\rho)
+\label{eq:reco-sigmajer}
+\end{equation}
+이다. $r_i$ 는 JME 의 JER payload(PtResolution)에서 jet 마다 읽을 수 있다. 이렇게 하면 식~\eqref{eq:reco-chi2} 가 차원 없는 \chisq{} 가 되고
+사건 사이에서도 비교할 수 있다. AN 의 문장이 이 식을 뜻하는지는 확인 못 함; 바꿀지는 사용자 결정이다(\S\ref{sec:reco-open}).
+\end{note}
+
+\paragraph{두 재구성이 함께 있다.}
+cut-flow 의 재구성(STEP 6)은 $n_b\ge4$ 에서만, 목표 질량 \code{cHiggsMass}\,=\,125.38, \code{cZMass}\,=\,91 로 돈다. 그 HH 결과는 cut-step
+히스토그램(Higgs 후보 질량)에, ZH·ZZ 결과는 Tree 의 \code{chi2ZH}, \code{mZcandZH}, \code{mHcandZH}, \code{chi2ZZ}, \code{mZ1ZZ}, \code{mZ2ZZ} 에 간다.
+Tree v1 의 \code{chi2Higgs}, \code{chi2HiggsZ}, \code{chi2Z} 와 질량들은 AN 의 jet 선택(표~\ref{tab:reco-chi2sets})과 AN 의 목표 질량(125, 91.2)을 쓴다
+\src{STEP 27 §O.1}. $n_M\ge4$ 에서는 목표 질량만 다르고 알고리즘이 같다(단위 시험: $n_M=5$ 에서 비트 동일)\src{STEP 27}.
+
+\begin{impl}
+\begin{itemize}
+\item \file{include/HiggsReconstructor.h}, \file{src/HiggsReconstructor.cc}: 쌍 cache(질량, $\sum\pt$, 쌍 \pt)를 만든 뒤 모든 4 개 조합의 세 쌍 짓기
+      $(ij)(kl), (ik)(jl), (il)(jk)$ 를 한 번 돌며 HH·ZZ(대칭)와 ZH(두 방향)를 동시에 평가한다. 두 항을 double 로 더한 뒤 한 번만 float 로
+      내린다 — 항마다 float 로 내렸을 때 옛 코드와 2,280 사건이 달랐던 것을 이렇게 맞췄다\src{STEP 6}. 동률은 먼저 찾은 것을 둔다.
+\item \file{include/TreeVars.h} 의 \code{chi2AN}: 후보 넷을 만들고 \code{reconstruct} 를 불러 가설마다 최소를 둔다; HH·ZZ 질량은 목표에 가까운 순으로.
+      조합 비용: $n_M=6$ 이면 45, $n_M=8$ 이면 210 쌍 짓기; $n_M=2$ 에서 $<L$ jet 이 많으면 $\binom{n}{2}$ 후보 — Tree 에 들어가는 사건에서만 계산한다.
+\end{itemize}
+\end{impl}
+
+% -----------------------------------------------------------------------------
+\section{event-shape 와 운동학 변수}\label{sec:reco-shape}
+
+\subsection{운동량 텐서: sphericity, aplanarity, $C$, $D$}
+선택 jet(또는 b jet)의 3-운동량으로
+\begin{equation}
+M_{ab}=\frac{\sum_i p_{i,a}\,p_{i,b}}{\sum_i|\vec p_i|^2},\qquad a,b\in\{x,y,z\},\qquad \lambda_1\ge\lambda_2\ge\lambda_3,\ \ \textstyle\sum\lambda=1
+\label{eq:reco-tensor}
+\end{equation}
+의 고유값에서
+\begin{equation}
+S=\tfrac32(\lambda_2+\lambda_3),\quad S_\perp=\frac{2\lambda_2}{\lambda_1+\lambda_2},\quad A=\tfrac32\lambda_3,\quad
+C=3(\lambda_1\lambda_2+\lambda_2\lambda_3+\lambda_3\lambda_1),\quad D=27\lambda_1\lambda_2\lambda_3
+\label{eq:reco-shape}
+\end{equation}
+를 만든다\src{AN-22-122 v26, PDF p.51--52, eq.\ 6--11}. 범위는 $0\le S\le1$(back-to-back dijet 0, 등방 1), $0\le A\le\frac12$(등방 $\frac12$)다
+(AN 은 위 끝을 $<$ 로 적었지만 등방 사건에서 등호가 된다). 우리 코드는 외부 라이브러리
+\file{EventShape/Class}(D.\,G.\ Sheffield)를 정적 라이브러리 \file{lib/libEventShape.a} 로 묶어 쓰며, 위 식과 같다\src{STEP 5}. 대상이 둘 미만이면
+텐서가 퇴화하므로 $-1$ 로 둔다. branch 는 jet 과 b jet 각각 다섯(\code{aplanarity} … \code{bjetEventD})이다.
+
+\begin{note}[읽는 법]
+QCD multijet 은 두 jet 이 마주보는 평평한(작은 $S$, $A$) 사건이 많고, 무거운 입자 넷(t, $\bar t$, H, H)이 붕괴하는 \ttHH{} 는 더 둥글다 — STEP 5 가 이
+변수를 FH 에 선제 탑재한 이유다\src{STEP 5}. 두 가지 주의: (1) 이차 텐서는 한 jet 이 둘로 갈라지면 값이 바뀐다(collinear-unsafe); 같은 jet
+정의를 쓰는 한 Data/MC 비교에는 문제가 없지만 jet 수와 상관이 크다. (2) 보통 transverse sphericity 는 횡운동량의 $2\times2$ 텐서로 정의하는데,
+AN 식 8 과 우리 코드는 $3\times3$ 텐서의 $\lambda_1,\lambda_2$ 를 쓴다. 이 노트를 쓰며 라이브러리의 고유값(하삼각만 채운 \code{TMatrixDSym})을
+numpy 의 전체 대칭 행렬과 무작위 2,000 사건에서 대조했고 차이는 $10^{-15}$ 수준이었다.
+\end{note}
+
+\subsection{centrality 와 Fox–Wolfram 모멘트}
+AN 의 centrality 는 jet 과 lepton 의 $\sum\pt/\sum|\vec p|$ 이다\src{AN-22-122 v26, PDF p.52, eq.\ 12}. FH 에는 lepton 이 없으므로 jet 만 쓴다
+(\code{centrality}, \code{bjetCentrality}). Fox–Wolfram 모멘트는
+\begin{equation}
+H_l=\sum_{i,j}\frac{|\vec p_i|\,|\vec p_j|}{s}\,P_l(\cos\Omega_{ij}),\qquad R_l=\frac{H_l}{H_0},\qquad l=0,\dots,4
+\label{eq:reco-fw}
+\end{equation}
+이다($P_l$: Legendre 다항식, $\Omega_{ij}$: 두 jet 사이 각)\src{AN-22-122 v26, PDF p.53, eq.\ 16}. AN 은 ``같은 jet 의 조합도 포함한다''고 적었으므로
+합은 $i=j$ 를 포함한다\src{AN-22-122 v26, PDF p.53, l.804--805}. $s$ 는 AN 에 정의가 없어 우리는 $e^+e^-$ 의 관례대로 $s=(\sum_iE_i)^2$ 로 두었다
+\tagours\src{TreeVars.h}. 이 선택에서 $H_0=(\sum|\vec p_i|)^2/(\sum E_i)^2$ 로, jet 질량이 0 이면 1 이고 질량이 있으면 1 보다 조금 작다;
+$R_l$ 은 그 정규화를 지운다. 질량 없는 두 jet 이 같은 에너지로 마주보면 짝수 $l$ 에서 1, 홀수 $l$ 에서 0 이다(단위 시험의 닫힌 꼴; 에너지가
+다르면 홀수 $l$ 은 $(E_1-E_2)^2/(E_1+E_2)^2$). jet 과 b jet 각각
+$H_0$–$H_4$, $R_1$–$R_4$ 를 남긴다. 대상이 둘 미만이면 $-1$.
+
+\begin{note}[Fox–Wolfram 을 hadron 충돌에서 쓸 때]
+$e^+e^-$ 의 질량중심계에서는 운동량 보존으로 $H_1=0$ 이지만, 우리는 실험실계에서 선택 jet 만으로 계산하므로 $H_1\ne0$ 이고 $z$ 방향 boost 에 따라
+값이 바뀐다. AN 도 같은 정의를 썼으므로 Run 2 와의 정합을 위해 그대로 둔다(D-2026-10-10-B: 억지로 바꾸지 않는다).
+\end{note}
+
+\subsection{쌍 통계, HT, 질량}
+쌍의 집합 $\mathcal P$ 를 셋 둔다: \textbf{jj}(모든 선택 jet 의 $i<j$), \textbf{bb}(b jet 의 $i<j$), \textbf{bj}(b jet 과 non-b jet 의 모든 쌍).
+$\Delta R=\sqrt{\Delta\eta^2+\Delta\phi^2}$ 이고 $\Delta\phi$ 는 $[0,\pi]$ 로 접는다. 각 $\mathcal P$ 에서
+\begin{equation}
+\overline{\Delta R}=\frac1{|\mathcal P|}\sum_{\mathcal P}\Delta R,\quad \Delta R^{\min},\ \Delta R^{\max},\quad
+\overline{\Delta\eta}=\frac1{|\mathcal P|}\sum_{\mathcal P}|\Delta\eta|,\quad \Delta\eta^{\max},\quad
+m^{\Delta R^{\min}},\ \pt^{\Delta R^{\min}}
+\label{eq:reco-pairs}
+\end{equation}
+일곱을 남긴다(마지막 둘은 $\Delta R$ 가 가장 작은 쌍의 질량과 \pt; AN Table 43 의 $\Delta R^{\min}_{jj,\text{mass}}$, $\Delta R^{\min}_{jj,\pt}$).
+세 집합 $\times$ 일곱 = 21 개다. 그 밖에
+\begin{itemize}
+\item $\HT=\sum\pt$(선택 jet), $\HT^b$(b jet), $\HT^{\text{light}}$(점수 $<L$); 평균 질량 $m_j^{\text{avg}}, m_b^{\text{avg}}, m_{\text{light}}^{\text{avg}}$ 와
+      $(m^2)_b^{\text{avg}}=\sum m_b^2/n_b$(AN 기호 그대로);
+\item $m_{jjj}^{\max\pt}$: 서로 다른 세 jet 가운데 합 벡터의 \pt{} 가 가장 큰 조합의 질량; $m_{jbb}^{\max\pt}$: 서로 다른 b jet 둘과 그 둘이 아닌 jet 하나;
+\item $m_{qq}$(\code{invMassHadW}, 식~\eqref{eq:selection-mqq}), \code{nLooseJets}(점수 $\ge L$, b 포함), \code{lightjetNumber}.
+\end{itemize}
+정의되지 않으면(대상 부족) $-1$ 이고 NaN 은 없다\src{TreeVars.h}.
+
+\begin{andiff}[옛 helper 와 다른 점(STEP 27 이 고친 것)]
+2026-06 의 \code{event} helper(\code{getStats}, \code{getStatsComb}, \code{getFoxWolfram}, \code{getMaxPTSame/Comb})는 그대로 두고 Tree 에는 쓰지 않는다.
+다른 점은 모두 의도한 것이다\src{TreeVars.h}\src{STEP 27}: (1) $\Delta\phi$ 를 접지 않아 $\pm\pi$ 를 건너는 쌍의 $\Delta R$ 이 틀렸다;
+(2) Fox–Wolfram 이 $i<j$ 만 더했다(AN 은 $i=j$ 포함); (3) bj 통계가 b jet 을 자기 자신과 짝지어 $\Delta R=0$ 이 생겼다; (4) $m_{jjj}$ 조합이 같은 jet 을
+두 번 쓸 수 있었다; (5) $(m^2)_b^{\text{avg}}$ 를 $(\sum m)^2/n$ 으로 계산했다. 옛 FHSample(2024-06; 사용자의 FH DNN V3 학습 표본)의 해당 열도
+같은 helper 로 만들어졌다\src{PLAN\_ML\_SYST §5.2}.
+\end{andiff}
+
+% -----------------------------------------------------------------------------
+\section{AN 변수 목록과 Tree v1}\label{sec:reco-anlist}
+
+DL DNN 은 Table 43 의 변수 전부와 GATJA 출력 24 개를 입력으로 쓰고\src{AN-22-122 v26, PDF p.50, Table 43}\src{AN-22-122 v26, PDF p.115},
+SL DNN 은 333 개 후보에서 고른 50 개를 쓴다\src{AN-22-122 v26, PDF p.108, Table 49}. FH 에서 계산할 수 있는 Table 43 의 변수는 Tree v1 이 덮는다
+(표~\ref{tab:reco-an43}).
+
+\begin{table}[htbp]\centering
+\caption{AN-22-122 Table 43 의 묶음과 Tree v1 의 대응. ``벡터''는 jet 벡터에서 내보내기 도구가 만든다.}\label{tab:reco-an43}
+\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{3.0cm}>{\raggedright\arraybackslash}p{4.6cm}L@{}}
+\toprule
+묶음 & AN 변수 & 우리 Tree(이름) \\
+\midrule
+다중도 & $N_{\text{jets}}$, $N_{\text{bjets}}$, $N_{\text{light}}$ & \code{nJets}, \code{nbJets}, \code{lightjetNumber} \\
+4-운동량 & jet·b jet 1–6 의 \pt, $|\eta|$; lepton 1, 2 & 벡터(\code{jetPt}, \code{jetEta}, \code{jetPhi}, \code{jetMass}, \code{bTagScore}); lepton 은 FH 에 없음 \\
+HT & $\HT$, $\HT^b$, $\HT^{\text{light}}$, $\HT^{\text{lepton}}$, $S_T$ & \code{HT}, \code{bjetHT}, \code{lightjetHT}; $\HT^{\text{lepton}}$, $S_T$ 없음 \\
+질량 & $m_j^{\text{avg}}$, $m_b^{\text{avg}}$, $m_{\text{light}}^{\text{avg}}$, $(m^2)_b^{\text{avg}}$, $m_{jjj}^{\max\pt}$, $m_{jbb}^{\max\pt}$, $m_{\mu\mu}$, $m_{ee}$ & \code{jetAverageMass}, \code{bjetAverageMass}, \code{lightjetAverageMass}, \code{bjetAverageMassSqr}, \code{maxPTmassjjj}, \code{maxPTmassjbb}; $m_{\ell\ell}$ 없음 \\
+각도 & $\overline{\Delta\eta}_{jj}, \overline{\Delta\eta}_{bb}, \Delta\eta_{bb}^{\max}$, $\overline{\Delta R}_{jj,bb}$, $\Delta R^{\min}_{jj,bb}$, 최소 $\Delta R$ 쌍의 질량·\pt & 21 개(jj, bb, bj $\times$ 7; 식~\eqref{eq:reco-pairs}) \\
+\chisq{} & $\chi^2_{HH}$, $\chi^2_{ZZ}$, $\chi^2_{ZH}$ & \code{chi2Higgs}, \code{chi2Z}, \code{chi2HiggsZ} \\
+질량·\pt{} & $m_{H,1}$, $m_{H,2}$, $m_{Z,1}$, $m_{Z,2}$, $m_{ZH,Z}$, $m_{ZH,H}$, $\pt(H_{1,2})$ & \code{invMassH1/H2}, \code{invMassZ1/Z2}, \code{invMassHiggsZ2}(Z), \code{invMassHiggsZ1}(H), \code{PTH1/PTH2} \\
+event shape & aplanarity, centrality, sphericity, $S_\perp$, $C$, $D$(jet, b jet) & STEP 5 의 열, \code{centrality}, \code{bjetCentrality} \\
+(표 밖) & Fox–Wolfram $H_0$–$H_4$, $R_1$–$R_4$; jet b-tag 판별값; GATJA 24 & \code{H0}…\code{bjetR4}; \code{bTagScore}(2024 는 \code{jetBTagWP}); GATJA 는 학습 뒤 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{없는 것.}
+(1) \textbf{BLR}(b-tag likelihood ratio; 6b 대 4b 가설의 b-tag pdf 비, AN eq.\ 17--19)\src{AN-22-122 v26, PDF p.55--56}: 맛별 b-tag pdf 가
+필요하다 — 내보내기 도구에서 나중에(PLAN\_ML\_SYST §5.1). (2) \textbf{JABDT}: SL 의 6-jet 가설(lepton top 의 b 포함)이라 FH 에는 새 가설이 필요하다.
+(3) \textbf{MEM}: ttH(bb) FH 는 MEM 판별값을 ANN 입력으로 썼지만\src{AN-19-094 v20, PDF p.113--114} ttHH AN 에는 없다. (4) \textbf{GATJA 출력}: FH 판을
+학습한 뒤(W5). (5) lepton·\MET{} 변수는 FH 에 해당 없음(\code{metPhi} 는 남김). (6) GATJA 의 이웃 번호(\chisq$(m_H)$ 가 가장·두 번째로 작은 짝)는 내보내기
+도구가 b jet 4-벡터로 만든다\src{PLAN\_ML\_SYST §5.1}.
+
+\paragraph{b-tag 와 상관된 입력의 제약.}
+ttH(bb) FH 는 QCD template 을 낮은 b-tag 영역에서 가져오므로 b-tag 값과 직접 상관된 입력을 피하고, TR·CR·SR 에서 모양이 같은 변수만 썼다
+\src{AN-19-094 v20, PDF p.156}. ttHH SL DNN 은 b-tag 점수 순위(d3–d6)와 BLR 을 많이 쓴다\src{AN-22-122 v26, PDF p.108, Table 49}. FH 에서는 이 둘이 부딪힌다:
+권고는 ``모양 동등성 검사를 통과한 변수만''이다(사용자 결정 대기)\tagopen\src{ROADMAP\_FH §6}. 2024 는 fixed-WP SF 만 있으므로 연속 점수 대신
+WP 칸(\code{jetBTagWP})을 쓰는 것이 SF 와 맞다\src{D-2026-10-10-A}.
+
+% -----------------------------------------------------------------------------
+\section{jet 단위 정보와 GATJA 의 정답 표지}\label{sec:reco-gen}
+
+\paragraph{jet 벡터.}
+선택 jet 마다(\code{jetPt} 와 같은 순서, 보정 뒤 \pt{} 내림차순) \code{jetPt}, \code{jetEta}, \code{jetPhi}, \code{jetMass}, \code{bTagScore},
+\code{jetBTagWP}, MC 의 \code{hadFlavs}, \code{partonFlavs} 가 있다. jet 배정 ML 의 입력(노드의 \pt, $\eta$, $\phi$, b-tag)을 모두 여기서 만들 수 있다.
+
+\paragraph{정답 표지(MC; \texttt{include/GenMatch.h}).}
+\begin{enumerate}
+\item \textbf{parton}: $|\text{pdgId}|=1$–5 인 quark 가운데 statusFlags 의 fromHardProcess(bit 8)와 isLastCopy(bit 13)가 모두 켜진 것. 마지막 사본은
+      parton shower 뒤 hadronization 직전이라 jet 방향에 가깝다.
+\item \textbf{기원}: quark 자신의 사본을 건너뛴 첫 다른 $|\text{pdgId}|$ 조상. H(25)의 b → 1, t(6)의 b → 2, W(24) → 3, Z(23) → 4. 그 밖(4FS tt+bb 의 추가
+      b, gluon 분열 등)은 parton 이 아니다.
+\item \textbf{어미 번호}: 그 조상의 \emph{첫} 사본의 GenPart 번호 — 같은 Higgs 의 두 b 가 같은 번호를 가진다.
+\item \textbf{짝짓기}: $\Delta R<0.4$($\Delta\phi$ 접음)인 모든 (jet, parton) 쌍을 $\Delta R$ 오름차순으로 보며 jet 과 parton 을 각각 한 번만 쓴다(greedy unique).
+\end{enumerate}
+결과는 \code{jetGenMatch}(0 없음, 1 H$\to$b, 2 t$\to$b, 3 W$\to$q, 4 Z$\to$q), \code{jetGenMotherIdx}(없으면 $-1$), 그리고
+\code{jetGenTopIdx}(그 quark 가 온 top 의 첫 사본: t$\to$b 는 어미 자신, W$\to$q 는 W 의 첫 사본의 부모가 top 이면 그 top; 아니면 $-1$)다.
+Data 는 0, $-1$, $-1$\src{GenMatch.h}\src{STEP 27 §O.2, §P}. top 번호는 독립 검토에서 더했다\tagimpl\tagtest: FH 에는 hadronic top 이 둘이라
+W 의 번호만으로는 W 의 두 quark 가 어느 top 의 b 와 한 묶음인지 알 수 없고(GenPart 는 tree 에 없다), top 재구성의 정답이 없었다. AN 의 JABDT 는 jet 과 gen jet 의 $\Delta R<0.4$ 로 매칭하고 $\Delta R$ 가 가장 작은 순열을 ``맞는 것''으로 했다
+\src{AN-22-122 v26, PDF p.58} — 발표는 이를 ``$\Delta R$ 합이 가장 작은 순열''로 적었다\src{사전승인 발표 p.40}\src{승인 발표 p.40}; 0.4 는 AK4 의 반지름이다. 이 규칙은 PROPOSED 이고 사용자 확인을 기다린다\tagopen.
+
+\paragraph{GATJA 가 이것을 필요로 하는 이유.}
+GATJA 는 b-tag 된 jet \emph{하나하나}를 Higgs / top / 기타로 분류하는 object 기반 배정이다\src{GATJA 발표 p.6}. 각 b jet 을 노드로 두고, 그 jet 과
+짝지었을 때 $\chi^2(m_H)$ 가 가장 작은 jet 과 두 번째로 작은 jet 을 이웃으로 붙인다 — 혼잡한 말단 상태에서는 맞는 짝이 두 번째인 경우가 많기
+때문이다\src{GATJA 발표 p.7}. 출력은 b jet 마다 세 확률이고 최대 8 개 b jet 이라 24 개다\src{AN-22-122 v26, PDF p.69, Table 48}. 이것은 지도 학습
+(supervised)이므로 jet 마다 ``진짜 기원''이 있어야 한다: \code{jetGenMatch} 1 → Higgs, 2 → top, 그 밖 → 기타가 GATJA 의 세 class 이고, FH 에서는 W
+(표지 3)를 넷째 class 로 넓힐 수 있다\src{PLAN\_ML\_SYST §9.3}. 어미 번호는 ``어느 두 jet 이 같은 Higgs 인가''를 주므로 GATJA 발표의 새 출력
+(best pairing)\src{GATJA 발표 p.8} 과 \chisq{} 재구성 효율(AN Table 47 같은 표)을 재는 데 쓴다. DL 에서 GATJA 를 넣으면 $Z_A$ 가 27\,\% 좋아졌다
+\src{AN-22-122 v26, PDF p.116, l.1184--1185}.
+
+\begin{note}[표지의 한계]
+두 quark 가 한 jet 에 들어가면(병합) 하나만 표지를 받는다; acceptance 밖의 quark 는 jet 이 없다; FSR 로 방향이 바뀌면 $\Delta R<0.4$ 를 놓칠 수 있다.
+그래서 ``H 에 매칭된 b jet 쌍의 질량이 125\GeV{} 근처에 모이는가''로 실제 v15 표본에서 확인한다\src{STEP 27, 확인하지 못한 것}. 표지는 선택이나 weight 에
+쓰지 않는다.
+\end{note}
+
+% -----------------------------------------------------------------------------
+\section{계통용 weight}\label{sec:reco-weights}
+Tree v1 은 MC 사건마다 계통 불확도의 재료를 남긴다(\ref{ch:syst} 장)\src{STEP 27 §O.4, §O.5}.
+\begin{itemize}
+\item \code{PUWeight_up/_down}: \code{CorrectionsManager::getPUWeight}. Run 2 는 LUM payload, 2024 는 우리 DQM 판 JSON(최소 편향 $\sigma\pm4.6\,\%$).
+\item \code{L1PrefiringWeight_up/_down}: 2016·2017 MC 의 NanoAOD 값(그 연도에는 필수 branch), 2018·2024 는 1.
+\item \code{LHEScaleWeight}, \code{PSWeight}: NanoAOD 벡터 그대로. 순서는 branch 제목이 정한다 — 보통 9 개($\mu_R,\mu_F$)와 4 개(ISR, FSR)지만 기억이므로
+      실제 v15 파일의 제목으로 확인한다\tagopen.
+\item \code{LHEPdfWeight}: 사건당 약 100 float 이라 \texttt{-{}-tree-pdf on} 일 때만(제출기도 같은 옵션).
+\item Run 2 b-tag shape 출처 8 개 $\times$ up/down(\code{bTagWeight_hf_up} …): BTV recipe — c jet 은 cferr1/2 에서만, b·light jet 은 cferr 밖의 모든 출처에서
+      변형. 출처별 norm reweight 는 reweight 도구가 유도해 downstream 이 곱한다(AN 은 ``변동마다 따로'')\src{AN-22-122 v26, PDF p.42}.
+\item 2024: \code{bTagWeight_up/_down}(fixed WP), 비교 weight \code{bTagWeight_oldRule}, \code{bTagWeight_cAsB}\src{D-2026-10-10-A}.
+\end{itemize}
+JES·JER 변형은 weight 가 아니라 다시 실행해야 한다(W6). 출처별 shape weight 의 키(\code{up_hfstats1} 등)는 job 이 시작할 때 레시피의
+flavour 마다 한 번씩 계산해 보고, payload 가 하나라도 모르면 그 자리에서 멈춘다(E40)\tagtest\src{STEP 27 §P}: 계산 실패를 SF = 1 로 바꾸는 옛 함수
+때문에 변형이 조용히 틀릴 수 있었다(독립 검토 R2).
+
+\paragraph{Tree v1 끄기\,\tagimpl\tagtest.} Tree v1 은 압축 전 tree byte 의 55–60\,\% 를 차지한다(합성 출력에서 잰 값\src{STEP 27 §P}). ML 입력이 필요
+없는 실행(btagtrig, lepton CR)에서는 analyzer 와 제출기의 \texttt{-{}-tree-v1 off} 로 Tree v1 branch 를 모두 뺄 수 있다; 나머지 branch·히스토그램은
+같다(offline smoke 에서 확인). \texttt{-{}-tree-pdf on} 은 Tree v1 이 켜져 있을 때만 된다.
+
+% -----------------------------------------------------------------------------
+\section{검증}\label{sec:reco-tests}
+\begin{itemize}
+\item \textbf{단위 시험} \file{test/test_TreeVars.cc}(30 check, 모두 PASS; STEP 27 의 27 + P 의 top 번호 3): $\Delta\phi$ 접기와 $\pm\pi$ 를 건너는 쌍, 쌍 통계와 무차별 계산, Fox–Wolfram 의 닫힌
+      꼴과 무차별 이중합, centrality·HT·평균 질량, 서로 다른 세 jet 의 $m_{jjj}$, \chisq{}: $n_M=5$ 에서 \code{HiggsReconstructor} 와 비트 동일·무차별과 같음,
+      질량 순서, $n_M=3$(L 있음·없음), $n_M=2$(L 하나), $n_M=1\to-1$; 정답 표지: 합성 gen record(H 의 두 b 사본, t$\to$b, W$\to$q 둘, hard process 가
+      아닌 b, $\pm\pi$ 를 건너는 Z$\to$b)에서 표지·어미·유일성\src{STEP 27}. 기대값은 시험 안에서 독립적으로 계산한다.
+\item \textbf{독립 재계산} \file{test/offline_smoke/treev1_check.py}: analyzer 출력 다섯(2024 MC, 2024 MC \texttt{-{}-tree-pdf on}, 2024 Data, 2017 MC,
+      2017 Data)의 모든 사건에서 Tree 의 jet 벡터로 모든 Tree v1 변수를 numpy 로 다시 계산하고, 입력 파일의 같은 사건으로 \code{metPhi}, 정답 표지,
+      PU up/down(correctionlib), L1 up/down, LHE/PS 벡터, 2017 의 shape 출처 16 개를 대조한다.
+\item \textbf{offline smoke} 116/116(STEP 27 의 110 + P 의 6: \texttt{-{}-tree-v1 off} 와 그 금지 조합, shape 키 검사와 키가 빠진 payload), 2017 출력은 전 빌드와 같다(Y1)\src{STEP 27 §P}.
+\item \textbf{병합}: 두 빌드의 출력(예: 다시 빌드한 뒤 재제출한 job)이 섞이면 hadd 가 실패하지 않고 branch 나 사건을 조용히 잃는다(독립 검토 R1).
+      \file{outputMerger/run_one_hadd.sh} 가 hadd 전에 입력의 \code{Tree/Tree} branch 집합을 비교해 다르면 exit 8 로 멈춘다\tagtest\src{STEP 27 §P}.
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{변경 이력}\label{sec:reco-history}
+\begin{itemize}
+\item \textbf{STEP 5} (2026-06-11): EventShape 를 소스 include 대신 \file{lib/libEventShape.a} 로; 사건 형태 10 branch\src{STEP 5}.
+\item \textbf{STEP 6} (2026-06-12): \code{HiggsReconstructor} — HH 만 하던 인라인 재구성을 HH/ZH/ZZ 한 번의 sweep 으로; ZH·ZZ 6 branch;
+      옛 HH 와 비트 동일(10,000 사건, 2,280 mismatch 를 고친 뒤 0)\src{STEP 6}.
+\item \textbf{STEP 27} (2026-10-10): Tree v1 — branch 75 개 + 연도별 16(Run 2 shape) 또는 2(2024), \code{--tree-pdf}; \file{include/TreeVars.h},
+      \file{include/GenMatch.h}; 제출기 \code{--memory} 기본 2 GB(전 12 GB 고정; 2024 analyzer job 25,313 개의 최대 286 MB), plotter \code{--tree-v1}
+      \src{STEP 27}. 계획은 \file{docs/PLAN_ML_SYST.md} §5.2.
+\item \textbf{STEP 27 P} (2026-10-10, 독립 검토 반영): \code{jetGenTopIdx}(core 76 개), analyzer·제출기 \code{--tree-v1 on|off}, shape 키 검사(E40),
+      병합의 branch 집합 검사(exit 8), cAsB 의 큰 jet weight 수, NaN 점수의 WP 칸 0\src{STEP 27 §P}.
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{미결 사항}\label{sec:reco-open}
+\begin{openq}
+\begin{enumerate}
+\item \textbf{\chisq{} 의 $\sigma$}: 식~\eqref{eq:reco-chi2ours}(역사적) 대 AN 의 ``JER 의 함수''(식~\eqref{eq:reco-sigmajer} 같은 꼴, 우리 해석).
+      cut-flow·SR 정의는 그대로 두고 DNN 입력의 정의만 바꿀지\src{PLAN\_ML\_SYST §8}.
+\item \textbf{Tree v1 을 SF main 셋에 넣을지} — 권고는 예(아니면 ML 표본을 위해 main 을 한 번 더)\src{ROADMAP\_FH §6}.
+\item 이름 규칙(DL 새 이름 + b jet 양은 \code{bjet} 접두)과 정답 규칙은 PROPOSED — 사용자 확인\src{STEP 27}.
+\item \code{LHEScaleWeight}·\code{PSWeight} 의 순서를 v15 파일의 branch 제목으로 확인; Tree 크기(합성 출력에서 사건당 약 0.7\,kB, 압축 전 tree byte 의
+      55–60\,\%)와 CPU 를 첫 SF main 에서 잼; \code{--memory} 2 GB 가 Tree v1 에서도 넉넉한지; lepton CR 에 Tree v1 을 켤지(\texttt{-{}-tree-v1}).
+\item DNN 입력에 b-tag 점수·BLR·$n_M=2$ \chisq{} 를 쓸지 — QCD template 과의 정합(TR/CR/SR 모양 검사)\src{ROADMAP\_FH §6}.
+\item GATJA 의 FH 판: class 셋(H, t, 기타) 또는 넷(+W), event 입력에서 lepton·\MET{} 를 무엇으로 바꿀지\src{PLAN\_ML\_SYST §9.3}.
+\item 목표 질량이 cut-flow 재구성(125.38/91)과 Tree v1(125/91.2)에서 다르다 — 의도한 것이지만 그림을 비교할 때 혼동하지 않도록 표기할 것.
+\end{enumerate}
+\end{openq}

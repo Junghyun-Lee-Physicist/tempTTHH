@@ -1,0 +1,342 @@
+% =============================================================================
+% 6 장 — 사건 선택과 분석 영역 (ch:selection)
+% 출처: AN-19-094 v20(ttH(bb), FH baseline·범주), AN-22-122 v26(ttHH SL/DL baseline),
+%       Hbb 회의 FH 발표(2026-07-30), KCMS 발표, tempTTHH 코드·STEP·DECISIONS(2026-10-10, STEP 27 까지)
+% =============================================================================
+\chapter{사건 선택과 분석 영역}\label{ch:selection}
+
+이 장은 FH 사건 선택(selection)이 코드에서 어떻게 돌아가는지 정리한다. cut 의 순서와 값, 분석 모드(prescan, btagtrig, main)마다
+어떤 cut 이 실제로 사건을 버리는지, 그리고 그 값들이 어디서 왔는지를 적는다. 출발점은 ttH(bb) FH 의 baseline(AN-19-094 Table 55)이다.
+ttHH SL/DL 의 baseline(AN-22-122 Table 26)과 왜 다른지는 FH 의 물리, 곧 lepton 이 없고 jet 이 많으며 trigger 가 HT·jet·b-tag 에
+걸린다는 점으로 설명한다. 같은 selection 위에 영역 셋(FH, $\mu$CR, $e$CR), weight 층 셋(3-tier), SF 토글별 출력 디렉터리가 있고,
+나중에 QCD data-driven 추정과 fit 이 쓸 영역(b-tag 다중도 $\times$ $m_{qq}$)이 이 baseline 안에서 정의된다(\ref{ch:qcd} 장).
+끝으로 지금까지 나온 control plot(2017 Hbb 회의 발표, 2024 첫 look)과 앞으로의 control plot 계획, 변경 이력과 미결 사항을 모은다.
+
+% -----------------------------------------------------------------------------
+\section{물리적 배경: FH 사건 선택이 풀어야 하는 문제}\label{sec:selection-physics}
+
+\paragraph{말단 상태.}
+FH 채널에서는 두 top quark 가 모두 $t\to bW\to bq\bar q'$ 로, 두 Higgs boson 이 모두 \Hbb{} 로 붕괴한다.
+LO 에서 quark 10 개(b quark 6 개 + W 의 light quark 4 개)가 나오고 중성미자와 고립된 lepton 은 없다\src{Hbb 회의 FH 발표 p.8}.
+AN-22-122 의 분기비 $\mathcal{B}(H\to b\bar b)=0.5824$, $\mathcal{B}(W\to\text{had})=0.6741$\src{AN-22-122 v26, PDF p.38, Table 25} 로 계산하면
+$\mathcal{B}(t\bar t\to\text{FH})=0.6741^2\simeq0.454$, $\mathcal{B}(HH\to4b)=0.5824^2\simeq0.339$ 이고, \ttHH{}(HH$\to4b$) 가운데 FH 몫은
+$0.454\times0.339\simeq0.154$ 이다(계산). top 쌍 붕괴 가운데 가장 큰 몫이고 완전 재구성이 가능하며 SL/DL 과 통계적으로 독립이라는 것이
+FH 를 더하는 이유다\src{Hbb 회의 FH 발표 p.8}.
+
+\paragraph{배경과 trigger.}
+대가는 QCD multijet 이다. lepton 과 \MET{} 로 QCD 를 누를 수 없으므로 FH 의 trigger 는 HT, 여러 jet 의 \pt, online b-tag 에 걸린 경로의 OR 이고
+(\ref{ch:trigger} 장), baseline 뒤에도 QCD 가 배경의 대부분이다: ttH(bb) FH 의 신호 범주 사전 수율에서 multijet 은 배경의 67–83\,\% 이다
+(AN-19-094 Table 83, 89, 95 의 값으로 계산)\src{AN-19-094 v20, PDF p.177, 183, 189}. 이 때문에 FH 사건 선택에는 세 가지 요구가 겹친다.
+\begin{enumerate}
+\item \textbf{trigger plateau.} offline cut 이 trigger 의 turn-on 위에 있어야 trigger 효율과 그 SF 가 안정하다. ttH(bb) FH 는 6 번째 jet 의
+      $\pt>40\GeV$ 를 ``HLT 성능 때문'' 이라 적었다\src{AN-19-094 v20, PDF p.68, l.703--704}. HT\,$>500\GeV$ 도 같은 성격이다(\code{include/SelectionCuts.h}
+      의 주석: 2017 HLT 의 SixPFJet40/PFHT380 plateau).
+\item \textbf{낮은 b-tag 영역을 남긴다.} QCD 는 MC 로 모델링할 수 없어 데이터에서 추정한다(\ref{ch:qcd} 장). 그 방법은 b-tag 수가 적은 영역
+      (2M, 3M)을 학습·control 영역으로 쓰므로, baseline 은 신호 영역보다 느슨한 $n_b\ge2$ 로 두고 신호 영역은 그 안에서 고른다.
+\item \textbf{SL/DL 과의 직교성.} lepton veto 로 세 채널이 겹치지 않게 한다. ttH(bb) 는 세 채널이 ``구성상 서로 겹치지 않는다''고
+      적었다\src{AN-19-094 v20, PDF p.69, l.738--739}.
+\end{enumerate}
+
+\paragraph{신호의 크기.}
+baseline 에서 신호는 아주 작다. 2017 baseline(아래 \S\ref{sec:selection-control})에서 \ttHH{} 는 4.3 사건, MC 합은 $3.39\times10^6$
+사건이다\src{Hbb 회의 FH 발표 p.25}. 그래서 baseline·control 영역의 data 는 신호를 드러낼 수 없고, 가리지 않는다
+(\S\ref{sec:selection-plan}의 blinding 정책).
+
+% -----------------------------------------------------------------------------
+\section{구현: 선언적 cut 표 \texttt{kCutSequence}}\label{sec:selection-cuts}
+
+\subsection{표가 하는 일}
+selection 은 \file{ttHHanalyzer_unified.cc} 의 \code{kCutSequence} 한 표에 순서대로 적혀 있고 \code{selectObjects} 의 짧은 loop 가 그 표를
+실행한다\src{STEP 3}. 표의 한 줄은 \texttt{CutDef\{step, label, enforceIn, recordOnlyIfPass, pass, onAfter\}} 이다.
+\begin{itemize}
+\item \code{enforceIn}: 그 cut 이 사건을 \emph{버리는} 모드의 bit. \code{kSelBitMainLike}(main, debug), \code{kSelBitBtagTrig}(btagtrig),
+      둘 다(\code{kSelEnforceAll}), 아무 모드도 아님(\code{kSelObserveOnly}). bit 에 없는 모드에서는 cut-flow 에 기록만 한다.
+\item \code{recordOnlyIfPass}: 관찰 단계($n_b\ge3$, $n_b\ge4$)는 조건을 만족할 때만 기록한다. 그래서 cut-flow 의 비로 ``다음 단계의 효과''를
+      읽을 수 있지만 사건은 버리지 않는다.
+\item \code{onAfter}: 살아남은 뒤의 부수 작업. lepton veto 뒤에는 lepton–jet 통계, HT 뒤에는 \textbf{사건 단위 SF 블록}
+      (\code{applyEventScaleFactors}: b-tag SF, trigger SF, b-tag norm reweight)이 돈다. 그래서 SF 를 건 cut-flow(\code{_btagSF}, \code{_full}; 아래 3-tier)는
+      $n_b\ge2$ 단계부터 SF 의 효과를 보인다.
+\end{itemize}
+값은 \file{include/SelectionCuts.h} 의 \code{Cuts::} 상수(예전 \code{std::map} 의 오타가 조용히 0 이 되는 함정을 없앤 것)이고, 연도에 따라
+다른 값(b-tag WP 등)은 \file{include/EraConfig.h} 에만 있다\src{STEP 3}. STEP 3 은 표 실행과 그 전의 if-나열을 무작위 200,000 사건 $\times$
+\{main, btagtrig\} 로 비교해 기록된 단계·SF 호출까지 차이 0 을 확인했다\src{STEP 3}.
+
+\subsection{분석 모드}
+analyzer 는 \code{--mode} 로 갈린다\src{README §1}. \textbf{prescan} 은 selection 없이 $\sum w_{\text{gen}}$ 과 \code{genTtbarId} 분포만 모아 정규화와
+stitching 의 입력을 만든다. \textbf{btagtrig} 는 파생 도구(trigger SF, b-tag 효율·norm reweight)의 입력 skim 을 만든다: trigger, lepton veto,
+$n_b\ge2$, $m_{qq}$ cut 을 강제하지 않고 기록만 하며, lead muon 이 있는 사건의 lepton 을 모은다(single-muon 기준 영역). \textbf{main} 은 모든 cut 을
+강제하고 SF·stitching 을 건 최종 수율과 \code{Tree/Tree} 를 만든다. \textbf{debug} 는 main 과 같고 단계별 로그만 더한다.
+cut 이 아닌 동작(lepton 수집, Higgs 재구성)은 \code{SelectionPolicy} 가 모드마다 정한다(main·debug 만 \chisq{} 재구성)\src{ttHHanalyzer\_unified.h, SelectionPolicy}.
+
+\begin{table}[!ht]\centering
+\caption{\texttt{kCutSequence} 의 단계(2026-10-10). ``강제''는 main/btagtrig 에서 사건을 버리는지(●) 기록만 하는지(○). 값은 \texttt{Cuts::}.}
+\label{tab:selection-cuts}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}c>{\raggedright\arraybackslash}p{2.35cm}>{\raggedright\arraybackslash}p{5.2cm}cL@{}}
+\toprule
+\# & 라벨 & 조건과 값 & 강제 & 목적 · 출처 \\
+\midrule
+0 & \code{noCut} & 모든 사건 & ○/○ & 기록 \\
+1 & \code{HadTrigger} & hadronic trigger OR(연도·PD 규칙, \ref{ch:trigger} 장) & ●/○ & 분석 trigger; btagtrig 는 bit 만 저장 \\
+2 & \code{noiseFilter} & MET filter 목록(\code{EraConfig::metFilters}); 2024 는 jet veto map 도 이 단계 & ●/● & 사건 정제(연도별 목록) \\
+3 & \code{pv>=1} & \code{PV_npvsGood} $\ge1$ & ●/● & 사건 정제 \\
+4 & \code{njets>=6} & 선택 jet $\ge6$(보정 뒤 $\pt>30\GeV$, $|\eta|<2.4$, ID; \ref{ch:objects} 장) & ●/● & AN-19-094 Table 55 \\
+5 & \code{6thJetsPT>40} & 6 번째 jet $\pt>40\GeV$ & ●/● & HLT plateau; Table 55 \\
+6 & \code{nlepton==0} & veto lepton 0($\mu$: tight ID, iso\,$<0.15$, $\pt>15$, $|\eta|<2.4$; $e$: MVA WP90, $\pt>15$, $|\eta|<2.5$, gap 제외) & ●/○ & SL/DL 직교성; \code{--region} 이면 1$\ell$+\MET{} 로 바뀜(\S\ref{sec:selection-regions}) \\
+7 & \code{HT>500} & $\HT=\sum\pt(\text{선택 jet})>500\GeV$; 통과 뒤 SF 블록 & ●/● & trigger plateau; Table 55 \\
+8 & \code{nbjets>=2} & 점수 $\ge$ M 인 jet $\ge2$ & ●/○ & baseline; QCD 의 낮은 b-tag 영역을 남김 \\
+9 & \code{nbjets>=3} & $n_b\ge3$ & ○/○ & 관찰 전용(통과할 때만 기록) \\
+10 & \code{nbjets>=4} & $n_b\ge4$ & ○/○ & 관찰 전용 \\
+11 & \code{30<HadW<250} & $30\le m_{qq}\le250\GeV$(정의는 아래) & ●/○ & Table 55; 나중의 $m_{qq}$ 축 \\
+12 & \code{HiggsMassWindow} & 조건 없음(2026-01-05 부터 비활성) & ○/○ & 카운터 \\
+13 & \code{nTotal} & 최종 & ○/○ & 기록 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{hadronic W 후보 질량 $m_{qq}$ (``HadW'')}\label{sec:selection-mqq}
+AN-19-094 는 $m_{qq}$ 를 ``W 질량에 가장 가까운 dijet 불변질량''이라 하고 baseline 에서 $30<m_{qq}<250\GeV$ 를 요구한다; 이 값은 나중에 검증
+사이드밴드를 정의하는 데 쓰인다\src{AN-19-094 v20, PDF p.68, l.704--706}. 우리 코드는 \code{selectObjects} 에서
+\begin{equation}
+m_{qq}=m_{i^*j^*},\qquad (i^*,j^*)=\operatorname*{arg\,min}_{(i,j)\in\mathcal{J}}\bigl|m_{ij}-m_W\bigr|,\qquad m_W=80.377\GeV
+\label{eq:selection-mqq}
+\end{equation}
+을 \code{closestMassPair} 로 계산한다. $\mathcal{J}$ 는 light jet(점수 $<L$)이 둘 이상이면 light jet 쌍, 아니면 모든 선택 jet 쌍이다.
+경계를 포함해 $30\le m_{qq}\le250\GeV$ 이면 통과시킨다(\texttt{wMass = 80.377f})
+\src{ttHHanalyzer\_unified.cc, selectObjects}. light jet 을 점수 $<L$ 로 고르므로 M·L 로 tag 된 jet 은 빠진다. 이것이 ttH(bb) FH 가 QCD 영역에서
+요구한 ``b-tag 로 영역을 정의하는 데 쓰인 jet 은 $m_{qq}$ 계산에서 뺀다''\src{AN-19-094 v20, PDF p.101, l.1171--1174}를 만족하는 방식이다.
+light jet 이 둘 미만이면 모든 jet 에서 고르므로 이 독립성이 깨질 수 있다(\ref{ch:qcd} 장에서 그 사건의 비율을 센다). STEP 27 부터 이 값이
+\code{Tree/Tree} 의 \code{invMassHadW} 로 기록된다\src{STEP 27}.
+
+\begin{impl}
+\begin{itemize}
+\item cut 표: \file{ttHHanalyzer_unified.cc} 의 \code{kCutSequence}(\code{selectObjects} 바로 위), 실행 loop 는 \code{selectObjects} 끝.
+      debug 모드는 시작할 때 표·enum·라벨의 1:1 을 검사한다(\code{[dbg][seltable]}).
+\item 값: \file{include/SelectionCuts.h}(\code{nJets=6}, \code{sixthJetPt=40}, \code{HT=500}, \code{nbJets=2}, \code{hadWMassLo/Hi=30/250},
+      lepton veto 문턱); b-tag WP: \code{EraConfig::btagWP}(2017 M 0.3040, 2018 M 0.2783, 2024 UParTAK4 M 0.1272).
+\item veto lepton 수: \code{createObjects} 의 STEP 1(\code{setnVetoLepton}), 모든 모드에서 센다. Tree 의 \code{nVetoLeptons} 가 같은 값이다.
+\item 주석에 남은 역사: \code{nJets} 와 \code{nbJets} 는 예전 판(``round2'')에서 8 과 4 였다\src{SelectionCuts.h}.
+\end{itemize}
+\end{impl}
+
+% -----------------------------------------------------------------------------
+\section{baseline 비교: ttH(bb) FH, ttHH SL/DL, 우리 FH}\label{sec:selection-compare}
+
+\begin{table}[htbp]\centering
+\caption{baseline 비교. ttH(bb) FH 는 AN-19-094 Table 55, ttHH SL/DL 은 AN-22-122 Table 26, 우리 FH 는 \texttt{SelectionCuts.h}.}
+\label{tab:selection-compare}
+\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{2.5cm}LLLL@{}}
+\toprule
+ & ttH(bb) FH & ttHH SL & ttHH DL & 우리 FH \\
+\midrule
+lepton & 0(DL 차선행 기준, 추가 lepton $\pt\le15$) & 정확히 1 & 정확히 2, 반대 부호 & 0(\S\ref{sec:selection-cuts} 의 veto) \\
+jet 수 & $\ge6$, $\pt>30$, $|\eta|<2.4$ & $\ge5$ & $\ge4$ & $\ge6$, $\pt>30$, $|\eta|<2.4$ \\
+6 번째 jet & $\pt>40$ & — & — & $\pt>40$ \\
+b-tag & $\ge2$ (DeepJet M) & $\ge4$ (M) & $\ge3$ (M) & $\ge2$ (M; 2024 UParTAK4 M) \\
+\HT & $>500$ & — & — & $>500$ \\
+\MET & — & $>20$ & $>40$ & — \\
+$m_{qq}$ & $30$–$250$ & — & — & $30$–$250$ (식~\eqref{eq:selection-mqq}) \\
+$m_{\ell\ell}$ & — & — & $>20$; ee, $\mu\mu$ 는 76–106 제외 & — \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+출처: ttH(bb) FH\src{AN-19-094 v20, PDF p.68, Table 55}, ttHH SL/DL\src{AN-22-122 v26, PDF p.39, Table 26}. 우리 FH 는 ttH(bb) FH 의
+baseline 을 그대로 옮긴 것이다(ttHH AN 에는 FH baseline 이 없다; FH 는 ``다른 AN 에서 진행 중''이라고만 적혀 있다\src{AN-22-122 v26, PDF p.5, l.58--60}).
+
+\paragraph{왜 SL/DL 과 다른가.}
+\begin{itemize}
+\item \textbf{lepton 과 \MET.} SL/DL 은 lepton trigger 로 사건을 얻고 \MET{} cut 으로 QCD 를 누르며 중성미자를 반영한다(DL 의 $\MET>40$ 은 QCD
+      억제 목적이라고 적혀 있다)\src{AN-22-122 v26, PDF p.42, l.591--603}. FH 에는 그 둘이 없으므로 \MET{} 요구가 없고, QCD 는 cut 이 아니라
+      데이터 기반 추정으로 다룬다.
+\item \textbf{jet 수.} LO parton 이 SL 8 개, FH 10 개다. SL 은 $\ge5$ jet, FH 는 $\ge6$ jet 을 baseline 으로 두고, ttH(bb) FH 는 신호 범주를 7, 8,
+      $\ge9$ jet 으로 나눴다\src{AN-19-094 v20, PDF p.99--100}. parton 이 더 많은 \ttHH{} 는 $\ge9$ 쪽 범주가 더 중요할 것이다(우리 판단).
+\item \textbf{HT 와 6 번째 jet.} 이 두 cut 은 물리 cut 이 아니라 trigger plateau 에서 왔다. 그래서 연도마다 HLT 의 문턱이 바뀌면 다시 확인해야 한다:
+      2018 은 SixPFJet36/PFHT400/PFHT330PT30 이라 plateau 재확인이 남아 있다\src{SelectionCuts.h 주석 (P1)}. 2024 는 b-tag 경로의 HT 다리가
+      PFHT330/400/450 이고, HT\,$>500$ 을 그대로 두고 OR 의 turn-on 은 trigger SF 로 다룬다\src{STEP 24 §17}.
+\item \textbf{b-tag 다중도.} SL($\ge4$)·DL($\ge3$)과 달리 FH baseline 은 $\ge2$ 다. 신호 민감도는 높은 $n_b$ 에 있지만, QCD 추정이 2M·3M 영역을
+      필요로 하기 때문이다(\ref{ch:qcd} 장). 신호 영역은 이 baseline 안에서 $n_b\ge4$ 이상으로 고른다(\S\ref{sec:selection-plan}).
+\item \textbf{$m_{qq}$.} 두 hadronic W 가 있는 FH 만의 변수다. baseline 의 넓은 창은 큰 효과가 없고, 중심창·사이드밴드로 나눠 QCD 방법의 검증 축으로
+      쓴다(\ref{ch:qcd} 장).
+\end{itemize}
+
+\begin{andiff}[ttH(bb) FH·ttHH AN 과 다른 점 — lepton veto 정의]
+ttH(bb) FH 의 veto 는 ``DL 의 차선행 lepton 기준''이다\src{AN-19-094 v20, PDF p.68, l.701--702}. 그 AN 의 FH veto muon 은 CutBasedIdTight,
+iso\,$<0.25$, $\pt>15$, $|\eta|<2.4$ 이고 electron 은 cut-based tight, $|\eta|<2.4$ 이다\src{AN-19-094 v20, PDF p.54--57}. ttHH DL 의 차선행
+muon 도 iso\,$<0.25$ 이고 electron 은 MVA WP90, $|\eta|<2.5$ 이다\src{AN-22-122 v26, PDF p.42--44, Tables 33--35}. 우리 veto 는 electron 이
+ttHH DL 과 같고(MVA WP90, $|\eta|<2.5$) muon 은 iso\,$<0.15$(SL 의 tight iso)다\src{SelectionCuts.h}\src{Hbb 회의 FH 발표 p.13}. iso 가 더
+엄격하면 veto 되는 muon 이 줄어 FH 가 더 느슨해진다. 발표 p.13 은 ``veto lepton = DL 차선행 기준''이라 적었으므로 muon iso 는 그 문장과
+맞지 않는다(\S\ref{sec:selection-open}).
+\end{andiff}
+
+% -----------------------------------------------------------------------------
+\section{영역, 출력, weight 층}\label{sec:selection-regions}
+
+\subsection{영역: FH, $\mu$CR, $e$CR}
+같은 cut 표에서 lepton veto 단계(6)만 바꿔 영역 셋을 만든다(\code{--region}, STEP 14). QCD multijet 에는 진짜 고립 lepton 과 \MET{} 가 거의 없으므로
+1$\ell$+\MET{} 를 요구하면 QCD 가 크게 줄고, 남는 것은 주로 \ttbar{}(SL) 이다. 그래서 이 영역은 \emph{MC 로 모델링되는 배경}(tt+X 등)의 Data/MC 를
+QCD 의 영향 없이 보는 곳이다\src{STEP 14}.
+\begin{itemize}
+\item \texttt{-{}-region muon}: muon 정확히 1, electron 0, \code{MET_pt}\,$>20\GeV$(2024 는 PuppiMET). lepton 수집은 lead lepton gate(muon $\pt>29$ 또는
+      electron $\pt>30$)를 통과한 사건에서 veto 문턱($\pt>15$) 위의 lepton 을 모으므로, 실제로는 $\pt>29\GeV$ muon 하나다
+      \src{ttHHanalyzer\_unified.cc, createObjects}.
+\item \texttt{-{}-region electron}: electron 정확히 1, muon 0, $\MET>20\GeV$. 같은 이유로 실제로는 $\pt>30\GeV$ electron 하나다.
+\item trigger 와 Data PD 는 FH 와 같다(hadronic trigger 와 그 PD)\src{D-2026-10-07-B}. lepton SF 는 쓰지 않는다\src{PLAN\_v15 §9.2, N4}.
+\end{itemize}
+이 영역은 \ttbar{} 와 tt+HF 의 모델링, trigger SF, b-tag SF 가 맞는지를 보는 곳이고, \ref{ch:qcd} 장의 QCD 추정에서 data 에서 빼는 MC 가 바로 이것이다.
+그래서 사용자는 ``lepton selection 으로 적절한 Data/MC 가 나오면'' QCD data-driven 을 하기로 했다\src{D-2026-10-10-B}.
+
+\subsection{출력 디렉터리와 SF 토글}
+production weight \code{evtWeight} 에 곱할 SF 셋은 CLI 로 켜고 끈다: \code{--trigsf}(기본 on), \code{--btagsf}(기본 off), \code{--btagrw}(기본 off)
+\src{STEP 16}. 제출기는 영역과 기본에서 벗어난 토글을 출력 디렉터리 이름에 붙여 서로 덮어쓰지 않게 한다(표~\ref{tab:selection-dirs})
+\src{STEP 15}\src{STEP 16}. 2024 부터는 연도도 붙는다(예: \code{AnalyzerOutput_main_notrig_2024})\src{STEP 24}.
+
+\begin{table}[htbp]\centering
+\caption{영역과 SF 토글에 따른 출력 디렉터리(STEP 15, 16).}\label{tab:selection-dirs}
+\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{6.4cm}>{\raggedright\arraybackslash}p{5.2cm}L@{}}
+\toprule
+제출 인자 & 출력 & 뜻 \\
+\midrule
+\texttt{-{}-mode main} & \code{AnalyzerOutput_main} & FH, trigger SF 만 \\
+\texttt{-{}-mode main -{}-region muon} & \code{AnalyzerOutput_main_muon} & $\mu$CR \\
+\texttt{-{}-mode main -{}-region electron} & \code{AnalyzerOutput_main_electron} & $e$CR \\
+\texttt{-{}-trigsf off} & 접미사 \code{_notrig} & SF 없는 첫 look \\
+\texttt{-{}-btagsf on} / \texttt{-{}-btagrw on} & 접미사 \code{_btagsf} / \code{_btagrw} & b-tag SF / norm reweight \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{weight 층 셋(3-tier)}
+b-tag SF 와 norm reweight 의 영향을 한 실행 안에서 비교하려고 weight 를 세 층으로 동시에 남긴다\src{STEP 14}\src{STEP 16}.
+SF 는 모두 HT 단계(7) 직후, MC 에만 곱한다.
+\begin{align}
+w_{\text{base}} &= \frac{L\,\sigma\,\mathcal{B}}{\sum w_{\text{gen}}}\times w_{\text{PU}}\times w_{\text{L1}}\times w_{\text{gen}}\times r_{\text{stitch}}
+  && \text{(Data: 1)}\label{eq:selection-wbase}\\
+\texttt{evtWeight\_btagSF} &= w_{\text{base}}\times w_{\text{b-tag}}\times \text{SF}_{\text{trig}}\label{eq:selection-tiers}\\
+\texttt{evtWeight\_full} &= \texttt{evtWeight\_btagSF}\times r_g(n_{\text{jets}},\HT)\nonumber\\
+\texttt{evtWeight} &= w_{\text{base}}\times \text{SF}_{\text{trig}}^{[\texttt{--trigsf}]}\times w_{\text{b-tag}}^{[\texttt{--btagsf}]}\times r_g^{[\texttt{--btagrw}]}
+  \label{eq:selection-wprod}
+\end{align}
+여기서 $w_{\text{b-tag}}$ 는 Run 2 의 DeepJet shape SF 곱, 2024 의 fixed-WP weight 이고(\ref{ch:btag} 장), $r_g$ 는 과정 묶음 $g$ 의 b-tag norm reweight
+(2024 에는 없음, D-2026-10-08-A)다. 두 tier branch 는 토글과 상관없이 항상 위 뜻으로 기록되고 토글은 \code{evtWeight} 한 줄만 바꾼다
+\src{STEP 16}. cut-flow 히스토그램도 같은 셋(\code{hCutFlow_w} = SF 없음, \code{_btagSF}, \code{_full})이다. 단 cut-step 의 jet 히스토그램
+(jet $\pt,\eta,\phi$, b-tag 점수)은 production \code{evtWeight} 를 쓴다\src{ttHHanalyzer\_unified.h, fillCutStepHist}.
+
+\subsection{과정 묶음 8 개}
+b-tag norm reweight 는 과정 묶음마다 따로 유도·적용한다: \code{tt+LF}, \code{tt+cc}, \code{tt+B}, \code{tt+nb}, \code{ttH}, \code{ttHH}, \code{ttZH4b},
+\code{ttZZ4b}. \ttbar{} 계열(포괄·4FS ttbb·tt4b)은 표본 이름이 아니라 \code{expandedTtbarId} 의 HF 범주로 묶고, 나머지 소수 배경(QCD 포함)은
+ttH AN 처럼 \code{tt+LF} 로 보낸다\src{STEP 7.5}\src{Config\_TtCatGroup.hh, MakeProcessKey}. trigger SF 는 과정으로 나누지 않고(운동학 bin 만),
+stack 은 HF 범주로 나눈다\src{STEP 7.5}. STEP 7.5 는 이 과정에서 4FS ttbb 3 종이 \code{tt+LF} 키를 받던 버그를 고쳤다.
+
+% -----------------------------------------------------------------------------
+\section{앞으로의 분석 영역과 blinding}\label{sec:selection-plan}
+
+\paragraph{신호 영역(SR) 계획.}
+Hbb 회의 발표는 baseline 을 세 방향으로 조여 SR 을 만들 계획을 보였다: $n_b\ge4$, jet 범주 7/8/$\ge9$, $\chi^2$ 로 짝지은 Higgs 후보의 질량창
+(예: $100<m(H_1),m(H_2)<140\GeV$, 출발점)\src{Hbb 회의 FH 발표 p.14}. KCMS 발표는 SR 최적화를 2027 상반기에 두었다\src{KCMS 발표 p.4}.
+지금 코드의 \code{HiggsMassWindow} 단계는 비활성이다. \ttHH{} 신호는 b quark 가 6 개라 $n_b\ge5$ 나 ($n_b=4$, $n_b\ge5$) 범주가 더 민감할 수 있다
+\src{PLAN\_QCD\_DD §3.1}.
+
+\paragraph{QCD 와 fit 의 영역(\ref{ch:qcd} 장의 미리보기).}
+ttH(bb) FH 는 b-tag 축(TR: 2M+$\ge$2L, CR: 3M+$\ge$1L, SR: $\ge$4M)과 $m_{qq}$ 축(중심창 60–100\GeV{} / 사이드밴드)의 직교 영역을 썼다
+\src{AN-19-094 v20, PDF p.101, Table 63}. 우리 계획은 이것을 $N$ 으로 일반화한다 — SR($n_M\ge N$), CR($n_M=N-1$, $n_L\ge N$), TR($n_M=N-2$,
+$n_L\ge N$)\tagplan\src{PLAN\_QCD\_DD §3.1}. Tree 에는 이미 영역 정의에 필요한 \code{nbJets}, \code{nLooseJets}, \code{jetBTagWP}, \code{invMassHadW}
+가 있다\tagimpl\src{STEP 27}.
+
+\paragraph{blinding.}
+preselection 과 control 영역의 그림에서는 data 를 가리지 않고($n_b\ge4$ 포함), 최종 판별변수에서 기대 S/B 가 가장 큰 bin 만 가린다. 기준과
+unblinding 절차는 AN 의 것을 따른다\src{D-2026-10-02-E}. 근거는 신호의 크기다: $\sigma(\ttHH)\,\mathcal{B}(HH\to4b)=0.756\fb\times0.339=0.256\fb$
+이고, selection 전 생성 사건이 2017(42.07\fbinv)에서 약 11, 2024 C–I(109.8\fbinv, 13\TeV{} $\sigma$)에서 약 28 이므로 control 영역의 data 는 신호를
+드러낼 수 없다\src{D-2026-10-02-E}. 2024 첫 look 에서 사용자가 받아들였다\src{D-2026-10-05-A}.
+
+% -----------------------------------------------------------------------------
+\section{control plot: 지금까지와 계획}\label{sec:selection-control}
+
+\subsection{2017: Hbb 회의 FH 발표(2026-07-30)}
+2017 UL NanoAODv9 의 첫 cut-flow 와 Data/MC 를 baseline 과 ``+1$\mu$, $\MET>20\GeV$'' 영역에서 보였다\src{Hbb 회의 FH 발표 p.25--35}.
+\begin{itemize}
+\item baseline 최종 수율: Data $3.97\times10^6$, MC $3.39\times10^6$(QCD $2.60\times10^6$, \ttbar{} 693,318, \ttHH{} 4.3) → Data/MC 1.17(계산).
+      +1$\mu$: Data 27,517, MC 35,380(\ttbar{} 30,191, QCD 2,835) → 0.78(계산)\src{Hbb 회의 FH 발표 p.25}.
+\item 그림에서 읽은 근사값: baseline 의 Data/Pred 는 $n_b\ge3$ 에서 약 1.4, $n_b\ge4$ 에서 약 1.55; $n_b$ 분포에서 $n_b=2,3,4,5,6$ 이 약
+      1.1, 1.35, 1.55, 1.75, 1.85. +1$\mu$ 에서는 $n_b=2,3,4$ 가 약 0.72, 0.85, 1.1\src{Hbb 회의 FH 발표 p.25, p.29}.
+\item 발표의 해석: +1$\mu$ 요구가 QCD 를 누르고 거의 모든 곳에서 Data/MC 를 낫게 하므로 잔여 불일치는 QCD 모델링을 가리키지만, +1$\mu$ 에서도
+      $n_b$ 와 함께 커지는 불일치가 남는다\src{Hbb 회의 FH 발표 p.26}. $n_b\ge3$, $n_b\ge4$ 단계는 baseline 이 아니라 그 경향을 보이려고 기록한
+      것이다\src{Hbb 회의 FH 발표 p.25}.
+\item Higgs 후보 질량 그림은 Data 113,683, MC 71,729(비 1.58, 계산)\src{Hbb 회의 FH 발표 p.31}. 이 그림은 \chisq{} 재구성이 $n_b\ge4$ 에서만 돌고
+      히스토그램이 질량 $>0$ 일 때만 채워지므로 $n_b\ge4$ 사건뿐이다(코드로 확인)\src{ttHHanalyzer\_unified.h, fillCutStepHist}.
+\end{itemize}
+발표가 던진 질문: (1) QCD data-driven 이전 단계에서 높은 $n_b$ 의 이 정도 불일치가 정상인가(비교할 공개 FH control plot 이 없다); (2) +1$\mu$ 의
+잔여 불일치; (3) b-tag SF·reweight closure 그림은 아직(``확정되면''); (4) QCD 방법은 ``planned''; (5) FH 의 jet–parton 배정 방법은 정하지 않았다;
+(6) SR 정의는 최적화 예정; (7) 2018·Run 3 확장과 SL/DL 결합은 ``채널이 양립 가능하면''\src{Hbb 회의 FH 발표 p.6, p.9, p.14, p.23, p.26, p.37, p.38}.
+회의의 답은 기록이 없다.
+
+\subsection{2024: 첫 look 에서 SF main 까지}
+\begin{enumerate}
+\item \textbf{첫 look}(trigger SF·b-tag SF 없음, lumi 109.816\fbinv, $\sigma$ 는 임시 13.6\TeV{} 값)\src{D-2026-10-05-A}: Data $5.02\times10^6$,
+      MC $8.70\times10^6$(QCD 78\,\%), \ttHH{} 9.2; cut-flow 의 Data/MC 는 trigger 뒤 0.43–0.44, HT$>500$ 0.60, $n_b\ge3$ 0.98, $n_b\ge4$ 1.21.
+      모자람은 $\HT<1000\GeV$ 에 몰려 있었다\src{STEP 24 §16}.
+\item \textbf{원인}: 2024 의 b-tag 경로 넷은 ParkingHH PD 에만 기록되고 JetMET 에는 우리 OR 가운데 \code{HLT_PFHT1050} 만 있다 → PD 규칙을 바꾸고
+      ParkingHH 를 생산했다\src{D-2026-10-06-A}. 그 사이 \code{HLT_PFHT1050} \& $\HT>1200\GeV$ 의 tree control plot 에서 Data/MC 1.46, 운동학 모양은
+      평평하고 넘침은 b-tag(중간 점수, $n_b=2$ 에서 1.38, 3 에서 1.85)에 있었고, jet 수의 비는 6 에서 1.38, 13 에서 약 2 였다\src{STEP 24 §18}.
+\item \textbf{전체 다시}: 2024 main 을 MC+JetMET+ParkingHH 8,062 job 으로 다시 돌리고 첫 look 출력은 \code{_firstlook} 으로 보존했다
+      \src{D-2026-10-07-A}. lepton CR 둘을 같이 돌렸다(W$\to\ell\nu$·DY 표본 없이 모양 위주)\src{D-2026-10-07-B}.
+\item \textbf{SF 없는 세 영역}(2026-10-09): Data/MC 는 FH \code{nTotal} 1.40($n_b\ge3$ 2.02, $\ge4$ 2.18; MC 의 78\,\% 가 LO QCD), $\mu$CR 0.84
+      ($n_b\ge4$ 1.41), $e$CR 0.75($n_b\ge4$ 1.19)\src{STATUS 10-09 (3)}.
+\item \textbf{다음}: btagtrig → b-tag 효율 map → 2024 trigger SF → \emph{SF 를 켠 main 셋}(FH, $\mu$CR, $e$CR; trigger SF + fixed-WP b-tag SF)
+      → plot\src{ROADMAP\_FH §2 W1}. 이 SF main 을 STEP 27 의 실행 파일로 돌리면 control plot, DNN 입력의 Data/MC, 첫 ML 표본이 한 번에 나온다
+      \src{ROADMAP\_FH 결론 1}.
+\end{enumerate}
+
+\subsection{전체 Run 2 + 2024 의 control plot 프로그램}
+사용자 방향은 ``trigger SF, b-tag SF 와 reweight, ttbar stitching 이 적용된 control plot'' 을 full Run 2 와 2024 모두에서 보는 것이다. 배경 표본이
+아직 다 없으므로 지금은 analyzer 를 그 연도들에 준비한다\src{D-2026-10-10-B}. 기다리는 것: Run 2 v15 의 신호·\code{TT4b}·\code{TTZH}·\code{TTZZ}·\code{THW}
+(중앙 요청과 enriched 생산), 2016·2017 v15 hadronic 생산, 2024 의 W$\to\ell\nu$·DY 표본(D13)과 tt+nb patch\src{ROADMAP\_FH 결론 3}. 2024 는 stitching
+없이 그리므로 4FS ttbb 와 tt4b 표본을 stack 에서 뺀다\src{D-2026-10-05-C}.
+
+\begin{impl}[plot 도구: \texttt{plotter/make\_plots.py}]
+\begin{itemize}
+\item 기본: merge 된 main 출력의 히스토그램으로 stack 과 수율표(\code{YIELDS.txt}), MC 완결성 검사(merge 된 noCut = prescan 사건 수).
+\item \texttt{-{}-tree-cut EXPR}: 저장된 히스토그램 대신 \code{Tree/Tree} 에서 EXPR(RDataFrame 식)을 통과한 사건으로 그린다 — analyzer 를 다시 돌리지 않고
+      trigger 경로나 HT 를 더 조일 수 있다(D-2026-10-06-A). MC 는 \code{evtWeight}, Data 는 1. jet 수 진단 일곱과 b-tag 점수 칸별 flavour 표
+      (\code{TREEFLAV})도 만든다\src{STEP 24 §19}.
+\item \code{--tree-v1}(\code{--tree-cut} 과 함께): Tree v1 의 ML 입력과 $m_{qq}$ 의 Data/MC. 목록 \code{TREE_HISTS_V1} 은 31 개다
+      (ML 입력 30 + $m_{qq}$; STEP~27·CHANGELOG 의 예전 표기 32 는 31 로 고쳐졌다)\src{plotter/make\_plots.py}\src{STEP 27}\src{STATUS 2026-10-10}.
+\end{itemize}
+\end{impl}
+
+% -----------------------------------------------------------------------------
+\section{변경 이력}\label{sec:selection-history}
+\begin{itemize}
+\item \textbf{STEP 3} (2026-06-11): \code{std::map} cut → \code{SelectionCuts.h} 상수, if-나열 → \code{kCutSequence}(14 단계), 관찰 단계의 명시화,
+      \code{SelectionPolicy} 를 bool 7 개에서 3 개로. 동작 불변(200k 사건 비교)\src{STEP 3}.
+\item \textbf{STEP 7.5} (2026-06-12): 과정 묶음 8 개(\code{tt+nb} 추가), 4FS ttbb·61–72 의 키 버그 수정\src{STEP 7.5}.
+\item \textbf{STEP 14–16} (2026-06-15): 3-tier weight, lepton CR(1$\ell$+$\MET>20$), 영역별·SF 토글별 출력 디렉터리\src{STEP 14}\src{STEP 15}\src{STEP 16}.
+\item \textbf{2026-07-29}: Tree 에 \code{nVetoLeptons}(main 의 veto 와 같은 값)와 \code{MET_pt}(lepton CR 재현용)\src{ttHHanalyzer\_unified.h 주석}.
+\item \textbf{STEP 24} (2026-10): 2024 — jet veto map 을 \code{noiseFilter} 단계에, PD 별 trigger 규칙(JetMET/ParkingHH), 2024 WP\src{STEP 24}.
+\item \textbf{STEP 27} (2026-10-10): $m_{qq}$ 를 \code{invMassHadW} 로 Tree 에. selection·cut-flow 는 그대로(2017 출력 동일)\src{STEP 27}.
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{미결 사항}\label{sec:selection-open}
+\begin{openq}
+\begin{enumerate}
+\item \textbf{trigger plateau 의 연도별 재확인.} HT$>500$, 6 번째 jet $\pt>40$ 은 2017 HLT 기준이다. 2018(SixPFJet36/PFHT400)과 2024(PNet 경로)의
+      plateau 는 아직 재지 않았다; 2018 의 trigger SF 기준 경로(IsoMu24 vs IsoMu27)와 lead muon 문턱(29 → 26)도 열려 있다
+      \src{SelectionCuts.h 주석}\src{ROADMAP\_FH §6}.
+\item \textbf{veto muon 의 iso.} 우리 0.15 는 ttH(bb) FH·ttHH DL 의 차선행 muon(0.25)보다 엄격하다(위 andiff). SL/DL 과 결합하려면 세 채널의
+      겹침을 실제로 세어야 한다(우리 판단). 사용자 결정 필요.
+\item \textbf{lepton CR 의 jet–lepton 정리.} 코드에는 선택 jet 과 lepton 의 $\Delta R<0.4$ 정리가 없다(ttH·ttHH AN 은 한다). FH 에서는 lepton 이 있으면
+      버리므로 상관없지만 $\mu$CR·$e$CR 에서는 lepton 이 jet 으로도 셀 수 있다. jet ID 의 TightLepVeto 가 lepton 이 대부분인 jet 을 막지만 확인이
+      필요하다(우리 판단; \ref{ch:objects} 장).
+\item \textbf{$m_{qq}$ 의 대체 규칙.} light jet 이 둘 미만이면 모든 jet 에서 고른다 — QCD 영역의 독립성이 깨지는 사건의 비율을 세야 한다(\ref{ch:qcd} 장).
+\item \textbf{Hbb 발표의 표기.} 발표 p.14 의 ``AN-2022/122 Tab.\ 55'' 는 AN-19-094 Table 55 를 뜻한다(AN-22-122 의 Table 55 는 SL fit 결과).
+      2017 그림은 41.5\fbinv{} 로 표기되어 있고\src{Hbb 회의 FH 발표 p.25} 당시 main yml 의 41.48 로 정규화된 것으로 보인다(우리 판단; 정본 42.07,
+      1.42\,\% 차이; yml 은 2026-10-02 에 고침)\src{STATUS OPEN 7}. 발표 p.32–35 의 jet
+      그림이 cut-flow 보다 MC 가 26–27\,\% 작은 것은 jet 히스토그램이 production \code{evtWeight}(trigger SF 기본 on)를, HT·$n_{\text{jets}}$·$n_b$
+      히스토그램이 SF 없는 weight 를 쓰기 때문으로 보인다(우리 판단, 코드에서 확인한 weight 차이; 당시 토글은 확인 못 함).
+\item \textbf{SR 정의}($n_b$, jet 범주, 질량창)와 \textbf{QCD 영역의 $N$} 은 W5(SR 최적화)·W7(QCD) 때 정한다.
+\item 2024 lepton CR 의 MC 에는 W$\to\ell\nu$·DY 가 없고 lepton SF 도 없다 — 이 CR 의 정규화로 결론을 내기 전에 D13·N4 를 정해야 한다.
+\end{enumerate}
+\end{openq}

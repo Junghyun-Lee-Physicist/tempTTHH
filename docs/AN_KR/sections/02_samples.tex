@@ -1,0 +1,495 @@
+% =============================================================================
+% 2 장: 데이터·시뮬레이션 표본과 정규화 (AN_KR)
+% 이 장의 라벨은 samples- 로 시작한다. 출처 표기는 preamble.tex 의 \src.
+% =============================================================================
+\chapter{데이터·시뮬레이션 표본과 정규화}\label{ch:samples}
+
+이 장은 분석에 쓰는 데이터와 시뮬레이션(MC) 표본, 그리고 MC 를 데이터의 루미노시티로 정규화하는 방법을 다룬다. 먼저 연도별 primary dataset(PD,
+HLT 경로 묶음별로 나뉜 데이터 흐름)과 PD 중복 처리 규칙, golden JSON 과 적분 루미노시티, blinding 을 정리하고, 신호·배경 표본의 단면적과 출처를
+Run~2(13\TeV)와 2024(13.6\TeV)로 나누어 AN-2022/122 와 비교한다. 이어서 사건 weight 의 공식을 유도하고, 가장 중요한 배경인 \ttbar+heavy flavour 의
+분류(genTtbarId)와 5FS 포괄 \ttbar·4FS \ttbb·LO tt4b 표본의 stitching 을 적는다. stitching 절에는 AN 과 다른 점과, 이 문서를 쓰며 찾은 정규화 조건의
+의문을 함께 둔다.
+
+% -----------------------------------------------------------------------------
+\section{데이터}\label{sec:samples-data}
+
+\subsection{연도별 primary dataset 과 PD 규칙}\label{sec:samples-pd}
+
+FH 채널은 렙톤 trigger 를 쓰지 않으므로 hadronic trigger(다중 jet, $\HT$, online b-tag)가 기록된 PD 를 쓴다. 한 사건이 두 PD 에 함께 들어갈 수 있으므로
+PD 마다 받을 경로를 정해 이중 계산을 막는다. trigger SF 는 직교하는 단일 muon PD 로 재고(\ref{ch:trigger}~장), 렙톤 제어영역(µCR, eCR)은 trigger 가 FH 와
+같은 hadronic OR 이라 같은 PD 를 쓴다\src{D-2026-10-02-D}\src{README §7.3}. 표~\ref{tab:samples-pd} 가 연도별 정리다.
+
+\begin{table}[htbp]
+\centering
+\caption{연도별 데이터 PD 와 PD 규칙. "OR" 는 FH trigger 경로의 논리합(경로 이름은 \ref{ch:trigger}~장).}
+\label{tab:samples-pd}
+\footnotesize
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{1.35cm} >{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}p{2.3cm} L}
+\toprule
+연도 & 분석 PD (FH, µCR, eCR) & trigger SF 용 & PD 규칙과 상태 \\
+\midrule
+2016 & (ttH FH: JetHT B--H) & (SingleMuon) & 우리는 아직 없음. ttH FH 는 JetHT 만 썼다\src{AN-19-094 v20, PDF p.8, Table 3}; BTagCSV 2016 사용은 미정\src{ROADMAP\_FH §3 F} \\
+2017 & JetHT B--F, BTagCSV B--F & SingleMuon B--F & BTagCSV ← 4 jet+3 b 경로가 발화한 사건; JetHT ← (6 jet 경로 또는 \code{HLT_PFHT1050}) 이면서 4 jet+3 b 미발화\src{Hbb 회의 FH 발표 p.15}. ttH FH 와 같은 규칙\src{AN-19-094 v20, PDF p.36} \\
+2018 & JetHT A--D & SingleMuon A--D & 2018 에는 BTagCSV PD 가 없어 JetHT 단독 OR\src{CHANGELOG 2026-07-26}; 2018 v15 analyzer 경로는 작업 전\src{ROADMAP\_FH §3} \\
+2024 & JetMET0/1 C--I, ParkingHH C--I & Muon0/1 C--I & JetMET ← \code{HLT_PFHT1050}; ParkingHH ← (4J3T, 6J1T, 6J2T 의 OR) 이면서 \code{HLT_PFHT1050} 미발화; Muon·MC ← 전체 OR\src{D-2026-10-06-A} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+2024 의 규칙은 첫 look 에서 나왔다. 처음에는 JetMET0/1 만 생산했는데, 2024 HLT 메뉴에서 우리 OR 의 b-tag 경로 넷은 \file{ParkingHH} 에만 기록되고
+JetMET 에는 \code{HLT_PFHT1050} 하나만 있었다 — $\HT\approx1000\GeV$ 아래의 Data 부족이 이것 때문이었다. 그래서 ParkingHH C--I(8 dataset, 2,771 파일)를 생산하고
+2017 의 BTagCSV/JetHT 와 역할만 바꾼 규칙을 만들었으며\src{D-2026-10-06-A}, 2024 main 을 전체 다시 돌렸다\src{D-2026-10-07-A}. I era 는 dataset 이 둘이라 lumi section
+중복을 \file{tools/stage3/data_lumi_check.py} 가 DUPLICATE 로 잡는다\src{STEP 24 §7}. AN-2022/122 의 SL·DL 은 렙톤 PD 를 써서 FH 와 PD 가 겹치지 않는다
+\src{AN-22-122 v26, PDF p.20--23, Tables 5--8}. FH 의 선례인 ttH(bb) FH 는 JetHT(2016--2018), BTagCSV(2017), 효율용 SingleMuon 을 썼다
+\src{AN-19-094 v20, PDF p.8--10, Tables 3--5}.
+
+\subsection{golden JSON 과 적분 루미노시티}\label{sec:samples-lumi}
+
+데이터는 인증된 lumi section 목록(golden JSON)으로 거르고, MC 는 그 데이터의 적분 루미노시티 $L$ 로 정규화한다. 표~\ref{tab:samples-lumi} 는 연도별
+golden JSON 과 $L$ 을 두 AN 과 비교한 것이다.
+
+\begin{table}[htbp]
+\centering
+\caption{golden JSON 과 적분 루미노시티 [\fbinv]. 불확도는 AN 의 Table~52 와 우리 정본(LUM POG Legacy)의 값.}
+\label{tab:samples-lumi}
+\footnotesize
+\begin{tabularx}{\textwidth}{l L c c c c}
+\toprule
+연도 & golden JSON & AN-2022/122 & AN-19-094 & 우리 & 불확도 (AN / 우리) \\
+\midrule
+2016 & \file{Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt} & 36.31 & 36.33 & 확인 못 함 & 1.2\,\% / — \\
+2017 & \file{Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt} & 41.53 & 41.53 & 42.07 & 2.3\,\% / 0.82\,\% \\
+2018 & \file{Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt} & 59.74 & 59.74 & 59.56 & 2.5\,\% / 0.84\,\% \\
+Run~2 & — & 137.60 & 137.60 & — & 1.6\,\% / — \\
+2024 C--I & \file{Cert_Collisions2024_378981_386951_Golden.json} (2026-08-04 판) & — & — & 109.816 & — / 확인 못 함 \\
+\bottomrule
+\end{tabularx}
+\par\smallskip\footnotesize 출처: AN-22-122 v26, PDF p.19, Tables~3--4 와 PDF p.121, Table~52; AN-19-094 v20, PDF p.7, Table~2; LUMI\_SOURCES §2, §6; samples\_2017UL.json·samples\_2018UL.json 의 \_meta.
+\end{table}
+
+\paragraph{Run~2.} 정본은 LUM POG 의 "Recorded Golden Legacy" 값(2017 42.07, 2018 59.56\fbinv; 불확도 0.82, 0.84\,\%)이고, 2017 은 우리 analysis JSON 으로 돌린
+brilcalc 의 42.0688 과 소수 둘째 자리까지 같다\src{LUMI\_SOURCES §2}(2018 brilcalc 는 아직\src{LUMI\_SOURCES §3}). 2017 yml 의 41.48 은 42.07 로 고쳤고\src{D-2026-10-02-D},
+2018 의 잠정값 59.83 은 LUM POG 표에 없는 값이라 59.56 으로 바로잡았다\src{CHANGELOG 2026-07-27}. 단일 연도 fit 의 lumi nuisance 는 2017 이 \code{lumi_13TeV_151617_l}$=1.0055$,
+\code{lumi_13TeV_15161718_l}$=1.0061$, 2018 이 \code{lumi_13TeV_15161718_l}$=1.0084$ 다\src{LUMI\_SOURCES §2}. AN 의 41.53, 59.74 는 현재 Legacy 값이 아니라서 DB 에
+"Do not use ttHH AN as the luminosity reference" 를 적어 두었다\src{samples\_2017UL.json, \_meta}. AN Table~4 의 연도별 합은 $36.31+41.53+59.74=137.58$ 인데 합계는 137.60
+(ttH AN 은 2016 을 36.33 으로 써서 137.60; 우리 계산)이고 본문은 137.5\fbinv 라 쓴다\src{AN-22-122 v26, PDF p.5, p.19}. SL·DL 과 결합하려면 lumi 값과 상관 조직을 팀과
+맞춰야 한다.
+
+\paragraph{2024.} golden JSON 은 B--I 를 덮지만 Data 는 C--I 뿐이라 정규화 값은 C--I 의 brilcalc 109.816\fbinv(normtag\_PHYSICS; PdmV era 표와 같음; normtag\_BRIL 로는
+104.504)이다\src{LUMI\_SOURCES §6.2}. HLT 기록이 있는 lumi 만 세면 \code{HLT_PFHT1050} 109.144\fbinv 이지만, 차이의 거의 전부인 era C 의 run 380126--380128 은 lumi DB 에
+HLT 표만 없고 data 는 있어 109.816 으로 정했다\src{LUMI\_SOURCES §6.4}\src{D-2026-10-05-A}. 생산된 Data 에는 golden LS 의 일부가 빠져 있어(JetMET0 2.08\,\%, JetMET1
+0.70\,\%, ParkingHH 0.398\,\%)\src{STATUS 2026-10-08} 되살리거나 공통 LS mask 를 쓰기 전까지 Data 가 정규화보다 1\,\% 남짓 적다\src{STEP 24 §13}.
+
+\subsection{blinding}\label{sec:samples-blinding}
+
+preselection 과 제어영역의 plot 에는 $n_b\geq4$ 를 포함해 data 를 모두 보이고, 최종 판별변수의 신호 민감 bin 만 가린다(기준과 unblinding 절차는 AN 을
+따른다). preselection 의 SM 신호는 선택 전 생성 수부터 2017 에 약 11 개, 2024 에 약 28 개(13\TeV 단면적)로 배경보다 자릿수가 훨씬 작아, 숨기면 가장 중요한 검증
+영역만 잃기 때문이다\src{D-2026-10-02-E}(표~\ref{tab:intro-yield}). AN 도 SL 최종 판별변수의 data 는 저신호 bin 에만 그렸고\src{AN-22-122 v26, PDF p.112, l.1138},
+SR 의 DNN 입력 변수는 data 와 비교했다\src{AN-22-122 v26, PDF p.82, l.1020--1022}.
+
+% -----------------------------------------------------------------------------
+\section{시뮬레이션 표본}\label{sec:samples-mc}
+
+\subsection{캠페인과 생산}\label{sec:samples-campaigns}
+
+AN 은 Run~2 의 모든 표본에 RunIISummer20UL(MiniAODv2, NanoAODv9)을 쓴다\src{AN-22-122 v26, PDF p.19, l.395--398}. 우리 표본의 상태는 연도마다 다르다.
+\begin{itemize}
+  \item \textbf{2017 UL}: NanoAODv9 전체 pass-through(\file{ttHH2017UL_fullNano_v20})로 첫 cut-flow 와 Hbb 발표를 만들었으나\src{STEP 17} 이 ntuple 은 KNU 에서
+        지워져 v15 로 다시 생산한다\src{D-2026-10-05-D}\src{D-2026-10-02-A}.
+  \item \textbf{2018 UL}: DB 에 v9 이름으로 85 표본(77 MC + 8 Data)이 있다\src{CHANGELOG 2026-07-26}. v15 생산(slimB, skim 없음)은 끝났지만 analyzer 는 아직 v9 이름으로
+        읽는다\src{ROADMAP\_FH §3}. \textbf{2016}: DB 도 생산도 없다\src{ROADMAP\_FH §3 I}.
+  \item \textbf{2024}: Summer24 NanoAODv15 MC 60 표본과 Run2024C--I Data 를 slimB + \code{6j20} skim(저장된 $\pt>20\GeV$, $|\eta|<2.5$ jet $\geq6$)으로 생산했다
+        \src{samples\_2024.json, \_meta}\src{NtupleForge D-2026-09-28-volume}. skim 통과율(Σ genWeight)은 신호 95.0\,\%, \ttbar Had/SL/DL 52.0/31.7/16.2\,\%,
+        QCD\_HT200to400 2.3\,\% 다\src{STEP 24 §13}.
+\end{itemize}
+
+\subsection{Run~2(13\TeV) 표본과 단면적}\label{sec:samples-run2xsec}
+
+단면적과 분기비는 연도별 DB 하나(\file{data/samples_2017UL.json}, \file{data/samples_2018UL.json})에서만 읽고, 2018 의 $\sigma$·BR 은 2017 의 13\TeV 값을 복사한
+것이다\src{samples\_2018UL.json, \_meta}. \code{cross_section_fb} 는 생성 단면적, \code{br} 은 따로 곱하는 분기비, \code{kfactor} 는 모두 1.0 이고, 생성 단계에서
+붕괴를 강제·필터한 표본은 \code{br}$=1$ 과 표본의 유효 단면적을 쓴다\src{samples\_2017UL.json, \_meta}. 표~\ref{tab:samples-run2} 가 2017 main 설정의 MC 전부다.
+
+\begingroup
+% 이 표만 한 단계 작은 글씨: preamble 의 \AtBeginEnvironment{longtable}{\small...} 를 이 그룹 안에서만 바꾼다.
+\let\small\footnotesize
+\begin{longtable}{>{\raggedright\arraybackslash}p{1.75cm} >{\raggedright\arraybackslash}p{4.1cm} >{\raggedleft\arraybackslash}p{2.35cm} >{\raggedright\arraybackslash}p{2.0cm} >{\raggedright\arraybackslash}p{4.0cm}}
+\caption{Run~2(2017·2018) MC 표본과 13\TeV 단면적. $\sigma$ 는 \texttt{cross\_section\_fb}, BR 은 \texttt{br}(1 이면 생략). 출처는 DB 의 \texttt{xsec\_ref} 요약.}\label{tab:samples-run2}\\
+\toprule
+묶음 & 표본 키 & $\sigma$ [fb] & BR & 출처 \\
+\midrule
+\endfirsthead
+\multicolumn{5}{l}{\footnotesize (표~\ref{tab:samples-run2} 계속)}\\
+\toprule
+묶음 & 표본 키 & $\sigma$ [fb] & BR & 출처 \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+신호 & \file{TTHHto4b} & 0.756 & $0.5824^{2}$ & AN Table~9·10; Higgs Handbook 0.7565 \\
+\ttH, tH & \file{ttHTobb} / \file{ttHToNonbb} & 507.1 & 0.5824 / 0.4176 & AN; Higgs Handbook \\
+ & \file{tHq} / \file{tHW} & 74.25 / 15.17 & — & NLO 목표값(생성은 LO); ttH AN Table~8 \\
+\ttbar 5FS & \file{TTbar_Hadronic}, \file{_SemiLep}, \file{_DiLep} & 831\,760 & 0.45441 / 0.43938 / 0.10621 & NNLO+NNLL; AN Table~9 \\
+\ttbb 4FS & \file{TTbb_Hadronic}, \file{_SemiLep}, \file{_DiLep} & 1452 & 같은 \ttbar BR & AN Table~9 (tt+bb, NLO 4FS) \\
+tt4b & \file{TT4b} & 296 & — & AN Table~9 (LO, 붕괴 inclusive) \\
+\ttZ & \file{TTZToBB} & 861 & 0.15 & AN Table~16 (Table~9 는 841) \\
+ & \file{TTZToLLNuNu} & 243.9 & — & XSDB(붕괴 필터 표본) \\
+\ttW & \file{TTWJetsToQQ} / \file{TTWJetsToLNu} & 443.2 / 216.3 & — & XSDB \\
+\ttZH, \ttZZ & \file{TTZHTo4b}(+ext1) / \file{TTZZTo4b}(+ext1) & 1.535 / 1.98 & 0.08736 / 0.0225 & AN Table~18; Higgs Handbook \\
+ttVV, 다중 top & \file{TTWW}, \file{TTWH}, \file{TTWZ}, \file{TTTW}, \file{TTTT} & 6.992, 1.143, 2.448, 0.7337, 8.091 & — & DB 는 "AN Tab.~9" 라 적었으나 그 표에 없다\src{CHANGELOG 2026-07-26} \\
+single top & \file{ST_t_top} / \file{ST_t_antitop} & 136\,020 / 80\,950 & — & NLO; ttH AN Table~15 \\
+ & \file{ST_tW_top} / \file{ST_tW_antitop} & 35\,850 / 35\,850 & — & approx.\ NNLO; ttH AN Table~15 \\
+ & \file{ST_s_lep} / \file{ST_s_had} & 10\,320 & 0.3259 / 0.6741 & NLO; ttH AN Table~15 \\
+diboson & \file{WW} / \file{WZ} / \file{ZZ} & 118\,700 / 65\,544 / 15\,827 & — & ttH AN Table~22(SM xsec TWiki 경유) \\
+QCD (HT) & \file{QCD_HT200to300} … \file{QCD_HT2000toInf}(7 bin) & $1.552\times10^{9}$ … $2.174\times10^{4}$ & — & LO; XSDB(UL2017) \\
+V$\to qq$; W$\to\ell\nu$, DY & \file{WJetsToQQ_HT*}, \file{ZJetsToQQ_HT*}(각 3 bin); \file{WJetsToLNu_HT*}, \file{DYJetsToLL_M50_HT*}(각 8 bin) & 275\,400 … 13\,100 (V$\to qq$) & — & LO; XSDB. W$\to\ell\nu$·DY 는 baseline 연구용\src{Hbb 회의 FH 발표 p.42} \\
+\end{longtable}
+\endgroup
+
+\begin{note}[AN 의 표본 구성과 FH 에 더한 것]
+AN 의 SL·DL 은 신호(SM, HEFT), \ttH(bb), \ttbar, 4FS \ttbb, tt4b, \ttZ(bb), \ttZZ, \ttZH 만 쓰고\src{AN-22-122 v26, PDF p.24--30, Tables 10--18}, H·Z 를 포함한 표본은
+H/Z$\to\bbbar$ 만 생성했으며 LO 표본에는 NLO k-factor 를 곱한다\src{AN-22-122 v26, PDF p.21, l.420--431}. QCD multijet, single top, V+jets 는 AN 의 배경 목록에 없다
+\src{AN-22-122 v26, PDF p.5--6}. FH 는 여기에 hadronic \ttbar·\ttbb, QCD(HT), single top, V$\to qq$, diboson, \ttW, ttVV, \tttt, \ttH(non-bb), tH 를 더했다
+\src{Hbb 회의 FH 발표 p.11}. 우리 DB 는 k-factor 를 곱하지 않고 NLO 목표 단면적을 직접 넣는다(신호의 AN k-factor 는 0.756\fb 에 들어 있다)\src{D-2026-06-30-B}.
+\end{note}
+
+\subsection{2024(13.6\TeV) 표본과 임시 단면적}\label{sec:samples-2024xsec}
+
+2024 MC 60 표본의 단면적은 모두 \textbf{임시}(PROVISIONAL)다. 2026-10-05 에 AI 가 공개 자료(LHC WG 노트, 13.6\TeV 논문, XSDB·GenXSecAnalyzer 를 인용한 공개
+저장소)에서 모았고 XSDB 자체와 CERN twiki 는 읽지 못했다. 항목마다 \code{xsec_ref} 와 \code{confidence} 가 있고, 여섯 항목(\file{TTbb_*} 셋, \file{TT4b},
+\file{TTTWminus}·\file{TTTWplus})은 13\TeV 값을 비율로 올린 것이다(\_meta 는 ``Five keys'', STEP~24 는 TTTW$^{\pm}$ 를 하나로 세어 ``다섯'')
+\src{samples\_2024.json, \_meta}\src{STEP 24 §7}. plot 에는 "provisional cross sections" 를 적는다\src{D-2026-10-05-A}. 표~\ref{tab:samples-2024} 가 묶음별 요약이다.
+
+\begin{table}[htbp]
+\centering
+\caption{2024 MC 의 13.6\TeV 임시 단면적(묶음별 요약; $\sigma\times$BR 의 BR 은 DB 의 \texttt{br}).}
+\label{tab:samples-2024}
+\footnotesize
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.6cm} >{\raggedright\arraybackslash}p{4.1cm} >{\raggedright\arraybackslash}p{1.7cm} L}
+\toprule
+묶음 & $\sigma$ [fb] & 신뢰도 & 출처·비고 \\
+\midrule
+신호 \file{TTHHto4b} & 0.860 ($\times0.33919$) & high & ATLAS 논문(arXiv:2603.13113)이 인용한 NLO 값; 13\TeV 대비 1.138 \\
+\ttbar(3 채널) & 923\,600 ($\times$ 채널 BR) & high & Top WG NNLO+NNLL 13.6\TeV(PDF4LHC21) \\
+\ttbb 4FS(3 채널), \file{TT4b} & 1608.2, 327.8 & low & 2017 값 $\times$ 1.10757(\ttbar 의 923.6/833.9); stitching 이 없어 쌓지 않음 \\
+\ttH(bb, \ttbar 붕괴별 3), \ttH(non-bb), tHq, tHW & 570, 570, 83.62, 17.2 & high & LHC Higgs WG 13.6\TeV 노트(arXiv:2402.09955); 2024 \ttH 표본은 \ttbar 붕괴도 강제 \\
+\file{TTZToQQ}, \file{TTWJetsToQQ}, \ttZ($\ell\ell$, $\nu\nu$) & 660.3; 467.8; 86.46(\file{TTLL_MLL50}) 등 & medium; \ttW{} 는 medium-low & XSDB(2022 이름)·공개 저장소 경유; \file{TTZToBB} 대신 \file{TTZToQQ}; 렙톤 \ttW{} 는 없음 \\
+\ttZH, \ttZZ (4b) & 1.288, 1.579 & low–medium & LO XSDB(2017 은 NLO) \\
+ttVV, \tttt, TTTW$^{\pm}$ & 8.203, 1.252, 2.715; 15.82; 0.4173 & low–medium & TTTW 는 13\TeV 값을 비율로 \\
+single top, diboson & t-ch 145\,000/87\,200, tW 43\,950, … & medium–high & Top WG 값의 공개 사본, 13.6\TeV 측정 논문의 이론값 \\
+QCD(HT 8 bin), V$\to qq$(각 4 bin) & $1.961\times10^{9}$ …; 356\,900 … & medium & 2022/23 XSDB(같은 HT 경계), Summer24 GenXSecAnalyzer \\
+W$\to\ell\nu$, DY & — & — & 2024 에는 아직 생산하지 않음(µCR·eCR 의 MC 합에 빠짐)\src{D-2026-10-07-B} \\
+\bottomrule
+\end{tabularx}
+\par\smallskip\footnotesize 출처: samples\_2024.json(항목별 \texttt{xsec\_ref}, \texttt{confidence}); STEP 24 §7.
+\end{table}
+
+\subsection{빠진 표본과 요청}\label{sec:samples-missing}
+
+\begin{itemize}
+  \item \textbf{Run~2 v15}: \file{TTHHTo4b}, \file{TT4b}, \file{TTZHTo4b}, \file{TTZZTo4b}, \file{THW} 는 NanoAODv15 에 없다. 28 dataset(약 162 M event)을 중앙에
+        요청했고(2026-09-14) 같은 MiniAODv2 부모에서 만드는 enriched 생산을 병행한다\src{NtupleForge 04\_mc\_request §1, §4}. Run~2 전체 학습과 Run~2 SR 이 이것을
+        기다린다\src{ROADMAP\_FH 결론 3}. \file{TTZToBB} 도 v15 에 없어 inclusive \file{TTZToQQ} 로 대체한다(hadronic 채널에 더 완전하다)\src{NtupleForge 04\_mc\_request §3}.
+  \item \textbf{2024}: W$\to\ell\nu$(12)·DY(7) 표본은 KNU 저장 공간을 본 뒤 정한다\src{D-2026-10-07-B}\src{PLAN\_v15 §9.6 D13}. Run~3 \ttbar 대안으로 Sherpa tt+jets 세
+        채널의 완성과 Sherpa tt+bb·tt+4b 를 요청했다\src{NtupleForge 04\_mc\_request §2}.
+\end{itemize}
+NLO 생성기의 음수 weight 는 유효 통계를 줄인다: 음수 비율 $f_-$ 에서 $N_{\mathrm{eff}}=(\sum g)^{2}/\sum g^{2}=N(1-2f_-)^{2}$ 이고($|g|$ 일정), 2017 DB 의 \file{TTZToBB} 는
+$f_-=0.330$ 이라 $0.12\,N$, 4FS \ttbb 는 $f_-\approx0.063$ 이라 $0.76\,N$ 이다(우리 계산)\src{samples\_2017UL.json}\src{ttbarCategorization\_KR §10.7.2}.
+
+% -----------------------------------------------------------------------------
+\section{사건 weight 와 정규화}\label{sec:samples-weights}
+
+과정 $p$ 가 선택을 통과해 기대되는 사건 수는 $N_p=L\,\sigma_p\,\mathrm{BR}_p\,\varepsilon_p$ 이다. MC 사건 $i$ 의 생성기 weight 를 $g_i$(\code{genWeight}, 부호
+있음)라 하면 효율의 추정은 $\hat\varepsilon_p=\sum_{i\in\mathrm{sel}}g_i\big/\sum_{i\in\mathrm{all}}g_i$ 이므로, 사건마다
+\begin{equation}
+  w_i = \underbrace{\frac{L\,\sigma_p\,\mathrm{BR}_p\,k_p}{\sum_{j\in\mathrm{all}}g_j}}_{w_{\mathrm{base}}}\;g_i
+  \label{eq:samples-weight}
+\end{equation}
+를 주면 $\sum_{i\in\mathrm{sel}}w_i=N_p$ 가 된다($k_p=1$\src{D-2026-06-30-B}). 분모는 prescan 이 모은 \code{Runs} tree 의 \code{genEventSumw}, 곧 생성된 모든 사건의
+합이다. skim 된 ntuple(2024 의 \code{6j20})은 \code{Events} 에 통과 사건만 남지만 \code{Runs} 는 skim 전의 합을 가지므로 정규화가 맞는다
+\src{samples\_2024.json, \_meta}\src{STEP 24 §13}. 단위는 $\sigma$ [fb], $L$ [\fbinv] 다\src{STEP 12}. analyzer 안에서 MC 사건의 weight 는 다음 순서로 곱해진다
+\src{STEP 14}\src{ttHHanalyzer\_unified.cc, process}:
+\begin{equation}
+  w_i = w_{\mathrm{base}}\cdot g_i\cdot w_{\mathrm{PU}}\cdot w_{\mathrm{L1}}\cdot m_{\mathrm{stitch}}(s,c_i)\cdot \mathrm{SF}_{\mathrm{trig}}\cdot w_{\mathrm{btag}}\,[\cdot\,R_{\mathrm{btag}}],
+  \label{eq:samples-chain}
+\end{equation}
+여기서 $w_{\mathrm{PU}}$ 는 pileup weight(\ref{ch:objects}~장), $w_{\mathrm{L1}}$ 은 L1 prefiring weight(2016·2017 만), $m_{\mathrm{stitch}}$ 는 표본 $s$ 와 사건의
+\ttbar 범주 $c_i$ 에 따른 stitching 배수(\S\ref{sec:samples-stitch}; 계획 밖의 표본은 1), $\mathrm{SF}_{\mathrm{trig}}$ 는 trigger SF(\ref{ch:trigger}~장),
+$w_{\mathrm{btag}}$ 는 b-tag weight(Run~2 shape SF, 2024 fixed-WP), $R_{\mathrm{btag}}$ 는 Run~2 의 b-tag 정규화 재가중이다(\ref{ch:btag}~장). SF 들은 $\HT$ 단계와
+$n_b$ 단계 사이에서 곱해지므로 cut-flow 의 $n_b$ 단계부터 보정된 MC 를 본다\src{ttHHanalyzer\_unified.cc, applyEventScaleFactors}. Data 는 $w=1$ 이다\src{STEP 14}.
+
+무엇이 틀릴 수 있는지는 이력이 보여 준다. 단면적이 세 곳(stitch 스크립트 하드코딩, main yml 의 weight, prescan)에 흩어져 있을 때 stitching 배수는
+$\sigma_{\mathrm{ded}}=(1.452/\mathrm{BR}_{\mathrm{had}})\,\mathrm{BR}_c$, yml weight 는 $1.452\,\mathrm{BR}_c$ 로 계산해 약분이 깨졌고, 4FS \ttbb SL·DL 이 약 2.2 배
+($1/\mathrm{BR}_{\mathrm{had}}$) 적게 정규화되었다. 단면적 DB 를 단일 출처로 만들고 제출기가 weight 를 실행 때 합성하게 바꿔 해결했다\src{STEP 11}.
+
+\begin{impl}
+\begin{itemize}
+  \item base weight: \file{submit_job_FH_Tier3_unified.py} 의 \code{_compute_base_weight}(\code{w = lumi * xsec * br * kfac / sumw}, \code{sumw} 는 prescan 의
+        \code{runs.genEventSumw}). 제출기는 모든 표본의 DB 항목과 prescan 기록이 없으면 아무것도 내지 않는다(E20/E21)\src{README §7}. prescan(\texttt{-{}-mode prescan})은
+        선택 없이 genWeight 와 \texttt{genTtbarId\%100} 별 합을 쓴다\src{STEP 24 §13}.
+  \item weight tier: \code{evtWeight}(trigger SF 만), \code{evtWeight_btagSF}, \code{evtWeight_full}\src{STEP 14}; stitching 배수는 \code{stitchWeight} branch 로 따로 남는다\src{STEP 1}.
+\end{itemize}
+\end{impl}
+
+% -----------------------------------------------------------------------------
+\section{\texorpdfstring{\ttbar}{ttbar}+jets 의 분류와 모델링}\label{sec:samples-ttjets}
+
+\subsection{물리: 왜 tt+bb 인가, 4FS 와 5FS}\label{sec:samples-ttbb-physics}
+
+\ttbar 에 추가 b jet 이 붙는 사건은 대부분 gluon 이 갈라지는 $g\to b\bar b$ 에서 온다\src{Hbb 회의 FH 발표 p.20}. tt+bb 는 신호 \ttHH(4b)와 같은 말단 상태라
+b-tag 으로 줄일 수 없는(irreducible) 배경이고, \ttHH 에서는 추가 b jet 이 셋·넷인 tt+bbb, tt+4b 도 중요하다\src{AN-22-122 v26, PDF p.12--13}. 이를 모델링하는 MC 는
+두 방식이다. \textbf{5FS(5-flavour scheme) 포괄 \ttbar} 는 b 쿼크를 질량 없는 parton 으로 proton PDF 에 넣어, 추가 b 가 주로 parton shower(PS)의 $g\to b\bar b$ 에서
+나온다. 정밀도는 낮지만 데이터로 잘 조율되어 있고\src{승인 발표 p.15} NNLO+NNLL 단면적(831.76\pb)으로 정규화한다. \textbf{4FS(4-flavour scheme) \ttbb} 는
+b 질량($m_b=4.75\GeV$)을 유지하고 $t\bar tb\bar b$ 를 행렬요소(ME)에서 NLO 로 만든다(Powheg-Box-Res + OpenLoops). 단단하고 떨어진 추가 b jet 의 기술이 좋고
+PS·생성기 선택에 따른 불확도가 줄지만\src{승인 발표 p.15--16}, 단면적의 척도 불확도가 크다(tt+bb $^{+37.6}_{-27.5}\%$)\src{AN-22-122 v26, PDF p.23, Table 9}.
+둘 다 PYTHIA 8.230, CP5 이고\src{AN-22-122 v26, PDF p.15, Table 2}, $h_{\mathrm{damp}}$ 는 AN Table~2 가 둘 다 $1.379\,m_t$ 로 적었으나 ttH AN 과 승인 발표는
+5FS 에 $1.5\,m_t$ 를 적었다\src{AN-19-094 v20, PDF p.77, Table 60}\src{승인 발표 p.14}. ttH(bb) AN 에서 4FS 는 같은 위상공간의 tt+B 를 5FS 보다 약 20\,\%, tt+bb 를 약 43\,\% 더
+예측했다(21.34 대 17.75\pb, 4.56 대 3.18\pb; 비는 우리 계산)\src{AN-19-094 v20, PDF p.91, Table 61}.
+
+\subsection{AN 의 tt+jets 범주와 모델}\label{sec:samples-an-cats}
+
+AN 은 ttH 와 같이 top 붕괴에서 오지 않은 \emph{추가} jet 의 맛으로 \ttbar 를 나눈다. 도구는 GenHFHadronMatcher 이고 생성자 수준 jet 은 $\pt>20\GeV$, $|\eta|<2.4$ 다
+\src{AN-22-122 v26, PDF p.12, l.271--277}. 범주는 tt+bb(추가 b jet 2 개), tt+2b(추가 b jet 1 개, B hadron $\geq2$), tt+b(추가 b jet 1 개, B hadron 1 개),
+tt+cc(추가 c jet $\geq1$), tt+LF(나머지)\src{AN-22-122 v26, PDF p.12, l.278--285}에 \ttHH 를 위한 tt+bbb(추가 b jet 3 개 이상, 4 개 제외)와 tt+4b(정확히 4 개)를
+더한 7 개다\src{AN-22-122 v26, PDF p.13, l.299--306}. 그림~\ref{fig:samples-hfmatch} 가 세 b 범주의 차이다.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=0.8cm, y=0.8cm, font=\footnotesize,
+  lab/.style={align=center, text width=4.3cm, inner sep=1pt, anchor=north}]
+\begin{scope}
+  \fill[gray!22] (0,0) -- (2.9,1.25) -- (2.9,0.45) -- cycle;
+  \fill[gray!22] (0,0) -- (2.9,-0.35) -- (2.9,-1.15) -- cycle;
+  \fill[blue!60!black] (2.25,0.72) circle (0.09);
+  \fill[blue!60!black] (2.25,-0.62) circle (0.09);
+  \node[lab] at (1.45,-1.4) {(a) tt+bb: 추가 b jet 2 개, 각각 B hadron 1 개 이상};
+\end{scope}
+\begin{scope}[xshift=5.4cm]
+  \fill[gray!22] (0,0) -- (2.9,0.6) -- (2.9,-0.4) -- cycle;
+  \fill[blue!60!black] (2.2,0.18) circle (0.09);
+  \fill[blue!60!black] (2.5,-0.05) circle (0.09);
+  \node[lab] at (1.45,-1.4) {(b) tt+2b: 추가 b jet 1 개에 B hadron 2 개 이상(collinear $g\to b\bar b$)};
+\end{scope}
+\begin{scope}[xshift=10.8cm]
+  \fill[gray!22] (0,0) -- (2.9,1.0) -- (2.9,0.2) -- cycle;
+  \fill[blue!60!black] (2.25,0.55) circle (0.09);
+  \fill[blue!60!black] (2.6,-0.95) circle (0.09);
+  \draw[densely dashed, gray] (0,0) -- (2.6,-0.95);
+  \node[anchor=west, gray!40!black] at (2.75,-0.95) {acc.\ 밖};
+  \node[lab] at (1.45,-1.4) {(c) tt+b: 추가 b jet 1 개에 B hadron 1 개(다른 하나는 acceptance 밖)};
+\end{scope}
+\end{tikzpicture}
+\caption{GenHFHadronMatcher 에 의한 추가 b jet 범주(AN 의 Fig.~5 를 따라 다시 그림). 회색 원뿔은 생성자 수준 jet, 점은 B hadron.}
+\label{fig:samples-hfmatch}
+\end{figure}
+
+\begin{itemize}
+  \item \textbf{SL}: tt+cc·tt+LF 는 5FS \ttbar, tt+b·tt+2b·tt+bb 는 4FS \ttbb 에서 가져와 DNN 노드 tt+mb 로 묶는다\src{AN-22-122 v26, PDF p.14, l.341--346}. tt+bbb·tt+4b 는
+        노드 tt+nb 로 묶고, 4FS 의 통계가 모자라 "절충안으로" LO tt4b 에서 가져온다\src{AN-22-122 v26, PDF p.15, l.349--360}. 부록 D 의 표본별 사용 범주도
+        같다\src{AN-22-122 v26, PDF p.187, p.195, p.203}. 최종 fit 은 "5j4b model option 2" 다.
+  \item \textbf{DL}: \ttbar 와 tt+4b 를 한 노드로 다루고, "생성자 수준에서 b-tag jet 넷인 사건을 \ttbar 표본에서 제외"한 뒤 tt+4b 를 더한다
+        \src{AN-22-122 v26, PDF p.17, l.372--376}. 정확히 어느 범주를 뺐는지는 확인 못 함.
+  \item \textbf{승인(SL 최종)}: tt+mb $=$ tt+$\leq$2b, tt+nb $=$ tt+$\geq$3b\src{승인 발표 p.18}. fit 은 \ttbar(tt+lf, tt+cc)와 $t\bar tb$(tt+nb, tt+mb) 두 template 이고
+        ttH·\ttbar·$t\bar tb$ 정규화가 자유다\src{승인 발표 p.25, p.27}.
+\end{itemize}
+LO tt4b 와 4FS \ttbb 는 tt+nb 에서 jet 수 10 이하는 일치하고 jet 수 $>10$, medium b-tag $>7$ 에서 어긋나지만 그곳에는 신호가 적다
+\src{AN-22-122 v26, PDF p.15, l.364--371}. AN 은 tt+4b 를 4FS 에서 NLO 로 얻으려고 약 6 배 큰 4FS 표본을 요청했고 Run~3 에서 추진한다
+\src{AN-22-122 v26, PDF p.14, l.329--338}.
+
+\begin{andiff}[AN 서술의 혼선 — "Option 1/2"]
+본문은 "LO tt4b 로 tt+bbb·tt+4b 를 만드는 것"을 Option~1, "4FS \ttbb 로"를 Option~2 라 부르지만\src{AN-22-122 v26, PDF p.15, l.355--358}, Fig.~7·8 의 캡션과 최종 fit 의
+"option 2" 는 반대 정의와 맞는다\src{AN-22-122 v26, PDF p.16, Figs.~7--8}. 부록 D 와 일관된 "tt+nb ← LO tt4b" 를 이름 대신 적는다.
+\end{andiff}
+
+\subsection{genTtbarId 해독과 우리 범주}\label{sec:samples-genttbarid}
+
+NanoAOD 의 \code{genTtbarId} 는 GenTtbarCategorizer 가 사건마다 쓰는 정수이고, 우리는 끝 두 자리(\texttt{\%100})만 쓴다\src{ttbarCategorization\_KR §2.2}. 추가 b jet
+이 둘 이상이면 53--55 에서 포화되어 3 개와 4 개를 구분하지 못한다(53--55 의 차이는 앞 두 b jet 안의 B hadron 수일 뿐이다)\src{ttbarCategorization\_KR §2.3}. 그래서
+MiniAODv2 에서 같은 매칭을 다시 돌려 추가 b jet 이 셋 이상인 사건만 담은 표본별 조회표 \file{ttnb_<sample>.root}(tree \code{TtNb}, 키 (run, lumi, event))를 만들고,
+analyzer 가 그 사건의 끝 두 자리를 61/62(정확히 3 개), 71/72(4 개 이상)로 덮어쓴다(확장 ID)\src{ttbarCategorization\_KR §9}\src{ExpandedTtbarId.h}. 조회표의
+\code{genTtbarId} 가 NanoAOD 값과 다르면 잘못 짝지은 파일이므로 멈춘다\src{ExpandedTtbarId.h}. 표~\ref{tab:samples-cats} 가 범주의 대응이다.
+
+\begin{table}[htbp]
+\centering
+\caption{\ttbar+jets 범주의 대응: AN 이름, \texttt{genTtbarId\%100}(확장 ID 포함), 우리 코드의 세 가지 묶음.}
+\label{tab:samples-cats}
+\footnotesize
+\begin{tabularx}{\textwidth}{l L c l l l}
+\toprule
+AN 범주 & 정의(추가 jet) & \texttt{\%100} & \texttt{TtCat}(검증용) & stitch 라벨 & b-tag 정규화 group \\
+\midrule
+tt+LF  & 추가 b·c jet 없음 & 0 & \texttt{LightFlavour} & \texttt{LF} & tt+LF \\
+tt+cc  & 추가 c jet $\geq1$, b 없음 & 41--45 & \texttt{AddCjet} & \texttt{cc} & tt+cc \\
+tt+b   & 추가 b jet 1 개(B hadron 1 개) & 51 & \texttt{Add1Bjet\_1Had} & \texttt{ttb} & tt+B \\
+tt+2b  & 추가 b jet 1 개(B hadron $\geq2$) & 52 & \texttt{Add1Bjet\_2Had} & \texttt{ttb} & tt+B \\
+tt+bb  & 추가 b jet 2 개 & 53--55 & \texttt{Add2Bjet} & \texttt{tt2b} & tt+B \\
+tt+bbb & AN: $\geq3$(4 제외); 확장 ID: 정확히 3 & 61, 62 & (\texttt{Add2Bjet}) & \texttt{ttbbb} & tt+nb \\
+tt+4b  & AN: 정확히 4; 확장 ID: $\geq4$ & 71, 72 & (\texttt{Add2Bjet}) & \texttt{tt4b} & tt+nb \\
+\bottomrule
+\end{tabularx}
+\par\smallskip\footnotesize 출처: AN-22-122 v26, PDF p.12--13; ttbarCategorization\_KR §2.2, §9.2; compute\_stitch\_factors.py \texttt{CAT\_OF\_SUB}; Config\_TtCatGroup.hh \texttt{Classify}.
+b-tag 정규화 group 은 이 밖에 ttH, ttHH, ttZH4b, ttZZ4b 가 있어 모두 8 개다\src{STATUS, Known constraints}.
+\end{table}
+
+\begin{note}[이름의 함정: "tt2b"]
+stitching 라벨 \texttt{tt2b} 는 53--55, 곧 \emph{추가 b jet 이 둘}인 사건(AN 의 tt+bb)이고 AN 의 "tt+2b" 는 52 다. \file{compute_stitch_factors.py} 의 출력 머리글도
+"tt+2b(53-55)" 다. \code{TtCat} 이름(\code{Add1Bjet_2Had} 등)은 이 혼동을 피하려고 붙였다\src{ttbarCategorization\_KR §3.2}. 확장 ID 의 경계(정확히 3 / $\geq4$)는
+AN(3 이상·4 제외 / 정확히 4)과 다르지만 둘 다 tt+nb 로 합치므로 결과는 같다(우리 판단).
+\end{note}
+
+STEP~17 이후 공식 범주(\code{officialTtCategory()})는 NanoAOD \code{genTtbarId} 의 해독이고, analyzer 의 GenPart 알고리즘과의 2-way 비교를 검증 히스토그램으로 남긴다
+\src{STEP 17}. 예전 메모의 "tt+b 부터 tt+4b 까지 tt+nb 노드 하나로"\src{ttbarCategorization\_KR §3.3}는 AN 의 두 노드(tt+mb, tt+nb) 구조와 다르며, AN 쪽이 맞다.
+
+% -----------------------------------------------------------------------------
+\section{Stitching: 5FS \texorpdfstring{\ttbar}{ttbar}, 4FS \texorpdfstring{\ttbb}{ttbb}, LO tt4b}\label{sec:samples-stitch}
+
+\subsection{왜 필요한가와 선례}
+
+5FS 포괄 \ttbar 에도 tt+bb, tt+nb 사건이 적은 통계로 들어 있으므로 세 표본을 그냥 더하면 그 위상공간이 두세 번 세어진다. stitching 은 각 범주를 한 표본
+(dedicated)에만 맡기고 그 표본을 다시 정규화해, 4FS 의 모델링과 통계를 이중 계산 없이 쓰게 한다\src{ttbarCategorization\_KR §10.1}. ttH(bb) 의 처방은 명시적이다:
+tt+B($=$ tt+bb, tt+b, tt+2b)는 4FS 에서, tt+C·tt+LF 는 5FS 에서 가져오고, 바꿔 넣은 tt+B 의 수율이 포괄 표본에서 \emph{대체된} tt+B 부분의 수율과 같도록 weight 를
+준다 — 그래서 \ttbar 전체 수율은 그대로이고 tt+B 정규화는 fit 에서 자유다\src{AN-19-094 v20, PDF p.89, §6.2.1}. 우리 발표의 표도 같은 구조이고(5FS: lf·cc 만 ×1;
+\ttbb: b, 2b, bb 를 ×$r$; tt4b: bbb, 4b 를 ×$r$), 같은 stitching 을 analyzer 와 b-tag SF 정규화에 똑같이 써야 수율이 닫힌다\src{Hbb 회의 FH 발표 p.21}\src{STATUS, Known constraints}.
+
+\subsection{우리 공식과 기호}\label{sec:samples-stitch-formula}
+
+\file{compute_stitch_factors.py} 의 기본 계획 \code{EXP} 를 적는다\src{compute\_stitch\_factors.py, STITCH\_PLANS, CAT\_OF\_SUB}. 기호: $c\in\{\mathrm{Had},\mathrm{SL},\mathrm{DL}\}$
+는 \ttbar 의 W 붕괴 채널($\mathrm{BR}_{\mathrm{Had}}=0.45441081$, $\mathrm{BR}_{\mathrm{SL}}=0.43937838$, $\mathrm{BR}_{\mathrm{DL}}=0.10621081$), $\sigma_{\mathrm{tot}}=831\,760\fb$ 는
+포괄 \ttbar 단면적(DB), $G_s(S)=\sum_{i\in s,\ \mathrm{ID}_i\%100\in S}g_i$ 는 표본 $s$ 에서 확장 ID 가 집합 $S$ 에 드는 사건의 genWeight 합(prescan; $G_s\equiv G_s(\mathrm{all})$),
+$\sigma_{\mathrm{ded}}$ 는 dedicated 표본의 DB 유효 단면적 $\sigma\times\mathrm{BR}$ 이다(4FS: $\sigma_{\ttbb,c}=1452\fb\times\mathrm{BR}_c$; tt4b: $\sigma_{\mathrm{tt4b}}=296\fb$, 붕괴
+inclusive). 채널마다의 4FS \ttbb 는 자기 채널의 포괄 표본 \file{TTbar_c} 에 묶이고(anchor) 53--55 를 맡으며, tt4b 는 세 포괄 표본을 합친 것에 묶이고 61, 62, 71, 72 를
+맡는다:
+\begin{align}
+  f_{B,c} &= \frac{G_{\mathrm{TTbar}_c}(53,54,55)}{G_{\mathrm{TTbar}_c}}, &
+  r_{B,c} &= \frac{\sigma_{\mathrm{tot}}\,\mathrm{BR}_c\,f_{B,c}}{\sigma_{\ttbb,c}}, \label{eq:samples-rB}\\
+  f_{4b}  &= \frac{\sum_c G_{\mathrm{TTbar}_c}(61,62,71,72)}{\sum_c G_{\mathrm{TTbar}_c}}, &
+  r_{4b}  &= \frac{\sigma_{\mathrm{tot}}\,f_{4b}}{\sigma_{\mathrm{tt4b}}}. \label{eq:samples-r4b}
+\end{align}
+사건마다 곱하는 배수 $m_{\mathrm{stitch}}(s,c_i)$ 는 포괄 표본에서 맡기지 않은 범주(LF, cc, 51--52)는 1, 넘긴 범주(53--55, 61--72)는 0; dedicated 표본에서 맡은 범주는
+$r$, 나머지는 0; 계획 밖의 표본은 1 이다\src{compute\_stitch\_factors.py, build\_analyzer\_table}. dedicated 사건 하나의 weight 는 식~\eqref{eq:samples-weight} 와 곱하면
+\begin{equation}
+  w_i = \frac{L\,\sigma_{\mathrm{ded}}}{G_{\mathrm{ded}}}\,g_i\cdot r = \frac{L\,\sigma_{\mathrm{inc}}\,f}{G_{\mathrm{ded}}}\,g_i,
+  \qquad \sigma_{\mathrm{inc}}=\sigma_{\mathrm{tot}}\mathrm{BR}_c\ (\text{또는 }\sigma_{\mathrm{tot}})
+  \label{eq:samples-dedw}
+\end{equation}
+이 되어 $\sigma_{\mathrm{ded}}$ 가 약분된다. 그래서 4FS 단면적 1452\fb 의 정확한 의미(STEP~10 이 지적한, ttH AN 이 쓴 LHE 총 단면적 43.74\pb 와의 30 배 차이
+\src{STEP 10}\src{AN-19-094 v20, PDF p.90, l.956--963})는 결과에 들어가지 않는다. 필요한 것은 base weight 와 $r$ 이 \emph{같은} $\sigma_{\mathrm{ded}}$ 를 쓰는 것뿐이고,
+단일 DB 가 그것을 보장한다\src{STEP 11}. 표~\ref{tab:samples-owner} 는 범주별 담당 표본을 AN, ttH(bb), 우리 Run~2 계획, 지금의 2024 로 나란히 놓은 것이다.
+
+\begin{table}[htbp]
+\centering
+\caption{범주별 담당 표본(stitching). 5FS = 포괄 \ttbar, 4FS = \ttbb, tt4b = LO tt4b.}
+\label{tab:samples-owner}
+\footnotesize
+\begin{tabularx}{\textwidth}{l c C C C C}
+\toprule
+범주 & \texttt{\%100} & AN SL (부록 D) & ttH(bb) & 우리 Run~2 (\texttt{EXP}) & 우리 2024 (지금) \\
+\midrule
+tt+LF  & 0      & 5FS & 5FS & 5FS ($\times1$) & 5FS \\
+tt+cc  & 41--45 & 5FS & 5FS & 5FS ($\times1$) & 5FS \\
+tt+b   & 51     & 4FS & 4FS & \textbf{5FS} ($\times1$) & 5FS \\
+tt+2b  & 52     & 4FS & 4FS & \textbf{5FS} ($\times1$) & 5FS \\
+tt+bb  & 53--55 & 4FS & 4FS & 4FS ($\times r_{B,c}$) & 5FS \\
+tt+bbb & 61, 62 & tt4b & 4FS(tt+B 안) & tt4b ($\times r_{4b}$) & 5FS(53--55 안) \\
+tt+4b  & 71, 72 & tt4b & 4FS(tt+B 안) & tt4b ($\times r_{4b}$) & 5FS(53--55 안) \\
+\bottomrule
+\end{tabularx}
+\par\smallskip\footnotesize 출처: AN-22-122 v26, PDF p.187, 195, 203; AN-19-094 v20, PDF p.89; compute\_stitch\_factors.py; D-2026-10-05-C.
+\end{table}
+
+\begin{andiff}[우리 \texttt{EXP} 가 AN 과 다른 점: 추가 b jet 하나(51, 52)]
+AN(부록 D), ttH(bb), 그리고 우리 Hbb 발표의 표는 모두 tt+b(51)와 tt+2b(52)를 4FS \ttbb 에서 가져온다. 지금 \code{EXP} 는 이 둘(라벨 \texttt{ttb})을 5FS 포괄 표본에
+남기고 4FS 에는 53--55 만 맡긴다\src{compute\_stitch\_factors.py, l.245--283, l.325--333}. 옛 선택지 \code{A}·\code{B} 는 포괄에 LF+cc 만 남겼으므로\src{compute\_stitch\_factors.py, l.98--99}
+어느 시점에 바뀐 것인데 그 근거를 적은 기록은 찾지 못했다. 2017 \file{TTToHadronic} 에서 51+52 의 genWeight 비율(2.0\,\%)은 53--55(0.42\,\%)의 약 4.8 배라(우리 계산)
+\src{ttbarCategorization\_KR §10.7.2} 이 선택은 $n_b\geq3$ 영역의 \ttbar 구성에 직접 영향을 준다. 분석자가 정할 항목이다(\S\ref{sec:samples-openq}).
+\end{andiff}
+
+\begin{note}[정규화 조건의 점검 — 이 문서를 쓰며 찾은 의문]
+ttH 의 처방은 "맡은 범주에서 dedicated 의 수율 $=$ 포괄 표본이 그 범주에 주던 수율", 곧 $\sum_{i\in\mathrm{ded,owned}}w_i=L\,\sigma_{\mathrm{inc}}f$ 이다.
+식~\eqref{eq:samples-dedw} 를 맡은 범주에 대해 더하면
+\begin{equation}
+  \sum_{i\in\mathrm{ded,owned}} w_i = L\,\sigma_{\mathrm{inc}}\,f\;\frac{G_{\mathrm{ded}}(\mathrm{owned})}{G_{\mathrm{ded}}} \equiv L\,\sigma_{\mathrm{inc}}\,f\;p_{\mathrm{own}}
+  \label{eq:samples-pown}
+\end{equation}
+이므로 조건은 $p_{\mathrm{own}}=1$, 곧 dedicated 표본의 사건이 모두 맡은 범주에 있을 때만 성립한다. 커밋된 2017 prescan(\file{prescan_summary/prescan_summary.json},
+tt+nb 조회표 없음)의 genWeight 합으로 계산하면 $p_{\mathrm{own}}$(53--55) 은 \file{TTbb_Hadronic} 0.114, \file{TTbb_SemiLep} 0.108, \file{TTbb_DiLep} 0.103 이다
+\src{D-2026-10-10-C}. 4FS \ttbb 의 genWeight 합 가운데 LF(0)가 43--46\,\%, 51--52 가 약 41\,\% 다(우리 계산). 조회표가 있던 2026-06 실행의 합으로는 53--55 가
+0.109/0.104/0.100, \file{TT4b} 의 61--72 가 0.198 이다(우리 계산)\src{ttbarCategorization\_KR §10.7.2}; 커밋된 prescan 에는 61--72 가 없어 \file{TT4b} 의 값은 그
+실행에서만 나온다. 그렇다면 지금 공식의 stitched tt+bb 는 포괄 예측의 약 1/9, tt+nb 는 약 1/5 이 된다. 처방대로라면 분모를 맡은 범주의 합으로 바꿔
+$r'=r/p_{\mathrm{own}}=\sigma_{\mathrm{inc}}f/(\sigma_{\mathrm{ded}}\,p_{\mathrm{own}})$ 이어야 한다(우리 판단, D-2026-10-10-C 로 PROPOSED; 예: Had 에서 $r\approx2.4$ 대신
+약 22). STEP~11 의 검증(V4)은 $\sigma_{\mathrm{ded}}$ 의 약분만 보았다\src{STEP 11}.
+생성자 수준의 closure — prescan 합으로 $\sum_{\mathrm{TTbb}_c,\,53\text{--}55}w$ 와 $\sum_{\mathrm{TTbar}_c,\,53\text{--}55}w$ 를 비교 — 로 바로 확인할 수 있다.
+2017 Hbb 발표에서 $n_b$ 와 함께 Data/MC 가 커진 것이\src{Hbb 회의 FH 발표 p.25--26} 이와 관련 있는지는 그 plot 이 쓴 stitch JSON 을 확인한 뒤 판단한다.
+\end{note}
+
+\subsection{지금까지의 값과 상태}\label{sec:samples-stitch-values}
+
+2026-06 의 2017 실행(옛 이름, lumi 41480\pb$^{-1}$, 당시의 $\sigma_{\mathrm{ded}}$ 관례 1.452\pb)은 $f_{B}=0.004187/0.003829/0.003504$(Had/SL/DL),
+$r_{B}=1.090/0.9967/0.9121$, $f_{4b}=9.8\times10^{-5}$, $r_{4b}=0.2759$ 를 주었다\src{ttbarCategorization\_KR §10.7.2}. $r_{4b}<1$ 은 tt4b 의 \emph{전체}
+단면적(0.296\pb)이 포괄 표본이 61--72 에 주는 예측($\sigma_{\mathrm{tot}}f_{4b}\approx0.082\pb$)의 약 3.6 배라서다. 이 비교는 tt4b 사건 가운데 맡은 범주에 드는
+몫($p_{\mathrm{own}}\approx0.2$)을 빠뜨린 것이다(\S\ref{sec:samples-stitch-formula} 의 마지막 상자). 채널마다 $f_B$ 가 달라 Had 의 $r$ 을 SL·DL 에 쓰면 9--20\,\% 어긋나므로 채널별로
+stitch 한다\src{STITCH\_CHANGELOG §2}. DB 통일 뒤에는 $r_{B,\mathrm{Had}}\approx2.40$($831\,760\times0.004187/1452$, 우리 계산)이 되고 base weight 도 함께 바뀌어 곱은
+같다\src{STEP 11}. 저장소의 \file{DerivedCorr/stitchFactors/stitch_factors_2017.json} 은 KNU 의 로컬 수정이 커밋된 판으로\src{STATUS 2026-10-05} lumi 41480,
+$r_B=2.460/2.247/2.053$, $f_{4b}=r_{4b}=0$ 이다. $f_{4b}=0$ 은 그 prescan 이 tt+nb 조회표 없이 돌았기 때문이다: 커밋된 \file{prescan_summary.json} 에는
+61--72 가 하나도 없고, 그래서 tt+$\geq$3b 는 53--55 에 남아 4FS 가 맡는다\src{D-2026-10-10-C}. 2017 v20 의 파생 입력(stitch, 조회표)은 아직 다시 만들지 않았고
+main·prescan yml 의 경로는 \code{null}(꺼짐)이며, btagtrig yml 만 이 JSON 과 조회표 디렉터리를 읽는다(b-tag 정규화 재가중 유도용)\src{D-2026-06-30-E}\src{STATUS, Current correction state}\src{D-2026-10-10-C}.
+
+\subsection{2024 와 2018}\label{sec:samples-stitch-2024}
+
+2024 에는 tt+nb 조회표가 없다(NtupleForge V6 미착수). 그래서 2024 job 은 조회표 없이 돌아(\code{EraConfig::hasTtNbLookup("2024")} 가 거짓) 61--72 가 나오지 않고
+tt+$\geq$3b 는 tt+B(51--55) 안에 남으며, stitching 도 하지 않는다(\code{path_stitch_json: null}). 4FS \file{TTbb_*} 와 \file{TT4b} 는 돌리지만 포괄 \ttbar 위에 쌓지
+않으므로 지금은 5FS 포괄 하나가 모든 범주를 낸다\src{D-2026-10-05-C}\src{D-2026-10-02-A}. 2024 에 stitching 을 켜기 전에 둘을 정리한다: (1) skim 된 \code{Events} 로
+prescan 하면 $f$·$r$ 이 skim 뒤의 합으로 조용히 틀리므로(합성 시험에서 $f$(53--55) $\times1.61$)\src{PLAN\_v15 §2 \#8} NtupleForge 의 job 별 \code{ForgeAudit}(skim 전
+\texttt{genTtbarId\%100} 별 Σw)를 쓴다\src{PLAN\_v15 §9.4}; (2) 위의 $p_{\mathrm{own}}$ 문제. 2018 은 조회표가 여섯 표본에 있지만 v15 에 \file{TT4b} 가 없어, \code{EXP}
+가 \file{TT4b} 를 가정하면 tt+nb 가 조용히 빠진다\src{PLAN\_v15 §2 \#7}\src{PLAN\_v15 §9.4}.
+
+\begin{impl}
+\begin{itemize}
+  \item 계산: \file{compute_stitch_factors.py} — \code{STITCH_PLANS["EXP"]}, \code{CAT_OF_SUB}, \code{compute_plan}, \code{build_analyzer_table}; 출력
+        \file{DerivedCorr/stitchFactors/stitch_factors_<연도>.json} 의 \code{analyzer_perEvent_factor}. $\sigma$ 는 env \code{TTHH_XSEC_DB} 또는 \file{data/samples_2017UL.json}.
+  \item 적용: \file{src/StitchFactors.cc} 의 \code{factor(expandedId, w)}, 확장 ID 는 \file{include/ExpandedTtbarId.h} 의 \code{resolve(run, lumi, event, genTtbarId)};
+        \code{process()} 에서 \code{_evtWeight *= stitchMult} 후 tree 에 \code{stitchWeight}, \code{expandedTtbarId} 를 쓴다. 경로는 yml \code{common.path_stitch_json},
+        \code{common.path_expanded_ttbarid_dir}\src{README §4}, 실패 코드는 60--63(stitch), 70--73(확장 ID)\src{ERROR\_CODES}.
+\end{itemize}
+\end{impl}
+
+% -----------------------------------------------------------------------------
+\section{변경 이력}\label{sec:samples-history}
+
+표~\ref{tab:samples-history} 는 이 장의 내용과 관련된 변경 기록을 시간순으로 모은 것이다(자세한 내용은 각 기록).
+
+\begin{table}[htbp]
+\centering
+\caption{표본·정규화·stitching 의 주요 변경(날짜는 2026 년; STEP 은 \texttt{docs/changes}, D-… 는 DECISIONS 의 기록).}
+\label{tab:samples-history}
+\footnotesize
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{1.25cm} >{\raggedright\arraybackslash}p{2.75cm} L}
+\toprule
+날짜 & 기록 & 내용 \\
+\midrule
+06 & STEP~1, STITCH\_\allowbreak CHANGELOG & \code{stitchWeight} branch; 채널별 4FS stitch(\code{EXP}), 확장 ID 61--72, 사건별 적용 \\
+06-12/14 & STEP~10, 11 & 4FS 단면적의 의미 의문(1.452\pb 대 LHE 43.74\pb); 단면적 DB 단일 출처(\ttbb SL·DL 2.2 배 과소 해소) \\
+06-15 & STEP~12, 14 & fb 단위, AN 기준 $\sigma$·BR, k-factor 미적용; 세 weight tier \\
+06-29/30 & STEP~17; D-06-30-A, B, E & 2017 \file{fullNano_v20}, \code{genTtbarId} 해독; 표본 이름 = NtupleForge key; v20 파생 보정 \code{null} \\
+07-26/29 & CHANGELOG & 2018 DB(85 표본), 2018 lumi 59.83 → 59.56; stitch·조회표 이름 별칭과 FATAL \\
+10-02 & D-10-02-A, D, E & 2024 먼저; 2017 lumi 42.07; blinding 정책 \\
+10-05 & D-10-05-A, C, D & 2024 첫 look(109.816\fbinv, 임시 $\sigma$), tt+nb 조회표·stitching 없이; 2017 v20 삭제 \\
+10-06/07 & D-10-06-A; D-10-07-A, B & ParkingHH 와 PD 규칙; 2024 main 다시; W·DY 표본은 저장 공간을 본 뒤 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% -----------------------------------------------------------------------------
+\section{미결 사항}\label{sec:samples-openq}
+
+\begin{openq}[2 장의 미결 사항(분석자 결정 또는 확인)]
+\begin{enumerate}
+  \item \textbf{stitching 의 정규화 조건}(\S\ref{sec:samples-stitch-formula} 의 마지막 상자): dedicated 수율이 포괄 예측의 $p_{\mathrm{own}}$ 배(\ttbb 약 0.11, tt4b 약 0.2)인지
+        생성자 수준 closure 로 확인하고, 맞으면 $r$ 을 맡은 범주의 합으로 정규화한다(D-2026-10-10-C, PROPOSED). b-tag 정규화 재가중과 그 JSON 도 같은 stitching 으로 다시 만든다.
+  \item \textbf{51·52 의 담당}: AN·ttH·우리 발표처럼 4FS 로 옮길지, 지금처럼 5FS 에 둘지(근거 기록 없음; D-2026-10-10-C (b), AI 권고는 AN 대로).
+  \item 2016 의 PD(BTagCSV 사용 여부)·루미노시티·표본 DB; 2018 brilcalc; 2024 루미노시티 불확도와 연도 간 상관; SL·DL 과 맞출 lumi 값(AN 41.53/59.74 대 우리 값).
+  \item 단면적: 2024 의 모든 $\sigma$(임시; 특히 비율로 올린 6 항목), Run~2 DB 의 \code{verify_xsec} 항목, \ttZ 861 대 841\fb(AN 내부 불일치; DB 는 분석자 결정으로 861
+        \src{samples\_2017UL.json, TTZToBB}), 다중 top·ttVV 의 출처 표기, \file{ST_s_had} 의 note("sigma remains undetermined" 인데 값이 있음).
+  \item 표본: Run~2 v15 의 부재 5 종, 2024 W$\to\ell\nu$·DY 생산, 2024 tt+nb 조회표(V6)와 skim 전 범주 합으로 하는 2024 stitching. 데이터: 빠진 golden LS 를 되살릴지,
+        세 PD 공통 LS mask 와 그 brilcalc 로 갈지.
+\end{enumerate}
+\end{openq}

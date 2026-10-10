@@ -1,0 +1,75 @@
+% =============================================================================
+% 부록 B — 용어 풀이
+% =============================================================================
+\chapter{용어 풀이}\label{ch:glossary}
+
+본문에서 영어 그대로 쓰는 용어와 우리 작업 환경의 이름을 짧게 푼다. 물리 용어의 자세한 설명은 괄호 안의 장에 있다.
+
+\begingroup\small
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}p{12.2cm}@{}}
+\caption{용어 풀이(가나다·알파벳 순이 아니라 분석의 흐름 순)}\label{tab:glossary}\\
+\toprule
+용어 & 풀이 \\
+\midrule
+\endfirsthead
+\toprule
+용어 & 풀이 \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\multicolumn{2}{@{}l}{\textbf{물리·신호}}\\
+\kl, \kt & Higgs 삼중 자기 결합, top Yukawa 결합을 표준 모형 값으로 나눈 비. 1 이면 표준 모형(\ref{ch:intro}장). \\
+HEFT, $c_2$ & Higgs 유효장론. $c_2$ 는 $t\bar{t}HH$ 접촉 결합의 계수로, \ttHH{} 가 직접 민감하다(\ref{ch:intro}장). \\
+FH, SL, DL & \ttbar{} 의 두 $W$ 가 모두 쿼크로(fully hadronic), 하나만 lepton 으로(semi-leptonic), 둘 다 lepton 으로(di-leptonic) 붕괴한 경우. \\
+$\mu$ (signal strength) & 관측(또는 상한) 단면적을 표준 모형 예측으로 나눈 값. ``$55\times$SM'' 은 $\mu<55$ 의 상한이라는 뜻. \\
+4FS, 5FS & 4·5 flavour scheme. b 쿼크를 무거운 입자로 다루어 행렬요소에서 직접 만드는가(4FS), 양성자 안의 parton 으로 두는가(5FS)(\ref{ch:samples}장). \\
+genTtbarId & GenHFHadronMatcher 가 매긴 \ttbar{} 의 추가 HF jet 분류 번호. 51–55 는 추가 b jet, 41–45 는 추가 c jet, 0 은 없음. 61/62/71/72 는 우리 tt+nb lookup 이 더한 tt+bbb·tt+4b(\ref{ch:samples}장). \\
+tt+B, tt+mb, tt+nb & tt+B 는 추가 b jet 이 있는 \ttbar{}(51–55). AN 은 tt+b·tt+2b·tt+bb 를 tt+mb, tt+bbb·tt+4b 를 tt+nb 노드로 묶는다. \\
+stitching & 같은 위상 공간을 덮는 표본(5FS inclusive, 4FS ttbb, tt4b)을 범주별로 하나만 쓰도록 이어 붙이는 것. 범주마다 한 표본이 ``소유''한다. \\
+\multicolumn{2}{@{}l}{\textbf{데이터·운영}}\\
+NanoAOD v9 / v15 & CMS 의 작은 데이터 형식. Run 2 UL 은 v9, 2024 와 우리 Run 2 재생산은 v15. branch 이름과 jet ID 정보가 다르다(\ref{ch:objects}장). \\
+NtupleForge & 우리 NanoAOD skim·slim 도구(CRAB 으로 실행). 필요한 branch 만 남기고 사건 수를 줄인다. \\
+tempTTHH & 우리 analyzer 저장소(C++ \code{ttHHanalyzer_unified}, 제출기, plotter, 도구). \\
+prescan / btagtrig / main & analyzer 의 세 실행 모드. prescan 은 genWeight 합과 genTtbarId 분해, btagtrig 는 b-tag 효율·norm reweight·trigger SF 의 입력, main 은 선택과 히스토그램·Tree. \\
+PD & primary dataset. 같은 trigger 묶음으로 모은 데이터 묶음(JetHT, BTagCSV, JetMET, ParkingHH 등). 한 사건이 두 PD 에 있을 수 있어 PD 규칙으로 한 번만 센다. \\
+golden JSON & 물리 분석에 쓸 수 있다고 인증된 run·lumi section 목록. \\
+lumi(\fbinv) & 적분 광도. 모든 MC weight 에 곱한다. 정본은 LUM POG 권고와 brilcalc 실측(\ref{ch:samples}장). \\
+KNU Tier-3, condor & 경북대의 계산 클러스터와 그 job 관리자(HTCondor). \\
+lxplus, CRAB & CERN 의 로그인 서버와 grid 제출 도구. NtupleForge 생산에 쓴다. \\
+SWAN & CERN 의 Jupyter 서비스. ML 학습의 기본 환경(GPU). \\
+\multicolumn{2}{@{}l}{\textbf{객체·보정}}\\
+CHS, PUPPI & 두 가지 pileup 제거 방식. Run 2 UL jet 은 CHS, Run 3 jet 은 PUPPI. \\
+JEC, JER & jet 에너지 보정(scale)과 해상도 보정(smearing). 그 불확도가 JES/JER 계통. \\
+jet veto map & 검출기 문제가 있는 $(\eta,\phi)$ 영역의 jet 을 가진 사건을 버리는 지도(2024). \\
+PU reweighting & MC 의 pileup 분포를 데이터의 것에 맞추는 사건 weight. \\
+L1 prefiring & 2016–2017 ECAL 의 L1 trigger 시간 어긋남으로 생긴 비효율. MC 에 weight 로 보정. \\
+SF & scale factor. 같은 효율을 데이터와 MC 에서 잰 비 $\varepsilon_{\text{data}}/\varepsilon_{\text{MC}}$. \\
+trigger turn-on, plateau & trigger 효율이 오프라인 변수에 따라 0 에서 1 로 오르는 구간과 거의 일정해진 구간. 오프라인 cut 은 plateau 에 둔다(\ref{ch:trigger}장). \\
+\multicolumn{2}{@{}l}{\textbf{b-tagging}}\\
+WP (L/M/T) & working point. b-tag 판별값의 문턱. light jet 의 오인 비율이 약 10/1/0.1\,\% 가 되게 정한다\src{AN-22-122 v26, PDF p.44}(\ref{ch:btag}장). \\
+DeepJet, UParT & Run 2 와 2024 에 쓰는 b-tag 판별기. \\
+shape SF & 판별값 전체 분포를 보정하는 SF(Run 2, iterative fit). 사건 수를 바꾸므로 norm reweight 와 함께 쓴다. \\
+norm reweight & b-tag shape SF 가 바꾼 전체 수율을 jet 다중도 등에 따라 되돌리는 보정. \\
+fixed-WP method 1a & 정해진 WP 의 SF 와 MC 효율로 사건 weight $P(\text{data})/P(\text{MC})$ 를 만드는 BTV 방법. 2024 에 L·M 두 WP 로 쓴다. \\
+closure & 보정을 넣은 뒤 넣기 전과 비교해 기대대로(대개 1) 나오는지 보는 확인. \\
+\multicolumn{2}{@{}l}{\textbf{재구성·ML}}\\
+\chisq{} 짝짓기 & b jet 을 두 쌍으로 묶어 질량이 $m_H$(또는 $m_Z$)에 가장 가깝게 되는 조합을 고르는 방법(\ref{ch:reco}장). \\
+Fox–Wolfram 모멘트, centrality & 사건 모양 변수. 에너지 흐름이 얼마나 등방적인가, 횡방향으로 퍼졌는가. \\
+Tree v1 & STEP 27 에서 analyzer 출력 Tree 에 더한 ML 입력·jet 정답 표지·계통 weight 의 묶음(부록 \ref{ch:treev1}). \\
+DNN, softmax & 다층 신경망과 그 다중 분류 출력. 출력은 각 class 의 사후 확률의 근사(\ref{ch:mva}장). \\
+GATJA & graph attention 으로 b-tag 된 jet 하나하나를 Higgs·top·기타 가운데 어디서 왔는지 분류하는 신경망. AN DL 채널에서 그 출력을 DNN 입력으로 썼다(\ref{ch:mva}장). \\
+LAMB, Adam & 신경망 최적화 방법. LAMB 는 큰 batch 용. \\
+odd/even split & 사건 번호의 홀짝으로 학습·평가 표본을 나눠 같은 사건으로 학습과 평가를 하지 않게 하는 것. \\
+\multicolumn{2}{@{}l}{\textbf{QCD·통계}}\\
+TR, CR, SR & \ttH(\bbbar) FH 의 b-tag 영역: training region(2M+$\geq$2L; ANN 의 QCD 학습 표본), control region(3M+$\geq$1L; QCD template), signal region($\geq$4M)\src{AN-19-094 v20, PDF p.101, Table 63}(\ref{ch:qcd}장). \\
+TF, TF\_loose & transfer factor. 낮은 b-tag 영역의 모양을 높은 영역으로 옮기는 비. TF\_loose 는 loose jet 의 운동학으로 매개화한 판. \\
+ABCD & 서로 독립인 두 변수로 네 영역을 나눠 신호 영역의 배경을 나머지 셋으로 추정하는 방법. \\
+nuisance parameter & 계통 불확도를 나타내는 fit 의 매개변수. 사전 제약(prior)을 가진다. \\
+lnN, shape & 수율만 바꾸는 계통(log-normal)과 분포 모양도 바꾸는 계통. \\
+autoMCStats & combine 에서 MC 통계 불확도를 bin 마다 넣는 방법(Barlow–Beeston-lite). \\
+Asimov & 모든 bin 이 기대값과 같은 가상의 데이터. 기대 상한·기대 유의도를 계산할 때 쓴다(\ref{ch:stats}장). \\
+CLs & 신호 가설 배제의 기준. $\text{CL}_s=\text{CL}_{s+b}/\text{CL}_b<0.05$ 이면 95\,\% CL 로 배제. \\
+blinding & 결과가 정해지기 전에 신호에 민감한 bin 의 데이터를 보지 않는 것. 우리는 최종 판별변수의 신호 민감 bin 만 가린다\src{D-2026-10-02-E}. \\
+\end{longtable}
+\endgroup

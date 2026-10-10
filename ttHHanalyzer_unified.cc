@@ -45,6 +45,8 @@ void ttHHanalyzer_unified::computeBTagWeight(event* thisEvent) {
     bTagWeight_down_cferr1_ = 1.0;
     bTagWeight_up_cferr2_ = 1.0;
     bTagWeight_down_cferr2_ = 1.0;
+    bTagWeight_oldRule_ = 1.0f;   // [STEP 27 N]
+    bTagWeight_cAsB_    = 1.0f;
     
     // Data는 SF 적용하지 않음
     if (_DataOrMC == "Data") return;
@@ -57,75 +59,48 @@ void ttHHanalyzer_unified::computeBTagWeight(event* thisEvent) {
     // [STEP 24] no b-tag shape SF for this year: every weight stays 1
     if (!_hasBTagShapeSF) return;
     
-    // 선택된 모든 jet에 대해 SF 계산
+    // 선택된 모든 jet에 대해 SF 계산 — the central weight for every event (the cut-flow chains use it).
+    // [STEP 27 O] The per-source variations are computed for the events that reach the tree only
+    //   (computeBTagShapeVariations_, BTV's recipe); before, this loop varied hf on b jets only and lf on light jets
+    //   only, values that were never written anywhere.
     const auto* jets = thisEvent->getSelJets();
-    
-    for (const auto* jet : *jets) {
-        double pt   = jet->getp4()->Pt();
-        double eta  = jet->getp4()->Eta();
-        double disc = jet->bTagCSV;  // btagDeepFlavB
-        int flav    = jet->hadFlav;  // hadronFlavour
-        
-        // ═══════════════════════════════════════════════════════════════════
-        // Central value
-        // ═══════════════════════════════════════════════════════════════════
-        double sf_central = corrMgr->getBTagSF_Shape(flav, eta, pt, disc, "central");
-        bTagWeight_central_ *= sf_central;
-        
-        // ═══════════════════════════════════════════════════════════════════
-        // Systematic variations
-        // ═══════════════════════════════════════════════════════════════════
-        
-        // b/light jet systematics (c-jet에는 central 적용됨)
-        if (flav == 5 || flav == 0) {
-            // Heavy flavor (b)
-            if (flav == 5) {
-                bTagWeight_up_hf_   *= corrMgr->getBTagSF_Shape(flav, eta, pt, disc, "up_hf");
-                bTagWeight_down_hf_ *= corrMgr->getBTagSF_Shape(flav, eta, pt, disc, "down_hf");
-            } else {
-                bTagWeight_up_hf_   *= sf_central;
-                bTagWeight_down_hf_ *= sf_central;
-            }
-            
-            // Light flavor
-            if (flav == 0) {
-                bTagWeight_up_lf_   *= corrMgr->getBTagSF_Shape(flav, eta, pt, disc, "up_lf");
-                bTagWeight_down_lf_ *= corrMgr->getBTagSF_Shape(flav, eta, pt, disc, "down_lf");
-            } else {
-                bTagWeight_up_lf_   *= sf_central;
-                bTagWeight_down_lf_ *= sf_central;
-            }
-            
-            // c-jet variations에는 central
-            bTagWeight_up_cferr1_   *= sf_central;
-            bTagWeight_down_cferr1_ *= sf_central;
-            bTagWeight_up_cferr2_   *= sf_central;
-            bTagWeight_down_cferr2_ *= sf_central;
-        }
-        // c-jet systematics
-        else if (flav == 4) {
-            // c-jet은 cferr만 사용
-            bTagWeight_up_cferr1_   *= corrMgr->getBTagSF_Shape(flav, eta, pt, disc, "up_cferr1");
-            bTagWeight_down_cferr1_ *= corrMgr->getBTagSF_Shape(flav, eta, pt, disc, "down_cferr1");
-            bTagWeight_up_cferr2_   *= corrMgr->getBTagSF_Shape(flav, eta, pt, disc, "up_cferr2");
-            bTagWeight_down_cferr2_ *= corrMgr->getBTagSF_Shape(flav, eta, pt, disc, "down_cferr2");
-            
-            // hf/lf variations에는 central
-            bTagWeight_up_hf_   *= sf_central;
-            bTagWeight_down_hf_ *= sf_central;
-            bTagWeight_up_lf_   *= sf_central;
-            bTagWeight_down_lf_ *= sf_central;
+    for (const auto* jet : *jets)
+        bTagWeight_central_ *= corrMgr->getBTagSF_Shape(jet->hadFlav, jet->getp4()->Eta(), jet->getp4()->Pt(),
+                                                        jet->bTagCSV, "central");
+    if (debugCorrections)
+        std::cout << "[BTagWeight] central=" << bTagWeight_central_ << std::endl;
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// [STEP 27 O] Run 2 deepJet shape SF per uncertainty source (AN-2022/122 Table 53: hf, lf, hfstats1/2, lfstats1/2,
+//   cferr1/2; jes goes with the JES runs). BTV's recipe (the same as bTagSF_ReweightStudy's resolveJetSystematic):
+//   a c jet takes the variation for cferr1/2 and its central SF otherwise; a b or light jet takes the variation for
+//   every source but cferr1/2 (the payload knows what each source does to each flavour). Tree branches
+//   bTagWeight_<source>_up/_down. The b-tag norm reweight of each variation is not applied here (it is derived per
+//   variation in the reweight study, AN §5.3) -- downstream multiplies it in.
+// ───────────────────────────────────────────────────────────────────────────
+void ttHHanalyzer_unified::computeBTagShapeVariations_(event* thisEvent) {
+    double w[8][2];
+    for (auto& r : w) r[0] = r[1] = 1.0;
+    for (const auto* jet : *thisEvent->getSelJets()) {
+        const double pt = jet->getp4()->Pt(), eta = jet->getp4()->Eta(), disc = jet->bTagCSV;
+        const int flav = jet->hadFlav;
+        const bool isC = (flav == 4);
+        const double c = corrMgr->getBTagSF_Shape(flav, eta, pt, disc, "central");
+        for (int k = 0; k < 8; ++k) {
+            const bool cferr = (k >= 6);
+            if (cferr != isC) { w[k][0] *= c; w[k][1] *= c; continue; }
+            w[k][0] *= corrMgr->getBTagSF_Shape(flav, eta, pt, disc, std::string("up_") + kBTagShapeSrc[k]);
+            w[k][1] *= corrMgr->getBTagSF_Shape(flav, eta, pt, disc, std::string("down_") + kBTagShapeSrc[k]);
         }
     }
-    
-    if (debugCorrections) {
-        std::cout << "[BTagWeight] central=" << bTagWeight_central_
-                  << " up_hf=" << bTagWeight_up_hf_
-                  << " down_hf=" << bTagWeight_down_hf_
-                  << " up_lf=" << bTagWeight_up_lf_
-                  << " down_lf=" << bTagWeight_down_lf_
-                  << std::endl;
-    }
+    for (int k = 0; k < 8; ++k)
+        for (int v = 0; v < 2; ++v) _tv.bTagShapeVar[k][v] = static_cast<float>(w[k][v]);
+    // the old members follow (hf, lf, cferr1, cferr2), so nothing holds a value of the old recipe
+    bTagWeight_up_hf_ = _tv.bTagShapeVar[0][0];     bTagWeight_down_hf_ = _tv.bTagShapeVar[0][1];
+    bTagWeight_up_lf_ = _tv.bTagShapeVar[1][0];     bTagWeight_down_lf_ = _tv.bTagShapeVar[1][1];
+    bTagWeight_up_cferr1_ = _tv.bTagShapeVar[6][0]; bTagWeight_down_cferr1_ = _tv.bTagShapeVar[6][1];
+    bTagWeight_up_cferr2_ = _tv.bTagShapeVar[7][0]; bTagWeight_down_cferr2_ = _tv.bTagShapeVar[7][1];
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -134,8 +109,8 @@ void ttHHanalyzer_unified::computeBTagWeight(event* thisEvent) {
 //   (selectbJet) and a light jet when its score < L (selectLightJet, the hadronic W), so each jet is in one of
 //   three bins and its weight is P_Data(bin) / P_MC(bin):
 //     score >= M      : SF_M e_M / e_M                              = SF_M
-//     L <= score < M  : (SF_L e_L - SF_M e_M) / (e_L - e_M)
-//     score < L       : (1 - SF_L e_L) / (1 - e_L)
+//     L <= score < M  : (SF_L e_L - SF_M e_M) / (e_L - e_M)   [STEP 27 N: 1 when the numerator is < 0, BTV's rule]
+//     score < L       : (1 - SF_L e_L) / (1 - e_L)              [a numerator < 0 stays 0, a question to BTV]
 //   e_L, e_M: our MC efficiency for the jet's flavour, pT, |eta| and process group (getBTagEff); SF: the payload
 //   (getBTagSF_WP; 2024 b jets only -> 1 for c and light jets, whose weight is then exactly 1). The event weight
 //   is the product over the selected jets; it keeps the pre-tag normalization on average (the closure line at
@@ -144,13 +119,44 @@ void ttHHanalyzer_unified::computeBTagWeight(event* thisEvent) {
 void ttHHanalyzer_unified::computeBTagWeightFixedWP_(event* thisEvent) {
     const float wpL = objectJet::valbTagLoose, wpM = objectJet::valbTagMedium;
     auto clampEff = [](double e) { return std::min(std::max(e, 1.0e-4), 1.0 - 1.0e-4); };
-    double w[3] = {1.0, 1.0, 1.0};                                    // central, up, down
+    double w[3] = {1.0, 1.0, 1.0};                                    // central, up, down (BTV's rule)
+    double wOld = 1.0, wCB = 1.0;                                     // [STEP 27 N] comparison weights (central)
     static const char* syst[3] = {"central", "up", "down"};
+    // method 1a for one jet. interNegIsOne: BTV's rule (an intermediate numerator < 0 -> 1; D-2026-10-10-A (1)),
+    //   false = the commit-K rule (-> 0). A negative fail-L numerator (SF_L e_L > 1) is 0 in both.
+    auto jetWeight = [&](double s, double sL, double sM, double eL, double eM, bool interNegIsOne,
+                         bool& interNeg) -> double {
+        interNeg = false;
+        if (s >= wpM) return sM;
+        if (s >= wpL) {
+            const double pmc = eL - eM;
+            if (!(pmc > 1.0e-6)) return 1.0;
+            const double num = sL * eL - sM * eM;
+            if (num < 0.0) { interNeg = true; return interNegIsOne ? 1.0 : 0.0; }
+            return num / pmc;
+        }
+        const double pmc = 1.0 - eL;
+        if (!(pmc > 1.0e-6)) return 1.0;
+        return std::max(0.0, 1.0 - sL * eL) / pmc;
+    };
     for (const auto* jet : *thisEvent->getSelJets()) {
         const int f = jet->hadFlav;
         const double pt = jet->getp4()->Pt();
         const double ae = std::abs(jet->getp4()->Eta());
         const double s  = jet->bTagCSV;
+        // [STEP 27 N] "c jets with the b SF" (comparison): a c jet takes the b-jet SF (flavour 5) and our c-jet
+        //   efficiencies, while the payload has no c SF of its own
+        if (f == 4 && !corrMgr->btagFixedWPCovers(4) && corrMgr->btagFixedWPCovers(5)) {
+            const double sL = corrMgr->getBTagSF_WP(5, ae, pt, "L", "central");
+            const double sM = corrMgr->getBTagSF_WP(5, ae, pt, "M", "central");
+            const double eL = clampEff(corrMgr->getBTagEff(_btagEffGroup, 4, ae, pt, "L"));
+            const double eM = std::min(clampEff(corrMgr->getBTagEff(_btagEffGroup, 4, ae, pt, "M")), eL);
+            bool in = false;
+            const double wc = jetWeight(s, sL, sM, eL, eM, true, in);
+            wCB *= wc;
+            ++_btagNJetCAsB;
+            if (wc > 10.0) ++_btagNBigCAsB;   // [STEP 27 P] the c maps are not required at load (review R4)
+        }
         if (!corrMgr->btagFixedWPCovers(f)) continue;   // no SF for this flavour (2024: c, light): weight exactly 1
         const double sL0 = corrMgr->getBTagSF_WP(f, ae, pt, "L", "central");
         const double sM0 = corrMgr->getBTagSF_WP(f, ae, pt, "M", "central");
@@ -159,21 +165,20 @@ void ttHHanalyzer_unified::computeBTagWeightFixedWP_(event* thisEvent) {
         for (int v = 0; v < 3; ++v) {
             const double sL = v == 0 ? sL0 : corrMgr->getBTagSF_WP(f, ae, pt, "L", syst[v]);
             const double sM = v == 0 ? sM0 : corrMgr->getBTagSF_WP(f, ae, pt, "M", syst[v]);
-            double wj;
-            if (s >= wpM) {
-                wj = sM;
-            } else if (s >= wpL) {
-                const double pmc = eL - eM;
-                wj = (pmc > 1.0e-6) ? std::max(0.0, sL * eL - sM * eM) / pmc : 1.0;
-            } else {
-                const double pmc = 1.0 - eL;
-                wj = (pmc > 1.0e-6) ? std::max(0.0, 1.0 - sL * eL) / pmc : 1.0;
-            }
+            bool interNeg = false;
+            const double wj = jetWeight(s, sL, sM, eL, eM, true, interNeg);
             w[v] *= wj;
-            // the end-of-job [btagSF] line counts the jet weights that point at maps that do not fit (> 10) and the
-            //   P_Data < 0 cases set to 0 (SF x e > 1: likely for the up variation of a high-efficiency bin)
+            if (v == 0) {
+                wCB *= wj;                                             // b jets: as the main weight
+                bool dummy = false;
+                wOld *= jetWeight(s, sL, sM, eL, eM, false, dummy);    // the commit-K rule
+            }
+            // the end-of-job [btagSF] lines count the jet weights that point at maps that do not fit (> 10), the
+            //   P_Data < 0 cases set to 0 (fail L: SF x e > 1, likely for the up variation of a high-efficiency
+            //   bin) and the intermediate ones set to 1 (BTV's rule)
             if (v == 0 && wj > 10.0) ++_btagNBig;
             if (wj == 0.0) ++_btagNZero[v];
+            if (interNeg) ++_btagNInterNeg[v];
         }
         ++_btagNJet;
     }
@@ -183,8 +188,11 @@ void ttHHanalyzer_unified::computeBTagWeightFixedWP_(event* thisEvent) {
     bTagWeight_up_lf_ = bTagWeight_down_lf_ = bTagWeight_central_;
     bTagWeight_up_cferr1_ = bTagWeight_down_cferr1_ = bTagWeight_central_;
     bTagWeight_up_cferr2_ = bTagWeight_down_cferr2_ = bTagWeight_central_;
+    bTagWeight_oldRule_ = static_cast<float>(wOld);
+    bTagWeight_cAsB_    = static_cast<float>(wCB);
     if (debugCorrections)
-        std::cout << "[BTagWeight][fixed WP] central=" << w[0] << " up=" << w[1] << " down=" << w[2] << std::endl;
+        std::cout << "[BTagWeight][fixed WP] central=" << w[0] << " up=" << w[1] << " down=" << w[2]
+                  << " oldRule=" << wOld << " cAsB=" << wCB << std::endl;
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -225,7 +233,37 @@ void ttHHanalyzer_unified::bookBTagEff_() {
     _hBTagEffWP->SetBinContent(2, objectJet::valbTagMedium);
     _hBTagEffWP->SetBinContent(3, objectJet::valbTagTight);
     _hBTagEffWP->SetBinContent(4, 1.0);
+    // [STEP 27 N] the closure per number of true b jets and per M-tag multiplicity, for the main weight and the two
+    //   comparison weights (D-2026-10-10-A (2), (4)); hadd adds them, ratios are taken after the merge
+    static const char* wn[4] = {"w", "wb", "wb_oldRule", "wb_cAsB"};
+    static const char* wt[4] = {"sum w", "sum w x bTagWeight", "sum w x bTagWeight_oldRule", "sum w x bTagWeight_cAsB"};
+    for (int k = 0; k < 4; ++k) {
+        _hBTagTrueB[k] = new TH1D(TString::Format("h_ntrueb_%s", wn[k]),
+                                  TString::Format("HT step: %s;true b jets among the selected (4 = #geq 4);", wt[k]), 5, 0.0, 5.0);
+        _hBTagNbM[k]   = new TH1D(TString::Format("h_nbM_%s", wn[k]),
+                                  TString::Format("HT step: %s;b-tagged (#geq M) jets (6 = #geq 6);", wt[k]), 7, 0.0, 7.0);
+        _hBTagTrueB[k]->Sumw2();
+        _hBTagNbM[k]->Sumw2();
+    }
     if (keep) keep->cd();
+}
+
+// [STEP 27 N] at the HT step (applyEventScaleFactors, before any b-tag cut), MC of a fixed-WP year with the weight ready
+void ttHHanalyzer_unified::fillBTagClosure_(event* thisEvent) {
+    if (!_btagEffDir || !_btagFixedWPReady) return;
+    int ntb = 0;
+    for (const auto* j : *thisEvent->getSelJets()) ntb += (j->hadFlav == 5);
+    const int itb = std::min(ntb, 4), inb = std::min(thisEvent->getnSelbJet(), 6);
+    const double w = _evtWeight;
+    const double ws[4] = {w, w * bTagWeight_central_, w * bTagWeight_oldRule_, w * bTagWeight_cAsB_};
+    for (int k = 0; k < 4; ++k) {
+        _hBTagTrueB[k]->Fill(itb + 0.5, ws[k]);
+        _hBTagNbM[k]->Fill(inb + 0.5, ws[k]);
+    }
+    _btagTrueBW[itb]  += w;
+    _btagTrueBWB[itb] += ws[1];
+    _btagClosureWOld  += ws[2];
+    _btagClosureWCB   += ws[3];
 }
 
 void ttHHanalyzer_unified::fillBTagEff_(event* thisEvent) {
@@ -415,6 +453,19 @@ void ttHHanalyzer_unified::loop(sysName sysType, bool up){
         std::cout << "[btagSF] jets weighted (b, all events): " << _btagNJet << "; jet weight > 10: " << _btagNBig
                   << "; set to 0 (P_Data < 0): central " << _btagNZero[0] << ", up " << _btagNZero[1] << ", down "
                   << _btagNZero[2] << std::endl;
+        // [STEP 27 N] D-2026-10-10-A: BTV's intermediate rule, the closure per true b jets, the comparison weights
+        std::cout << "[btagSF] intermediate (L <= score < M) numerator < 0 -> jet weight 1 (BTV): central "
+                  << _btagNInterNeg[0] << ", up " << _btagNInterNeg[1] << ", down " << _btagNInterNeg[2] << std::endl;
+        std::cout << "[btagSF] closure per true b jets at the HT step, sum(w x bTagWeight) / sum(w):";
+        for (int k = 0; k < 5; ++k)
+            std::cout << " " << (k == 4 ? ">=4" : std::to_string(k)) << "b "
+                      << (_btagTrueBW[k] != 0.0 ? std::to_string(_btagTrueBWB[k] / _btagTrueBW[k]) : std::string("-"));
+        std::cout << " (each about 1 when the maps fit; BTagEff/h_ntrueb_*)" << std::endl;
+        std::cout << "[btagSF] comparison weights, closure at the HT step: oldRule (intermediate < 0 -> 0) "
+                  << (_btagClosureW != 0.0 ? _btagClosureWOld / _btagClosureW : 0.0)
+                  << ", cAsB (c jets with the b SF; " << _btagNJetCAsB << " c jets weighted in all events, "
+                  << _btagNBigCAsB << " with a jet weight > 10) "
+                  << (_btagClosureW != 0.0 ? _btagClosureWCB / _btagClosureW : 0.0) << std::endl;
     }
     std::cout << "=== CutFlow Summary ===" << std::endl;
     for (size_t i = 0; i < _cutStepLabels.size(); ++i) {
@@ -587,7 +638,7 @@ void ttHHanalyzer_unified::requireBranches_() {
         "HLT_PFHT1050"};
     std::vector<std::vector<std::string>> anyOf;   // at least one of each group
     if (_isRun3) {
-        for (const char* b : {"Rho_fixedGridRhoFastjetAll", "PuppiMET_pt", "Jet_btagUParTAK4B", "Jet_chHEF", "Jet_neHEF",
+        for (const char* b : {"Rho_fixedGridRhoFastjetAll", "PuppiMET_pt", "PuppiMET_phi", "Jet_btagUParTAK4B", "Jet_chHEF", "Jet_neHEF",
                               "Jet_chEmEF", "Jet_neEmEF", "Jet_muEF", "Jet_chMultiplicity", "Jet_neMultiplicity",
                               "Electron_mvaIso_WP90", "Muon_isPFcand", "HLT_IsoMu24",
                               "HLT_PFHT450_SixPFJet36_PNetBTag0p35", "HLT_PFHT400_SixPFJet32_PNet2BTagMean0p50"})
@@ -598,7 +649,7 @@ void ttHHanalyzer_unified::requireBranches_() {
         else anyOf.push_back({"HLT_PFHT330PT30_QuadPFJet_75_60_45_40_PNet3BTag_4p3",
                               "HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepJet_4p5"});
     } else {
-        for (const char* b : {"fixedGridRhoFastjetAll", "MET_pt", "Jet_jetId", "Jet_puId", "Jet_btagDeepFlavB",
+        for (const char* b : {"fixedGridRhoFastjetAll", "MET_pt", "MET_phi", "Jet_jetId", "Jet_puId", "Jet_btagDeepFlavB",
                               "Electron_mvaFall17V2Iso_WP90"})
             req.push_back(b);
         if (_runYear == "2017") {
@@ -615,7 +666,9 @@ void ttHHanalyzer_unified::requireBranches_() {
         } else {
             req.push_back("HLT_IsoMu24");                 // the 2018 trigger-SF reference (fillTree)
         }
-        if (isMC && EraConfig::usesL1Prefiring(_runYear)) req.push_back("L1PreFiringWeight_Nom");
+        if (isMC && EraConfig::usesL1Prefiring(_runYear))
+            for (const char* b : {"L1PreFiringWeight_Nom", "L1PreFiringWeight_Up", "L1PreFiringWeight_Dn"})   // [STEP 27 O] up/down
+                req.push_back(b);
     }
     if (isMC)
         for (const char* b : {"genWeight", "Pileup_nTrueInt", "genTtbarId", "Jet_hadronFlavour", "Jet_partonFlavour",
@@ -1335,6 +1388,7 @@ void ttHHanalyzer_unified::applyEventScaleFactors(event* thisEvent){
                 _btagClosureW  += _evtWeight;
                 _btagClosureWB += _evtWeight * bTagWeight_central_;
                 ++_btagClosureN;
+                fillBTagClosure_(thisEvent);   // [STEP 27 N] per true b jets, the comparison weights
             }
         }
 
@@ -1573,6 +1627,7 @@ bool ttHHanalyzer_unified::selectObjects(event *thisEvent){
         thisEvent->getSelLightJets()->size() >= 2 ? thisEvent->getSelLightJets() : thisEvent->getSelJets(),
         wMass
     );
+    _hadWMassTree = hadWMass;   // [STEP 27 O] the m_qq of the cut (and of the QCD regions, PLAN_QCD_DD) into the tree
 
 
     // ──────────────────────────────────────────────────────────────────────
@@ -2346,6 +2401,10 @@ void ttHHanalyzer_unified::writeHistos(){
                 if (h) h->Write();
         if (_hBTagEffNevt) _hBTagEffNevt->Write();
         if (_hBTagEffWP) _hBTagEffWP->Write();
+        for (int k = 0; k < 4; ++k) {   // [STEP 27 N] the closure per true b jets / per M-tag multiplicity
+            if (_hBTagTrueB[k]) _hBTagTrueB[k]->Write();
+            if (_hBTagNbM[k]) _hBTagNbM[k]->Write();
+        }
         _of->file->cd();
     }
 }
@@ -2437,11 +2496,106 @@ void ttHHanalyzer_unified::fillTree(event * thisEvent){
     passHadTrig = thisEvent->getHadTriggerAccept();
 
    
+    // [STEP 27 P] the Run 2 per-source shape weights also give the STEP 26 branches bTagWeight_up/_down (hf), so they
+    //   are computed for every tree event of an MC shape year, with or without Tree v1
+    if (_DataOrMC != "Data" && !_btagFixedWP && _hasBTagShapeSF) computeBTagShapeVariations_(thisEvent);
+    if (_treeV1) fillTreeV1_(thisEvent);   // [STEP 27 O] ML inputs, jet truth labels, systematic weights
+
     // [STEP2][debug] tree 기록값 추적 — branch에 실리는 최종값 검증 (kDebug)
     _dbg.kv("tree", "evtWeight",       _evtWeight);
     _dbg.kv("tree", "stitchWeight",    _stitchWeight);
     _dbg.kv("tree", "expandedTtbarId", (double)_expandedTtbarId);
     _inputTree->Fill();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// [STEP 27 O] Tree v1 — docs/PLAN_ML_SYST.md §5.2. Everything from the selected jets (the order of jetPt) and their
+//   b-tag scores; the definitions are in include/TreeVars.h (AN-2022/122 §6.2) and include/GenMatch.h.
+// ═══════════════════════════════════════════════════════════════════════════
+void ttHHanalyzer_unified::fillTreeV1_(event* thisEvent) {
+    const auto* jets = thisEvent->getSelJets();
+    const float wpL = objectJet::valbTagLoose, wpM = objectJet::valbTagMedium, wpT = objectJet::valbTagTight;
+    const bool isMC = (_DataOrMC != "Data");
+    _tv.jetPhi.clear(); _tv.jetMass.clear(); _tv.jetBTagWP.clear();
+    TreeVars::P4s pAll, pB, pNonB, pLight;
+    std::vector<float> score;
+    std::vector<bool> isB;
+    std::vector<std::pair<float, float>> etaPhi;
+    int nLoose = 0;
+    for (const auto* j : *jets) {
+        const TLorentzVector* p = j->getp4();
+        const float sc = j->bTagCSV;
+        pAll.push_back(p);
+        score.push_back(sc);
+        isB.push_back(sc >= wpM);
+        (sc >= wpM ? pB : pNonB).push_back(p);
+        if (sc < wpL) pLight.push_back(p);
+        if (sc >= wpL) ++nLoose;
+        _tv.jetPhi.push_back(static_cast<float>(p->Phi()));
+        _tv.jetMass.push_back(static_cast<float>(p->M()));
+        _tv.jetBTagWP.push_back(sc >= wpT ? 3 : sc >= wpM ? 2 : sc >= wpL ? 1 : 0);   // [STEP 27 P] a NaN score -> 0
+        etaPhi.emplace_back(static_cast<float>(p->Eta()), static_cast<float>(p->Phi()));
+    }
+    _tv.lightjetNumber      = static_cast<int>(pLight.size());
+    _tv.nLooseJets          = nLoose;
+    _tv.bjetHT              = TreeVars::scalarHT(pB);
+    _tv.lightjetHT          = TreeVars::scalarHT(pLight);
+    _tv.jetAverageMass      = TreeVars::averageMass(pAll);
+    _tv.bjetAverageMass     = TreeVars::averageMass(pB);
+    _tv.lightjetAverageMass = TreeVars::averageMass(pLight);
+    _tv.bjetAverageMassSqr  = TreeVars::averageMassSqr(pB);
+    _tv.maxPTmassjjj        = TreeVars::maxPTmassjjj(pAll);
+    _tv.maxPTmassjbb        = TreeVars::maxPTmassjbb(pAll, isB);
+    _tv.jj                  = TreeVars::pairStatsSame(pAll);
+    _tv.bb                  = TreeVars::pairStatsSame(pB);
+    _tv.bj                  = TreeVars::pairStatsCross(pB, pNonB);
+    _tv.fwJet               = TreeVars::foxWolfram(pAll);
+    _tv.fwB                 = TreeVars::foxWolfram(pB);
+    _tv.centrality          = TreeVars::centrality(pAll);
+    _tv.bjetCentrality      = TreeVars::centrality(pB);
+    _tv.chi2                = TreeVars::chi2AN(pAll, score, wpL, wpM, kTreeMH, kTreeMZ);
+    _tv.metPhi              = metPhi_();
+
+    // jet truth labels (MC): GenMatch.h
+    if (isMC) {
+        std::vector<GenMatch::GenP> gp;
+        gp.reserve(_ev->GenPart.size());
+        for (const auto& g : _ev->GenPart)
+            gp.push_back({g.pdgId, g.genPartIdxMother, g.statusFlags, g.pt, g.eta, g.phi});
+        GenMatch::matchJets(etaPhi, GenMatch::hardPartons(gp), 0.4f, _tv.jetGenMatch, _tv.jetGenMotherIdx,
+                            &_tv.jetGenTopIdx);
+    } else {
+        _tv.jetGenMatch.assign(jets->size(), 0);
+        _tv.jetGenMotherIdx.assign(jets->size(), -1);
+        _tv.jetGenTopIdx.assign(jets->size(), -1);
+    }
+
+    // systematic weights (MC)
+    _tv.PUWeight_up = _tv.PUWeight_down = 1.f;
+    _tv.L1PrefiringWeight_up = _tv.L1PrefiringWeight_down = 1.f;
+    _tv.LHEScaleWeight.clear(); _tv.PSWeight.clear(); _tv.LHEPdfWeight.clear();
+    // _tv.bTagShapeVar: set by computeBTagShapeVariations_ in fillTree (MC of a shape year); 1 otherwise, never changed
+    if (!isMC) return;
+    const double nTrue = _ev->Pileup_nTrueInt;
+    _tv.PUWeight_up   = static_cast<float>(corrMgr->getPUWeight(nTrue, "up"));
+    _tv.PUWeight_down = static_cast<float>(corrMgr->getPUWeight(nTrue, "down"));
+    if (EraConfig::usesL1Prefiring(_runYear)) {   // 2016/2017 (AN p.118); the branches are required then
+        _tv.L1PrefiringWeight_up   = _ev->L1PreFiringWeight_Up;
+        _tv.L1PrefiringWeight_down = _ev->L1PreFiringWeight_Dn;
+    }
+    _tv.LHEScaleWeight = _ev->LHEScaleWeight;
+    _tv.PSWeight       = _ev->PSWeight;
+    if (_treePdf) _tv.LHEPdfWeight = _ev->LHEPdfWeight;
+    if (!_treeWeightInfoDone) {   // once per job: what the sample's theory-weight vectors hold
+        _treeWeightInfoDone = true;
+        std::cout << "[treeV1] first tree event of " << _sampleName << ": LHEScaleWeight " << _ev->LHEScaleWeight.size()
+                  << ", PSWeight " << _ev->PSWeight.size() << ", LHEPdfWeight " << _ev->LHEPdfWeight.size()
+                  << (_treePdf ? " (stored)" : " (not stored; --tree-pdf on)") << " entries; PU up/down "
+                  << _tv.PUWeight_up << "/" << _tv.PUWeight_down << "; b-tag "
+                  << (_btagFixedWP ? "fixed-WP (bTagWeight_up/_down, _oldRule, _cAsB)"
+                                   : (_hasBTagShapeSF ? "shape per source (16 branches)" : "none"))
+                  << std::endl;
+    }
 }
 
 void ttHHanalyzer_unified::writeTree(){
@@ -2910,6 +3064,17 @@ int main(int argc, char** argv){
     //      (outFile, eventBuffer, weight, sysToggle, year, dataOrMC,
     //       sampleName, era, debug, mode)
     // ─────────────────────────────────────────────────────────────────────
+    // [STEP 27 P] --tree-v1 on|off (default on): the constructor books the tree, so the switch is set before it
+    if (!cl.treeV1.empty() && cl.treeV1 != "on" && cl.treeV1 != "off") {
+        std::cerr << "\n[FATAL][E" << tthh::CONFIG_BAD_RUNINFO << "] --tree-v1 '" << cl.treeV1 << "': on or off.\n"
+                  << std::endl;
+        tthh::fatalExit(tthh::CONFIG_BAD_RUNINFO);
+    }
+    ttHHanalyzer_unified::treeV1Flag() = (cl.treeV1 != "off");
+    if (cl.treeV1 == "off")
+        std::cout << "[treeV1] --tree-v1 off: the Tree v1 branches are not booked (Tree/Tree as in STEP 26, plus the "
+                     "fixed-WP comparison weights)" << std::endl;
+
     const bool debugVerbose = (mode == AnalysisMode::kDebug);  // [STEP2] 거시 단계 로그
     ttHHanalyzer_unified analysis(
         cl.outputfilename,
@@ -2945,6 +3110,9 @@ int main(int argc, char** argv){
 
     // [SF toggle] CLI --trigsf/--btagsf/--btagrw 주입 (production evtWeight 구성)
     analysis.setSFflags(cl.sfTrig, cl.sfBtag, cl.sfBtagRw);
+
+    // [STEP 27 O] CLI --tree-pdf on|off (default off): LHEPdfWeight in Tree/Tree
+    analysis.setTreePdf(cl.treePdf);
 
     // ─────────────────────────────────────────────────────────────────────
     // [stitch] stitching multiplier JSON은 stitched 조성을 봐야 하는 모드에서만

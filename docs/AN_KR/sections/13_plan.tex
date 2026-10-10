@@ -1,0 +1,117 @@
+% =============================================================================
+% 13 장 — 앞으로의 계획
+% =============================================================================
+\chapter{앞으로의 계획}\label{ch:plan}
+
+결과(FH 채널의 신호 세기 상한, Run 2 전체 + 2024)까지의 작업을 여덟 갈래(워크스트림 W1–W8)로 나누고, 순서와 의존성, 결정을 기다리는 것,
+위험을 적는다. 정본은 \file{docs/ROADMAP_FH.md} 이고, 이 장은 그것을 분석의 흐름 위에 놓고 읽기 위한 요약이다\src{ROADMAP\_FH}.
+
+\section{목표와 일정}\label{sec:plan-goal}
+
+목표는 \ttHH(\HHfourb) FH 채널의 신호 세기 상한이다. Run 2 전체(2016preVFP, 2016postVFP, 2017, 2018)와 2024 를 쓴다. HEFT 해석은
+SL 처럼 나중에 한다. SL/DL 과의 결합은 채널들이 양립 가능하면 한다\src{Hbb 회의 FH 발표 p.38}. 일정은 2026 하반기에 full Run 2 로 넓히고
+QCD data-driven 방법을 세우고 검증하는 것, 2027 상반기에 다중 분류 DNN, SR 최적화, 계통 불확도를 거쳐 fit 에 이르는 것이다\src{KCMS 발표 p.4}.
+
+\section{워크스트림}\label{sec:plan-ws}
+
+\begin{table}[htbp]\centering
+\caption{워크스트림(2026-10-10)\src{ROADMAP\_FH §2}}\label{tab:plan-ws}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l >{\raggedright\arraybackslash}p{2.9cm} L L >{\raggedright\arraybackslash}p{2.0cm}@{}}
+\toprule
+W & 무엇 & 지금 & 다음 & 이 문서 \\
+\midrule
+W1 & control plot(SF 적용) & 2024 btagtrig 실행 중, SF 없는 plot 있음 & btagtrig $\to$ 효율 map $\to$ TriggerStudy $\to$ STEP 27 빌드 $\to$ SF main 셋 $\to$ plot(\texttt{--tree-v1} 포함) & \ref{ch:trigger}, \ref{ch:btag}, \ref{ch:selection}장 \\
+W2 & analyzer 의 Run 2 v15 & Run 2 는 v9 이름만 & 할 일 A–K(스키마 선택, 이름, jet ID 재계산, PU ID, trigger, PD, payload, lumi, xsec·prescan·stitch, tt+nb, trigger SF·b-tag norm), 2018 먼저 & \ref{ch:objects}, \ref{ch:trigger}장 \\
+W3 & 표본(NtupleForge) & 2018 v15·2024 v15·ParkingHH 끝 & 2016·2017 v15 생산, Run 2 부재 5 종, 2024 lepton 표본, 2024 tt+nb patch & \ref{ch:samples}장 \\
+W4 & Tree·ML 입력 & Tree v1 코드·시험 끝 & SF main 으로 표본, 내보내기 도구(\texttt{tools/ml/}) & \ref{ch:reco}장, 부록 \ref{ch:treev1} \\
+W5 & ML & 설계 & 2024 표본으로 기준선 DNN, GATJA 의 FH 판 & \ref{ch:mva}장 \\
+W6 & 계통·통계 & weight 변형의 Tree 기록 & MC 통계 band, JES/JER 변형 실행 경로, datacard & \ref{ch:syst}, \ref{ch:stats}장 \\
+W7 & QCD data-driven & 계획 & lepton CR Data/MC 확인 $\to$ 영역 수율 표 $\to$ TF 유도 도구 & \ref{ch:qcd}장 \\
+W8 & 한국어 AN & v0.1 & 각 단계가 끝날 때마다 해당 장 & 이 문서 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{순서와 의존성}\label{sec:plan-order}
+
+\begin{figure}[htbp]\centering
+\begin{tikzpicture}[
+  box/.style={draw,rounded corners=2pt,fill=blue!4,align=center,font=\footnotesize\sffamily,inner sep=2.5pt,
+              text width=2.0cm,minimum height=8mm},
+  now/.style={box,fill=orange!12,draw=orange!70!black},
+  ext/.style={box,fill=gray!10,draw=gray!70,dashed},
+  arr/.style={-{Latex[length=2mm]},thick,draw=black!65}]
+% 2024 의 임계 경로
+\node[now] (bt)  at (0,0)    {W1\\btagtrig};
+\node[now] (map) at (2.9,0)  {효율 map\\TriggerStudy};
+\node[now] (b27) at (5.8,0)  {STEP 27\\빌드·시험};
+\node[now] (sf)  at (8.7,0)  {SF main 셋\\FH·μCR·eCR};
+\node[now] (pl)  at (11.6,0) {control plot\\(\texttt{--tree-v1})};
+% SF main 뒤
+\node[box] (syst) at (5.8,-1.9)  {W6\\weight template};
+\node[box] (lep)  at (8.7,-1.9)  {lepton CR\\Data/MC 판정};
+\node[box] (qcd)  at (11.6,-1.9) {W7\\QCD DD};
+\node[box] (fit)  at (8.7,-3.8)  {fit\\(combine)};
+\node[box] (ml)   at (11.6,-3.8) {W4·W5\\내보내기·DNN};
+% Run 2
+\node[box] (w2)  at (0,-1.9)   {W2\\2018 v15 A–K};
+\node[box] (p18) at (2.9,-1.9) {2018\\control plot};
+\node[ext,text width=2.6cm] (w3) at (0,-3.8) {W3 생산\\2016·2017 v15\\Run 2 부재 5 종};
+\node[box] (r2)  at (2.9,-3.8) {full Run 2\\plot·학습};
+\draw[arr] (bt)--(map); \draw[arr] (map)--(b27); \draw[arr] (b27)--(sf); \draw[arr] (sf)--(pl);
+\draw[arr] (sf)--(lep); \draw[arr] (lep)--(qcd); \draw[arr] (qcd)--(ml); \draw[arr] (ml)--(fit);
+\draw[arr] (sf.south west)--(syst.north east); \draw[arr] (syst.south east)--(fit.north west);
+\draw[arr] (sf.south east)--(ml.north west);
+\draw[arr] (w2)--(p18); \draw[arr] (w2)--(w3); \draw[arr] (w3)--(r2);
+\end{tikzpicture}
+\caption{작업의 순서. 주황은 지금 진행 중인 2024 의 임계 경로, 점선은 외부(생산)에 달린 것이다. QCD 추정은 lepton CR 의 Data/MC 가
+합리적으로 나온 뒤에 한다\src{D-2026-10-10-B}. Run 2(왼쪽 아래)는 갖춰지는 대로 control plot, 학습(W5), 계통(W6)에 합류한다.}\label{fig:plan-order}
+\end{figure}
+
+\section{바로 다음 할 일}\label{sec:plan-next}
+
+\begin{itemize}
+\item \textbf{사용자(맥)}: 10-10 문서 커밋 뒤 STEP 27, 계획 문서, 이 문서의 원본을 커밋한다(워크스페이스 RUNBOOK §32, §33).
+\item \textbf{사용자(KNU)}: 2024 btagtrig 의 analyzer job 이 큐에서 모두 빠진 뒤 \code{git pull --ff-only}, \code{make clean && make -j4}, 시험,
+그 실행 파일로 SF main 셋(RUNBOOK §33).
+\item \textbf{AI}: W2 의 A·B(스키마 선택과 v15 이름) 설계와 코드, W7 의 영역 수율 도구, D-2026-10-10-C 가 정해지면 stitching 도구 수정과 closure 시험,
+이 문서의 갱신.
+\end{itemize}
+
+\section{결정을 기다리는 것}\label{sec:plan-open}
+
+\begin{openq}[결정 대기(2026-10-10; 권고는 AI)]
+\begin{enumerate}[leftmargin=*]
+\item Tree v1 을 SF main 셋에 넣을지 — 권고: 넣는다(시험 110/110; 아니면 ML 표본을 위해 main 을 한 번 더 돌려야 한다).
+\item DNN 입력에 b-tag 점수를 쓸지 — 권고: TR/CR/SR 에서 모양이 같은지 검사를 통과한 변수만(\ref{ch:mva}·\ref{ch:qcd}장).
+\item Run 2 학습 표본 — 권고: 2024 로 먼저, Run 2 는 v15 신호를 확보한 뒤.
+\item 2018 trigger SF 의 기준 경로(IsoMu24 대 IsoMu27).
+\item 2016 Data 에 BTagCSV PD 를 쓸지.
+\item 문서 경로(같은 AN 의 보완 채널 대 별도 AN)와 결합 계획 — 팀 확인.
+\item \textbf{ttbar stitching 의 정규화($p_{\text{own}}$)와 51/52 의 소유}\src{D-2026-10-10-C} — stitching 을 넣은 control plot 전에.
+권고: AN·\ttH(\bbbar) 대로(4FS 가 51–55 를 갖고, 소유 칸을 5FS 예측에 맞춤).
+\item veto muon isolation 0.15 대 0.25 — SL/DL 과의 결합 전에.
+\item jet–lepton $\Delta R$ cleaning — lepton CR 판정 전에.
+\item $\chi^2$ 의 $\sigma$(역사적 형태 대 JER 기반) — DNN 입력으로 쓰기 전에.
+\end{enumerate}
+1–10 모두 \src{ROADMAP\_FH §6} 에 있고, 그중 7–10 은 이 문서를 쓰며 찾아 더한 것이다(\ref{sec:status-findings}절).
+\end{openq}
+
+\section{위험}\label{sec:plan-risk}
+
+\begin{itemize}
+\item \textbf{QCD 가 SR 의 대부분}이다. \ttH(\bbbar) FH 의 SR 에서 배경의 67–83\,\% 가 QCD 였고(그 AN 의 표로 계산한 값)\src{ROADMAP\_FH §7},
+\ttHH{} 는 b 다중도가 더 높아 CR 에서 SR 로의 외삽이 길다. 결과는 QCD 추정의 질에 달려 있다(\ref{ch:qcd}장).
+\item \textbf{FH 단독은 tt+B 정규화에 민감도가 약하다.} \ttH(\bbbar) FH 는 50\,\% lnN 으로 묶었다\src{AN-19-094 v20, PDF p.243}. SL/DL 과의 결합이나
+외부 제약이 필요하다.
+\item \textbf{높은 jet·b-tag 다중도에서 Data/MC 기울기}가 2017 과 2024 모두에서 보이며, QCD 만으로 설명되지 않을 수 있다\src{STATUS 10-07; D-2026-10-07-B}.
+\item \textbf{저장공간}: full Run 2 + Run 3 생산과 Tree v1 로 커진 출력(KNU Tier-3).
+\end{itemize}
+
+\section{이 문서가 자라는 방식}\label{sec:plan-an}
+
+각 워크스트림이 끝날 때마다 해당 장을 고친다: W1 이 끝나면 \ref{ch:trigger}·\ref{ch:btag}·\ref{ch:selection}장에 SF 를 넣은 Data/MC 를,
+W2 가 끝나면 \ref{ch:objects}장에 Run 2 v15 의 객체 정의를, W7 이 끝나면 \ref{ch:qcd}장에 실제 TF 와 closure 를, W5 가 끝나면
+\ref{ch:mva}장에 학습 결과를 넣는다. 그림(plot)이 생기면 \file{docs/AN_KR/figures/} 에 두고 본문에서 부른다(그림 파일은 커밋 여부를
+따로 정한다).

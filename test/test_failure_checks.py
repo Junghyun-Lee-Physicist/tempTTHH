@@ -234,6 +234,35 @@ with tempfile.TemporaryDirectory(prefix="tthh_fail_") as T:
         rc2, out2 = run(["/bin/bash", os.path.join(REPO, "outputMerger", "run_one_hadd.sh"),
                          os.path.join(mb, "SampleA"), os.path.join(T, "x.root"), "-", "4"], env)
         check("B worker: 3 inputs, 4 expected -> exit 7", rc2 == 7 and "3 input files, 4 expected" in out2, out2[-800:])
+
+        # [STEP 27 P] review R1: inputs with two Tree/Tree branch sets (outputs of two analyzer builds) stop before hadd
+        def write_tree(path, extra):
+            f = ROOT.TFile(path, "RECREATE")
+            d = f.mkdir("Tree")
+            d.cd()
+            t = ROOT.TTree("Tree", "")
+            va, vb = array("f", [0.0]), array("f", [0.0])
+            t.Branch("evtWeight", va, "evtWeight/F")
+            if extra:
+                t.Branch("chi2Higgs", vb, "chi2Higgs/F")
+            for i in range(5):
+                va[0], vb[0] = float(i), 2.0 * i
+                t.Fill()
+            t.Write()
+            f.Close()
+        sx = os.path.join(T, "schema", "SchemaX")
+        os.makedirs(sx)
+        write_tree(os.path.join(sx, "SchemaX_0.root"), False)
+        write_tree(os.path.join(sx, "SchemaX_1.root"), False)
+        wcmd = ["/bin/sh", os.path.join(REPO, "outputMerger", "run_one_hadd.sh"), sx,
+                os.path.join(T, "schema", "SchemaX.root"), "-", "2"]
+        rc3, out3 = run(wcmd, env)
+        check("B worker: one Tree/Tree branch set -> [schema] OK and merged (exit 0)",
+              rc3 == 0 and "[schema] OK: 2 inputs, one Tree/Tree branch set (1 branches)" in out3, out3[-1500:])
+        write_tree(os.path.join(sx, "SchemaX_1.root"), True)
+        rc4, out4 = run(wcmd, env)
+        check("B worker: an input with an extra branch (a newer build) -> exit 8 before hadd, naming the branch",
+              rc4 == 8 and "+chi2Higgs" in out4 and "[hadd] starting" not in out4, out4[-1500:])
     else:
         print("NOTE hadd not on PATH: the local merge checks of B are skipped")
     # a condor work directory written after the local one: SampleB merged ok, the data merge failed with rc 7
@@ -491,6 +520,13 @@ with tempfile.TemporaryDirectory(prefix="tthh_fail_") as T:
     rc, out = run(pf + ["--only", "Nope*"], envp)
     check("E preflight --only matching no sample: FAIL, exit 1", rc == 1 and "[FAIL] --only" in out
           and "pattern(s) matching no yml sample: ['Nope*'] (0 of 4 selected" in out, out[-2000:])
+    # [STEP 27 P] --memory above 0; --tree-pdf on needs --tree-v1 on; the preflight note line shows Tree v1
+    rc, out = run(pf + ["--memory", "0 GB"], envp)
+    check("E --memory '0 GB': exit 2 (a positive size is required)", rc == 2 and "above 0" in out, out[-800:])
+    rc, out = run(pf + ["--tree-pdf", "on", "--tree-v1", "off"], envp)
+    check("E --tree-pdf on with --tree-v1 off: exit 2", rc == 2 and "--tree-pdf on needs --tree-v1 on" in out, out[-800:])
+    rc, out = run(pf + ["--tree-v1", "off"], envp)
+    check("E preflight --tree-v1 off: the condor note line says Tree v1 off", "Tree v1 off;" in out, out[-3000:])
     with open(os.path.join(T, "xsec_pk.json"), "w") as fh:
         json.dump(dict(dbj, **{PK: {"cross_section_fb": None}}), fh)
     cfg_pk2 = os.path.join(T, "cfg_pk2.yml")

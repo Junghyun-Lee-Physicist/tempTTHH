@@ -390,6 +390,40 @@ void CorrectionsManager::loadBTag_() {
     
     // Shape correction (continuous discriminant 사용)
     btagCorr_shape_ = cset->at("deepJet_shape");
+
+    // [STEP 27 P] the per-source variations (analyzer computeBTagShapeVariations_, BTV's recipe: b and light jets every
+    //   source but cferr1/2, c jets cferr1/2) are evaluated for every tree event of MC, and getBTagSF_Shape turns a
+    //   failed evaluation into 1.0 with one stderr line -- a silently wrong variation (review R2). Evaluate each key
+    //   once here, for the flavours the recipe gives it; a payload that does not know one stops the job at load.
+    {
+        static const char* kSrc[8] = {"hf", "lf", "hfstats1", "hfstats2", "lfstats1", "lfstats2", "cferr1", "cferr2"};
+        std::string bad;
+        int nOk = 0;
+        for (int k = 0; k < 8; ++k) {
+            const bool cferr = (k >= 6);
+            const std::vector<int> flavs = cferr ? std::vector<int>{4} : std::vector<int>{5, 0};
+            for (const char* dir : {"up_", "down_"}) {
+                const std::string key = std::string(dir) + kSrc[k];
+                for (const int flav : flavs) {
+                    try {
+                        (void)btagCorr_shape_->evaluate({key, flav, 0.5, 50.0, 0.5});
+                        ++nOk;
+                    } catch (const std::exception& e) {
+                        bad += " " + key + "(flavour " + std::to_string(flav) + ")";
+                    }
+                }
+            }
+        }
+        if (!bad.empty()) {
+            std::cerr << "\n[FATAL][E" << tthh::CENTRAL_CORR_LOAD_FAIL << "] b-tag shape SF (" << runYear_ << ", "
+                      << file << "): deepJet_shape cannot evaluate" << bad
+                      << " -- the per-source weights of Tree/Tree would silently use SF = 1 for those jets"
+                      << " (BTV recipe: b and light jets every source but cferr1/2, c jets cferr1/2)\n" << std::endl;
+            tthh::fatalExit(tthh::CENTRAL_CORR_LOAD_FAIL);
+        }
+        std::cout << "[CorrectionsManager] b-tag shape SF (" << runYear_ << "): the 8 sources x up/down evaluate for "
+                  << "the flavours of the BTV recipe (" << nOk << " keys x flavours)" << std::endl;
+    }
     
     // Fixed WP corrections
     btagCorr_bc_    = cset->at("deepJet_comb");   // b/c jets

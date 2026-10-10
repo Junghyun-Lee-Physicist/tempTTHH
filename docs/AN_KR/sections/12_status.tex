@@ -1,0 +1,111 @@
+% =============================================================================
+% 12 장 — 현재 상태
+% =============================================================================
+\chapter{현재 상태}\label{ch:status}
+
+이 장은 2026-10-10 기준으로 분석의 각 부분이 어디까지 왔는지를 한 번에 보여 준다. 앞 장들이 ``무엇을 왜''를 다뤘다면 여기서는
+``지금 어디''를 다룬다. 연도별·단계별 상태표(\ref{sec:status-table}절), 코드가 바뀌어 온 흐름(\ref{sec:status-history}절), 시험 상태
+(\ref{sec:status-tests}절), 그리고 이 문서를 쓰면서 드러난 분석의 문제(\ref{sec:status-findings}절)를 차례로 적는다. 날마다의 상세는
+\file{docs/STATUS.md} 가 정본이다.
+
+\section{한눈에 보기}\label{sec:status-table}
+
+\begin{table}[htbp]\centering
+\caption{단계별·연도별 상태(2026-10-10). 2016 은 두 반쪽(preVFP, postVFP) 모두 아직 v15 ntuple 이 없어 표에서 뺐다.}\label{tab:status-overview}
+\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{2.6cm} L L L@{}}
+\toprule
+단계 & 2017(Run 2) & 2018(Run 2) & 2024(Run 3) \\
+\midrule
+ntuple\newline(NtupleForge) & v20(NanoAOD v9) 생산본은 KNU 에서 지워짐\src{D-2026-10-05-D}; v15 재생산 전 & v15 생산 끝 & v15 생산 끝(MC, JetMET, ParkingHH)\src{STATUS 10-07} \\
+analyzer & v9 이름으로 동작(2017 회귀 기준 Y1) \tagtest & v15 이름 미지원 — 필수 branch 검사에서 의도된 FATAL; 할 일 A–K\src{ROADMAP\_FH §3} \tagplan & 동작(STEP 24–27) \tagtest \\
+lumi(\fbinv) & 42.07\src{LUMI\_SOURCES §2} & 59.56(brilcalc 미실행)\src{LUMI\_SOURCES §2} & 109.816(C–I)\src{LUMI\_SOURCES §6} \\
+trigger SF & 유도본이 KNU 에만 있음(STEP 26 이전 판) & 기준 trigger 미결(\ref{ch:trigger}장) \tagopen & 도구 준비(STEP 26) \tagtest; btagtrig 출력 대기 \\
+b-tag SF & shape SF + norm reweight(저장소의 JSON 은 옛 7묶음 판; main 은 norm reweight 끔 — tt+nb 키 판 미재생성)\src{2017 main 의 yml} & payload 준비 전 & fixed-WP method 1a(STEP 25, 27) \tagtest; 효율 map 은 btagtrig 뒤 \\
+stitching & JSON 있음, main 에는 꺼짐; 정규화 문제(\ref{sec:status-findings}절) \tagopen & — & 꺼짐(tt+nb lookup 없음)\src{D-2026-10-05-C} \\
+control plot & Hbb 회의 FH 발표(2026-07-30) & — & SF 없는 FH·μCR·eCR\src{STATUS 10-09 (3)}; SF 판 대기 \\
+Tree v1(ML 입력) & 코드 공통 \tagtest & 코드 공통 & 코드·시험 끝, KNU 실행 전\src{STEP 27} \\
+QCD data-driven & \multicolumn{3}{>{\raggedright\arraybackslash}p{12.8cm}}{계획(\ref{ch:qcd}장) \tagplan; lepton CR 의 Data/MC 가 맞은 뒤\src{D-2026-10-10-B}} \\
+DNN·GATJA & \multicolumn{3}{>{\raggedright\arraybackslash}p{12.8cm}}{설계(\ref{ch:mva}장) \tagplan; Run 2 v15 의 신호 표본 부재가 Run 2 학습을 막음} \\
+계통·fit & \multicolumn{3}{>{\raggedright\arraybackslash}p{12.8cm}}{weight 변형은 Tree 에 기록 \tagimpl; JES/JER 변형 미구현; fit 은 계획 \tagplan} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{지금의 임계 경로.} 2024 의 SF 를 넣은 control plot 이다: btagtrig 완료 $\to$ merge $\to$ b-tag 효율 map $\to$ TriggerStudy(2024 trigger SF)
+$\to$ STEP 27 실행 파일로 SF main 셋(FH, μCR, eCR) $\to$ plot\src{ROADMAP\_FH, 결론 먼저}. 그 SF main 을 Tree v1 이 든 실행 파일로 돌리면
+control plot, DNN 입력 변수의 Data/MC, 첫 학습 표본이 한 번에 나온다. 2026-10-10 KNU 에서는 2024 btagtrig job(6,353 개)이
+\code{request_memory} 12\,GB 때문에 거의 돌지 못하는 것이 확인됐고(analyzer job 의 실측 최대 286\,MB), 제출기의 기본값은 STEP 27 에서
+2\,GB 로 바꿨다\src{STATUS 10-10}.
+
+\paragraph{결과까지 막는 외부 의존.} (a) Run 2 v15 에 신호(\texttt{TTHHTo4b})와 \texttt{TT4b}, \texttt{TTZHTo4b}, \texttt{TTZZTo4b}, \texttt{THW} 가
+중앙 생산에 없다 — 요청은 2026-09-14 에 했고, enriched 사설 생산을 병행한다. (b) 2016·2017 v15 hadronic ntuple 생산 전. (c) 2024 의
+W$\to\ell\nu$·DY 표본(lepton CR 의 MC 합)과 tt+nb patch(2024 stitching)\src{ROADMAP\_FH, 결론 먼저; D-2026-10-10-B}.
+
+\section{지금까지의 흐름}\label{sec:status-history}
+
+코드의 변경은 STEP 단위로 기록한다(\file{docs/changes/STEP_*.md}). 각 기록에는 무엇을, 왜, 원래 형태, 되돌리는 법, 검증이 있다\src{docs/changes/README}.
+
+\begin{table}[htbp]\centering
+\caption{변경의 큰 흐름. 날짜는 각 STEP 문서의 첫 날짜다.}\label{tab:status-steps}
+\small
+\begin{tabularx}{\linewidth}{@{}l l L@{}}
+\toprule
+시기 & STEP & 내용 \\
+\midrule
+2026-06-11–12 & 0–9 & 리팩토링: 변경 기록 체계, stitchWeight branch, debug mode, 선언적 cut 표(\texttt{kCutSequence}), 경로의 yml 화, event-shape 라이브러리, HiggsReconstructor(HH/ZH/ZZ), condor 개선, 8 묶음 카테고리, 주석 정리, README \\
+2026-06-12–15 & 10–16 & ttbb weight, cross section 단일 출처(xsec\_db), fb 단위와 AN 기반 $\sigma$/BR 수정, 3 단계 weight(trigSF / +btagShape / +normRW), lepton CR(1$\ell$+MET), region 출력 분리, SF 토글 \\
+2026-06-29–07-12 & 17–22 & fullNano v20 dataset 과 genTtbarId 표준 디코드, NtupleForge 표본 이름, 완료 표지, report 표, plotter 전 표본, merge 자동 탐색 \\
+2026-10-04 & 23 & KNU 의 긴 단계를 condor job 으로, 실행 기록(\texttt{runlogs/})을 커밋 \\
+2026-10-05–07 & 24 & 2024 analyzer: EraConfig 2024, v15 이름, 필수 branch 검사, PU, jet veto map, PD 규칙(ParkingHH) \\
+2026-10-08 & 25 & 2024 fixed-WP b-tag weight(method 1a), 효율 map 도구\src{D-2026-10-08-A} \\
+2026-10-09 & 26 & TriggerStudy 의 2024, trigger SF JSON 의 연도 검사, merge guard \\
+2026-10-10 & 27 & BTV 다중 WP 규칙(\src{D-2026-10-10-A}), Tree v1(ML 입력, jet 정답 표지, 계통 weight), 제출기 \texttt{--memory} 2\,GB \\
+2026-10-10 & 27 P & 독립 검토 반영: jet 의 top 표지(\texttt{jetGenTopIdx}), \texttt{--tree-v1 on|off}, Run 2 shape 키의 load 검사(E40), 병합 전 \texttt{Tree/Tree} branch 집합 검사(exit 8) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+큰 방향의 결정은 다음 순서로 내려졌다: 2024 를 v15 의 첫 대상으로(D-2026-10-02-A), blinding 은 최종 판별변수의 신호 민감 bin 만(D-2026-10-02-E),
+2024 첫 plot 은 SF 없이(D-2026-10-05-A), 2024 의 b-tag 경로는 ParkingHH(D-2026-10-06-A), 2024 lepton CR 먼저(D-2026-10-07-B),
+2024 b-tag 은 fixed WP(D-2026-10-08-A)와 BTV 다중 WP 규칙(D-2026-10-10-A), 그리고 FH 전체의 방향(D-2026-10-10-B)\src{DECISIONS}.
+
+\section{시험 상태}\label{sec:status-tests}
+
+STEP 27 의 컨테이너 시험: 단위 시험 \texttt{test\_TreeVars} 27/27, offline smoke 110/110(그중 15 개가 새 것), failure checks 76/76,
+runlog 85/85\src{STEP 27; STATUS 10-10 (2)}. 독립 검토(코드 리뷰 에이전트)는 BUG 0, RISK 4 를 냈고, 그것을 반영한 STEP 27 P 뒤에는 단위 30/30,
+offline smoke 116/116, failure checks 81/81 이다\src{STEP 27 §P}. KNU 에서는 10-09 에 2024 smoke 106/106\src{STEP 26 §10}. 2017 은 새 코드가 옛 실행 파일과
+같은 출력을 내는지(Y1 비교)를 합성 입력으로 확인했다\src{STEP 27}. 실제 2017 파일로의 Y1 은 v20 ntuple 이 지워져 지금은 할 수 없다\src{D-2026-10-05-D}.
+
+\section{이번 판에서 찾은 문제}\label{sec:status-findings}
+
+이 문서를 쓰며 원문·발표·코드를 맞대어 보다가 분석 자체의 문제가 드러났다. 아래는 결정이 필요한 것들이며, 자세한 설명은 괄호 안의 장에 있다.
+
+\begin{enumerate}[leftmargin=*]
+\item \textbf{stitching 정규화에 $p_{\text{own}}$ 이 빠져 있다}(\ref{ch:samples}장) \tagopen.
+\code{compute_stitch_factors.py} 의 $r=\sigma_{\text{inc}} f/\sigma_{\text{ded}}$ 는 dedicated 표본 \textbf{전체}를 inclusive 의 소유 칸 단면적
+$\sigma_{\text{inc}}f$ 로 맞춘 뒤 소유 칸만 남긴다. 그러면 소유 칸의 수율은
+\begin{equation}
+N_{\text{owned}} = L\,\sigma_{\text{inc}}\,f\,p_{\text{own}},\qquad p_{\text{own}}=\frac{\sum_{\text{ded, owned}} g}{\sum_{\text{ded, all}} g}
+\label{eq:status-pown}
+\end{equation}
+이 되어 목표 $L\sigma_{\text{inc}}f$ 보다 $p_{\text{own}}$ 배 작다. 2017 prescan 에서 4FS ttbb 표본의 53–55 비율은 Had 0.114, SL 0.108,
+DL 0.103 이다\src{prescan\_summary.json(2017), genTtbarId sumGenW}. 즉 stitched tt+bb 는 목표의 약 1/9 이다. 지금은 어떤 main 도 stitching 을
+쓰지 않아(2017 main 과 2024 의 \texttt{path\_stitch\_json} 이 null) 기존 plot 은 영향이 없고, 2017 btagtrig 의 norm reweight 유도만
+그 JSON 을 읽는다. 고치는 식 $r'=r/p_{\text{own}}$ 과 closure 시험을 \src{D-2026-10-10-C}(PROPOSED)에 적었다.
+\item \textbf{tt+b, tt+2b(genTtbarId 51, 52)의 소유가 AN 과 다르다}(\ref{ch:samples}장) \tagopen. 우리 EXP 는 5FS 에 두고, AN 은 4FS
+ttbb 에서 가져온다\src{AN-22-122 v26, PDF p.187, 195, 203}. \ttH(\bbbar) FH 와 우리 Hbb 회의 발표도 4FS 다\src{AN-19-094 v20, PDF p.89; Hbb 회의 FH 발표 p.21}.
+\item \textbf{veto muon 의 isolation 이 0.15}다\src{SelectionCuts.h, muonIso}. AN DL 의 부 lepton 과 \ttH(\bbbar) FH 의 veto 는 0.25 이므로
+SL/DL 과의 직교성을 결합 전에 확인해야 한다(\ref{ch:objects}장) \tagopen.
+\item \textbf{jet–lepton $\Delta R$ cleaning 이 코드에 없다}(\ref{ch:objects}·\ref{ch:selection}장) \tagopen. FH 영역에서는 lepton veto 가 있어 문제가
+작지만, lepton CR 에서는 lepton 이 jet 으로도 세어질 수 있다. TightLepVeto jet ID 가 일부만 막는다.
+\item \textbf{$\chi^2$ 의 분모}는 $\sqrt{0.1\sum\pt}$ 로 단위가 $\sqrt{\mathrm{GeV}}$ 다\src{HiggsReconstructor.h; STEP 6}. AN 은 JER 로 정한 $\sigma$ 라고만
+적었다(숫자 없음)\src{AN-22-122 v26, PDF p.49}. DNN 입력으로 쓰기 전에 정한다(\ref{ch:reco}장) \tagopen.
+\item 2016 PU jet ID 의 WP(우리 \texttt{puId}$\geq4$, AN \texttt{puId}$==1$)\src{AN-22-122 v26, PDF p.44}, trigger SF 불확도가 bin 전체가 함께 움직이는
+nuisance 하나라는 점(\ref{ch:objects}·\ref{ch:trigger}·\ref{ch:syst}장) \tagopen.
+\item 13\TeV{} 신호 단면적이 자료마다 0.756\fb\src{AN-22-122 v26, PDF p.23, Table 9}와 0.775\fb\src{승인 발표 p.3, p.27}로 다르고,
+13.6\TeV{} 값 0.860\fb{} 는 임시값이다\src{STEP 24 §7}(\ref{ch:intro}장) \tagopen.
+\item 문서 고침: plotter \code{--tree-v1} 의 plot 수는 31 개다(STEP 27 기록과 CHANGELOG 의 32 는 잘못이었고 고쳤다).
+\end{enumerate}
+
+AN 원문 안의 불일치(표와 본문이 다른 곳)는 각 장의 \texttt{openq} 상자에 모았다. 우리가 그것을 그대로 따라 하지 않도록 하기 위함이다.

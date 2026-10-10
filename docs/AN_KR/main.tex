@@ -1,0 +1,63 @@
+% =============================================================================
+% ttHH(→4b) 완전 강입자(FH) 채널 — 한국어 분석 노트(AN_KR)
+% 빌드: docs/AN_KR/build.sh   (XeLaTeX 두 번, 결과는 docs/AN_KR/out/AN_KR.pdf)
+% 작성·갱신 규칙: docs/AN_KR/README.md
+% =============================================================================
+\documentclass[11pt,a4paper,oneside,openany]{report}
+\usepackage[a4paper,top=24mm,bottom=24mm,left=23mm,right=23mm,headheight=14pt]{geometry}
+\input{preamble}
+
+% 판 표기: 고칠 때마다 아래 두 줄과 sections/00_about.tex 의 개정 이력을 같이 바꾼다.
+\newcommand{\ANKRversion}{AN\_KR 작업본 v0.1}
+\newcommand{\ANKRdate}{2026-10-10}
+
+\hypersetup{pdftitle={ttHH(4b) FH 채널 분석 노트 (한국어 작업본)},pdfauthor={Junghyun Lee (KNU)}}
+
+\begin{document}
+
+\begin{titlepage}
+\sffamily
+\vspace*{26mm}
+\noindent{\color{accent}\rule{\linewidth}{1.2pt}}\par\vspace{5mm}
+{\fontsize{13}{17}\selectfont\color{gray}CMS 분석 노트 — 한국어 작업본(내부 이해용, CMS 공식 문서 아님)\par}\vspace{5mm}
+{\fontsize{24}{32}\selectfont\bfseries $t\bar{t}HH$, $HH\to b\bar{b}b\bar{b}$ 탐색:\\[1mm] 톱 쌍의 완전 강입자 붕괴 채널\par}\vspace{5mm}
+{\Large Run 2(2016–2018)와 Run 3 2024 데이터, $\sqrt{s}=13$ / $13.6\,$TeV\par}\vspace{5mm}
+\noindent{\color{accent}\rule{\linewidth}{1.2pt}}\par
+\vspace{12mm}
+{\large 이 문서는 분석의 흐름, 물리적 근거, 지금까지 바뀐 것, 앞으로 할 것을 한곳에 모은다.
+코드·운영 기록(md 문서)과 함께 고쳐 나간다.\par}
+\vfill
+{\large Junghyun Lee\quad 경북대학교 입자물리연구실\par}\vspace{2mm}
+{\large \ANKRversion\quad(\ANKRdate)\par}\vspace{6mm}
+{\small\color{gray}코드 기준: tempTTHH \texttt{dev260614} 의 STEP 27(커밋 N·O) 까지.
+숫자·사실 뒤의 회색 괄호는 출처다(부록~C). 출처가 없는 문장은 설명이거나 우리의 판단이며, 판단에는 그렇다고 적었다.\par}
+\end{titlepage}
+
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+% 장 번호를 파일 번호와 맞춘다: 00_about = 0 장, 01_intro = 1 장, …, 13_plan = 13 장(md 문서들이 이 번호로 가리킨다)
+\setcounter{chapter}{-1}
+\input{sections/00_about}
+\input{sections/01_intro}
+\input{sections/02_samples}
+\input{sections/03_trigger}
+\input{sections/04_objects}
+\input{sections/05_btag}
+\input{sections/06_selection}
+\input{sections/07_reco}
+\input{sections/08_qcd}
+\input{sections/09_mva}
+\input{sections/10_syst}
+\input{sections/11_stats}
+\input{sections/12_status}
+\input{sections/13_plan}
+
+\appendix
+\input{sections/A_treev1}
+\input{sections/B_glossary}
+\input{sections/C_sources}
+
+\end{document}

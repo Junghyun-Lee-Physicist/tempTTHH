@@ -2,7 +2,7 @@
 
 > **Purpose:** the single place that answers "where are we right now?" — current state, what is ready, what is pending, and what is OPEN.
 > **Audience:** anyone starting a session.
-> **Status:** living · last meaningful update **2026-10-09** (커밋 M2: merge 의 guard 는 시간 한도 — 정상 merge 도 CPU 1 % 미만이라 CPU 로는 가르지 못함; KNU 10-09 저녁: merge 셋 84/84·사후 대조, SF 없는 plot 셋, K+L 빌드와 시험 통과) · 2026-10-09 (커밋 M: merge job 에도 stall guard — FH merge 하나가 /pnfs 에서 4 시간 멈췄던 일; 큐에 그 프로세스의 merge·analyzer job 이 있으면 merge 하지 않음) · 2026-10-09 (커밋 L = STEP 26: TriggerStudy 의 2024(`HLT_IsoMu24`, PNet 경로, Muon0/1) — 합성 skim 에서 넣은 Data/MC 비를 117 칸 모두 되찾음, 2017 은 bin 단위로 그대로; trigger SF JSON 에 연도 태그, 다른 해의 JSON 은 analyzer E50·제출 때 E50; eCR job 넷 다시 멈춤, 입력은 `ONLINE`) · 2026-10-08 (커밋 K2: condor stall guard — /pnfs 에서 멈춘 job 7 개가 12 시간 'running' 이던 일; 출력 파일 수는 완료가 아님) · 2026-10-08 (D-2026-10-08-A: 2024 b-tag SF 는 지금 fixed WP, shape 방법이 확인되면 전환; 커밋 K = analyzer 의 fixed-WP weight·효율 히스토그램, `tools/stage7/btag_eff_maps.py`, 2024 btagtrig yml; KNU 10-08 03:43 큐 9,890) · 2026-10-07 (커밋 J: main 제출이 76 cluster 뒤 E20 — Data 의 xsec_db 항목, 제출 전 모든 표본 확인, `--only`; ParkingHH 만 따로 낸다) · 2026-10-07 (D-2026-10-07-B: 2024 lepton CR 지금, 다음 작업 넷, 커밋 I 의 nJets 진단) · 2026-10-07 (ParkingHH 생산 끝, G 의 KNU smoke 81/81, HT1050 control plot Data/MC 1.46 = b-tag; D-2026-10-07-A: 2024 main 전체 다시, 커밋 H) · 2026-10-06 (2024 의 b-tag 경로는 ParkingHH: D-2026-10-06-A, 커밋 G 의 PD 규칙과 `make_plots.py --tree-cut` control plot; STEP 24 커밋 E·F `b29856eb`: KNU smoke `dC_mix` 의 139 → `tthh::fatalExit`, F 빌드 smoke 69/69; 첫 plot 의 모자람은 HT < 1000 GeV(trigger 경로·PD 확인); main 5,291/5,291·merge 76/76, 사후 확인으로 빠짐 없음, 첫 수율표; 커밋 D·E 실패 확인 · prescan 983/983, consolidate 의 `EXIT 1` 은 도구 — 커밋 C 에 `--skimmed`; Data 는 golden LS 의 1.4 % 쯤 없음) · 2026-10-05 (STEP 24 커밋 C: KNU smoke 68/69, plot 도구, 여러 파일 job 검사 고침 · 커밋 B: 진짜 eventBuffer.h 와 2024 analyzer·제출기, smoke_2024 · 묶음 1: 2024 eventBuffer·PU 도구와 입력, Y1 도구; D-2026-10-05-A · 묶음 2: analyzer 의 2024 코드는 진짜 header 와 함께 커밋 대기, Stage 3 도구·yml·임시 σ, 오프라인 smoke 31/31; D-2026-10-05-B·C) · 2026-10-04 (KNU 의 긴 단계는 condor job, 실행 기록은 `runlogs/` 에 커밋 — STEP 23) · 2026-10-03 (Stage 0 의 payload·lumi 실측 반영, eventBuffer 생성기 = 사용자 fork treestream 점검, 그 패치 커밋 `8be42e8`; KNU 의 pull 과 clean 빌드) · 2026-10-02 (2024 먼저 결정, 단계별 계획 [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) §9, 2017 lumi 42.07 반영) · 그 전 2026-10-01 (v15 계획 PROPOSED) · 2026-07-26 (2018UL 준비: samples_2018UL.json, --preflight, OPEN #5).
+> **Status:** living · last meaningful update **2026-10-10 (3)** (한국어 AN v0.1 과 그 과정에서 찾은 문제: stitching 의 p_own(D-2026-10-10-C PROPOSED), 51/52 소유, veto μ iso, jet–lepton cleaning 없음; STEP 27 P 독립 검토 반영 — top 표지, `--tree-v1`, merge 의 branch 집합 검사) · 2026-10-10 (2) (STEP 27 = 커밋 N·O: BTV 다중 WP 규칙과 Tree v1(ML 입력·jet 정답·계통 weight), 제출기 `--memory` 2 GB — 시험 110/110; 사용자 방향 D-2026-10-10-B 와 계획 문서 ROADMAP_FH·PLAN_QCD_DD, 한국어 AN v0.1; KNU 는 btagtrig 뒤 clean 빌드) · 2026-10-10 (문서: BTV 다중 WP 검토 → D-2026-10-10-A; ML·계통 자료 정리와 Tree 의 빈칸 PLAN_ML_SYST.md; btagtrig 이 느린 원인은 request_memory 12 GB — 측정 최대 286 MB) · 2026-10-09 (커밋 M2: merge 의 guard 는 시간 한도 — 정상 merge 도 CPU 1 % 미만이라 CPU 로는 가르지 못함; KNU 10-09 저녁: merge 셋 84/84·사후 대조, SF 없는 plot 셋, K+L 빌드와 시험 통과) · 2026-10-09 (커밋 M: merge job 에도 stall guard — FH merge 하나가 /pnfs 에서 4 시간 멈췄던 일; 큐에 그 프로세스의 merge·analyzer job 이 있으면 merge 하지 않음) · 2026-10-09 (커밋 L = STEP 26: TriggerStudy 의 2024(`HLT_IsoMu24`, PNet 경로, Muon0/1) — 합성 skim 에서 넣은 Data/MC 비를 117 칸 모두 되찾음, 2017 은 bin 단위로 그대로; trigger SF JSON 에 연도 태그, 다른 해의 JSON 은 analyzer E50·제출 때 E50; eCR job 넷 다시 멈춤, 입력은 `ONLINE`) · 2026-10-08 (커밋 K2: condor stall guard — /pnfs 에서 멈춘 job 7 개가 12 시간 'running' 이던 일; 출력 파일 수는 완료가 아님) · 2026-10-08 (D-2026-10-08-A: 2024 b-tag SF 는 지금 fixed WP, shape 방법이 확인되면 전환; 커밋 K = analyzer 의 fixed-WP weight·효율 히스토그램, `tools/stage7/btag_eff_maps.py`, 2024 btagtrig yml; KNU 10-08 03:43 큐 9,890) · 2026-10-07 (커밋 J: main 제출이 76 cluster 뒤 E20 — Data 의 xsec_db 항목, 제출 전 모든 표본 확인, `--only`; ParkingHH 만 따로 낸다) · 2026-10-07 (D-2026-10-07-B: 2024 lepton CR 지금, 다음 작업 넷, 커밋 I 의 nJets 진단) · 2026-10-07 (ParkingHH 생산 끝, G 의 KNU smoke 81/81, HT1050 control plot Data/MC 1.46 = b-tag; D-2026-10-07-A: 2024 main 전체 다시, 커밋 H) · 2026-10-06 (2024 의 b-tag 경로는 ParkingHH: D-2026-10-06-A, 커밋 G 의 PD 규칙과 `make_plots.py --tree-cut` control plot; STEP 24 커밋 E·F `b29856eb`: KNU smoke `dC_mix` 의 139 → `tthh::fatalExit`, F 빌드 smoke 69/69; 첫 plot 의 모자람은 HT < 1000 GeV(trigger 경로·PD 확인); main 5,291/5,291·merge 76/76, 사후 확인으로 빠짐 없음, 첫 수율표; 커밋 D·E 실패 확인 · prescan 983/983, consolidate 의 `EXIT 1` 은 도구 — 커밋 C 에 `--skimmed`; Data 는 golden LS 의 1.4 % 쯤 없음) · 2026-10-05 (STEP 24 커밋 C: KNU smoke 68/69, plot 도구, 여러 파일 job 검사 고침 · 커밋 B: 진짜 eventBuffer.h 와 2024 analyzer·제출기, smoke_2024 · 묶음 1: 2024 eventBuffer·PU 도구와 입력, Y1 도구; D-2026-10-05-A · 묶음 2: analyzer 의 2024 코드는 진짜 header 와 함께 커밋 대기, Stage 3 도구·yml·임시 σ, 오프라인 smoke 31/31; D-2026-10-05-B·C) · 2026-10-04 (KNU 의 긴 단계는 condor job, 실행 기록은 `runlogs/` 에 커밋 — STEP 23) · 2026-10-03 (Stage 0 의 payload·lumi 실측 반영, eventBuffer 생성기 = 사용자 fork treestream 점검, 그 패치 커밋 `8be42e8`; KNU 의 pull 과 clean 빌드) · 2026-10-02 (2024 먼저 결정, 단계별 계획 [`PLAN_v15_2018UL_2024.md`](PLAN_v15_2018UL_2024.md) §9, 2017 lumi 42.07 반영) · 그 전 2026-10-01 (v15 계획 PROPOSED) · 2026-07-26 (2018UL 준비: samples_2018UL.json, --preflight, OPEN #5).
 > **Links:** decisions [`DECISIONS.md`](DECISIONS.md) · history [`CHANGELOG.md`](CHANGELOG.md) · exit codes [`reference/ERROR_CODES.md`](reference/ERROR_CODES.md) · path policy [`reference/CONFIG_PATHS.md`](reference/CONFIG_PATHS.md).
 
 ## Bottom line
@@ -179,6 +179,40 @@ K+L 빌드 0, TriggerStudy 빌드, 단위 PASS, 실패 확인 63/63, 효율 map 
 §10): merge 는 시간 한도(기본 3 h, subcode 4202; merge 405 개의 로그로 확정 — 정상 404 개 중 가장 긴 것 2,082 s, 멈춘 것 15,581 s),
 `condor_run.sh --time-limit H`. 다음: 2024 btagtrig 제출(빌드·시험 끝), M2 를 받은 뒤 그 merge →
 효율 map·TriggerStudy(RUNBOOK §31).
+
+**10-10 (KNU 01:14–02:45 KST; 문서만):** M2(`fc461713`) KNU 76/76·85/85. 2024 btagtrig 제출: 76 cluster 2181969–2182044, 6,353 job(preflight 의 WARN 하나는
+proxy 의 나이). **job 이 거의 돌지 않음**: 02:18 에 6,241 중 running 1(schedd 전체 8). `condor_q -better-analyze`: 다른 조건은 1,728 slot 모두 맞고
+`TARGET.Memory >= RequestMemory`(12,288 MB)만 10 slot — 제출기가 analyzer job 에 `request_memory = 12 GB` 를 고정으로 쓴다. 2024 analyzer job 25,313 개의
+condor log 로 잰 메모리: 중앙값 125 MB, p99 126 MB, 최대 286 MB(TTHHto4b btagtrig). 2048 MB 면 1,620 slot, 4096 MB 면 1,022 slot. 대기 job 을
+`condor_qedit … RequestMemory 2048` 로 낮추자고 제안(사용자가 할 일; 실패한 job 은 `--resubmit` 이 12 GB 로 다시 낸다). 제출기 기본값은 다음 커밋에서.
+M 의 큐 검사는 진짜 condor_q 로 동작(dry-run: 출력이 다 생긴 3 프로세스, 큐에 그 job 없음, exit 0; 미완성 표본은 그 전에 INCOMPLETE 로 빠지므로
+`[fatal] … analyzer job` 은 이 경우 나오지 않는 것이 맞다 — RUNBOOK §31 의 기대값 `exit 2` 는 AI 의 착오). BTV 의 다중 WP 안내(cms-talk) 검토 →
+**D-2026-10-10-A**(사용자 결정; 코드는 커밋 N). ML(GATJA, DNN)·계통 자료(AN v26, GATJA 발표·코드, SWAN 의 FH·DL DNN 코드·표본)를 정리하고 지금
+`Tree/Tree` 의 빈칸과 순서를 제안 → [`PLAN_ML_SYST.md`](PLAN_ML_SYST.md)(PROPOSED: 다음 빌드에 "Tree v1"). 다음: qedit → btagtrig 완료 → merge →
+효율 map·TriggerStudy; 그동안 커밋 N(BTV)·O(Tree v1) 준비, 빌드는 btagtrig analyzer job 이 끝난 뒤.
+**10-10 (2) (컨테이너; 사용자 방향 [`DECISIONS.md`](DECISIONS.md) D-2026-10-10-B):** 10-10 문서 패키지는 맥에 설치(RESULT OK, 커밋은 사용자 — RUNBOOK §32 6).
+**STEP 27**([`changes/STEP_27_treev1_btv_rule.md`](changes/STEP_27_treev1_btv_rule.md)): N = D-2026-10-10-A 의 구현(L–M 음수 분자 → 1, 비교 weight 둘,
+true-b closure 히스토그램), O = **Tree v1**(jet φ·질량·WP 칸, MC jet ↔ quark 표지, AN Table 43 의 FH 변수와 χ² 의 AN jet 선택, m_qq, PU·L1·scale·PS weight,
+Run 2 shape 출처 16; PDF 는 `--tree-pdf on`), 제출기 `--memory` 기본 2 GB·`--tree-pdf`, plotter `--tree-v1`. 시험(컨테이너): 단위 27/27, offline smoke 110/110,
+failure checks 76/76, runlog 85/85 외. selection·cutflow·기존 branch 는 그대로(2017 Y1 동일). **KNU: btagtrig analyzer job 이 큐에서 다 빠진 뒤
+`make clean && make -j4`, 시험, 그 실행 파일로 SF main 셋**(워크스페이스 RUNBOOK §33). 계획: [`ROADMAP_FH.md`](ROADMAP_FH.md)(W1–W8, Run 2 v15 의 목록),
+[`PLAN_QCD_DD.md`](PLAN_QCD_DD.md)(ttH(bb) FH 방법의 ttHH 판; lepton CR 의 Data/MC 뒤), [`PLAN_ML_SYST.md`](PLAN_ML_SYST.md) §9–10(AN 기반 FH DNN·GATJA;
+**Run 2 v15 에는 신호·TT4b·TTZH·TTZZ·THW 가 아직 없다** — Run 2 학습의 의존), 한국어 AN v0.1 [`AN_KR/`](AN_KR/)(PDF 는 맥 `AN_KR_pdf/`). 새로 읽은 자료:
+AN-19-094 v20(ttH(bb), FH 전부), 승인·Wei·pre-approval·Hbb·KCMS 발표 전부, NtupleForge 의 v15 branch 목록·상태(ntuplizer 수정 불필요: Tree v1 의 재료가
+v15 목록에 다 있다).
+**10-10 (3) (컨테이너; 한국어 AN v0.1 을 쓰며 찾은 것):** [`AN_KR/`](AN_KR/) v0.1(0–13장, 부록 A–C; 장 초안은 AI 에이전트 넷이 원문·코드를 읽고 쓰고,
+숫자마다 출처) — 빌드 `docs/AN_KR/build.sh`, PDF 는 맥 `AN_KR_pdf/`. 쓰는 중에 드러난 분석의 문제(AN_KR 12장 §"이번 판에서 찾은 문제"):
+(1) **stitching 의 r 에 p_own 이 빠져 있다** — dedicated 표본의 소유 칸 수율이 L·σ_inc·f·p_own 이 되어 2017 의 tt+bb(53–55)가 목표의 약 1/9
+(p_own = 0.114/0.108/0.103, 2017 prescan); 지금은 어떤 main 도 stitching 을 쓰지 않는다(2017 btagtrig 의 norm-RW 유도만 읽음) →
+[`DECISIONS.md`](DECISIONS.md) **D-2026-10-10-C PROPOSED**(고치는 식, AN 대로 51/52 를 4FS 로 할지, closure 시험). (2) EXP 는 51/52 를 5FS 에
+두는데 AN·ttH(bb)·우리 Hbb 발표(p.21)는 4FS. (3) veto muon 의 iso 0.15(`SelectionCuts.h` muonIso) — AN DL 부 lepton·ttH(bb) FH 는 0.25(SL/DL
+과의 직교성). (4) jet–lepton ΔR cleaning 이 코드에 없다(lepton CR 에서만 문제). (5) χ² 분모 √(0.1 ΣpT) 는 단위가 √GeV(σ² 아님, 역사적). (6) 2016
+PU ID WP(puId≥4 vs AN puId==1), trigger SF 불확도는 bin 전체가 함께 움직이는 nuisance 하나. (7) 13 TeV 신호 σ 0.756(AN Table 9) vs
+0.775 fb(승인 발표 p.3·27), 13.6 TeV 는 임시 0.860 fb. 문서 고침: plotter `--tree-v1` 의 plot 은 31 개(STEP 27·CHANGELOG 의 32 는 잘못).
+**STEP 27 P(같은 날, 독립 검토 반영 — BUG 0, RISK 4):** `jetGenTopIdx`(FH 의 두 hadronic top 을 가르는 정답; Tree v1 core 76), `--tree-v1 on|off`(analyzer·제출기,
+기본 on), Run 2 shape 키의 load 검사(E40), 병합기의 `Tree/Tree` branch 집합 검사(exit 8 — **재빌드 뒤 옛 production 의 job 을 재제출하면 merge 가 멈춘다**:
+한 production 은 한 실행 파일로), cAsB 의 큰 jet weight 수. 시험 단위 30/30, offline smoke 116/116, failure checks 81/81
+([`changes/STEP_27_treev1_btv_rule.md`](changes/STEP_27_treev1_btv_rule.md) §P).
 
 ## What is ready (DECIDED)
 

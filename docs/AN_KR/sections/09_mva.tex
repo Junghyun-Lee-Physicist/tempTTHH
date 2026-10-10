@@ -1,0 +1,519 @@
+% =============================================================================
+% 9 장 — 다변량 분석(DNN·GATJA)
+% 작성 2026-10-10 (AN_KR v0.1). 근거: AN-2022/122 v26 §6.2, §7, App. E; AN-19-094 v20 §4.8, §8.1.3, §10.1;
+% GATJA 발표(2025-12-10); docs/PLAN_ML_SYST.md §2·§5·§8–§10; DECISIONS D-2026-10-10-A/B; STEP 27.
+% =============================================================================
+\chapter{다변량 분석(DNN·GATJA)}\label{ch:mva}
+
+이 장은 신호와 배경을 가르는 기계학습(ML) 단계를 다룬다. 먼저 이 노트를 읽는 데 필요한 만큼의 ML 기초
+— 순방향 신경망, softmax 와 cross-entropy, 최적화와 과적합, 그래프 신경망의 attention — 를 정리한다.
+이어서 Run 2 ttHH AN(AN-2022/122)의 SL·DL 다중 분류 DNN 과 jet 배정 알고리즘(JABDT, GATJA)을 숫자와 함께 옮기고,
+ttH(bb) FH(AN-19-094)가 QCD 를 data 에서 추정하기 때문에 b-tag 값을 입력에서 뺀 이진 ANN 을 쓴 이유를 본다.
+마지막으로 우리 FH 설계(QCD class 를 더한 다중 분류 DNN, GATJA 의 FH 판), 학습 데이터와 환경, 검증 계획, 미결 사항을 적는다.
+우리 쪽은 대부분 \tagplan 이다: 코드로 있는 것은 학습 입력을 담는 Tree v1(STEP 27, \tagimpl\tagtest)뿐이다.
+
+% -----------------------------------------------------------------------------
+\section{왜 다변량 분석인가}\label{sec:mva-why}
+
+2017 FH baseline(≥6 jet, $\HT>500\GeV$, $n_b\ge2$ 등, \ref{ch:selection}장)에서 MC 합은 $3.39\times10^{6}$ event, ttHH 는 4.3 event 였다
+\src{Hbb 회의 FH 발표 p.25}. 신호 대 배경 비가 $10^{-6}$ 대인 상황에서 cut 하나하나로는 신호를 살릴 수 없다.
+신호의 정보는 b jet 수, 두 Higgs 후보의 질량, jet 사이 각도, event 의 모양 같은 여러 변수에 조금씩 흩어져 있고,
+그 변수들은 서로 상관되어 있다. 다변량 분석은 이 정보를 한 숫자(또는 class 별 확률)로 모은다.
+
+\begin{note}[가장 좋은 판별 변수 — Neyman–Pearson]
+두 가설 S(신호)와 B(배경)를 관측량 벡터 $\vec{x}$ 로 가를 때, 주어진 배경 효율에서 신호 효율이 가장 높은 검정은
+우도비 $\Lambda(\vec{x})=p(\vec{x}\,|\,S)/p(\vec{x}\,|\,B)$ 에 cut 을 거는 것이다(Neyman–Pearson 정리).
+$p(\vec{x}|\cdot)$ 는 수십 차원이라 직접 만들 수 없다. 분류기(classifier)는 MC 표본에서 이 비의 단조 함수를 근사한다:
+\S\ref{sec:mva-basics-ce} 에서 보듯 잘 학습된 분류기의 출력 $q_S(\vec{x})$ 는 $p(S|\vec{x})$ 에 가깝고,
+$q_S/(1-q_S)\propto\Lambda(\vec{x})$ 이다. 그래서 분류기 출력 분포를 fit 하면 이 정보를 거의 다 쓸 수 있다.
+\end{note}
+
+AN-2022/122 의 두 채널은 모두 다중 분류(multi-class) DNN 으로 event 를 과정별 node 에 나누고, 각 node 의 출력 분포를
+binned fit 의 판별 변수로 쓴다\src{AN-22-122 v26, PDF p.106}. 우리 FH 도 같은 전략을 따른다\src{Hbb 회의 FH 발표 p.9}\src{D-2026-10-10-B}.
+그림~\ref{fig:mva-flow} 는 우리 계획의 흐름이다.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\footnotesize, >=Stealth,
+  box/.style={draw, rounded corners=2pt, align=center, inner sep=3pt, text width=27mm, minimum height=9mm},
+  done/.style={box, fill=green!8, draw=green!45!black},
+  plan/.style={box, fill=blue!5, draw=blue!50!black}]
+\node[done] (tree) at (0,0)      {Tree v1\\ (STEP 27)};
+\node[plan] (exp)  at (3.6,0)    {내보내기 도구\\ \texttt{tools/ml/}};
+\node[plan] (gat)  at (7.2,1.25) {GATJA stage 1\\ b jet 별 H/t/기타};
+\node[plan] (qcd)  at (7.2,-1.25){QCD class\\ TR data $\times$ TF\textsubscript{loose}};
+\node[plan] (dnn)  at (10.8,0)   {다중 분류 DNN\\ softmax};
+\node[plan] (tmpl) at (10.8,-2.6){최대 node 범주화\\ node 별 template};
+\node[plan] (fit)  at (7.2,-2.6) {binned likelihood\\ fit};
+\draw[->] (tree) -- (exp);
+\draw[->] (exp.east) -- (dnn.west);
+\draw[->] (exp.north) |- (gat.west);
+\draw[->] (gat.east) -| node[above, pos=0.3, font=\scriptsize]{\texttt{gatja\_0..23}} (dnn.north);
+\draw[->] (qcd.east) -| ([xshift=-6mm]dnn.south);
+\draw[->] ([xshift=6mm]dnn.south) -- ([xshift=6mm]tmpl.north);
+\draw[->] (tmpl) -- (fit);
+\end{tikzpicture}
+\caption{우리 FH 의 ML 흐름(계획). 초록 = 구현·시험됨, 파랑 = 계획. QCD class 는 \ref{ch:qcd}장, fit 은 \ref{ch:stats}장. GATJA 를 넣기 전에 GATJA 없는 DNN 기준선을 먼저 만든다(PLAN\_ML\_SYST §7 B, C).}
+\label{fig:mva-flow}
+\end{figure}
+
+% -----------------------------------------------------------------------------
+\section{기계학습 기초 — 이 장을 읽는 데 필요한 만큼}\label{sec:mva-basics}
+
+\subsection{순방향 신경망}\label{sec:mva-basics-ffnn}
+
+순방향(feed-forward, fully connected) 신경망은 입력 벡터 $\vec{x}$ 에 층(layer)을 차례로 적용한다:
+\begin{equation}
+  \vec{h}^{(0)}=\vec{x},\qquad
+  \vec{h}^{(l)}=\phi\!\left(W^{(l)}\vec{h}^{(l-1)}+\vec{b}^{(l)}\right),\quad l=1,\dots,L,
+  \label{eq:mva-ffnn}
+\end{equation}
+여기서 $W^{(l)}$(weight 행렬)과 $\vec{b}^{(l)}$(bias)가 학습되는 parameter, $\phi$ 는 비선형 활성 함수다.
+AN 은 숨은 층에 ReLU, $\phi(z)=\max(0,z)$ 를 쓴다\src{AN-22-122 v26, PDF p.109, Table 50}. "[512, 256, 128, 64]" 는 숨은 층 네 개의
+node 수다. 입력 50 개, 출력 9 개이면 parameter 는 약 $2.0\times10^{5}$ 개다(우리 계산: $\sum_l (n_{l-1}+1)\,n_l$).
+parameter 가 많을수록 학습 표본의 우연한 요동까지 외우기 쉽다(\S\ref{sec:mva-basics-overfit}).
+
+\subsection{다중 분류: softmax 와 cross-entropy}\label{sec:mva-basics-ce}
+
+마지막 층은 class 수 $K$ 만큼의 실수 $z_k$ 를 내고, softmax 가 이를 합이 1 인 확률로 바꾼다:
+\begin{equation}
+  q_k(\vec{x})=\frac{e^{z_k}}{\sum_{j=1}^{K}e^{z_j}},\qquad
+  \mathcal{L}_{\mathrm{CE}}=-\frac{1}{\sum_n w_n}\sum_{n} w_n\sum_{k=1}^{K} y_{nk}\ln q_k(\vec{x}_n),
+  \label{eq:mva-softmax-ce}
+\end{equation}
+$y_{nk}$ 는 event $n$ 의 정답 class 면 1, 아니면 0 (one-hot), $w_n$ 은 event 의 학습 weight 다. 이것이 categorical cross-entropy 이고,
+$K=2$ 에 sigmoid 를 쓰면 binary cross-entropy 가 된다(ttH(bb) FH 의 ANN, \S\ref{sec:mva-tth}).
+
+\begin{note}[왜 출력이 확률처럼 행동하나]
+표본이 무한히 크면 손실의 기댓값은 $-\int d\vec{x}\,p(\vec{x})\sum_k p(k|\vec{x})\ln q_k(\vec{x})$ 이다. 각 $\vec{x}$ 에서 $\sum_k q_k=1$
+조건으로 이를 최소화하면(Lagrange 승수) $q_k(\vec{x})=p(k|\vec{x})$ 가 나온다. 즉 출력은 \textbf{학습 표본의 class 구성비}를 사전 확률로 한
+사후 확률이다. class weight $c_k$ 를 곱하면 $q_k\propto c_k\,p(k|\vec{x})$ 가 되어 경계가 움직인다. fit 은 출력의 "확률 값"이 아니라
+모양(template)만 쓰므로 이것은 틀린 것이 아니다 — 같은 네트워크를 MC 와 data 에 똑같이 적용하기만 하면 된다.
+\end{note}
+
+event 는 출력이 가장 큰 node 로 보낸다(최대 node 범주화). 그러면 한 event 가 한 범주에만 들어가 범주들이 통계적으로 독립이다
+\src{사전승인 발표 p.18}\src{AN-22-122 v26, PDF p.112}.
+
+\textbf{class weight 와 event weight}.\label{sec:mva-basics-weights} 식~\eqref{eq:mva-softmax-ce} 의 $w_n$ 에는 두 가지가 섞인다. (1) event weight($\sigma\mathcal{L}/\sum w_{\mathrm{gen}}\times$SF)는 한 class 안에서
+하위 과정의 비(tt 의 SL·DL·FH 붕괴, stitching 된 tt+HF 범주)를 맞춘다. (2) class weight(흔히 $c_k=N_{\mathrm{tot}}/(K N_k)$)는 작은 class 가
+손실에서 묻히지 않게 한다. AN 은 "different training weight" 로 최적화했다고만 쓰고 값은 없다\src{AN-22-122 v26, PDF p.107}. SWAN 의 우리 FH
+시험 판(V3)은 event weight 없이 표본을 일정 비율로 덜어낸 뒤 균형식 class weight 를 썼다\src{PLAN\_ML\_SYST §2.4}. NLO 표본의 음의 weight 처리도
+정해야 한다(우리 판단).
+
+\subsection{최적화: Adam, LAMB, 학습률 감쇠}\label{sec:mva-basics-opt}
+
+parameter $\theta$ 는 손실의 기울기 $g_t=\nabla_\theta\mathcal{L}$ 를 mini-batch(AN: 1024 event)마다 계산해 갱신한다. Adam 은 기울기의 1·2차
+이동 평균으로 parameter 마다 보폭을 조절한다:
+\begin{equation}
+  m_t=\beta_1 m_{t-1}+(1-\beta_1)g_t,\quad v_t=\beta_2 v_{t-1}+(1-\beta_2)g_t^2,\quad
+  \theta_t=\theta_{t-1}-\eta_t\,\frac{\hat m_t}{\sqrt{\hat v_t}+\epsilon},
+  \label{eq:mva-adam}
+\end{equation}
+($\hat m_t, \hat v_t$ 는 초기 편향을 보정한 값). LAMB 는 Adam 의 갱신량을 층마다 $\|\theta^{(l)}\|/\|r_t^{(l)}\|$ 로 다시 재어(trust ratio)
+큰 batch 에서도 층마다 같은 비율로 움직이게 한다. AN 의 DL DNN 이 LAMB 를 쓰고\src{AN-22-122 v26, PDF p.116--117, Table 51}, GATJA 도 "큰 batch
+optimizer" 를 쓴다(공개 코드는 LAMB)\src{GATJA 발표 p.10}\src{PLAN\_ML\_SYST §2.2}.
+학습률 $\eta_t$ 는 처음에 크게(빠른 탐색), 나중에 작게(안정) 둔다. AN SL 은 지수 감쇠
+\begin{equation}
+  \eta(\text{epoch})=\eta_0\times0.99312^{\,\text{epoch}},\qquad \eta_0=2\times10^{-5}
+  \label{eq:mva-lrdecay}
+\end{equation}
+를 쓴다\src{AN-22-122 v26, PDF p.109, Eq.~20, Table 50}. $0.99312^{100}\approx0.50$ 이므로 학습률은 100 epoch 마다 절반이 된다(우리 계산).
+$\eta_0$ 는 $10^{-3}, 10^{-4}, 5\times10^{-5}, 2\times10^{-5}, 10^{-5}$ 가운데 손실 분포가 가장 좋은 것으로 골랐다\src{AN-22-122 v26, PDF p.108}.
+DL 은 cosine 감쇠, $\eta_t=\eta_{\min}+\tfrac12(\eta_0-\eta_{\min})\bigl(1+\cos(\pi t/T)\bigr)$ 를 쓴다\src{AN-22-122 v26, PDF p.117, Table 51}.
+
+\subsection{과적합, 검증, 홀짝 분할}\label{sec:mva-basics-overfit}
+
+과적합(overtraining)은 네트워크가 학습 표본의 우연한 요동을 외워 새 표본에서 성능이 떨어지는 상태다. 대책은 셋이다.
+(1) 정규화: dropout(학습 때 node 일부를 무작위로 끔; AN 0.2), L2 weight decay. (2) 조기 종료: 학습에 쓰지 않은 validation 표본의 손실을
+본다. AN SL 은 학습·검증 손실 차가 1 \% 를 넘으면 멈추되 최소 100 epoch 은 돌리고\src{AN-22-122 v26, PDF p.107; p.109, Table 50}, 그 가운데
+$Z_A$(식~\eqref{eq:mva-za})가 가장 큰 epoch 을 고른다. (3) 독립 평가: AN 은 MC 의 홀수 event number 로 학습하고(그 안을 학습 55 \%, 검증 25 \%,
+test 20 \%로) 짝수 event 로 template 을 만든다\src{AN-22-122 v26, PDF p.106, 109}. 이것은 $k=2$ k-fold 의 한 방향이다 — 두 방향(홀→짝,
+짝→홀)을 다 쓰면 MC 전부가 template 에 들어간다. 과적합은 학습·test 표본의 출력 분포를 겹쳐 Kolmogorov–Smirnov(KS) 검정으로 본다.
+AN 은 node 별 train/test 비교를 부록 E 에 둔다\src{AN-22-122 v26, PDF p.211--214, Fig.~E.1--E.4}.
+
+\subsection{입력 전처리}\label{sec:mva-basics-prep}
+
+변수마다 크기와 꼬리가 다르면(\HT 는 수백--수천 GeV, $\dR$ 는 0--5) 학습이 불안정하다. 흔한 변환은 표준화 $\hat x=(x-\mu)/\sigma$
+(ttH(bb) FH\src{AN-19-094 v20, PDF p.114}), 분위수 변환(QuantileTransformer, [0,1] 균등 분포로) 뒤 MinMaxScaler(AN\src{AN-22-122 v26, PDF p.107--108}),
+RobustScaler(SWAN V3)다. 분위수 변환은 긴 꼬리와 이상값에 강하다. 변환은 학습 표본에서 한 번 정해 평가 표본과 data 에 그대로 적용한다
+\src{AN-22-122 v26, PDF p.115}. 우리 Tree v1 은 정의되지 않는 값을 $-1$ 로 둔다(예: b jet 이 둘 미만이면 $\dR_{bb}$)\src{STEP 27} — 한 점에
+몰리는 값이므로 SR 밖(TR)까지 학습에 쓸 때는 따로 다룬다.
+
+\subsection{변수 중요도와 성능 지표}\label{sec:mva-basics-metrics}
+
+AN SL 은 333 개 후보에서 첫 층 weight 합으로 50 개를 골랐고 1차 Taylor 계수로 교차 확인했다\src{AN-22-122 v26, PDF p.107}.
+AN DL 은 feature importance 상위 20 개를 그림으로 보였다(PLAN 은 SHAP 값으로 읽음)\src{AN-22-122 v26, PDF p.116, Fig.~88}\src{PLAN\_ML\_SYST §2.1}.
+성능은 ROC 곡선과 그 아래 면적(AUC), class 별 혼동 행렬(confusion matrix), 그리고 AN 이 epoch 선택에 쓰는 Asimov 유의도
+\begin{equation}
+  Z_A=\sqrt{2\left[(s+b)\ln\frac{(s+b)(b+\sigma_b^2)}{b^2+(s+b)\sigma_b^2}-\frac{b^2}{\sigma_b^2}\ln\!\left(1+\frac{\sigma_b^2\,s}{b(b+\sigma_b^2)}\right)\right]}
+  \label{eq:mva-za}
+\end{equation}
+로 잰다\src{AN-22-122 v26, PDF p.109, Eq.~21}. AN 은 ttHH node 출력에 cut 을 [0.1, 1] 에서 바꾸며, cut 위의 참 ttHH 를 $s$, 나머지를 $b$
+(단면적으로 정규화)로 두고, $\sigma_b=0.1$, $b>0.1$ 을 요구한다\src{AN-22-122 v26, PDF p.109}. $\sigma_b\to0$ 이면
+$Z_A\to\sqrt{2[(s+b)\ln(1+s/b)-s]}$ 이고 $s\ll b$ 에서 $s/\sqrt{b}$ 다. 일반적으로 $s\ll b$ 에서 $Z_A\approx s/\sqrt{b+\sigma_b^2}$ 이다.
+식의 $\sigma_b$ 는 배경 수의 \emph{절대} 불확도이므로, AN 의 $\sigma_b=0.1$ 이 절대값이면 $b>0.1$ 에서 $\sigma_b^2\le0.1\,b$ 라 효과가 작고,
+상대값($\sigma_b=0.1\,b$)이면 $b$ 가 클수록 $Z_A$ 가 $s/\sigma_b$ 쪽으로 포화되어 큰 $b$ 를 벌한다 — AN 은 어느 쪽인지 적지 않았다(확인 못 함).
+
+\subsection{그래프 신경망과 attention — GATJA 를 위한 직관}\label{sec:mva-basics-gnn}
+
+event 의 jet 들은 순서가 없는 "집합"이고, 물리적 의미는 jet 사이의 관계(같은 Higgs 에서 왔는가)에 있다. 그래프 신경망(GNN)은 object 를
+node 로, 관계를 edge 로 놓고 node 마다 이웃의 정보를 모아 표현을 갱신한다. attention 은 그 이웃들을 \textbf{얼마나} 볼지를 학습한다:
+\begin{equation}
+  e_{ij}=a\!\left(W\vec h_i,\,W\vec h_j\right),\qquad
+  \alpha_{ij}=\frac{\exp e_{ij}}{\sum_{j'\in\mathcal{N}(i)}\exp e_{ij'}},\qquad
+  \vec h_i'=\phi\Bigl(\sum_{j\in\mathcal{N}(i)}\alpha_{ij}\,W\vec h_j\Bigr).
+  \label{eq:mva-gat}
+\end{equation}
+GATJA 는 이웃 $\mathcal{N}(i)$ 를 물리로 정한다: 관심 b jet 과 짝지었을 때 $\chi^2(m_H)$ 가 가장 작은 b jet 과 둘째로 작은 b jet 둘이다
+(\S\ref{sec:mva-an-gatja}). 그러면 "조합 전부를 도는" 대신 b jet 하나와 그 이웃 둘만 보면 되므로, jet 수가 늘어도 계산이 b jet 수에
+비례해 늘 뿐이다. 이것이 jet 이 많은 FH 에서 GATJA 가 매력적인 이유다(우리 판단, \S\ref{sec:mva-ours-gatja}).
+
+% -----------------------------------------------------------------------------
+\section{Run 2 AN(ttHH SL·DL)의 다변량 분석}\label{sec:mva-an}
+
+\subsection{SL: JABDT, BLR, 9-node DNN}\label{sec:mva-an-sl}
+
+\textbf{JABDT}(jet assignment BDT)는 6 jet(두 top 의 b 와 네 Higgs b)을 gen jet 과 $\dR<0.4$ 로 맞춘 순열을 "correct", 나머지를 "wrong" 으로 두고
+TMVA BDT(NTrees 300, MaxDepth 4)를 학습해, 점수가 가장 높은 순열의 jet 으로 DNN 변수를 만든다\src{AN-22-122 v26, PDF p.57--58, Table 44}.
+맞는 순열 대 틀린 순열은 2017 에서 62{,}551 대 176{,}382{,}875 이다\src{AN-22-122 v26, PDF p.59, Table 46} — 약 1 : 2{,}800(우리 계산). event 기반
+배정은 이 조합 폭발을 피할 수 없다. \textbf{BLR}은 jet 별 DeepJet 값의 flavour 별 확률 밀도로 "6 jet 이 b" 대 "4 jet 이 b" 가설의 우도비를 만든
+것이다\src{AN-22-122 v26, PDF p.55--56, Eq.~17--19}. 두 변수의 정의는 \ref{ch:reco}장.
+
+\textbf{SL DNN}. 학습 표본은 ttHH, tt(SL)H(bb), tt+4b, tt(SL)+bb, tt(SL), ttZ(bb), ttZH(4b), ttZZ(4b)\src{AN-22-122 v26, PDF p.106}.
+출력은 9 node — ttHH, ttH, ttZH, ttZZ, ttZ, tt+lf, tt+cc, tt+mb(tt+b, tt+2b, tt+bb), tt+nb(tt+bbb, tt+4b)\src{AN-22-122 v26, PDF p.106}.
+설정은 표~\ref{tab:mva-an-dnn} 에 모았다. 학습은 연도별이다: 본문은 "three years" 라 쓰지만 Fig.~78--81 은 2016APV, 2016, 2017, 2018 의
+모델 넷이다\src{AN-22-122 v26, PDF p.106, 110--111}.
+
+\begin{table}[htbp]
+\centering
+\caption{AN-2022/122 의 두 DNN. 쪽은 PDF 쪽.}
+\label{tab:mva-an-dnn}
+\small
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+ & SL (§7.1, Table 50, p.109) & DL (§7.3, Table 51, p.117) \\
+\midrule
+선택 & $\ge5$ jet, $\ge4$ b (5j4b; 6j4b 도 학습) & $\ge4$ jet, $\ge3$ b \\
+입력 & 50 개(후보 333 개에서 첫 층 weight 합으로) & Table 43 전부 + GATJA 24(본문, p.115); 그림 88 에는 jet b-tag 값도 \\
+숨은 층 & [512, 256, 128, 64], ReLU, dropout 0.2 & 같음 \\
+출력 & softmax 9 node & softmax 6 node(ttHH, ttZH, ttZZ, ttH, ttZ, tt) \\
+손실·batch & categorical CE, 1024 & 같음 \\
+최적화 & Adam, $\eta_0=2\times10^{-5}$, 식~\eqref{eq:mva-lrdecay} & LAMB, cosine 감쇠 \\
+멈춤·선택 & 조기 종료 1 \%, 최소 100 epoch, $Z_A$ 최대 epoch & 검증 분할 0.2; node·층·활성 함수의 grid search, AUC 최대 \\
+전처리 & QuantileTransformer(균등) + MinMaxScaler & 같음(학습 표본의 변환을 평가에) \\
+분할 & 홀수 event 학습(55/25/20), 짝수 event 로 template & 홀짝 분할 기술 없음(확인 못 함) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{판별 변수와 fit node}. event 를 최대 node 로 보내고, fit 에서는 tt+mb, tt+nb, tt+lf, tt+cc 를 ttbar node 하나로, ttZH·ttZ·ttZZ 를 ttZ node
+하나로 묶는다. ttZ node 는 통계가 적어 1 bin 이다\src{AN-22-122 v26, PDF p.112}. 그래서 fit node 는 ttHH, ttH, ttZ, ttbar 넷이다
+(본문의 "merge , ttZ and ttZZ" 는 빈칸이 있는 문장이다. 빈칸을 ttZH 로 읽은 것은 판별 변수 그림의 "3 background nodes and the ttHH signal node"
+에 맞춘 우리 판단이다\src{AN-22-122 v26, PDF p.112--113, Figs.~82--84}). node 별 bin 경계는 본문에 없다(확인 못 함; \ref{ch:stats}장). data 는 신호가 적은 bin 에만 그렸고, 최종 판별 변수에서 data/MC 가 약 15 \% 어긋났으며
+그 원인을 $\ge4$ b-tag 영역의 배경 모델링으로 보았다\src{AN-22-122 v26, PDF p.112, Fig.~86}. 상위 50 입력에는 JABDT 점수(1 위), b-tag 값
+($d_3, d_5, d_6$, 평균), BLR 이 많다\src{AN-22-122 v26, PDF p.108, Table 49} — FH 에서 이것이 문제가 되는 이유는 \S\ref{sec:mva-ours-btag}.
+승인 발표에서 ROC-AUC 는 연도별 0.734, 0.730, 0.742, 0.747, 2017 의 ttHH 정분류율 0.471, 참 ttZH 의 0.369 와 참 ttZZ 의 0.279 가 ttHH 로
+분류되었다(그림 판독)\src{승인 발표 p.24}. 최종 fit 은 tt 를 tt(lf+cc) 와 ttb(mb+nb) 두 template 으로 나누고 ttH, ttbar, ttb 의 정규화를
+자유로 둔 모델이다\src{승인 발표 p.25, 27, 32}(\ref{ch:stats}장).
+
+\subsection{DL: GATJA 와 6-node DNN}\label{sec:mva-an-gatja}
+
+\textbf{동기}. ttZH·ttZZ 는 ZH, ZZ 가 4 b 로 붕괴해 ttHH 와 거의 같은 final state 를 만든다. 신호를 가르는 가장 강한 양은 Higgs 쌍의
+$m_{bb}$ 인데, jet 이 6 개 이상이라 맞는 쌍을 찾기 어렵다\src{AN-22-122 v26, PDF p.65}. 혼잡한 final state 에서는 맞는 짝이 $\chi^2(m_H)$ 최소가
+아니라 둘째인 경우가 많아 이웃을 둘 둔다\src{GATJA 발표 p.7}\src{AN-22-122 v26, PDF p.65--66}.
+
+\textbf{구조}(그림~\ref{fig:mva-gatja}). 관심 b jet 과 두 이웃의 4-운동량과 b-tag 판별 값이 self-attention 층으로, event 변수(lepton 4-운동량, MET,
+b jet 수, \HT 등)가 skip connection 이 있는 DNN 으로 들어가고, b jet 마다 Higgs·top·기타 확률 셋을 낸다\src{AN-22-122 v26, PDF p.66}.
+b jet 최대 8 개 $\times$ 3 = 24 개 출력 \code{gatja_0} … \code{gatja_23} 이 DL DNN 의 입력이다(0, 3, …, 21 = Higgs; 1, 4, …, 22 = top;
+2, 5, …, 23 = 기타)\src{AN-22-122 v26, PDF p.68--69, Table 48}. 배정 결과 자체는 선택에 쓰지 않는다\src{AN-22-122 v26, PDF p.72}.
+공개 코드(\file{gatja-studio})의 구조는 PLAN\_ML\_SYST §2.2 에 정리되어 있다.
+
+\textbf{학습}. ttZH 를 뺀 모든 신호·배경 표본, jet 1{,}900 만 개 이상\src{AN-22-122 v26, PDF p.67, 72}; 정답 표지는 jet 과 quark 의 gen 매칭.
+500 epoch 과 조기 종료, 큰 batch optimizer(LAMB)와 학습률 감쇠, parameter 5M, A100 한 장에서 30 분; 50M parameter 판은 12 시간에 성능이 더 좋았다
+\src{GATJA 발표 p.10}\src{AN-22-122 v26, PDF p.68, Fig.~38}.
+
+\textbf{성능}. jet 단위 Higgs 판정에서 GATJA 는 Higgs b jet 의 0.62, 기타의 0.86 을 맞추고, 같은 표의 $\chi^2$ 쌍짓기는 0.48, 0.72 다(표의 대각
+성분)\src{GATJA 발표 p.14}. GATJA 출력 24 개만으로 학습한 이진 분류기가 ttHH 를 ttZH, ttZZ 와 뚜렷이 가른다 — GATJA 가 위상(topology)을 배웠다는
+확인이다(GATJA 는 ttZH 로 학습하지 않았다)\src{AN-22-122 v26, PDF p.72--73, Fig.~43}\src{GATJA 발표 p.16--17}. DL DNN 에 GATJA 출력을 넣으면
+2017 에서 $Z_A$ 가 27 \% 좋아진다\src{AN-22-122 v26, PDF p.116, Fig.~89}; ROC AUC 는 0.73 에서 0.778 로(그림 판독)\src{사전승인 발표 p.38}.
+DL DNN 의 중요도 상위 20 에는 \code{bjetNumber}, \code{minDeltaRMassbb}, \code{gatja_0}, $S_T$, jet b-tag 값 \code{jetBTagDisc1/3/4/5} 가 있다
+\src{AN-22-122 v26, PDF p.116, Fig.~88}\src{PLAN\_ML\_SYST §2.1} — b-tag 값과 GATJA 출력이 많다.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\footnotesize, >=Stealth,
+  jet/.style={circle, draw=accent, fill=accent!10, minimum size=8mm, inner sep=0pt},
+  box/.style={draw, rounded corners=2pt, align=center, inner sep=3pt, fill=black!3}]
+\node[jet] (b)  at (0,0)       {$b_k$};
+\node[jet] (n1) at (-1.9,0.95) {$N_1$};
+\node[jet] (n2) at (-1.9,-0.95){$N_2$};
+\draw[accent, thick] (b) -- (n1);
+\draw[accent, thick, dashed] (b) -- (n2);
+\node[font=\scriptsize, anchor=west] at (-1.45,1.35) {$\chi^2(m_H)$ 최소};
+\node[font=\scriptsize, anchor=west] at (-1.45,-1.35) {$\chi^2(m_H)$ 둘째};
+\node[draw, dashed, rounded corners=3pt, fit=(b)(n1)(n2), inner sep=4mm] (g) {};
+\node[font=\scriptsize, anchor=north] at (g.south) {node 입력: \pt, $\eta$, $\phi$, b-tag 값};
+\node[box] (att) at (2.9,0.45)  {self-attention\\ 식~\eqref{eq:mva-gat}};
+\node[box] (ev)  at (2.9,-1.05) {event 변수\\ (DL: lepton, MET, $n_b$, \HT)};
+\node[box] (dnn) at (5.7,-0.3)  {DNN\\ skip 연결};
+\node[box] (out) at (8.6,-0.3)  {softmax\\ $P(H), P(t), P(\text{기타})$};
+\draw[->] (g.east |- att) -- (att);
+\draw[->] (att.east) -- (dnn.west);
+\draw[->] (ev.east) -- (dnn.west);
+\draw[->] (dnn) -- (out);
+\end{tikzpicture}
+\caption{GATJA 의 한 b jet 판정(AN-2022/122 Fig.~36--37, GATJA 발표 p.8--9 를 단순화). b jet 마다 반복해 최대 8 개 b jet 의 24 개 출력을 만든다.}
+\label{fig:mva-gatja}
+\end{figure}
+
+\subsection{입력 변수 묶음과 우리 Tree}\label{sec:mva-an-inputs}
+
+DL 의 Table 43 은 baseline 을 통과한 모든 event 에서 계산한 변수 목록이다\src{AN-22-122 v26, PDF p.50, Table 43}. SL 의 333 개는 부록 B 에 있다
+(125 개만 나열됨). 표~\ref{tab:mva-inputs} 는 Table 43 의 묶음이 FH 에 쓰이는지와 우리 Tree v1 의 이름이다(정의는 \ref{ch:reco}장,
+branch 목록은 부록~\ref{ch:treev1}).
+
+\begin{table}[htbp]
+\centering
+\caption{AN Table 43 의 묶음과 우리 Tree v1(STEP 27). FH 에서 lepton·MET 관련 양은 뺀다.}
+\label{tab:mva-inputs}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}p{24mm} L L@{}}
+\toprule
+묶음 & AN 변수 & Tree v1 / 기존 branch \\
+\midrule
+다중도 & $N_{\mathrm{jets}}, N_{\mathrm{bjets}}, N_{\mathrm{light}}$ & \code{nJets}, \code{nbJets}, \code{lightjetNumber}, (\code{nLooseJets}) \\
+4-운동량 & jet 1--6, b jet 1--6 의 \pt, $|\eta|$; lepton 1, 2 & \code{jetPt}, \code{jetEta}, \code{jetPhi}, \code{jetMass}, \code{bTagScore} 벡터 → 내보내기 도구가 열로(lepton 은 FH 에 없음) \\
+\HT & $H_T, H_T^b, H_T^{\mathrm{light}}$; $H_T^{\mathrm{lep}}, S_T$ & \code{HT}, \code{bjetHT}, \code{lightjetHT}(lepton 쪽은 제외) \\
+질량 & $m^{\mathrm{avg}}_{j,b,\mathrm{light}}$, $(m^2)^{\mathrm{avg}}_b$, $m^{\max p_T}_{jjj,jbb}$; $m_{\mu\mu}, m_{ee}$ & \code{jetAverageMass}, \code{bjetAverageMass}, \code{lightjetAverageMass}, \code{bjetAverageMassSqr}, \code{maxPTmassjjj}, \code{maxPTmassjbb} \\
+각도 & $\Delta\eta^{\mathrm{avg}}_{jj,bb}$, $\Delta\eta^{\max}_{bb}$, $\dR^{\mathrm{avg,min}}_{jj,bb}$, 최소 $\dR$ 쌍의 질량·\pt & \{\code{average},\code{min},\code{max}\}\code{DeltaR}, \{\code{average},\code{max}\}\code{DeltaEta}, \code{minDeltaRMass}, \code{minDeltaRpT} × \{jj, bb, bj\} = 21 개 \\
+$\chi^2$ 쌍 & $\chi^2_{HH,ZZ,ZH}$, $m_{H1,H2}$, $m_{Z1,Z2}$, $m_{ZH}$, $p_T(H_{1,2})$ & \code{chi2Higgs}, \code{chi2Z}, \code{chi2HiggsZ}, \code{invMassH1/H2}, \code{invMassZ1/Z2}, \code{invMassHiggsZ1/Z2}, \code{PTH1/PTH2}(AN 의 jet 선택, $n_M\ge2$ 로 넓힘) \\
+event shape & aplanarity, centrality, sphericity, $S_\perp$, C, D(jet, b jet) & \code{aplanarity} … \code{eventD}, \code{centrality} 와 \code{bjet} 판 \\
+Table 43 밖 & Fox–Wolfram $H_0$--$H_4$, $R_i$; jet b-tag 값; GATJA 24 & \code{H0}--\code{H4}, \code{R1}--\code{R4}, \code{bjetH0}… ; \code{bTagScore}, \code{jetBTagWP}; GATJA 는 계획 \\
+FH 추가 & — & \code{invMassHadW}($m_{qq}$, QCD 영역의 축), \code{metPhi} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{note}[AN 안의 엇갈림 — 우리 정의를 고정할 때 주의]
+(1) 본문은 event shape 변수를 "DL 에서만" 쓴다지만 SL 상위 50 에 jet aplanarity(4 위)와 $H_1$(8 위)이 있다\src{AN-22-122 v26, PDF p.52, 108}.
+(2) SL Table 50 의 머리말은 "($\ge4$ jets, $\ge3$ b-tags)" 다\src{AN-22-122 v26, PDF p.109}. (3) DL node 는 Fig.~87 이 7 개, 본문·혼동 행렬은 6 개다
+\src{AN-22-122 v26, PDF p.115--117}. (4) $\chi^2$ 의 $\sigma$ 는 "JER 의 함수" 라고만 한다\src{AN-22-122 v26, PDF p.49} — 우리는 옛 식을 두고 미결로 남겼다\src{STEP 27}.
+\end{note}
+
+% -----------------------------------------------------------------------------
+\section{참고: ttH(bb) FH 의 판별 변수}\label{sec:mva-tth}
+
+ttH(bb) FH 는 범주(7 jet, 8 jet, $\ge9$ jet; 모두 $\ge4$ b)마다 \textbf{이진} ANN 을 쓴다: 목표는 ttH(\Hbb) 대 QCD multijet 이다. tt+jets 를 더한
+다중 분류로도 큰 개선이 없었다\src{AN-19-094 v20, PDF p.113}. QCD MC 는 SR 에서 모델링이 나쁘고 통계가 적어 학습에 쓰지 않고, 대신
+\textbf{TR(2 M + $\ge2$ 추가 L) 의 data} 에 TF\textsubscript{loose} 보정을 곱해 배경 class 로 쓴다(TR 은 QCD 가 80 \% 이상, 다음이 tt+LF)
+\src{AN-19-094 v20, PDF p.113}. 신호는 SR 의 ttH MC 중 event number 홀짝의 절반만 학습·검증에 쓰고 나머지 절반을 fit 에 쓴다. 통계를 늘리려고 세 해를
+합쳐 학습하고 신호는 lumi 비로 가중했으며, 해마다 입력 모양이 같음을 확인했다\src{AN-19-094 v20, PDF p.113}. 설정은 표~\ref{tab:mva-tth}.
+
+\begin{table}[htbp]
+\centering
+\caption{ttH(bb) FH ANN(AN-19-094 v20 Table 66, PDF p.114; 성능 Fig.~61, PDF p.115).}
+\label{tab:mva-tth}
+\small
+\begin{tabularx}{\linewidth}{@{}l C C C@{}}
+\toprule
+ & 7 jet, $\ge4$ b & 8 jet, $\ge4$ b & $\ge9$ jet, $\ge4$ b \\
+\midrule
+입력 수 & 19 & 21 & 21 \\
+구조 & \multicolumn{3}{c}{3 층 × 100 node, ReLU, 출력 sigmoid, binary CE, Adam($10^{-4}$)} \\
+L2 / dropout & $10^{-4}$ / 0.5 & $5\cdot10^{-4}$ / 0.6 & $10^{-4}$ / 0.5 \\
+batch & 5000 & 20000 & 5000 \\
+AUC(검증 표본, ANN / MEM 단독) & 0.81 / 0.77 & 0.80 / 0.76 & 0.78 / 0.70 \\
+AUC(VR, ttH 대 추정 QCD) & 0.75 & 0.74 & 0.73 \\
+AUC(VR, ttH 대 tt+jets) & 0.62 & 0.62 & 0.63 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{b-tag 값을 입력에서 뺀 이유}. 입력은 "b-tagging 값과의 직접 상관을 피해" 배경 추정 방법과 맞도록 골랐다\src{AN-19-094 v20, PDF p.114}.
+입력 검증의 첫 단계는 TR, CR, SR 에서 변수의 모양이 같은지다: QCD 학습 표본은 TR 에서, 신호와 평가는 SR 에서 오기 때문에, 영역을 가르는 양과
+상관된 변수는 쓸 수 없다\src{AN-19-094 v20, PDF p.156}. 예로, "b jet 의 평균 b-tag 값" 은 7 jet 의 m\textsubscript{qq} 중앙창에서 평균이 TR 0.438,
+CR 0.574 로 다르다(그림 범례)\src{AN-19-094 v20, PDF p.157, Fig.~89}. BLR 도 FH 에서는 쓰지 않았다\src{AN-19-094 v20, PDF p.379, Table 154}. 남은 입력은 MEM, Fox–Wolfram 모멘트,
+aplanarity·sphericity, jet 쌍의 $\Delta\eta$·$\dR$ 통계, b-tag 순위 1·2 jet 의 $\eta$ 같은 운동학이다(범주마다 19/21/21 개)\src{AN-19-094 v20, PDF p.114, 386--398}.
+"b-tag 순위로 고른 jet 의 운동학" 은 b-tag 값은 아니지만 b-tag 와 상관될 수 있어 이것도 모양 검사를 통과해야만 남았다.
+
+\textbf{MEM}. 행렬 원소 방법의 판별 값은 $P_{S/B}=w_S/(w_S+\kappa\,w_B)$ 이고, $w$ 는 jet 과 parton 의 모든 순열에 대해 위상 공간·행렬 원소·전달 함수로
+적분한 무게의 합이다($S$ = ttH, $B$ = tt+bb; 기본 $\kappa=0.1$)\src{AN-19-094 v20, PDF p.65}. FH 는 7·8 jet 에서 W 의 quark 하나를 잃은 가설
+3W2H2T, $\ge9$ jet 에서 완전 재구성 4W2H2T 를 쓰고 $\kappa=0.065$ 다. 모든 영역에서 b-tag 값 상위 4 jet 을 b 로 둔다(영역 사이 정의를 같게)
+\src{AN-19-094 v20, PDF p.66, Table 54}. 이전 FH 분석은 MEM 을 최종 판별 변수로 썼고 이번에는 ANN 의 입력이다\src{AN-19-094 v20, PDF p.114}.
+
+\begin{note}[ttH FH 에서 배울 점]
+FH 의 QCD 는 MC 가 아니라 data(TR)로 학습하고, 그 대가로 입력은 b-tag 와 무관해야 한다 — 아니면 TR(낮은 b-tag)에서 배운 QCD 모양이 SR 에서 성립하지
+않고 CR 의 QCD template(\ref{ch:qcd}장)의 출력도 SR 과 달라진다. ANN 은 tt+jets 를 거의 가르지 못했다(VR AUC 0.62--0.63). ttHH 는 tt+bb·ttZH·ttZZ
+를 가르는 것이 핵심이라 AN-2022/122 의 다중 분류를 따라야 한다(우리 판단).
+\end{note}
+
+% -----------------------------------------------------------------------------
+\section{우리 FH 분석의 설계}\label{sec:mva-ours}
+
+\subsection{원칙}\label{sec:mva-ours-principle}
+
+사용자 방향(2026-10-10): "SWAN project의 전체적인 구조를 참조하되 머신러닝 학습 방향은 ttHH AN을 기반으로 FH에 맞게 적용해야 한다. … 억지로 변형할
+바엔 Run2 기준에 맞추는게 적절함."\src{D-2026-10-10-B}. 그래서 방법(class, 구조, 학습 절차, 전처리, 홀짝 분할, epoch 선택)은 AN SL DNN 에서 가져오고 \tagan, FH 가 요구하는 것(QCD class,
+lepton·MET 변수 제거, b-tag 입력의 제약)과 Run 3 가 요구하는 것(2024 의 b-tag 입력 형식)만 바꾼다 \tagrunthree. SWAN 의 옛 FH 노트북은 코드
+구조만 참고한다(\S\ref{sec:mva-ours-swan}). 학습은 Run 2 전체와 2024 가 기본이고, GPU 는 SWAN 이 기본, 필요하면 KNU GPU 다\src{D-2026-10-10-B}.
+
+\subsection{class 와 fit node}\label{sec:mva-ours-classes}
+
+표~\ref{tab:mva-classes} 는 제안이다\src{PLAN\_ML\_SYST §9.2}. 학습 class 는 SL 의 9 node 에 QCD 를 더한 10 개이고, fit 에서 node 를 묶는 방식은 AN 과
+승인 발표의 최종 모델을 따른다 \tagplan.
+
+\begin{table}[htbp]
+\centering
+\caption{FH DNN 의 학습 class 와 fit node(제안). 2024 의 tt+mb/tt+nb 는 tt+nb lookup 이 생길 때까지 나눌 수 없다.}
+\label{tab:mva-classes}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l L L l@{}}
+\toprule
+학습 class & 표본(Run 2 / 2024) & 비고 & fit node \\
+\midrule
+ttHH & \code{TTHHTo4b}(v15 없음) / \code{TTHH-HHto4B} & 신호 & ttHH \\
+ttH & ttH(bb) & & ttH \\
+ttZH, ttZZ, ttZ & \code{TTZHTo4b}, \code{TTZZTo4b}(v15 없음), ttZ(Z→qq) / 2024 중앙 & Run 2 v15 의 ttZ 는 \code{TTZToBB} 대신 \code{TTZToQQ} & ttZ(1 bin 가능) \\
+tt+lf, tt+cc & tt 5FS(FH, SL, DL 모두) & lepton 을 놓친 SL·DL 도 FH 선택에 들어온다 & tt \\
+tt+mb, tt+nb & 4FS tt+bb, LO tt4b(stitching) & 2024: tt+$\ge$3b 는 tt+B 안(lookup 없음) & ttb(또는 tt) \\
+QCD & TR data $\times$ TF\textsubscript{loose} & ttH FH 방식, \ref{ch:qcd}장 & QCD \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+근거: 표본 이름과 부재\src{NtupleForge 04\_mc\_request §1, §3}, tt 의 세 붕괴 채널을 모두 배경으로 쓰는 이유\src{NtupleForge 04\_mc\_request §2},
+2024 의 tt+nb\src{D-2026-10-05-C}. QCD node 로 간 event 는 QCD 가 많은 범주가 되어 fit 에서 QCD 정규화를 잡는 데 쓰인다\src{PLAN\_ML\_SYST §9.2}.
+TR 의 data 는 학습에만 쓰고 QCD template 은 CR(3 M + $\ge1$ L)에서 만들므로(ttH FH 방식), 같은 data event 가 학습과 template 에 동시에 들어가지 않는다.
+
+\subsection{입력 변수와 b-tag 정보 — 가장 큰 미결}\label{sec:mva-ours-btag}
+
+후보는 Table 43 과 부록 B 중 FH 에 있는 것(표~\ref{tab:mva-inputs})이다. 문제는 b-tag 정보다. AN SL 은 b-tag 값($d_3$…$d_6$)과 BLR 을 상위에 쓰고,
+DL 은 jet b-tag 값과 (b-tag 값을 node 입력으로 받는) GATJA 출력을 쓴다\src{AN-22-122 v26, PDF p.108, 116}. 반면 FH 의 QCD 는 TR→CR→SR 의
+b-tag 외삽으로 추정하므로(\ref{ch:qcd}장), 입력이 b-tag 와 직접 상관되면 그 외삽이 깨진다(\S\ref{sec:mva-tth}). 선택지는 셋이다.
+\begin{enumerate}
+\item AN 그대로 b-tag 값을 쓴다 — QCD 의 TR/CR 모양이 SR 과 달라질 위험이 크다.
+\item ttH FH 처럼 b-tag 값을 모두 뺀다 — QCD 추정은 안전하지만 tt+bb, ttZH/ttZZ 분리력을 잃는다(AN 상위 변수의 다수가 빠짐).
+\item \textbf{TR·CR·SR 모양 동등성 검사(중앙창과 사이드밴드)를 통과한 변수만} 쓴다(권고)\src{PLAN\_ML\_SYST §8 8, §9.2}\src{ROADMAP\_FH §6 2}.
+\end{enumerate}
+$\chi^2$ 쌍짓기도 검사 대상이다: AN 규칙에서 $n_M=3$ 이면 넷째 jet 이 L--M jet 이고, 우리가 넓힌 $n_M=2$(TR) 에서는 셋째·넷째가 L--M jet 이다
+\src{STEP 27}. 결정은 사용자 몫이다 \tagopen.
+
+\textbf{2024 의 b-tag 입력} \tagrunthree. 2024 에는 fixed-WP SF 만 있어(b jet 만, \ref{ch:btag}장) WP 칸 안의 점수 모양은 보정되지 않는다. 그래서 연속 점수
+대신 WP 칸을 입력으로 쓰는 것이 SF 와 맞는다 — BTV 문서도 "WP-binned information may be a BDT/DNN input" 이라고 한다\src{D-2026-10-10-A}.
+Tree v1 의 \code{jetBTagWP} 는 네 칸(\textless L, [L, M), [M, T), $\ge$T)이다\src{ttHHanalyzer\_unified.cc, fillTreeV1\_}. PLAN 은 XT, XXT 까지 여섯 칸을
+제안했으므로\src{PLAN\_ML\_SYST §5.3}, 더 잘게 필요하면 내보내기 도구가 \code{bTagScore} 에서 다시 만든다. Run 2(DeepJet)와 2024(UParTAK4)는 점수의
+정의가 달라 연도를 묶어 학습할 때 같은 열에 넣을 수 없다.
+
+\subsection{연도 처리}\label{sec:mva-ours-years}
+
+AN 은 연도별로 학습했고\src{AN-22-122 v26, PDF p.106}, ttH FH 는 세 해를 합쳤다\src{AN-19-094 v20, PDF p.113}. 권고는 AN 대로 연도(era)별 학습으로 시작하고
+통계가 모자라면 Run 2 를 묶는 것이다\src{PLAN\_ML\_SYST §8 9}. 2024 는 13.6\TeV, 다른 tagger, PUPPI jet 이라 Run 2 와 따로 학습하는 것이 자연스럽다(우리 판단).
+연도를 묶을 때는 연도 표지를 입력에 넣거나 lumi 비로 가중하고, ttH FH 처럼 연도별 입력 모양을 먼저 비교한다 \tagopen.
+
+\subsection{학습 데이터}\label{sec:mva-ours-data}
+
+\begin{table}[htbp]
+\centering
+\caption{학습 표본의 현황(2026-10-10). 출처: PLAN\_ML\_SYST §10, NtupleForge 04\_mc\_request §1, D-2026-10-02-A.}
+\label{tab:mva-data}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l l l L@{}}
+\toprule
+연도 & 신호 TTHH & TT4b & TTZH·TTZZ & 상태 \\
+\midrule
+2024(Summer24 v15) & 중앙 \code{TTHH-HHto4B} & \code{TT4B} & 중앙 & 생산 끝 — 첫 학습 표본 \\
+2018(UL v15) & 없음 & 없음 & 없음 & MC·Data 생산 끝; 다섯 표본(표의 넷과 \code{THW})은 중앙 요청(2026-09-14, 답장 기록 없음)과 enriched 사설 생산 병행 \\
+2016·2017(UL v15) & 없음 & 없음 & 없음 & hadronic 생산 전 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Run 2 의 다섯 표본은 v9 에는 있고 v15 에는 없으며 MiniAODv2 부모(신호 2016pre/2016post/2017/2018 = 5.0M/4.8M/9.9M/9.6M event)에서 NANO 단계만
+남았다\src{NtupleForge 04\_mc\_request §1}. 2017 v9 ntuple 은 KNU 에서 지워졌다\src{D-2026-10-05-D}. 그래서 첫 기준선은 2024 로 만든다(권고)
+\src{ROADMAP\_FH §6 3}: trigger·b-tag SF 를 켠 2024 SF main 셋을 STEP 27 실행 파일로 돌린 출력이 control plot 과 첫 학습 표본을 겸한다\src{ROADMAP\_FH §2}.
+
+\subsection{Tree v1 이 이미 주는 것}\label{sec:mva-ours-tree}
+
+Tree 에는 baseline 선택(\code{selectObjects})을 통과한 모든 event 가 들어간다 — TR(2 M)도 baseline($n_b\ge2$) 안이고, $n_b\ge3,4$ 와
+Higgs 질량창 단계는 지금 관찰 전용이다\src{ttHHanalyzer\_unified.cc, process, kCutSequence}.
+\begin{itemize}
+\item \textbf{DNN 입력} \tagimpl\tagtest: jet 벡터(\code{jetPt}, \code{jetEta}, \code{jetPhi}, \code{jetMass}, \code{bTagScore}, \code{jetBTagWP}, \code{hadFlavs})와
+  event 변수 약 75 개(표~\ref{tab:mva-inputs})\src{STEP 27}.
+\item \textbf{GATJA 표지}(MC): \code{jetGenMatch}(0 없음, 1 H→b, 2 t→b, 3 W→q, 4 Z→q)와 \code{jetGenMotherIdx}(어미의 첫 사본 번호 — 같은 Higgs 의 두 b 가 같은 값).
+  hard-process 의 마지막 사본 quark 와 $\dR<0.4$ 로, 가까운 순서로 한 번씩 짝짓는다\src{GenMatch.h}. \code{bjetHiggsMatched} = (값 1),
+  \code{bjetTopMatched} = (값 2). 규칙은 PROPOSED\src{PLAN\_ML\_SYST §8 4}.
+\item \textbf{weight 와 분할}: \code{evtWeight}(production: 토글로 켠 SF 만 곱함 — 기본은 trigger SF 만), \code{evtWeight_btagSF}(trigger SF 와 b-tag SF 를 언제나),
+  \code{evtWeight_full}(+norm reweight)\src{ttHHanalyzer\_unified.cc, selectObjects}, 계통 weight(\ref{ch:syst}장), \code{genTtbarId}·\code{expandedTtbarId}(tt class),
+  \code{eventNumber}(홀짝).
+\item \textbf{없는 것}: 내보내기 도구(\file{tools/ml/}: \code{export_tree.py}, \code{gatja_inputs.py}), GATJA 의 $\chi^2(m_H)$ 이웃 번호, BLR(flavour 별 b-tag pdf
+  필요)\src{PLAN\_ML\_SYST §5.1, §9.4}. 표지와 weight 는 입력 열과 따로 둔다 — SWAN DL 판은 \code{weight} 와 gen 매칭 표지가 입력에 섞여 쓸 수 없었다
+  \src{PLAN\_ML\_SYST §2.5}.
+\end{itemize}
+
+\subsection{GATJA 의 FH 판}\label{sec:mva-ours-gatja}
+
+node·이웃·표지의 정의는 채널과 무관하다. 바꿀 것은 event 변수다: lepton·MET 대신 \code{HT}, \code{bjetHT}, \code{lightjetHT}, \code{nJets}, \code{nbJets}, 평균 질량들
+(필요하면 \code{invMassHadW})을 넣고, stage 1 을 FH 표본으로 다시 학습한다(GPU)\src{PLAN\_ML\_SYST §2.2, §9.3} \tagplan. FH 의 final state 는 b 6 개와 W 의 light
+quark 4 개, 즉 parton 10 개다. 그래프는 b-tag 된 jet(최대 8 개)만 node 로 쓰므로 W jet 은 mistag 될 때만 들어와 "기타" 가 된다. 우리 표지에는
+W→q(값 3)와 Z→q(값 4)가 따로 있어 class 를 넓힐 수 있지만 AN 의 3 class 로 시작한다\src{PLAN\_ML\_SYST §9.3}. stage 2(GATJA 출력만으로 ttHH 대
+ttZH+ttZZ)는 확인용으로 그대로 둔다. GATJA 의 node 입력에도 b-tag 값이 있으므로 \S\ref{sec:mva-ours-btag} 의 검사가 똑같이 걸린다. 공개 코드는
+저장소 밖의 \file{snowttHHtools.py} 를 import 하고 DL allSys ntuple 경로를 가정하며, 학습된 weight 파일은 없다\src{PLAN\_ML\_SYST §2.2}.
+
+\subsection{학습 환경: SWAN 과 KNU GPU}\label{sec:mva-ours-env}
+
+표본은 KNU \file{/pnfs} 의 merge 출력 → 내보내기 도구 → EOS(CERNBox)로 xrdcp → SWAN 에서 학습한다\src{PLAN\_ML\_SYST §10}. GATJA 는
+Python ≥ 3.10, TensorFlow, tensorflow-addons(LAMB), tf-models-official 이 필요하고, tensorflow-addons 는 개발이 끝난 패키지라 SWAN 의 TF 판과의 호환을
+먼저 확인한다\src{PLAN\_ML\_SYST §2.2, §10}. AN SL DNN 은 Adam 이므로 FH DNN 기준선에는 이 의존이 없다(우리 판단).
+
+\subsection{SWAN 의 옛 FH 시험 판에서 가져오는 것}\label{sec:mva-ours-swan}
+
+SWAN 의 FH 노트북 마지막 판 V3(2024-09)은 13 class(QCD MC, tttt, tttW, ttWH, ttWW, ttWZ 포함), 입력 112 개(옛 FH 이름, b-tag 값 없음),
+Robust → Standard → MinMax 변환, Dense 523(LeakyReLU, dropout 0.1) → 523 → 261 → 130 → softmax, Adam $3\times10^{-6}$, batch 512, 150 epoch,
+event weight 없이 표본별로 덜어낸 뒤 균형 class weight 였다\src{PLAN\_ML\_SYST §2.4}. 여기서 \textbf{가져오는 것}은 노트북의 흐름(읽기 → 전처리 → 모델 →
+학습 → 혼동 행렬·손실 곡선), \code{Channel} 스위치, 출력 히스토그램 저장 같은 구조뿐이고, class·입력·구조·학습 절차·분할은 표~\ref{tab:mva-an-dnn} 의
+AN SL 판을 따른다 \tagan.
+
+\begin{andiff}[이름 함정 — 옛 FH ntuple 과 DL 새 이름]
+옛 FH ntuple 과 옛 DL template 은 모든 branch 앞에 \code{b} 를 붙였다: \code{bjetPT1} 은 \textbf{첫 jet}, \code{bbjetPT1} 이 첫 b jet, \code{baplanarity}·\code{bH0} 는
+jet 전체의 양이다. DL 새 이름에서는 \code{bjetPT1} 이 첫 b jet, \code{baplanarity}·\code{bH0} 가 b jet 의 양이다. 우리 Tree v1 은 DL 새 이름을 따르되 b jet 양에
+\code{bjet} 접두를 쓴다(\code{bjetH0})\src{PLAN\_ML\_SYST §3}. V3 노트북을 새 표본에 쓸 때는 대응표(PLAN 부록 A)로 바꿔야 하고, 섞으면 조용히 틀린 입력이 된다.
+\end{andiff}
+
+% -----------------------------------------------------------------------------
+\section{검증 계획}\label{sec:mva-validation}
+
+뼈대는 AN 이 보인 셋이다: DL CR($n_{\mathrm{jet}}\ge4$, $n_b=2$, 2 lepton)과 SR 의 DNN 입력 Data/MC\src{AN-22-122 v26, PDF p.73--81},
+Hbb convener 의 제안으로 본 SL SR 의 DNN 입력 Data/MC\src{AN-22-122 v26, PDF p.82--105}, node 별 학습/test 비교(부록 E). 입력 하나하나에는 신호가
+보이지 않으므로 SR 의 입력은 data 로 본다. 아래는 모두 \tagplan 이다.
+\begin{enumerate}
+\item \textbf{입력의 Data/MC}: lepton CR(μCR, eCR; QCD 가 억제된 영역)과 FH baseline 에서 모든 입력의 Data/MC. \file{plotter/make_plots.py} 의
+  \code{--tree-v1} 이 Tree v1 의 ML 입력 30 개와 $m_{qq}$, 모두 31 개를 그린다 \tagimpl\src{plotter/make\_plots.py, TREE\_HISTS\_V1}\src{STATUS 10-10 (3)}.
+\item \textbf{영역 사이 모양 동등성}: QCD 가 지배하는 data 에서 TR, CR, SR 의 정규화된 모양(m\textsubscript{qq} 중앙창과 사이드밴드) — ttH FH §10.1 의
+  방법(\S\ref{sec:mva-ours-btag}; \src{AN-19-094 v20, PDF p.157, Fig.~89}).
+\item \textbf{과적합과 closure}: class 별 학습/test 출력의 KS 검정(AN 부록 E 에 해당); 홀짝을 바꾼 모델·연도별 모델의 출력이 통계 안에서 같은지.
+\item \textbf{b-tag SF 변형에 대한 강건성}: Run 2 는 \code{bTagWeight_<src>_up/down} 16 개, 2024 는 \code{bTagWeight_up/down} 과 비교 weight
+  (\code{bTagWeight_oldRule}, \code{bTagWeight_cAsB})로 node 별 template 이 얼마나 움직이는지. b-tag 와 상관된 입력이 많을수록 크게 움직인다.
+\item \textbf{GATJA}: 표지 검증(ttHH MC 에서 H 에 매칭된 b jet 쌍의 질량이 125\GeV 근처, \src{PLAN\_ML\_SYST §5.2}), jet 단위 혼동 행렬, stage 2.
+\item \textbf{출력의 Data/MC}: 신호가 적은 bin(과 QCD node)에서만 data 를 본다 — 신호에 민감한 bin 은 가린다(D-2026-10-02-E, \ref{ch:stats}장).
+\end{enumerate}
+
+% -----------------------------------------------------------------------------
+\section{변경 이력}\label{sec:mva-history}
+
+2024-06--09: SWAN 의 FH·DL 겸용 DNN 노트북 다섯 판(입력 202 → 112 개)\src{PLAN\_ML\_SYST §2.4}. 옛 analyzer 의 DNN branch 는 2026-06-11 백업에서
+이미 239 줄 중 203 줄이 주석, 지금은 지워짐\src{PLAN\_ML\_SYST Bottom line 1}. 2026-10-10: D-2026-10-10-B 와 STEP 27 의 Tree v1(옛 helper 의 결함을 새 함수로 고침).
+
+% -----------------------------------------------------------------------------
+\section{미결 사항}\label{sec:mva-open}
+
+\begin{openq}
+\begin{enumerate}
+\item \textbf{DNN·GATJA 입력의 b-tag 정보}: 쓸지, 모양 검사를 통과한 것만 쓸지(권고), 모두 뺄지 — QCD 방법(\ref{ch:qcd}장)과 함께. 2024 의 WP 칸 수(L, M, T 대 XT, XXT 까지).
+\item \textbf{QCD class}: TR data 의 정의(SR 이 $n_M\ge5$ 면 TR 도 옮기는가), TF\textsubscript{loose} 적용, tt 기여를 빼는가.
+\item \textbf{Run 2 학습 데이터}: v15 의 신호·TT4b·TTZH·TTZZ·THW 부재(중앙 요청 답장 또는 enriched 생산 대기) — 그 전에는 2024 로만.
+\item \textbf{연도와 tt class}: 연도별 모델(AN) 대 묶음; 2024 는 tt+nb lookup 이 없어 tt+mb/tt+nb 를 나눌 수 없다(D-2026-10-05-C).
+\item \textbf{GATJA 의 FH 판}: parton 10 개(b 6, light 4)에서의 이웃 정의, W class, event 변수, GPU 시간, tensorflow-addons 호환.
+\item \textbf{학습 weight·분할·정의}: event·class weight 와 음의 weight; 홀짝 한 방향(AN) 대 2-fold; $Z_A$ 의 $\sigma_b=0.1$ 이 절대값인지(확인 못 함);
+  $\chi^2$ 의 $\sigma$; jet 7, 8 의 운동학을 더할지.
+\end{enumerate}
+\end{openq}

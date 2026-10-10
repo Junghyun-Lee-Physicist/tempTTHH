@@ -1,0 +1,164 @@
+% =============================================================================
+% AN_KR 공통 서문(preamble). main.tex 와 build.sh --chapter 가 함께 쓴다.
+% 매크로 목록과 작성 규칙은 README.md 에 있다. 새 매크로는 여기에만 정의한다.
+% XeLaTeX 전용(kotex = xetexko). pdflatex/lualatex 로는 빌드하지 않는다.
+% =============================================================================
+
+% ---- 글꼴: kotex(XeLaTeX 에서는 xetexko) + Noto CJK KR ------------------------
+% 2026-10-06 사용 설명서(1·2권)에서 쓴 조합과 같다. Noto 가 없으면 build.sh 가 알린다.
+\usepackage{kotex}
+\setmainfont{Noto Serif CJK KR}[Scale=0.96]
+\setsansfont{Noto Sans CJK KR}[Scale=0.96]
+\setmonofont{Noto Sans Mono CJK KR}[Scale=0.86,HyphenChar=None]
+\setmainhangulfont{Noto Serif CJK KR}
+\setsanshangulfont{Noto Sans CJK KR}
+\setmonohangulfont{Noto Sans Mono CJK KR}
+\linespread{1.15}
+% Noto Serif CJK 에는 기울임꼴이 없어 \emph 가 보이지 않는다 → 한글 조판의 관습대로 고딕(sans)으로 강조한다.
+\DeclareTextFontCommand{\emph}{\sffamily}
+\AtBeginDocument{%
+  \renewcommand{\contentsname}{차례}%
+  \renewcommand{\listtablename}{표 차례}%
+  \renewcommand{\listfigurename}{그림 차례}%
+  \renewcommand{\tablename}{표}%
+  \renewcommand{\figurename}{그림}%
+  \renewcommand{\appendixname}{부록}%
+  \renewcommand{\bibname}{참고 자료}%
+}
+
+% ---- 수식 ---------------------------------------------------------------------
+\usepackage{amsmath,amssymb}
+\numberwithin{equation}{chapter}
+
+% ---- 색 -----------------------------------------------------------------------
+\usepackage{xcolor}
+\definecolor{accent}{RGB}{24,72,128}
+\definecolor{rulegray}{RGB}{190,195,202}
+\definecolor{srcgray}{RGB}{110,116,124}
+
+% ---- 장·절 제목 -----------------------------------------------------------------
+\usepackage{titlesec}
+% 장 번호 표기: 본문은 "3 장", 부록은 "부록 A". \appendix 가 \ankrchaplabel 을 바꾼다.
+\newcommand{\ankrchaplabel}{\thechapter\,장}
+\makeatletter
+\g@addto@macro\appendix{\renewcommand{\ankrchaplabel}{부록\,\thechapter}}
+\makeatother
+\titleformat{\chapter}[display]{\sffamily\bfseries\color{accent}}{\Large\ankrchaplabel}{1.0ex}{\huge}[\vspace{0.5ex}{\color{rulegray}\titlerule[0.8pt]}]
+\titlespacing*{\chapter}{0pt}{0pt}{2.6ex}
+\titleformat{\section}{\sffamily\bfseries\Large\color{accent}}{\thesection}{0.8em}{}
+\titleformat{\subsection}{\sffamily\bfseries\large}{\thesubsection}{0.7em}{}
+\titleformat{\subsubsection}{\sffamily\bfseries\normalsize}{\thesubsubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{3.0ex plus 1ex minus .2ex}{1.3ex plus .2ex}
+\titlespacing*{\subsection}{0pt}{2.4ex plus 1ex minus .2ex}{1ex plus .2ex}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{1}
+
+% ---- 머리말·꼬리말 ---------------------------------------------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\chaptermark}[1]{\markboth{\ifnum\value{chapter}>0 \ankrchaplabel\enspace\fi #1}{}}
+\fancyhead[L]{\small\sffamily\color{gray}\leftmark}
+\fancyhead[R]{\small\sffamily\color{gray}\ANKRversion}
+\fancyfoot[C]{\small\sffamily\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\small\sffamily\thepage}\renewcommand{\headrulewidth}{0pt}}
+
+% ---- 표 -----------------------------------------------------------------------
+\usepackage{array,booktabs,tabularx,longtable,multirow,makecell,threeparttable}
+\usepackage{etoolbox}
+\AtBeginEnvironment{longtable}{\small\renewcommand{\arraystretch}{1.15}}
+\AtBeginEnvironment{tabular}{\renewcommand{\arraystretch}{1.12}}
+\AtBeginEnvironment{tabularx}{\renewcommand{\arraystretch}{1.12}}
+\setlength{\LTpre}{6pt}\setlength{\LTpost}{8pt}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\newcolumntype{C}{>{\centering\arraybackslash}X}
+\usepackage{caption}
+\captionsetup{font=small,labelfont={bf,sf},labelsep=colon,skip=4pt}
+\captionsetup[table]{position=top}
+
+% ---- 그림 ---------------------------------------------------------------------
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric,shapes.misc,fit,calc,backgrounds,decorations.pathmorphing,patterns}
+% Feynman 도형: XeLaTeX 에서는 자동 배치(graph drawing)가 되지 않으므로
+% \vertex 위치를 손으로 정하고 \diagram* 만 쓴다.
+\usepackage[compat=1.1.0]{tikz-feynman}
+
+% ---- 상자(이해 돕기·Run 2 AN 과의 차이·미결·코드 위치) ------------------------------
+\usepackage[most]{tcolorbox}
+\tcbset{ankrbox/.style={breakable,enhanced,arc=1.5pt,boxrule=0.5pt,left=5pt,right=5pt,top=3pt,bottom=3pt,
+  fonttitle=\sffamily\bfseries\small,before skip=8pt,after skip=8pt}}
+\newtcolorbox{note}[1][이해를 위한 설명]{ankrbox,colback=blue!3,colframe=blue!45!black,title={#1}}
+\newtcolorbox{andiff}[1][Run 2 AN 과 다른 점]{ankrbox,colback=orange!5,colframe=orange!65!black,title={#1}}
+\newtcolorbox{openq}[1][미결 사항]{ankrbox,colback=red!3,colframe=red!55!black,title={#1}}
+\newtcolorbox{impl}[1][우리 코드에서]{ankrbox,colback=black!3,colframe=black!45,title={#1}}
+
+% 상태 표지(본문·표 안에서 쓴다)
+\newtcbox{\ankrtag}[1][gray]{on line,colback=#1!10,colframe=#1!70!black,boxrule=0.4pt,arc=1.5pt,
+  left=1.6pt,right=1.6pt,top=0.2pt,bottom=0.2pt,boxsep=0.6pt,fontupper=\scriptsize\sffamily\bfseries}
+\newcommand{\tagimpl}{\ankrtag[green!55!black]{구현됨}}
+\newcommand{\tagtest}{\ankrtag[teal]{시험됨}}
+\newcommand{\tagplan}{\ankrtag[blue]{계획}}
+\newcommand{\tagopen}{\ankrtag[orange]{미결}}
+\newcommand{\tagan}{\ankrtag[gray]{Run 2 AN}}
+\newcommand{\tagrunthree}{\ankrtag[violet]{Run 3 조정}}
+\newcommand{\tagours}{\ankrtag[red!70!black]{우리 선택}}
+
+% 출처 표기: 본문 사실·숫자 뒤에 붙인다. 예: 0.756\fb\src{AN-22-122 v26, PDF p.23, Table 9}
+\newcommand{\src}[1]{\unskip~{\footnotesize\color{srcgray}[#1]}}
+
+% ---- 파일·코드 이름(밑줄 등 특수문자 그대로, 아무 데서나 줄바꿈) --------------------
+% 주의: \file, \code 는 \section, \caption, \footnote 등 다른 명령의 인자 안에서
+% 쓰지 않는다. 그런 곳에서는 \texttt{...} 에 \_ 를 쓴다.
+% obeyspaces: 인자의 빈칸을 그대로 찍는다(url 패키지는 기본으로 빈칸을 버린다). spaces: 빈칸에서도 줄을 바꾼다.
+\PassOptionsToPackage{obeyspaces,spaces}{url}
+\usepackage{xurl}
+\DeclareUrlCommand\file{\urlstyle{tt}}
+\DeclareUrlCommand\code{\urlstyle{tt}}
+
+% ---- 물리 기호 -----------------------------------------------------------------
+\newcommand{\ttbar}{\ensuremath{t\bar{t}}}
+\newcommand{\ttHH}{\ensuremath{t\bar{t}HH}}
+\newcommand{\ttH}{\ensuremath{t\bar{t}H}}
+\newcommand{\ttZ}{\ensuremath{t\bar{t}Z}}
+\newcommand{\ttZH}{\ensuremath{t\bar{t}ZH}}
+\newcommand{\ttZZ}{\ensuremath{t\bar{t}ZZ}}
+\newcommand{\ttW}{\ensuremath{t\bar{t}W}}
+\newcommand{\tttt}{\ensuremath{t\bar{t}t\bar{t}}}
+\newcommand{\ttbb}{\ensuremath{t\bar{t}b\bar{b}}}
+\newcommand{\ttcc}{\ensuremath{t\bar{t}c\bar{c}}}
+\newcommand{\ttjj}{\ensuremath{t\bar{t}jj}}
+\newcommand{\bbbar}{\ensuremath{b\bar{b}}}
+\newcommand{\Hbb}{\ensuremath{H\to b\bar{b}}}
+\newcommand{\HHfourb}{\ensuremath{HH\to b\bar{b}b\bar{b}}}
+\newcommand{\pt}{\ensuremath{p_{\mathrm{T}}}}
+\newcommand{\HT}{\ensuremath{H_{\mathrm{T}}}}
+\newcommand{\MET}{\ensuremath{p_{\mathrm{T}}^{\mathrm{miss}}}}
+\newcommand{\kl}{\ensuremath{\kappa_{\lambda}}}
+\newcommand{\kt}{\ensuremath{\kappa_{t}}}
+\newcommand{\dR}{\ensuremath{\Delta R}}
+\newcommand{\chisq}{\ensuremath{\chi^{2}}}
+\newcommand{\GeV}{\ensuremath{\,\mathrm{GeV}}}
+\newcommand{\TeV}{\ensuremath{\,\mathrm{TeV}}}
+\newcommand{\fb}{\ensuremath{\,\mathrm{fb}}}
+\newcommand{\pb}{\ensuremath{\,\mathrm{pb}}}
+\newcommand{\fbinv}{\ensuremath{\,\mathrm{fb}^{-1}}}
+\newcommand{\sqrts}{\ensuremath{\sqrt{s}}}
+
+% ---- 목록 ---------------------------------------------------------------------
+\usepackage{enumitem}
+\setlist{itemsep=0.25ex,topsep=0.6ex,parsep=0.2ex}
+\setlist[itemize,1]{label={\color{accent}\textbullet}}
+
+% ---- 줄 넘침 줄이기 --------------------------------------------------------------
+\setlength{\emergencystretch}{4em}
+\tolerance=2000
+\hbadness=3000
+\raggedbottom
+\usepackage{needspace}
+\makeatletter\renewcommand{\@pnumwidth}{2.4em}\renewcommand{\@tocrmarg}{3.2em}\makeatother
+
+% ---- 링크(마지막에 불러온다) ------------------------------------------------------
+\usepackage[colorlinks=true,linkcolor=accent,urlcolor=accent,citecolor=accent,
+  bookmarksnumbered=true,unicode=true]{hyperref}

@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
-#  run_unit_tests.sh -- the three analyzer unit tests (no ROOT needed), one
-#  RESULT line each and a SUMMARY.   (STEP 23, 2026-10-04)
+#  run_unit_tests.sh -- the analyzer unit tests, one RESULT line each and a
+#  SUMMARY.   (STEP 23, 2026-10-04; [STEP 27 O] + test_TreeVars, which needs ROOT)
 #
 #    /bin/bash test/run_unit_tests.sh          (from any directory)
 #
@@ -14,7 +14,12 @@
 #                           CHECKOUT, so a locally modified prescan summary can
 #                           change its result: the md5 and the git state of the
 #                           two inputs are printed first.
-#  Exit: 0 only if all three pass.
+#  test_TreeVars.cc         [STEP 27 O] include/TreeVars.h and include/GenMatch.h
+#                           (Tree v1: ΔR/Δη statistics with the Δφ fold, Fox-Wolfram,
+#                           χ² with the AN jet choice = HiggsReconstructor for nM >= 4,
+#                           jet-quark matching) -> PASS <n> / FAIL 0. Needs root-config
+#                           (cmsenv); without it the test FAILS (it is not skipped).
+#  Exit: 0 only if all pass.
 # =============================================================================
 set -u
 cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 2
@@ -53,6 +58,17 @@ if g++ -std=c++17 -I include -I . -I bTagSF_ReweightStudy/include -o "$T/t_sr" t
   if [[ $RC -eq 0 ]]; then echo "RESULT test_SampleRegistry PASS"; else echo "RESULT test_SampleRegistry FAIL (exit $RC)"; FAIL=1; fi
 else
   echo "RESULT test_SampleRegistry FAIL (compile)"; FAIL=1
+fi
+
+echo "--- test_TreeVars ---"
+if ! command -v root-config > /dev/null 2>&1; then
+  echo "RESULT test_TreeVars FAIL (no root-config: run inside cmsenv)"; FAIL=1
+elif g++ -std=c++17 -I include -o "$T/t_tv" test/test_TreeVars.cc src/HiggsReconstructor.cc $(root-config --cflags --libs); then
+  OUT="$("$T/t_tv" 2>&1)"; RC=$?
+  printf '%s\n' "$OUT" | grep -E '\[FAIL\]|PASS [0-9]+ / FAIL' | head -40
+  if [[ $RC -eq 0 ]]; then echo "RESULT test_TreeVars PASS"; else echo "RESULT test_TreeVars FAIL (exit $RC)"; FAIL=1; fi
+else
+  echo "RESULT test_TreeVars FAIL (compile)"; FAIL=1
 fi
 
 echo "SUMMARY unit_tests $([[ $FAIL -eq 0 ]] && echo PASS || echo FAIL)"

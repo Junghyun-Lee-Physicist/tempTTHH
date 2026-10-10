@@ -4,6 +4,8 @@
     python3 fake_pog.py <outdir>
     python3 fake_pog.py --btv-sources <outdir>     (STEP 25 K: only the 2024 fixed-WP payload, sources variant)
     python3 fake_pog.py --btv-default <outdir>     (STEP 25 K: the same, central and a default only)
+    python3 fake_pog.py --btv2017-drop <key> <outdir>  (STEP 27 P: the 2017 b-tag payload without that shape key)
+    python3 fake_pog.py --btv-interneg <outdir>    (STEP 27 N: the same, SF_M far above SF_L: intermediate numerators < 0)
 
 The correction NAMES and INPUTS are the ones the analyzer asks for (src/CorrectionsManager.cc) and that
 the real payloads have (2017_UL: jsonpog as used since 2025; 2024_Summer24: the 2026-10-02 inventory,
@@ -96,7 +98,7 @@ def lum_2017(out):
                           ("down", F("1.15-0.007*x", ["NumTrueInteractions"]))]))])
 
 
-def btv_2017(out):
+def btv_2017(out, drop=None):
     shape_in = [V("systematic", "string"), V("flavor", "int"), V("abseta"), V("pt"), V("discriminant")]
     fl = lambda k: cat("flavor", [(0, F("1+0.1*z-0.02*x+0*y", ["abseta", "pt", "discriminant"])),
                                   (4, F("1+0*x+0*y+0*z", ["abseta", "pt", "discriminant"])),
@@ -104,8 +106,23 @@ def btv_2017(out):
     wp_in = [V("systematic", "string"), V("working_point", "string"), V("flavor", "int"), V("abseta"), V("pt")]
     wp = lambda flavs: cat("working_point", [(w, cat("flavor", [(f, F("0.95+0.01*x+0*y", ["abseta", "pt"])) for f in flavs]))
                                              for w in ("L", "M", "T")])
+    # [STEP 27 O] the shape SF per uncertainty source (BTV key names): its own offset per key, b and light jets for every
+    #   source but cferr1/2, c jets for cferr1/2 -- so a jet that takes the wrong key would change the recomputed weight.
+    #   central and the default stay what they were (the 2017 central weight, and the Y1 comparison, do not change).
+    def flv(o):
+        return cat("flavor", [(0, F("%.3f+0.1*z-0.02*x+0*y" % (1.0 + o), ["abseta", "pt", "discriminant"])),
+                              (4, F("%.3f+0*x+0*y+0*z" % (1.0 + 2 * o), ["abseta", "pt", "discriminant"])),
+                              (5, F("%.3f+0.2*z+0*x+0*y" % (1.0 + 1.5 * o), ["abseta", "pt", "discriminant"]))])
+    srcs = ["hf", "lf", "hfstats1", "hfstats2", "lfstats1", "lfstats2", "cferr1", "cferr2"]
+    var = [("%s_%s" % (d, src), flv((0.01 + 0.004 * i) * (1 if d == "up" else -1)))
+           for i, src in enumerate(srcs) for d in ("up", "down")]
+    # [STEP 27 P] --btv2017-drop KEY: that key removed and no default, so the payload truly does not know it (the
+    #   analyzer's load check must stop); otherwise as before (central, the sources, a default)
+    if drop:
+        var = [(k_, v_) for k_, v_ in var if k_ != drop]
     write(os.path.join(out, "POG/BTV/2017_UL/btagging.json.gz"), [
-        C("deepJet_shape", shape_in, cat("systematic", [("central", fl(1.0))], default=fl(1.0))),
+        C("deepJet_shape", shape_in, cat("systematic", [("central", fl(1.0))] + var,
+                                         default=None if drop else fl(1.0))),
         C("deepJet_comb", wp_in, cat("systematic", [("central", wp([4, 5]))], default=wp([4, 5]))),
         C("deepJet_incl", wp_in, cat("systematic", [("central", wp([0]))], default=wp([0]))),
     ])
@@ -181,7 +198,7 @@ def jme_2024(out):
              cat("type", [("jetvetomap", vm), ("jetvetomap_all", vm)]))])
 
 
-def btv_2024(out, sources=False, default_only=False):
+def btv_2024(out, sources=False, default_only=False, interneg=False):
     """[STEP 25 K] the 2024 fixed-WP payload as the 2026-10-02 inventory has it (PLAN 9.2): btagging_preliminary.json.gz
     -> UParTAK4_kinfit, inputs systematic, working_point, flavor, abseta, pt; b jets only (flavor 5), |eta| < 2.5 in one
     bin, pT 20-600 GeV in 8 bins with flow 'error' (the analyzer clamps into it). The systematic keys of the real file
@@ -192,6 +209,8 @@ def btv_2024(out, sources=False, default_only=False):
     |eta| per pT bin and WP (so a wrong input order changes the result)."""
     pt_edges = [20.0, 30.0, 50.0, 70.0, 100.0, 140.0, 200.0, 300.0, 600.0]
     wp_off = {"L": 0.00, "M": -0.03, "T": -0.06, "XT": -0.08, "XXT": -0.10}
+    if interneg:                     # [STEP 27 N] SF_M about 1.3 SF_L: SF_L e_L - SF_M e_M < 0 once e_M > 0.77 e_L
+        wp_off = {"L": -0.05, "M": 0.30, "T": 0.30, "XT": 0.30, "XXT": 0.30}
     sys_off = {"central": 0.0, "up": 0.04, "down": -0.04}
     if sources:
         sys_off = {"central": 0.0, "up_jes": 0.03, "down_jes": -0.02, "statistic_up": 0.01, "statistic_down": -0.015}
@@ -210,7 +229,7 @@ def btv_2024(out, sources=False, default_only=False):
     write(os.path.join(out, "POG/BTV/2024_Summer24/btagging_preliminary.json.gz"), [
         C("UParTAK4_kinfit", [V("systematic", "string"), V("working_point", "string"), V("flavor", "int"), V("abseta"),
                               V("pt")], data)])
-    if sources or default_only:
+    if sources or default_only or interneg:
         return
     write(os.path.join(out, "POG/BTV/2024_Summer24/btagging.json.gz"), [
         C("UParTAK4_wp_values", [V("working_point", "string")],
@@ -223,6 +242,12 @@ def main(argv):
         return 0
     if len(argv) == 2 and argv[0] == "--btv-default":
         btv_2024(argv[1], default_only=True)  # [STEP 25 K] the same, central + a default only (no variation)
+        return 0
+    if len(argv) == 2 and argv[0] == "--btv-interneg":
+        btv_2024(argv[1], interneg=True)      # [STEP 27 N] the same, SF_M far above SF_L
+        return 0
+    if len(argv) == 3 and argv[0] == "--btv2017-drop":
+        btv_2017(argv[2], drop=argv[1])       # [STEP 27 P] overwrite only the 2017 b-tag payload, one shape key missing
         return 0
     if len(argv) != 1:
         print(__doc__)

@@ -2,7 +2,7 @@
 
 > **Purpose:** record each significant decision — the choice, why, what else was considered, and whether it still holds — so no one silently reopens a settled question or treats a proposal as settled.
 > **Audience:** anyone about to change behavior or unsure whether something is fixed.
-> **Status:** living, append-and-supersede · last meaningful update **2026-10-08** (D-2026-10-08-A: 2024 b-tag SF by the fixed-WP method now, the shape method when BTV's is confirmed; the 2024/2018 control-plot program) · 2026-10-07 (D-2026-10-07-B: 2024 lepton CRs now, lep samples after the storage check, next work; D-2026-10-07-A: the whole 2024 main again with ParkingHH, the first look kept as `_firstlook`) · 2026-10-06 (D-2026-10-06-A: 2024 b-tag paths in ParkingHH, the PD rule, tree control plots) · 2026-10-05 (D-2026-10-05-A: 2024 first-look scope, D14 109.816, D15 PU inputs; D-2026-10-02-E DECIDED; D-2026-10-05-B 2024 MC 4J3T bit PROPOSED; D-2026-10-05-C 2024 without tt+nb lookup; D-2026-10-05-D 2017 v20 removed from KNU) · 2026-10-04 (D-2026-10-04-A: run records are committed) · 2026-10-02 (D-2026-10-02-A…E: v15 analyzer order, eventBuffer policy, event cleaning, answers N0–N8, blinding).
+> **Status:** living, append-and-supersede · last meaningful update **2026-10-10 (3)** (D-2026-10-10-C PROPOSED: the stitching factor misses p_own — the stitched tt+bb is about 1/9 of its target — and the tt+b/tt+2b owner differs from the AN; no main run uses stitching yet) · 2026-10-10 (2) (D-2026-10-10-B: the direction of the whole FH program — AN-based ML, Tree branches now, uncertainties, the Korean AN, QCD from data after the lepton CRs, SWAN on Run 2 + 2024, full Run 2 + 2024 control plots; D-2026-10-10-A implemented in STEP 27) · 2026-10-10 (D-2026-10-10-A: the fixed-WP weight after BTV's multi-WP guidance — intermediate factor 1, closure per true b jets, comparison weights; c jets after BTV answers) · 2026-10-08 (D-2026-10-08-A: 2024 b-tag SF by the fixed-WP method now, the shape method when BTV's is confirmed; the 2024/2018 control-plot program) · 2026-10-07 (D-2026-10-07-B: 2024 lepton CRs now, lep samples after the storage check, next work; D-2026-10-07-A: the whole 2024 main again with ParkingHH, the first look kept as `_firstlook`) · 2026-10-06 (D-2026-10-06-A: 2024 b-tag paths in ParkingHH, the PD rule, tree control plots) · 2026-10-05 (D-2026-10-05-A: 2024 first-look scope, D14 109.816, D15 PU inputs; D-2026-10-02-E DECIDED; D-2026-10-05-B 2024 MC 4J3T bit PROPOSED; D-2026-10-05-C 2024 without tt+nb lookup; D-2026-10-05-D 2017 v20 removed from KNU) · 2026-10-04 (D-2026-10-04-A: run records are committed) · 2026-10-02 (D-2026-10-02-A…E: v15 analyzer order, eventBuffer policy, event cleaning, answers N0–N8, blinding).
 > **Links:** index [`README.md`](README.md) · current state [`STATUS.md`](STATUS.md) · per-change detail [`changes/`](changes/).
 
 ## How to use this log
@@ -259,6 +259,121 @@ sample — too few events in most samples; groups by process are the usual compr
 same weight takes them: `EraConfig::btagFixedWPPayload` loses `bJetsOnly`), or the closure in the SR/CR main runs is off by more than
 1–2 % (→ maps from the main-run MC, whose BTagEff histograms are filled after the trigger and the lepton requirement).
 **Record.** tempTTHH [`changes/STEP_25_btag_fixedWP_2024.md`](changes/STEP_25_btag_fixedWP_2024.md) (commit K: code, tests, commands).
+
+## D-2026-10-10-A — 2024 fixed-WP b-tag weight after BTV's multi-WP guidance (cms-talk, 2026-10): the intermediate factor with a negative numerator becomes 1, closure per number of true b jets, the variants kept as comparison weights; c jets with the b SF only after BTV answers · **DECIDED** (user, 2026-10-10; implemented 10-10 in STEP 27 part N, [`changes/STEP_27_treev1_btv_rule.md`](changes/STEP_27_treev1_btv_rule.md))
+
+**Fact (BTV material, read 10-09; copies on the Mac under `B-tag_SF_related_cms-talk/`).** (a) cms-talk "Corrections when using 3
+Working Points" (BTV conveners, 2026-10-07): with several WPs every jet is in exactly one of the mutually exclusive regions (Option A;
+N WPs → N−1 intermediate terms); an extra "L not T" term double counts. Our weight uses two WPs (L, M), so Option A and B do not differ
+for it. (b) BTV wiki "Recommendations for fixedWP SFs": method 1a is the default; an intermediate factor whose numerator
+SF_lo ε_lo − SF_hi ε_hi is negative (tighter SF above the looser one) is **set to unity**; c jets take the b-jet SF and its uncertainty;
+efficiencies come from the analysis' MC per flavour, in pT bins like the SFs' and one to a few |η| bins, per process group, **after the
+analysis selection without the b-tag requirements**; WP-binned information may be a BDT/DNN input. (c) BTV Calibration news (2026-04-20):
+the example code (`btag_sf.py`: `<tagger>_comb` for b and c, `<tagger>_light`, any number of WPs); ttH(bb) Run 3 saw a large normalization
+effect for tt+light at high N_b, possibly efficiencies of the ≥ 4-jet region extrapolated to high N_b — proposed fix: efficiencies as a
+function of the number of true b jets; tt dilepton efficiencies differ by up to several % between ≥ 0 and ≥ 3 b jets. **Ours (commit K):**
+a negative intermediate numerator gives the jet weight **0** (`max(0, …)`, the whole event weight 0); c and light SF 1; maps from the
+btagtrig MC (no trigger, no lepton requirement). STEP_25 §3 said the efficiency sensitivity of an untagged jet's weight is "(1 − SF) times,
+small"; it is (1 − SF)/(1 − ε)², not small for b jets failing L (1 − ε_L ≈ 0.05: at SF_L = 0.97, ε_L 0.95 → 0.96 moves the weight
+1.57 → 1.72). The 2024 FH trigger (ParkingHH) requires PNet b tags online, so offline efficiencies after the trigger can be higher than in
+btagtrig. Payload location: a CIEMAT framework issue (2025-10) moved all correction modules, BTV included, to
+`/cvmfs/cms-griddata.cern.ch/cat/metadata`; our 10-08 inventory looked only at the jsonpog rsync path (2024_Summer24 unchanged since
+2025-09-24) — a newer 2024 payload may exist there (to check).
+**Decision (user, 2026-10-10: "5번에 정해 줄 것은 모두 네 권고대로 수용한다"; the comparison histograms "if not too complex or costly, else
+later").** (1) An intermediate (L ≤ score < M) factor with a negative numerator becomes **1** (BTV); a negative fail-L numerator
+(SF_L ε_L > 1) stays **0** (continuous in the SF; 1 would jump the up variation the wrong way) and goes to BTV as a question. (2) At the HT
+step, Σw and Σw·bTagWeight per number of true b jets among the selected jets (hadronFlavour 5: 0, 1, 2, 3, ≥ 4) in `BTagEff/` — 1 per
+bin when the maps fit; the deviation is the extrapolation bias BTV warns about. (3) c jets with the b SF: after the payload-location check
+and BTV's answer (OPEN). (4) Comparison, cheap: the same jet loop also computes the old-rule weight and a "c jets with the b SF" weight —
+two Tree branches and small HT-step histograms (the M-tag multiplicity, the closure of (2)) per variant; comparing the maps themselves
+(btagtrig vs main-region maps, a true-b axis) waits for the first SF main run and recomputes the weight from the Tree (it has the jets'
+pT, η, score, flavour). (5) The first SF main run uses the btagtrig maps; its `BTagEff/` (after the trigger and the lepton requirement,
+BTV's region) makes main-region maps to compare.
+**Alternatives considered.** Keep 0 for the intermediate factor — rejected (BTV's explicit rule). c jets with the b SF now — wait for the
+payload check and BTV. Maps from the main region before any SF run — would need one more full main run.
+**Supersede when.** BTV answers on c jets or the fail-L case; a newer 2024 payload (comb, light, or shape) is found; the true-b closure
+shows a bias worth a true-b axis in the maps.
+**Record.** This entry; the 2024 ML inputs (WP bins instead of continuous scores while only fixed-WP SFs exist) in
+[`PLAN_ML_SYST.md`](PLAN_ML_SYST.md) §5.3; the implementation will be commit N.
+
+## D-2026-10-10-B — The direction of the whole FH program (user, 2026-10-10): ML after the ttHH AN adapted to FH and kept close to Run 2; Tree branches for DNN and GATJA now, in parallel with the SF control plots; systematic and statistical uncertainties prepared now; a Korean analysis note grown with the work; QCD data-driven after the lepton CR agrees; SWAN for training on all of Run 2 + 2024; control plots for full Run 2 and 2024 · **DECIDED** (user, 2026-10-10)
+
+**The user's words (2026-10-10, kept as written).** "1) FH DNN은 이전에 내가 거의 테스트 용도에 가깝게 사용한 것이다. SWAN project의 전체적인 구조를
+참조하되 머신러닝 학습 방향은 ttHH AN을 기반으로 FH에 맞게 적용해야 한다. 그리고 ttHH AN또한 Run2 기준이므로 Run3에 필요한 것이 있으면 우리가 최대한
+맞게 조정해야 한다. 단 Run2 내용과 너무 달라지면 안되며 억지로 변형할 바엔 Run2 기준에 맞추는게 적절함. 2) ntuple branch는 DNN과 GATJA 학습이
+가능하도록 만들어야 한다. 필요한 경우 ntuplizer와 analyzer를 수정해야 한다. trigger SF, b-tag SF 및 reweight, ttbar stitching 등이 적용된 control
+plot 작업을 하면서 동시에 이걸 준비하자. 3) 지금은 systematic uncertainty 및 statistical uncertainty 등이 거의 적용이 되지 않았을 것이다. 이들에 대한
+작업 준비도 함께 진행되어야 한다. 4) 위 내용들을 기반으로 AN을 작성하면 좋을 것 같다. 당장엔 "내가" 이해할 수 있도록 한국어로 작성하면 좋겠음. 이것도
+목표중 하나로 두라. 앞으론 md 문서들과 함께 AN을 만들면서 작업하면서 전체적 흐름과 변화, 이론 등을 모두 알 수 있으면 좋겠음 5) 맥 온라인이 되었다.
+못 읽은 문서 및 자료들을 다 읽어보라. 그리고 업데이트도 하고. 6) QCD data driven도 준비해야 한다. 단 이건 lepton selection을 해서 적절한 data/MC
+ratio가 나오면 하자. 일단 control plot이 먼저고 병렬적으로 위 사항들을 준비하자. 7) GPU는 SWAN을 이용하면 될 것 같으나 필요한 경우 KNU에 있는 GPU를
+이용할 수도 있다. 일단 SWAN이 기본이다. 학습은 모든 Run2, 그리고 지금 만든 2024년 Run3가 기본이다. 8) control plot은 background가 모두 준비되면 full
+Run2와 2024년 Run3를 모두 보고 싶다. 백그라운드 샘플이 아직 없으니 할 수는 없지만 적어도 stitching은 못하더라도 analyzer 준비는 가능할듯"
+
+**Decision (user).** (1) The ML follows AN-2022/122 (SL/DL) adapted to FH, with the SWAN FH project only as a structural reference; a Run 3
+change is made where Run 3 needs it, and where an adaptation would be forced the Run 2 (AN) definition is kept. (2) The analyzer's tree
+carries what the FH DNN and GATJA need (ntuplizer changes only if a branch is missing from the v15 ntuples), prepared in parallel with the
+control plots that have the trigger SF, the b-tag SF (and the reweight where it applies) and the ttbar stitching. (3) The systematic and
+statistical uncertainties are prepared now. (4) A Korean analysis note is one of the goals; it is written together with the md docs as the
+work goes. (5) Read the materials not yet read; update the docs. (6) The QCD multijet estimate from data is prepared, and done once the
+lepton-selection control regions give a sensible Data/MC; control plots first. (7) Training on SWAN by default (the KNU GPU if needed), on
+all of Run 2 and the 2024 production. (8) Control plots for full Run 2 and 2024 once every background exists; the analyzer is prepared for
+those years now, even before stitching is possible.
+
+**What the AI did with it (10-10; each item PROPOSED where it goes beyond the words above).**
+- (2) Tree v1 = STEP 27 part O (code, tests): the AN Table 43 inputs that FH has, the χ² pairing with the AN's jet choice for nM ≥ 2, the jet
+  ↔ hard-process quark labels (GATJA truth), PU / L1 / scale / PS weights, the Run 2 shape-SF source weights; PDF weights behind
+  `--tree-pdf on`. The v15 branch lists of NtupleForge already keep everything this needs (`Jet_*`, `GenPart_*`, `LHEScaleWeight`,
+  `LHEPdfWeight`, `PSWeight`, `L1PreFiringWeight_*`, `Pileup_*`; NtupleForge `branches/branch_hadronic_*_v15_MC.txt`), so **no ntuplizer
+  change** is needed for Tree v1.
+- (1), (7) the ML plan: [`PLAN_ML_SYST.md`](PLAN_ML_SYST.md) §9 (FH DNN after the SL DNN of AN §7.1 with a QCD class from the
+  ttH(bb) FH training region, AN-19-094 §8.1; GATJA's FH version). **A dependency to know:** the Run 2 v15 signal (`TTHHTo4b`) and `TT4b`,
+  `TTZHTo4b`, `TTZZTo4b`, `THW` do not exist centrally in NanoAODv15 (NtupleForge `docs/ttHH/04_mc_request_2026-09.md` §1: requested
+  2026-09-14, no answer recorded; the enriched private production runs in parallel, D-2026-09-17-run2-v15-two-tracks) — "all of Run 2" as
+  training data waits for them; 2024 has every sample centrally.
+- (6) [`PLAN_QCD_DD.md`](PLAN_QCD_DD.md): the ttH(bb) FH method (AN-19-094 §8.1: b-tag regions TR/CR/SR × the m_qq window, the loose-jet
+  kinematic correction, free normalisations) as the starting point for ttHH FH, with the prerequisite of (6).
+- (4) [`AN_KR/`](AN_KR/) (LaTeX, XeLaTeX + kotex): the analysis note in Korean, its structure from AN-2022/122, and the FH and Run 3
+  adaptations; built PDF in the Mac workspace `AN_KR_pdf/`.
+- (8) the Run 2 v15 analyzer path (2016preVFP, 2016postVFP, 2017, 2018 with v15 names; the analyzer reads Run 2 with the v9 names today):
+  the work list in [`ROADMAP_FH.md`](ROADMAP_FH.md) W2; 2018 v15 first (its ntuples exist), 2016/2017 v15 after their production.
+- The whole order: [`ROADMAP_FH.md`](ROADMAP_FH.md).
+**Alternatives considered.** Keep the SWAN FH DNN (V3, 13 classes, no b-tag inputs) as the baseline — rejected by the user (test level).
+A new FH-only variable set — rejected: AN-based with the minimum Run 3 change. Wait for the control plots before adding branches — rejected:
+one SF main run should give the plots and the first training sample.
+**Supersede when.** The user changes any of the eight points; the Run 2 v15 signal question is answered (central or enriched).
+
+## D-2026-10-10-C — ttbar stitching: normalise each dedicated sample over the categories it owns (the factor p_own is missing today), and settle who owns tt+b / tt+2b (genTtbarId 51, 52) · **PROPOSED** (AI, 2026-10-10; found while writing [`AN_KR/`](AN_KR/) ch. 2)
+
+**Finding.** `compute_stitch_factors.py` `compute_plan` sets r = σ_inc·f/σ_ded with f = Σgenw_anchor(owned)/Σgenw_anchor(all), and
+`build_analyzer_table` applies r to the **owned** categories of the dedicated sample only (0 elsewhere). The dedicated sample's base weight is
+L·σ_ded/Σgenw_ded(**all**) (`Runs genEventSumw`), so the owned yield it gives is **L·σ_inc·f·p_own**, with p_own = Σgenw_ded(owned)/Σgenw_ded(all) —
+not L·σ_inc·f, which is the stated target ("r rescales the dedicated sample to its inclusive anchor", "every (decay-channel × HF-category)
+cell is filled once": the `compute_plan` docstring, [`ttbarCategorization_KR.md`](ttbarCategorization_KR.md) §10.3–10.4). The 2017 prescan
+(`prescan_summary/prescan_summary.json`, genTtbarId sumGenW) gives p_own(53–55) = **0.114** (`TTbb_Hadronic`), **0.108** (`TTbb_SemiLep`),
+**0.103** (`TTbb_DiLep`) — about 45 % of each 4FS sample is genTtbarId 0 and about 31 % is 51 (counts 2,545,506 and 1,774,721 of 5,694,656 in
+`TTbb_Hadronic`). So the stitched tt+bb (53–55) is about **1/9** of the 5FS prediction it is meant to reproduce. For `TT4b` the owned codes
+61/62/71/72 need the tt+nb lookup; the committed 2017 prescan has none of them, and the committed `stitch_factors_2017.json` has f_4b = r_4b = 0
+(and the old lumi 41480 pb⁻¹, which does not enter r).
+**Second point.** EXP leaves 51/52 (tt+b, tt+2b in the AN's naming) in the 5FS inclusive. AN-2022/122 takes tt+b, tt+2b and tt+bb from the 4FS
+ttbb sample (App. D, PDF p.187/195/203: tt(SL) only tt+lf, tt+cc; ttbb(SL) only tt+b, tt+2b, tt+bb; tt4b only tt+bbb, tt+4b), as does the ttH(bb)
+analysis (AN-19-094 v20 PDF p.89: tt+B from the 4FS sample, its yield matched to the 5FS tt+B, the whole tt normalised to 831.76 pb) and our
+legacy options A/B and the Hbb talk (2026-07-30, p.21). No record says why EXP changed it.
+**Where it matters now.** No main run applies stitching: `path_stitch_json: null` in the 2017 main/prescan and in all 2024 ymls
+(D-2026-10-05-C). The 2017 **btagtrig** yml reads `stitch_factors_2017.json` (b-tag norm-reweight derivation); there r is a constant per
+(sample, category), so a norm-RW ratio changes only through the mix inside a group (tt+B = 51/52 from 5FS + 53–55 from 4FS). The stitched
+control plots of D-2026-10-10-B (2) wait for this.
+**Proposal.** (a) r' = σ_inc·f/(σ_ded·p_own): the owned cell of each dedicated sample is normalised to the inclusive (5FS, 831.76 pb NNLO+NNLL)
+prediction of that cell and takes its shape from the dedicated sample — the ttH(bb) prescription and the documented intent. (b) Ownership as
+in the AN: 4FS ttbb_c owns 51–55 (minus the tt+nb codes), tt4b owns 61/62/71/72, the 5FS inclusive keeps LF and cc (the user decides between
+this and keeping EXP's 51/52 in 5FS). (c) A generator-level closure test in the tool: for every (decay channel × category) cell the stitched
+Σw equals the inclusive Σw, and the stitched total equals the inclusive total. (d) Then: the 2017 stitch JSON again (lumi 42.07, with the tt+nb
+lookup), the 2017 b-tag norm-reweight JSON again with it, and 2024 stitching after the tt+nb patch (NtupleForge V6).
+**Alternatives considered.** Normalise the 4FS sample with its own cross section (r = 1 on owned categories, 5FS owned categories rejected):
+gives the 4FS prediction for tt+B (AN-19-094 Table 61: 4FS tt+B 21.34 pb vs 5FS 17.75 pb); the tt+B normalisation then rests on the 4FS
+σ — possible, but it is not what our tool documents, and the FH-only fit cannot constrain tt+B (AN-19-094 PDF p.243: 50 % lnN). Keep the code
+— rejected: it is not a choice but an error of a factor p_own.
+**Supersede when.** The user picks (b); the closure test passes on the 2017 prescan.
 
 ## D-(historical) — carried invariants · **DECIDED**
 

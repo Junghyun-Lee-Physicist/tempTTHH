@@ -40,7 +40,7 @@
 #    --dry-run      write the job files, do not submit
 #
 #  Memory: 4GB suits the scans and tests; for a build with -j4 give
-#  --cpus 4 --memory 12GB (the analyzer jobs of this repo request 12 GB).
+#  --cpus 4 --memory 12GB (the analyzer jobs of this repo request 2 GB since STEP 27; they use at most ~0.3 GB).
 #
 #  What it writes: condor/runlog/<step>_<UTCstamp>/   (condor/ is gitignored)
 #    payload.sh    cmsenv from $CMSSW_BASE/src, TMPDIR = the job's scratch,

@@ -52,6 +52,9 @@
 #  triggerSF; the JSON made
 #  for 2017, or one without the year tag (written before STEP 26), stops a 2024 MC job (E50, main and btagtrig); Data
 #  never read it; a 2017 MC job takes the untagged JSON (the KNU 2017 one) and stops on the 2024 one (E50).
+#  [STEP 27 P] --tree-v1 off: no Tree v1 branch, the rest of Tree/Tree and every histogram as with it; --tree-pdf on
+#  with it, or a value other than on/off, stops (E11); the jet top index (treev1_check.py); the 2017 deepJet_shape
+#  key check at load, and a payload without one key stops (E40).
 #  Exit: 0 all checks pass; 1 a check failed; 2 bad usage.
 #  The values are random: the checks are about running and stopping, never physics.
 # =============================================================================
@@ -130,6 +133,7 @@ runa() {
   local args=(--filelist "$out.filelist" --output "$out.root" --weight 1 --year "$year" --dataOrMC "$dom"
               --sample "$sample" --mode "${MODE:-main}" --trigsf "${TRIGSF:-off}" --btagsf "${BTAGSF:-off}" --btagrw off)
   [[ -n "$era" ]] && args+=(--era "$era")
+  [[ -n "${XARGS:-}" ]] && args+=(${XARGS})          # [STEP 27 O] e.g. XARGS="--tree-pdf on"
   ( cd "$repo" &&
     env LD_LIBRARY_PATH="$repo/lib:${RLIB}:${CLIB}:${LD_LIBRARY_PATH:-}" TNM_PATH="$repo" \
         TTHH_JSONPOG_PATH="$W/fakepog" TTHH_GOLDENJSON_PATH="$REPO/GoldenJson" TTHH_TRIGSF_DIR=__NULL__ \
@@ -152,6 +156,58 @@ stops() {    # name exit pattern
 
 # ---- 2024 ---------------------------------------------------------------------
 runa sig24 "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root"; ok_run "2024 MC signal runs"
+# ---- [STEP 27 O] Tree v1: every new branch recomputed from the tree's jets and from the input file (treev1_check.py)
+tv() {   # name, then the treev1_check.py arguments
+  local name="$1"; shift
+  python3 "$HERE/treev1_check.py" "$@" > "$W/tv_$name.log" 2>> "$W/synth.log"; local rc=$?
+  check "Tree v1 $name: treev1_check.py ($(sed -n 's/^TV-RESULT //p' "$W/tv_$name.log") pass/fail; $W/tv_$name.log)" \
+        "$([[ $rc == 0 ]] && grep -q '^TV-RESULT [1-9][0-9]* 0$' "$W/tv_$name.log" && echo 1)"
+  grep ' FAIL ' "$W/tv_$name.log" | head -5 | sed 's/^/    /'
+}
+check "2024 MC: the one-time [treeV1] line (theory-weight sizes 9 / 4 / 103, PDF not stored, fixed-WP b-tag)" \
+      "$(grep -q '^\[treeV1\] first tree event of TTHHto4b: LHEScaleWeight 9, PSWeight 4, LHEPdfWeight 103 (not stored; --tree-pdf on) entries; PU up/down .*; b-tag fixed-WP' "$LAST.log" && echo 1)"
+tv mc24 --out "$LAST.root" --input "$IN/mc24.root" --year 2024 --kind mc --pu-json "$W/puWeights_2024_FAKE.json"
+XARGS="--tree-pdf on" runa pdf24 "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root"; ok_run "2024 MC --tree-pdf on runs"
+check "... says LHEPdfWeight is stored" "$(grep -q '^\[treeV1\] --tree-pdf on: LHEPdfWeight is stored' "$LAST.log" && echo 1)"
+tv mc24pdf --out "$LAST.root" --input "$IN/mc24.root" --year 2024 --kind mc --pu-json "$W/puWeights_2024_FAKE.json" --pdf on
+XARGS="--tree-pdf yes" runa pdfbad "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root"; stops "--tree-pdf with a value other than on/off stops (E11)" 11 "--tree-pdf 'yes': on or off"
+# [STEP 27 P] --tree-v1 off (review R3): no Tree v1 branch; the other branches, the entries and every histogram as with Tree v1
+XARGS="--tree-v1 off" runa nov1 "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root"; ok_run "2024 MC --tree-v1 off runs"
+check "... says so; its tree = the Tree v1 run's without the 76 Tree v1 branches (entries, values), histograms identical" \
+      "$(grep -q '^\[treeV1\] --tree-v1 off: the Tree v1 branches are not booked' "$LAST.log" && ! grep -q '^\[treeV1\] first tree event' "$LAST.log" \
+         && ( cd "$W" && python3 - "$W/out/new_sig24.root" "$LAST.root" 2>> "$W/synth.log" <<'PY'
+import sys, ROOT
+fa, fb = ROOT.TFile.Open(sys.argv[1]), ROOT.TFile.Open(sys.argv[2])
+ta, tb = fa.Get("Tree/Tree"), fb.Get("Tree/Tree")
+na = {b.GetName() for b in ta.GetListOfBranches()}
+nb = {b.GetName() for b in tb.GetListOfBranches()}
+ok = nb < na and len(na - nb) == 76 and "jetGenTopIdx" in (na - nb) and "bTagWeight_cAsB" in nb \
+     and ta.GetEntries() == tb.GetEntries() > 0
+def val(t, n):
+    v = getattr(t, n)
+    try:
+        return list(v)
+    except TypeError:
+        return v
+for i in range(ta.GetEntries() if ok else 0):
+    ta.GetEntry(i); tb.GetEntry(i)
+    if any(val(ta, n) != val(tb, n) for n in nb):
+        ok = False
+        break
+def hists(d, pre, out):
+    for k in d.GetListOfKeys():
+        o = k.ReadObj()
+        if o.InheritsFrom("TDirectory"):
+            hists(o, pre + k.GetName() + "/", out)
+        elif o.InheritsFrom("TH1"):
+            out[pre + k.GetName()] = [o.GetBinContent(j) for j in range(o.GetNcells())]
+ha, hb = {}, {}
+hists(fa, "", ha); hists(fb, "", hb)
+print(1 if ok and ha == hb and len(ha) > 0 else "")
+PY
+) )"
+XARGS="--tree-v1 off --tree-pdf on" runa nov1pdf "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root"; stops "--tree-pdf on with --tree-v1 off stops (E11)" 11 "--tree-pdf on needs --tree-v1 on"
+XARGS="--tree-v1 maybe" runa v1bad "$NEW" MC TTHHto4b "" 2024 "$IN/mc24.root"; stops "--tree-v1 with a value other than on/off stops (E11)" 11 "--tree-v1 'maybe': on or off"
 runa tt24 "$NEW" MC TTbar_Hadronic "" 2024 "$IN/mc24.root"; ok_run "2024 TTbar_Hadronic runs without a tt+nb lookup (D-2026-10-05-C)"
 check "2024 TTbar_Hadronic says the tt+nb split is off" "$(grep -q 'NOT split from 51-55' "$LAST.log" && echo 1)"
 check "2024 MC prints the jet ID, veto map and PU payloads" \
@@ -164,6 +220,7 @@ check "2024 MC loads the fixed-WP b-tag payload (UParTAK4_kinfit, b jets; up/dow
             && grep -q '^\[btagSF\] fixed WP (method 1a, L and M; 2024): NOT ready (no efficiency JSON) -> bTagWeight = 1' "$LAST.log" \
             && grep -q 'b-tag efficiency JSON (fixed WP): not given (config null)' "$LAST.log" && echo 1)"
 runa d24C "$NEW" Data JetMET0_Run2024C-MINIv6NANOv15-v1 C 2024 "$IN/jetmet24C.root"; ok_run "2024 Data era C runs"
+tv d24C --out "$LAST.root" --input "$IN/jetmet24C.root" --year 2024 --kind data
 check "2024 Data uses the Data JEC" "$(grep -q -- '-> JEC Summer24Prompt24_V1_DATA_L1L2L3Res_AK4PFPuppi,' "$LAST.log" && echo 1)"
 runa d24I "$NEW" Data JetMET1_Run2024I-MINIv6NANOv15_v2-v2 I 2024 "$IN/jetmet24I.root"; ok_run "2024 Data era I runs"
 runa noDJ "$NEW" Data JetMET0_Run2024I-MINIv6NANOv15-v2 I 2024 "$IN/noDeepJet.root"; ok_run "2024 Data without the DeepJet 4J3T branch runs"
@@ -279,35 +336,88 @@ def sfv(sy, wp, ae, p):                 # the analyzer's getBTagSF_WP: up/down, 
     return c + q if sy == "up" else c - q
 L, M = 0.0246, 0.1272                               # EraConfig 2024 UParTAK4 WPs
 cl = lambda e: min(max(e, 1e-4), 1 - 1e-4)
+def jw(s, sL, sM, eL, eM, interone):                 # method 1a; [STEP 27 N] interone: BTV's rule (num < 0 -> 1)
+    if s >= M:
+        return sM, False
+    if s >= L:
+        if not (eL - eM > 1e-6):
+            return 1.0, False
+        num = sL * eL - sM * eM
+        if num < 0:
+            return (1.0 if interone else 0.0), True
+        return num / (eL - eM), False
+    return (max(0.0, 1 - sL * eL) / (1 - eL) if 1 - eL > 1e-6 else 1.0), False
 f = ROOT.TFile.Open(out); t = f.Get("Tree/Tree")
-n = nb = 0; worst = 0.0; nonone = 0
+n = nb = 0; worst = 0.0; nonone = 0; wold = wcb = 0.0; ninter = 0
 for i in range(t.GetEntries()):
     t.GetEntry(i)
-    w = {"central": 1.0, "up": 1.0, "down": 1.0}
+    w = {"central": 1.0, "up": 1.0, "down": 1.0}; old = 1.0; cb = 1.0
     for pt, eta, s, fl in zip(t.jetPt, t.jetEta, t.bTagScore, t.hadFlavs):
+        ae, p = min(abs(eta), 2.4999), min(max(pt, 20.0), 599.9)
+        if fl == 4:                                 # [STEP 27 N] c jets with the b SF and the c efficiencies
+            eL = cl(eff.evaluate("tt", 4, "L", abs(eta), pt)); eM = min(cl(eff.evaluate("tt", 4, "M", abs(eta), pt)), eL)
+            cb *= jw(s, sf.evaluate("central", "L", 5, ae, p), sf.evaluate("central", "M", 5, ae, p), eL, eM, True)[0]
         if fl != 5:
             continue                                # the 2024 payload has b jets only: weight 1
         nb += 1
-        ae, p = min(abs(eta), 2.4999), min(max(pt, 20.0), 599.9)
         eL = cl(eff.evaluate("tt", 5, "L", abs(eta), pt)); eM = min(cl(eff.evaluate("tt", 5, "M", abs(eta), pt)), eL)
         for sy in w:
             sL, sM = sfv(sy, "L", ae, p), sfv(sy, "M", ae, p)
-            if s >= M:   wj = sM
-            elif s >= L: wj = max(0.0, sL * eL - sM * eM) / (eL - eM) if eL - eM > 1e-6 else 1.0
-            else:        wj = max(0.0, 1 - sL * eL) / (1 - eL) if 1 - eL > 1e-6 else 1.0
+            wj, neg = jw(s, sL, sM, eL, eM, True)
             w[sy] *= wj
+            if sy == "central":
+                ninter += neg; cb *= wj; old *= jw(s, sL, sM, eL, eM, False)[0]
     for sy, br in (("central", "bTagWeight"), ("up", "bTagWeight_up"), ("down", "bTagWeight_down")):
         v = getattr(t, br)
         worst = max(worst, abs(v - w[sy]) / max(abs(w[sy]), 1e-12))
+    wold = max(wold, abs(t.bTagWeight_oldRule - old) / max(abs(old), 1e-12))
+    wcb = max(wcb, abs(t.bTagWeight_cAsB - cb) / max(abs(cb), 1e-12))
     nonone += abs(t.bTagWeight - 1.0) > 1e-6
     n += 1
-print(n, nb, nonone, "%.3g" % worst)
+print(n, nb, nonone, "%.3g" % worst, "%.3g" % wold, "%.3g" % wcb, ninter)
 PY
   )
 }
-read -r wp_n wp_nb wp_non1 wp_worst <<< "$(wpcheck "$LAST.root" "$W/fakepog/POG/BTV/2024_Summer24/btagging_preliminary.json.gz" updown)"
+read -r wp_n wp_nb wp_non1 wp_worst wp_wold wp_wcb wp_ninter <<< "$(wpcheck "$LAST.root" "$W/fakepog/POG/BTV/2024_Summer24/btagging_preliminary.json.gz" updown)"
 check "2024 bTagWeight / _up / _down of every Tree/Tree event = the method-1a product recomputed from its jets (${wp_n:-?} events, ${wp_nb:-?} b jets, ${wp_non1:-?} weights != 1; largest relative difference ${wp_worst:-?})" \
       "$([[ -n "${wp_worst:-}" && "${wp_n:-0}" -gt 0 && "${wp_non1:-0}" -gt 0 ]] && awk -v x="$wp_worst" 'BEGIN{exit !(x < 2e-6)}' && echo 1)"
+# [STEP 27 N] D-2026-10-10-A: the comparison weights recomputed; with this payload (SF_M < SF_L) no intermediate numerator is < 0
+check "2024 bTagWeight_oldRule and bTagWeight_cAsB = recomputed (old ${wp_wold:-?}, c-as-b ${wp_wcb:-?}); no intermediate numerator < 0 here (${wp_ninter:-?})" \
+      "$([[ -n "${wp_wcb:-}" && "${wp_ninter:-1}" == 0 ]] && awk -v x="$wp_wold" -v y="$wp_wcb" 'BEGIN{exit !(x < 2e-6 && y < 2e-6)}' && echo 1)"
+check "... and the end-of-job lines: intermediate count 0, closure per true b jets, the comparison closures" \
+      "$(grep -q '^\[btagSF\] intermediate (L <= score < M) numerator < 0 -> jet weight 1 (BTV): central 0, up 0, down 0$' "$LAST.log" \
+            && grep -q '^\[btagSF\] closure per true b jets at the HT step' "$LAST.log" \
+            && grep -qE '^\[btagSF\] comparison weights, closure at the HT step: oldRule .* cAsB \(c jets with the b SF; [1-9][0-9]* c jets weighted in all events, [0-9]+ with a jet weight > 10\)' "$LAST.log" && echo 1)"
+check "... BTagEff/h_ntrueb_* and h_nbM_*: sum(w x bTagWeight) / sum(w) over their bins = the printed closure" "$( cd "$W" && python3 - "$LAST.root" "$CLOS" 2>> "$W/synth.log" <<'PY'
+import sys, ROOT
+f = ROOT.TFile.Open(sys.argv[1]); clos = float(sys.argv[2])
+hs = {k: f.Get("BTagEff/h_%s" % k) for k in ("ntrueb_w", "ntrueb_wb", "ntrueb_wb_oldRule", "ntrueb_wb_cAsB", "nbM_w", "nbM_wb",
+                                            "nbM_wb_oldRule", "nbM_wb_cAsB")}
+ok = all(hs.values()) and hs["ntrueb_w"].GetNbinsX() == 5 and hs["nbM_w"].GetNbinsX() == 7
+if ok:
+    r1 = hs["ntrueb_wb"].Integral() / hs["ntrueb_w"].Integral(); r2 = hs["nbM_wb"].Integral() / hs["nbM_w"].Integral()
+    ok = abs(r1 - clos) < 1e-4 * clos and abs(r2 - clos) < 1e-4 * clos and abs(hs["ntrueb_w"].Integral() - hs["nbM_w"].Integral()) < 1e-6 * hs["nbM_w"].Integral()
+print(1 if ok else "")
+PY
+)"
+# [STEP 27 N] a payload with SF_M far above SF_L (fake_pog.py --btv-interneg): intermediate numerators < 0 -> 1 (BTV), the old rule 0
+mkdir -p "$W/fakepog_ineg"; cp -r "$W/fakepog/." "$W/fakepog_ineg/"
+python3 "$HERE/fake_pog.py" --btv-interneg "$W/fakepog_ineg" >> "$W/fake_pog.log" 2>&1
+MODE=btagtrig BTAGSF=on runa wp_ineg "$NEW" MC TTbar_Hadronic "" 2024 "$IN/mc24b.root" TTHH_BTAGEFF_JSON="$EFFJ" \
+     TTHH_JSONPOG_PATH="$W/fakepog_ineg"
+ok_run "2024 --btagsf on with SF_M far above SF_L runs"
+read -r wi_n wi_nb wi_non1 wi_worst wi_wold wi_wcb wi_ninter <<< "$(wpcheck "$LAST.root" "$W/fakepog_ineg/POG/BTV/2024_Summer24/btagging_preliminary.json.gz" updown)"
+NINT=$(sed -nE 's/^\[btagSF\] intermediate \(L <= score < M\) numerator < 0 -> jet weight 1 \(BTV\): central ([0-9]+),.*/\1/p' "$LAST.log")
+check "... intermediate numerators < 0 occur (${wi_ninter:-?} in the tree, ${NINT:-?} in the job) and bTagWeight = BTV's rule, _oldRule = the K rule, recomputed (${wi_worst:-?}, ${wi_wold:-?})" \
+      "$([[ -n "${wi_wold:-}" && "${wi_ninter:-0}" -gt 0 && "${NINT:-0}" -ge "${wi_ninter:-1}" ]] && awk -v x="$wi_worst" -v y="$wi_wold" 'BEGIN{exit !(x < 2e-6 && y < 2e-6)}' && echo 1)"
+check "... and the two differ in some events (bTagWeight_oldRule < bTagWeight)" "$( cd "$W" && python3 - "$LAST.root" 2>> "$W/synth.log" <<'PY'
+import sys, ROOT
+f = ROOT.TFile.Open(sys.argv[1]); t = f.Get("Tree/Tree"); d = 0
+for i in range(t.GetEntries()):
+    t.GetEntry(i); d += (t.bTagWeight_oldRule < t.bTagWeight - 1e-9)
+print(1 if d > 0 else "")
+PY
+)"
 # a payload without a total up/down: the analyzer finds the sources (two spellings) and adds them in quadrature
 mkdir -p "$W/fakepog_src"; cp -r "$W/fakepog/." "$W/fakepog_src/"
 python3 "$HERE/fake_pog.py" --btv-sources "$W/fakepog_src" >> "$W/fake_pog.log" 2>&1
@@ -316,7 +426,7 @@ MODE=btagtrig BTAGSF=on runa wp_src "$NEW" MC TTbar_Hadronic "" 2024 "$IN/mc24b.
 ok_run "2024 --btagsf on with a payload of sources only runs"
 check "... its load line names the sources it found (up_jes/down_jes, statistic_up/statistic_down)" \
       "$(grep -q 'up/down: sources in quadrature: up_jes/down_jes statistic_up/statistic_down' "$LAST.log" && echo 1)"
-read -r ws_n ws_nb ws_non1 ws_worst <<< "$(wpcheck "$LAST.root" "$W/fakepog_src/POG/BTV/2024_Summer24/btagging_preliminary.json.gz" 'up_jes,down_jes;statistic_up,statistic_down')"
+read -r ws_n ws_nb ws_non1 ws_worst ws_rest <<< "$(wpcheck "$LAST.root" "$W/fakepog_src/POG/BTV/2024_Summer24/btagging_preliminary.json.gz" 'up_jes,down_jes;statistic_up,statistic_down')"
 check "... and its bTagWeight_up / _down = central +- the sources in quadrature, recomputed (${ws_n:-?} events; ${ws_worst:-?})" \
       "$([[ -n "${ws_worst:-}" && "${ws_n:-0}" -gt 0 ]] && awk -v x="$ws_worst" 'BEGIN{exit !(x < 2e-6)}' && echo 1)"
 # the end-of-job counts of the jet weights (maps made from this sample: no weight > 10)
@@ -590,6 +700,18 @@ for repo in "$NEW" $OLD; do
   done
 done
 check "2017 TTbar_Hadronic used the tt+nb lookup" "$(grep -q 'loaded rows (map size)      : 40' "$W/out/new_y1_mc.log" && echo 1)"
+# [STEP 27 O] 2017 Tree v1: the 16 shape-source weights (BTV recipe), the L1 prefiring up/down, PU up/down (LUM payload)
+tv mc17 --out "$W/out/new_y1_mc.root" --input "$IN/mc17.root" --year 2017 --kind mc \
+   --pu-json "$W/fakepog/POG/LUM/2017_UL/puWeights.json.gz" --btv "$W/fakepog/POG/BTV/2017_UL/btagging.json.gz"
+tv d17F --out "$W/out/new_y1_jetht_F.root" --input "$IN/jetht17F.root" --year 2017 --kind data
+# [STEP 27 P] review R2: every shape source x up/down evaluates at load for its flavours; a payload without one stops (E40)
+check "2017 MC: the deepJet_shape key check at load passes (8 sources x up/down, 28 keys x flavours)" \
+      "$(grep -qE '^\[CorrectionsManager\] b-tag shape SF \(2017[^)]*\): the 8 sources x up/down evaluate for the flavours of the BTV recipe \(28 keys x flavours\)' "$W/out/new_y1_mc.log" && echo 1)"
+mkdir -p "$W/fakepog_drop"; cp -r "$W/fakepog/." "$W/fakepog_drop/"
+python3 "$HERE/fake_pog.py" --btv2017-drop up_hfstats1 "$W/fakepog_drop" >> "$W/fake_pog.log" 2>&1
+runa sh17drop "$NEW" MC TTbar_Hadronic "" 2017 "$IN/mc17.root" EXPANDED_TTBARID_DIR="$W/ttnb2017" TTHH_JSONPOG_PATH="$W/fakepog_drop"
+stops "2017 MC with a shape payload without up_hfstats1 stops at load (E40), naming the key and both flavours" 40 \
+      "deepJet_shape cannot evaluate up_hfstats1(flavour 5) up_hfstats1(flavour 0)"
 runa tt17null "$NEW" MC TTbar_Hadronic "" 2017 "$IN/mc17.root"; stops "2017 TTbar_Hadronic without a lookup still stops (E11)" 11 "no tt+nb lookup for 'TTbar_Hadronic'"
 # [STEP 26 L] 2017 takes a trigger SF JSON without the year tag (the KNU DerivedCorr/TriggerSF one) and refuses 2024's
 TRIGSF=on runa ts17un "$NEW" MC TTbar_Hadronic "" 2017 "$IN/mc17.root" EXPANDED_TTBARID_DIR="$W/ttnb2017" TTHH_TRIGSF_DIR="$W/trigsf_untag"

@@ -67,6 +67,8 @@ struct commandLine
     std::string sfTrig;        // "", "on", "off"
     std::string sfBtag;        // "", "on", "off"
     std::string sfBtagRw;      // "", "on", "off"
+    std::string treePdf;       // [STEP 27 O] "", "on", "off": LHEPdfWeight in Tree/Tree (MC)
+    std::string treeV1;        // [STEP 27 P] "", "on", "off": the Tree v1 branches (default on)
 
     // ── [Validation Study] optional fields ─────────────────────────────
     // [STEP8] --val-* 필드 제거 — kValidationStudy 모드 삭제(STEP 2)의 잔재 정리.

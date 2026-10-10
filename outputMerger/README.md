@@ -8,6 +8,9 @@
 > 2026-10-09(STEP 26 M·M2): condor merge job 에 시간 한도(기본 3 h, `--time-limit H`, `--stall-guard off` 로 끔 — CPU 기준이 아님: 정상 merge 도
 > CPU 1 % 미만), 큐에 그 프로세스의 merge 나 analyzer job 이 있으면 멈춤(exit 2), condor_submit 이 실패한 시도는 `--report` 에서 failed, `--dry-run` 의
 > work 디렉터리는 `--report` 가 보지 않음(`docs/changes/STEP_26_trigger_sf_2024.md` §9·§10).
+> 2026-10-10(STEP 27 P): `run_one_hadd.sh` 는 hadd 전에 입력 전부의 `Tree/Tree` branch 집합을 비교해 다르면 **exit 8**(두 analyzer 빌드의 출력이
+> 섞임 — 예: 재빌드 뒤 재제출한 job; hadd 는 실패하지 않고 branch 나 사건을 조용히 잃는다), 검사가 못 돌면 exit 9, `root` 가 없으면 exit 3
+> (`docs/changes/STEP_27_treev1_btv_rule.md` §P).
 
 이 디렉토리는 ttHH(4b) Fully Hadronic 분석의 **Step 8 (≥4 b-tag) 영역에서
 Data/MC ratio가 무너지는 원인 진단**을 위한 도구 모음입니다.

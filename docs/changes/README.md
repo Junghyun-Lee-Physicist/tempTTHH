@@ -23,6 +23,16 @@
 | 15 | resubmit_treecheck_region_output | resubmit 완료판정 중첩TTree 버그 + region output 분리 + report 거짓메시지 |
 | 16 | sf_toggles_and_dir_split | SF 적용 토글(--trigsf/--btagsf/--btagrw) + region/SF 조합 output 디렉토리 |
 | 17 | fullNano_dataset_and_categorization | **fullNano_v20 dataset 갱신**(make_filelists+prescan yml, 신규 MC 61) + **prescan↔xsec_db/prescan_summary 분리**(weight=1.0) + **categorization full-Nano 전환**(ntuple ttCat_* → 표준 genTtbarId 디코드) |
+| 18 | ntupleforge_naming_and_kfactor_cleanup | NtupleForge 표본 이름, k-factor 정리 |
+| 19 | completion_marker_and_ttcat_note | 완료 표지, tt 분류 노트 |
+| 20 | report_table_status_readonly | `--report` 표, `--status` 읽기 전용 |
+| 21 | plotter_full_samples_two_mode_grouping | plotter 전 표본, compact/detailed 묶음 |
+| 22 | merge_outputs_autodiscovery | merge 자동 탐색 |
+| 23 | runlog_condor | 실행 기록(`runlogs/`), KNU condor job |
+| 24 | stage1_2_2024 | 2024 analyzer(EraConfig, v15 이름, 필수 branch 검사, PU) |
+| 25 | btag_fixedWP_2024 | 2024 fixed-WP b-tag weight(method 1a), 효율 map(커밋 K) |
+| 26 | trigger_sf_2024 | 2024 trigger SF(TriggerStudy 연도), merge guard(커밋 L, M, M2) |
+| 27 | treev1_btv_rule | **BTV 다중 WP 규칙(N, D-2026-10-10-A) + Tree v1: ML 입력·jet 정답 표지·계통 weight(O)**, 제출기 `--memory` 2 GB; **P**: 독립 검토 반영(`jetGenTopIdx`, `--tree-v1 on\|off`, shape 키 load 검사 E40, 병합의 Tree branch 집합 검사 exit 8) |
 
 별도 트랙 (선행조건 대기):
 - **TRACK_A** (도구 업데이트) — btagtrig 재실행 후

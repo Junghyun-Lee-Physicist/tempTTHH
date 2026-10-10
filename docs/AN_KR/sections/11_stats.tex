@@ -1,0 +1,287 @@
+% =============================================================================
+% 11 장 — 통계 처리와 결과 추출
+% 작성 2026-10-10 (AN_KR v0.1). 근거: AN-2022/122 v26 §8.1, §8.3–8.6, §9; AN-19-094 v20 §8.1.4, §11.2;
+% 사전승인·승인·Wei Wei DPF 발표; Hbb 회의 FH 발표; PLAN_QCD_DD §3; ROADMAP_FH; DECISIONS D-2026-10-02-E.
+% 통계 이론(우도, profile likelihood, CLs, Asimov)은 일반 지식으로 쓰고 숫자는 모두 출처에서.
+% =============================================================================
+\chapter{통계 처리와 결과 추출}\label{ch:stats}
+
+이 장은 판별 변수의 분포에서 신호 세기 $\mu=\sigma/\sigma_{\mathrm{SM}}$ 의 상한과 최적값을 끌어내는 통계 절차를 다룬다. 먼저 binned likelihood, profile
+likelihood ratio, 상한용 검정 통계량 $\tilde q_\mu$ 와 CL\textsubscript{s}, Asimov data 와 기대 상한의 band, 발견 유의도 $q_0$, 그리고 pull·impact·적합도
+같은 진단을 분석자가 따라갈 수 있는 수준으로 유도한다. 이어서 Run 2 ttHH AN 의 fit 설정과 결과(모두 Asimov), 발표에 나온 최신 숫자(승인된 SL 의 관측
+상한 48.7 × SM), 그리고 QCD 정규화를 자유로 둔 ttH(bb) FH fit 을 예로 본다. 마지막으로 우리 FH fit 의 계획 — 영역과 범주, 판별 변수, Run 2 + 2024 결합,
+blinding, SL/DL 과의 결합 — 을 적는다. 우리 쪽은 전부 \tagplan 이다: datacard 와 fit 코드는 아직 없다.
+
+% -----------------------------------------------------------------------------
+\section{binned likelihood}\label{sec:stats-likelihood}
+
+판별 변수의 각 bin 은 독립된 계수 실험이다. 채널(연도·범주·node) $c$ 의 bin $i$ 에서 관측 수 $n_{ci}$ 는 기댓값 $\nu_{ci}$ 의 Poisson 분포를 따르고,
+\begin{equation}
+  \mathcal{L}(\mu,\vec\theta)=\prod_{c}\prod_{i}\mathrm{Pois}\bigl(n_{ci}\,\big|\,\mu\,s_{ci}(\vec\theta)+b_{ci}(\vec\theta)\bigr)\;
+  \prod_{k}p(\tilde\theta_k\,|\,\theta_k),\qquad
+  \mathrm{Pois}(n|\nu)=\frac{\nu^{n}e^{-\nu}}{n!},
+  \label{eq:stats-L}
+\end{equation}
+이다. $s_{ci}$ 는 SM 신호의 기댓값, $b_{ci}=\sum_p b_{p,ci}$ 는 배경 과정의 합이다. $\vec\theta$ 는 nuisance parameter(\ref{ch:syst}장)이고,
+$p(\tilde\theta_k|\theta_k)$ 는 보조 측정을 요약한 제약항(보통 $\theta_k\sim\mathcal{N}(0,1)$; $\tilde\theta_k=0$ 은 "보조 측정의 관측값")이다.
+정규화를 자유로 두는 parameter(combine 의 \code{rateParam}, 예: 범주별 QCD 정규화)에는 제약항이 없다 — 그 값은 data 가 정한다. 상수를 빼면
+\begin{equation}
+  -2\ln\mathcal{L}=2\sum_{c,i}\bigl[\nu_{ci}-n_{ci}\ln\nu_{ci}\bigr]+\sum_k\theta_k^2+\text{상수},
+  \label{eq:stats-nll}
+\end{equation}
+이므로, fit 은 "bin 마다 예측을 관측에 맞추되 nuisance 를 사전값에서 멀리 끌어갈수록 $\theta_k^2$ 만큼 벌점" 을 받는 최소화다. MC 통계의 Barlow–Beeston-lite
+항(\ref{ch:syst}장)도 bin 마다 같은 꼴로 더해진다. 신호가 거의 없는 bin(배경 node, 낮은 점수)은 배경 정규화와 nuisance 를 잡고, 신호가 많은 bin 이 $\mu$ 를
+잡는다 — 그래서 다중 분류 DNN 의 모든 node 를 함께 fit 하는 것이 유리하다.
+
+% -----------------------------------------------------------------------------
+\section{profile likelihood ratio 와 검정 통계량}\label{sec:stats-plr}
+
+관심 parameter 는 $\mu$ 하나이고 나머지는 "성가신" 것이므로, 각 $\mu$ 에서 $\vec\theta$ 를 최적화(profile)한다:
+\begin{equation}
+  \lambda(\mu)=\frac{\mathcal{L}\bigl(\mu,\hat{\hat{\vec\theta}}(\mu)\bigr)}{\mathcal{L}\bigl(\hat\mu,\hat{\vec\theta}\bigr)},\qquad
+  t_\mu=-2\ln\lambda(\mu)\ \ge 0 .
+  \label{eq:stats-plr}
+\end{equation}
+분모는 전체 최대(최적값 $\hat\mu,\hat{\vec\theta}$), 분자는 $\mu$ 를 고정했을 때의 최대다. Wilks 정리에 따라 큰 표본에서 $t_\mu$ 는 자유도 1 의 $\chi^2$
+분포를 따르므로 $t_\mu<1$ 이 68 \% 구간, $t_\mu<3.84$ 가 95 \% 구간이다. nuisance 의 불확도는 profile 에 의해 자동으로 $\mu$ 의 구간을 넓힌다.
+
+\textbf{상한용 $\tilde q_\mu$}. LHC 의 상한은
+\begin{equation}
+  \tilde q_\mu=
+  \begin{cases}
+    -2\ln\dfrac{\mathcal{L}(\mu,\hat{\hat{\vec\theta}}(\mu))}{\mathcal{L}(0,\hat{\hat{\vec\theta}}(0))}, & \hat\mu<0,\\[2.2ex]
+    -2\ln\dfrac{\mathcal{L}(\mu,\hat{\hat{\vec\theta}}(\mu))}{\mathcal{L}(\hat\mu,\hat{\vec\theta})}, & 0\le\hat\mu\le\mu,\\[2.2ex]
+    0, & \hat\mu>\mu,
+  \end{cases}
+  \label{eq:stats-qtilde}
+\end{equation}
+를 쓴다. 셋째 줄: 관측이 가정한 $\mu$ 보다 신호가 많아 보이면 그것을 $\mu$ 를 배제하는 증거로 쓰지 않는다(한쪽 검정). 첫째 줄: 신호는 음이 될 수 없으므로
+$\hat\mu<0$ 이면 $0$ 을 최적값 자리에 둔다. \textbf{발견용 $q_0$}는 $\hat\mu\ge0$ 일 때 $q_0=-2\ln\lambda(0)$, 아니면 0 이고, 점근적으로 유의도는
+$Z=\sqrt{q_0}$ 다.
+
+% -----------------------------------------------------------------------------
+\section{CL\textsubscript{s}, Asimov data, 기대 상한}\label{sec:stats-cls}
+
+관측값 $\tilde q_\mu^{\mathrm{obs}}$ 에 대해 두 꼬리 확률을 정의한다(그림~\ref{fig:stats-cls}):
+\begin{equation}
+  p_\mu=P\bigl(\tilde q_\mu\ge\tilde q_\mu^{\mathrm{obs}}\,\big|\,\mu\bigr),\qquad
+  1-p_b=P\bigl(\tilde q_\mu\ge\tilde q_\mu^{\mathrm{obs}}\,\big|\,0\bigr),\qquad
+  \mathrm{CL_s}=\frac{p_\mu}{1-p_b}.
+  \label{eq:stats-cls}
+\end{equation}
+$\mathrm{CL_s}(\mu)<0.05$ 인 $\mu$ 를 95 \% CL 로 배제하고, $\mathrm{CL_s}(\mu_{\mathrm{up}})=0.05$ 인 $\mu_{\mathrm{up}}$ 이 상한이다. $p_\mu$ 만 쓰면, 민감도가 거의
+없을 때(두 분포가 겹칠 때) 배경이 아래로 요동한 것만으로 신호를 배제할 수 있다. $1-p_b$ 로 나누면 그런 경우 CL\textsubscript{s} 가 커져 배제가 막힌다 —
+보수적인 대신 "볼 수 없는 신호를 배제하는" 일을 피한다.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\footnotesize, x=1.15cm, y=3.2cm]
+\draw[->] (0,0) -- (10.2,0) node[right]{$\tilde q_\mu$};
+\draw[->] (0,0) -- (0,1.05);
+\fill[accent!25, domain=3.2:10, samples=60] (3.2,0) -- plot (\x,{0.95*exp(-\x/1.4)}) -- (10,0) -- cycle;
+\fill[orange!30, opacity=0.8, domain=3.2:10, samples=60] (3.2,0) -- plot (\x,{0.8*exp(-(\x-5.6)^2/(2*1.5^2))}) -- (10,0) -- cycle;
+\draw[accent, thick, domain=0.05:10, samples=120] plot (\x,{0.95*exp(-\x/1.4)});
+\draw[orange!70!black, thick, domain=0:10, samples=120] plot (\x,{0.8*exp(-(\x-5.6)^2/(2*1.5^2))});
+\draw[dashed] (3.2,0) -- (3.2,1.0) node[above]{$\tilde q_\mu^{\mathrm{obs}}$};
+\node[accent, anchor=west] at (0.4,0.95) {$f(\tilde q_\mu|\mu)$: 신호+배경};
+\node[orange!70!black, anchor=west] at (6.6,0.78) {$f(\tilde q_\mu|0)$: 배경만};
+\node[accent!80!black] at (4.1,0.09) {$p_\mu$};
+\node[orange!70!black] at (6.0,0.35) {$1-p_b$};
+\end{tikzpicture}
+\caption{CL\textsubscript{s} 의 개념(모양은 설명용). 오른쪽 꼬리의 넓이가 $p_\mu$(파랑)와 $1-p_b$(주황)다. 두 분포가 많이 겹치면(민감도가 낮으면) $1-p_b$ 도 작아져 CL\textsubscript{s} 가 커진다.}
+\label{fig:stats-cls}
+\end{figure}
+
+\textbf{점근 공식과 Asimov data}. 표본이 크면 $\tilde q_\mu$ 의 분포를 해석적으로 쓸 수 있고(Cowan–Cranmer–Gross–Vitells), 필요한 것은 $\hat\mu$ 의 표준편차
+$\sigma$ 하나다. 이것은 \textbf{Asimov data} — 각 bin 의 관측 수를 어떤 가설(예: $\mu=0$, nuisance 는 사전값)의 기댓값 그대로 둔 가상의 data — 로
+구한다: Asimov data 에서는 모든 추정값이 참값과 같으므로 $\sigma^2=\mu^2/\tilde q_{\mu,A}$ 다. 배경만 있는 경우의 중앙값 기대 상한과 그 band 는
+\begin{equation}
+  \mu_{\mathrm{up}}^{\mathrm{med}}=\sigma\,\Phi^{-1}(1-\alpha/2)\approx1.96\,\sigma,\qquad
+  \mu_{\mathrm{up}}^{\pm N}=\sigma\bigl[\Phi^{-1}\bigl(1-\alpha\,\Phi(N)\bigr)+N\bigr],\quad \alpha=0.05,
+  \label{eq:stats-expected}
+\end{equation}
+이다($\Phi$ 는 표준 정규 누적 분포, $N=\pm1,\pm2$ 가 68 \%, 95 \% band). 직관: 계통 없는 단일 계수 실험에서 $s\ll b$ 이면 $\sigma\approx\sqrt{b}/s$ 이므로
+$\mu_{\mathrm{up}}\approx1.96\sqrt{b}/s$ 다 — 기대 상한 수십 × SM 은 "유효한" $s/\sqrt{b}$ 가 0.0x 라는 뜻이다(AN SL 의 46.5 는 대략 $s/\sqrt b\approx0.04$; 우리 계산,
+통계만의 근사). blind 분석의 "Observed (Asimov)" 는 $\mu=1$ Asimov data 에 fit 한 값이라 구성상 $\hat\mu=1$ 이고, 그 오차가 기대 정밀도다.
+
+\begin{note}[한 bin 으로 해 보기 — 위 식들이 어디서 오나]
+bin 하나, $\nu=\mu s+b$, nuisance 없음. $\ln\mathcal{L}(\mu)=n\ln(\mu s+b)-(\mu s+b)$ 이고 최적값은 $\hat\mu=(n-b)/s$ 다.
+(1) \textbf{오차}: Fisher 정보 $I(\mu)=-E[\partial^2_\mu\ln\mathcal{L}]=s^2/(\mu s+b)$ 이므로 $\sigma_{\hat\mu}=\sqrt{\mu s+b}/s$, $\mu=0$ 에서 $\sqrt b/s$.
+(2) \textbf{Wald 근사}: $-2\ln\lambda(\mu)\approx(\mu-\hat\mu)^2/\sigma^2$. 배경만의 Asimov data($n=b$, $\hat\mu=0$)에서 $\tilde q_{\mu,A}=\mu^2/\sigma^2$ — 식~\eqref{eq:stats-expected} 의
+$\sigma^2=\mu^2/\tilde q_{\mu,A}$ 다. 이때 $p_\mu=1-\Phi(\mu/\sigma)$, 중앙값에서 $1-p_b=1/2$ 이므로 $\mathrm{CL_s}=2[1-\Phi(\mu/\sigma)]=0.05$ 에서 $\mu_{\mathrm{up}}=1.96\,\sigma$.
+(3) \textbf{기대 유의도}: $\mu=1$ Asimov data($n=s+b$)에서 $q_{0,A}=-2\ln[\mathcal{L}(0)/\mathcal{L}(1)]=2[(s+b)\ln(1+s/b)-s]$, 즉 $Z_A=\sqrt{q_{0,A}}$ —
+\ref{ch:mva}장 식~\eqref{eq:mva-za} 에서 $\sigma_b\to0$ 인 경우다. 배경 불확도 $\sigma_b$ 를 nuisance 로 넣고 profile 하면 \eqref{eq:mva-za} 의 전체 꼴이 나온다.
+\end{note}
+
+% -----------------------------------------------------------------------------
+\section{fit 진단: pull, impact, 적합도}\label{sec:stats-diag}
+
+\begin{itemize}
+\item \textbf{pull 과 제약}: fit 뒤 $(\hat\theta_k-0)/1$ 이 pull, 사후 오차 $\sigma_k^{\mathrm{post}}<1$ 이면 data 가 그 nuisance 를 사전보다 강하게 제약한 것이다.
+  큰 pull 은 모델이 data 와 어긋난 곳, 강한 제약은 template 이 실제 이상으로 민감하거나(예: 한 과정의 큰 변형) data 가 정보를 가진 곳이다. AN 은 JER 의
+  제약이 tt 의 큰 JER 변형에서 온다는 것을 과정별 분리 fit 으로 확인했다\src{AN-22-122 v26, PDF p.126, 164--166}.
+\item \textbf{impact}: $\theta_k$ 를 $\hat\theta_k\pm\sigma_k^{\mathrm{post}}$ 에 고정하고 다시 fit 했을 때 $\hat\mu$ 가 움직이는 양 $\Delta\hat\mu$. 큰 순서로 늘어놓아 결과를
+  지배하는 불확도를 찾는다. 자유 정규화도 같은 방식으로 순위에 오른다("Unconstrained").
+\item \textbf{적합도(GoF)}: saturated 모델 검정은 $-2\ln[\mathcal{L}(\hat\mu,\hat{\vec\theta})/\mathcal{L}_{\mathrm{sat}}]$ ($\mathcal{L}_{\mathrm{sat}}$ 는 bin 마다
+  $\nu_i=n_i$)를 toy 의 분포와 비교한다. KS·AD 검정도 쓴다. ttH 는 \texttt{combine -M GoodnessOfFit -{}-algo "saturated"} 를 썼다\src{AN-19-094 v20, PDF p.158}.
+\item \textbf{배경 bin 만의 fit}: blind 일 때 신호가 적은 bin 으로만 fit 해 모델이 data 를 설명하는지 본다(AN Fig.~98\src{AN-22-122 v26, PDF p.126}).
+\end{itemize}
+
+\textbf{combine}. CMS 의 통계 도구 combine 은 datacard(채널별 관측 수, 과정별 기댓값과 template, \code{lnN}·\code{shape} nuisance, \code{rateParam},
+\texttt{autoMCStats})를 읽어 식~\eqref{eq:stats-L} 을 만든다. AN SL 은 combine v8.2.0(CMSSW\_10\_6\_29)으로 기대 상한과 Asimov 최적값을 구했다\src{AN-22-122 v26, PDF p.119}:
+{\small
+\begin{verbatim}
+combine -M AsymptoticLimits card.root -m 125 --run blind --rMin=-40 --rMax=40
+combine -M FitDiagnostics --saveWithUncertainties --saveShapes --rMin=-40 --rMax=40 -m 125 card.root
+\end{verbatim}
+}
+\texttt{-{}-run blind} 은 data 를 보지 않고 배경만의 Asimov data 로 기대 상한만 낸다.
+
+% -----------------------------------------------------------------------------
+\section{Run 2 AN(ttHH SL·DL)의 설정과 결과}\label{sec:stats-an}
+
+\textbf{설정}. SL 은 연도별로 4 개 fit node(ttHH, ttH, ttZ(1 bin), ttbar; \ref{ch:mva}장)의 판별 변수를 binned shape fit 한다("5j4b model option 2"),
+자유 정규화는 \code{mu_ttbar}, \code{mu_ttH}($[-5,5]$)\src{AN-22-122 v26, PDF p.119, 123}. DL 은 6 node 판별 변수의 동시 binned ML fit 으로, 일부 nuisance 에
+log-normal 사전 분포, shape 변형은 연속 template morphing 이다\src{AN-22-122 v26, PDF p.131}. 결과는 모두 Asimov(blind)이고 실 data 결과의 §9 는
+제목만 있다\src{AN-22-122 v26, PDF p.138}.
+
+\begin{table}[htbp]
+\centering
+\caption{AN-2022/122 의 기대 95 \% CL 상한($\mu$, Asimov). [68 \%] [95 \%] 는 band. PDF 쪽: SL Table 54--57 p.126--127, DL Table 59--66 p.132--133, 결합 Table 67 p.137.}
+\label{tab:stats-an}
+\small
+\begin{tabular}{@{}llrl r@{}}
+\toprule
+채널 & 데이터 & stat+syst & [68 \%] [95 \%] & stat 만 \\
+\midrule
+SL(5j4b) & 2016 & 95.7 & [65.8, 143.5] [47.9, 210.9] & 89.3 \\
+ & 2017 & 76.3 & [52.4, 114.5] [38.1, 168.2] & 71.5 \\
+ & 2018 & 63.5 & [43.7, 94.4] [32.2, 138.0] & 58.5 \\
+ & Run 2 & \textbf{46.5} & [32.2, 68.9] [23.6, 100.4] & 39.0 \\
+\midrule
+DL & 2016 & 91.75 & [57.59, 151.00] [39.07, 237.00] & 88.25 \\
+ & 2017 & 71.88 & [45.66, 116.00] [31.45, 180.90] & 69.88 \\
+ & 2018 & 60.00 & [38.23, 96.83] [26.02, 150.34] & 58.00 \\
+ & Run 2 & \textbf{34.63} & [22.49, 54.50] [15.69, 82.67] & 28.63 \\
+\midrule
+SL+DL & Run 2 & \textbf{25.13} & [17.05, 37.44] [12.37, 54.03] & — \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+SL Run 2 의 Asimov 최적값은 $1.0^{+22.1}_{-21.0}$(통계만 $^{+19.5}_{-18.5}$), 결합은 $1.0^{+11.68}_{-7.96}$ 이다\src{AN-22-122 v26, PDF p.127, 137}. AN 은 "DL 의 민감도가
+SL 과 비슷하다 — ttH 와 일관" 이라 쓴다\src{AN-22-122 v26, PDF p.137}. HEFT 해석(SL 만)은 $\sigma_{\ttHH}(\kl,\kt,c_2)$ 를 여섯 항의 다항식으로 매개화하고
+기대 95 \% CL $-5.0<c_2<4.8$ 를 얻었다\src{AN-22-122 v26, PDF p.127, Eq.~22}.
+
+\textbf{발표의 최신 숫자}. SL 승인 발표의 최종 fit(tt 와 ttb 분리, ttH·ttbar·ttb 자유)은 Run 2(137.6\fbinv) 기대 상한 \textbf{55.3 × SM}, 관측
+\textbf{48.7 × SM}, 즉 $\sigma(\ttHH)$ 에 관측(기대) 37(42)\fb 다\src{승인 발표 p.33}\src{Wei Wei, DPF 2026 p.12}. 최적값은 $-8.9^{+25.8}_{-24.8}$(그림 판독)
+\src{승인 발표 p.32}. 2025-12-02 의 둘째 ARC 회의에서 쓴 tt 병합 모델은 기대 50.5, 관측 79.3, 최적값 29.0 이었고, ARC 와 "나누는 것이 낫다" 고
+합의했다(그림 판독)\src{승인 발표 p.29--32}. 37(42)\fb 는 $\sigma_{\mathrm{SM}}=0.756\fb$ 로 환산한 값과 맞는다($48.7\times0.756=36.8$, $55.3\times0.756=41.8$;
+우리 계산). HEFT 의 관측(기대)은 $-6.6<c_2<6.4$($-5.4<c_2<5.2$)다\src{승인 발표 p.35}. 사전승인 발표(2025-04)의 SL+DL 기대 상한은 25.13 × SM 이었다
+\src{사전승인 발표 p.26}. 관측·기대 유의도와 $\kl$ 단독 제약은 어느 자료에도 없다.
+
+\begin{openq}[숫자가 서로 다른 곳]
+AN v26 Table 57 의 SL Run 2 기대 상한은 46.5 인데, 사전승인 발표 p.25 의 표(그림)에는 SL 42.5 로 읽힌다(발표 digest 판독). 그런데 SL+DL 결합 25.13 은 두 자료에서
+같다 — AN 의 결합 표가 SL 의 갱신 뒤에 다시 계산되었는지 확인할 수 없다. 승인의 최종 SL 기대 55.3 은 fit 모델(tt/ttb 분리)이 달라 직접 비교할 수 없다.
+\end{openq}
+
+% -----------------------------------------------------------------------------
+\section{참고: ttH(bb) FH 의 fit — 자유 QCD 정규화}\label{sec:stats-tth}
+
+ttH(bb) FH 는 ANN 출력(\code{DNN_Node0})을 범주 3 개(7, 8, $\ge9$ jet; $\ge4$ b) × 3 년으로 fit 한다. bin 은 20 개 균등에서 시작해 빈 bin 을 합친 뒤
+절반으로 줄인 "Option 2" 다\src{AN-19-094 v20, PDF p.115--117}. QCD 는 CR 에서 만든 template(\ref{ch:qcd}장)이고 정규화는 연도 × 범주 9 개가 사전 제약
+없이 자유다. FH 단독 fit 에서는 tt+B, tt+C 정규화를 50 \% lnN 으로 묶는다\src{AN-19-094 v20, PDF p.243}. 결과는 표~\ref{tab:stats-tth}.
+
+\begin{table}[htbp]
+\centering
+\caption{ttH(bb) FH 단독 fit(AN-19-094 v20, Table 128--132, PDF p.223, 243--246).}
+\label{tab:stats-tth}
+\small
+\begin{tabular}{@{}lllll@{}}
+\toprule
+ & Run 2 & 2016 & 2017 & 2018 \\
+\midrule
+Asimov $\mu$ & $1.00^{+0.77}_{-0.78}$(stat $\pm0.23$), 1.3$\sigma$ & $^{+1.09}_{-1.14}$ & $^{+1.26}_{-1.37}$ & $^{+1.12}_{-1.21}$ \\
+관측 $\mu$ & $-1.31^{+0.82}_{-0.89}$(stat $\pm0.20$) & $0.91^{+1.17}_{-1.22}$ & $-1.44^{+1.51}_{-1.63}$ & $-2.44^{+1.37}_{-1.58}$ \\
+saturated GoF $p$ & 0.46 & 0.84 & 0.34 & 0.45 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+자유 QCD 정규화는 FH 단독 data fit 에서 0.912--0.974 로, 범주마다 $\pm$1.3--3.5 \% 의 정밀도로 정해졌다\src{AN-19-094 v20, PDF p.237, Fig.~128}. 사전 제약이
+없어도 SR 자체가 QCD 를 잡는 이유는 QCD 가 SR 의 대부분이고(ttH FH SR 에서 67--83 \%) 판별 변수의 낮은 점수 bin 이 사실상 QCD 의 control
+region 역할을 하기 때문이다\src{PLAN\_QCD\_DD §1}. 채널 사이 nuisance 를 상관시킨 다중 POI fit 에서 FH 는 $0.84^{+0.49}_{-0.46}$ 로, FH 단독(−1.31)과 크게
+다르다\src{AN-19-094 v20, PDF p.244, Fig.~135}. 상관 fit 에서는 tt+B·tt+C 정규화도 50 \% lnN 대신 다른 채널과 공유하는 자유 정규화가 된다
+\src{AN-19-094 v20, PDF p.243} — 그 처리(와 다른 nuisance 의 공유)가 FH 결과를 크게 바꾼다는 뜻으로 읽는다(우리 판단).
+
+\begin{note}[ttHH FH 에 주는 시사점(우리 판단)]
+(1) ttHH 의 SR 통계는 ttH 보다 훨씬 적어, SR 만으로는 자유 QCD 정규화가 덜 고정될 수 있다 — 정규화를 연도나 범주 사이에 공유하거나 CR 을 fit 에 넣는
+설계를 검토한다\src{PLAN\_QCD\_DD §5}. (2) FH 단독은 tt+B 에 약하므로 단독 결과는 tt+B 처리에 민감하다 — SL/DL 과의 결합에서 tt+B 를 공유하는 것이 자연스럽다.
+(3) DNN 의 QCD node 와 배경 node 는 fit 안의 control region 이다.
+\end{note}
+
+% -----------------------------------------------------------------------------
+\section{우리 FH fit 계획}\label{sec:stats-ours}
+
+모두 \tagplan 이고 결정 전이다. 순서는 \textbf{FH 단독 fit} 이 먼저이고(SL/DL 과의 결합은 그 뒤), 그 안에서 2024 단독 → Run 2 → Run 2 + 2024 다.
+
+\textbf{영역과 범주}. 사용자 Hbb 발표의 출발점은 SR = $n_b\ge4$, jet 범주 7 / 8 / $\ge9$, Higgs 후보 질량창(예: 100--140\GeV)이다\src{Hbb 회의 FH 발표 p.14}.
+ttHH 는 b quark 6 개라 $n_M\ge5$ 나 ($n_M=4$, $n_M\ge5$) 범주가 더 민감할 수 있어, QCD 영역을 SR($n_M\ge N$), CR($n_M=N-1$, $n_L\ge N$), TR($n_M=N-2$, $n_L\ge N$)로
+일반화해 두었다\src{PLAN\_QCD\_DD §3.1}(그림~\ref{fig:stats-regions}). 범주와 질량창은 SR 최적화(ROADMAP W5)에서 정한다.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\footnotesize, x=1cm, y=1cm, >=Stealth]
+\tikzset{reg/.style={draw, text width=38mm, minimum height=8mm, align=center}}
+\node[reg, fill=orange!15] (sr)  at (0,2.5)    {\textbf{SR}: fit(DNN node 별)};
+\node[reg, fill=orange!6]  (vr)  at (4.4,2.5)  {VR: 추정 검증};
+\node[reg, fill=blue!7]    (cr)  at (0,1.25)   {CR: SR 의 QCD template};
+\node[reg, fill=blue!7]    (vcr) at (4.4,1.25) {ValCR: VR 의 template};
+\node[reg, fill=black!4]   (tr)  at (0,0)      {TR: DNN 의 QCD class 학습};
+\node[reg, fill=black!4]   (vtr) at (4.4,0)    {ValTR: 입력 검증};
+\node at (0,3.3)   {$m_{qq}$ 중앙창};
+\node at (4.4,3.3) {$m_{qq}$ 사이드밴드};
+\node[anchor=west] at (6.75,2.5)  {$n_M\ge N$};
+\node[anchor=west] at (6.75,1.25) {$n_M=N-1$, $n_L\ge N$};
+\node[anchor=west] at (6.75,0)    {$n_M=N-2$, $n_L\ge N$};
+\draw[->, thick, accent] (cr.west) to[bend left=55] node[left]{TF\textsubscript{loose}} (sr.west);
+\end{tikzpicture}
+\caption{QCD 추정과 fit 의 영역(ttH(bb) FH 방식을 $N$ 으로 일반화; ttH 는 $N=4$). $n_M$, $n_L$ 은 M, L 을 넘는 jet 수, $m_{qq}$ 는 \texttt{invMassHadW}. 각 영역은 jet 범주마다 따로.}
+\label{fig:stats-regions}
+\end{figure}
+
+\textbf{판별 변수}. \ref{ch:mva}장의 다중 분류 DNN 으로 event 를 최대 node 에 보내고, node 마다 그 node 점수 분포를 template 으로 쓴다. fit node 는 ttHH, ttH, ttZ,
+tt(lf+cc), ttb(mb+nb), QCD 가 후보다(AN 의 node 병합과 승인의 tt/ttb 분리; \ref{ch:mva}장 표~\ref{tab:mva-classes}). binning 은 AN 이 적지 않았으므로
+(DL 의 ttHH node 는 impact 이름에 \code{bin0}–\code{bin9} 가 보여 10 bin 으로 보인다\src{AN-22-122 v26, PDF p.135, Fig.~105}) ttH FH 의 방식(균등 bin 에서
+빈 bin 병합 후 축소)과 MC 통계로 정한다.
+
+\textbf{자유 parameter 와 nuisance}. QCD 정규화(연도 × 범주, 자유), tt·ttb 정규화(자유 또는 50 \% lnN — \ref{ch:syst}장 미결), ttH 정규화(AN 처럼 자유 또는
+단면적 불확도). 나머지는 \ref{ch:syst}장의 표.
+
+\textbf{Run 2 + 2024 결합}. 채널을 era(2016preVFP, 2016postVFP, 2017, 2018, 2024)마다 두고 공통 $\mu$ 하나를 둔다. $\mu$ 는 각 $\sqrt{s}$(13, 13.6\TeV)의 SM
+단면적에 대한 비이므로, 결합은 "두 에너지에서 같은 비" 를 가정한다. 상관 방식은 \ref{ch:syst}장 표~\ref{tab:syst-corr} 의 제안이다 \tagopen. 첫 결과는
+2024 단독(표본이 모두 있음), 다음이 Run 2(v15 신호 표본을 기다림)다\src{ROADMAP\_FH §1, §6}.
+
+\textbf{blinding}. preselection 과 control region 의 plot 에는 data 를 모두 보이고, 최종 판별 변수에서 기대 S/B 가 큰 bin(예: $\ge4$ b 범주의 높은 DNN 점수)만
+가린다. 기준과 unblinding 절차는 AN 에서 가져온다\src{D-2026-10-02-E}. preselection 에서 신호는 2017(42.07\fbinv)에 약 11 event, 2024 C--I 에 약 28 event 만
+생성되어(선택 전) data 로 신호를 볼 수 없기 때문이다\src{D-2026-10-02-E}. AN 도 data 를 신호가 적은 bin 에만 그렸다\src{AN-22-122 v26, PDF p.112}.
+절차(제안): (1) Asimov 기대 결과와 impact, (2) 가린 bin 을 뺀 data fit 과 GoF, pull 확인, (3) 검토 뒤 unblinding.
+
+\textbf{SL/DL 과의 결합}. FH 는 lepton veto 로 SL·DL 과 겹치지 않도록 정의되고, 결합은 "채널들이 양립 가능하다고 판명되면" 할 수 있다\src{Hbb 회의 FH 발표 p.38}.
+결합에서는 b-tag, JES, 이론, tt+B 의 nuisance 를 채널 사이에 맞춰야 한다. 문서 경로(같은 AN 의 보완 채널 대 후속 결과)는 팀 확인이 필요하다
+\src{Hbb 회의 FH 발표 p.5}\src{KCMS 발표 p.4}.
+
+% -----------------------------------------------------------------------------
+\section{미결 사항}\label{sec:stats-open}
+
+\begin{openq}
+\begin{enumerate}
+\item \textbf{SR 정의}: $N$($n_M\ge4$ 대 $\ge5$), jet 범주, Higgs 질량창; 범주 수와 자유 QCD 정규화의 개수(공유할지, CR 을 fit 에 넣을지).
+\item \textbf{fit node 와 binning}: tt/ttb 분리(승인 모델)를 따를지, QCD node 의 역할, bin 경계를 정하는 규칙.
+\item \textbf{tt+B 처리}: FH 단독 결과에서 50 \% lnN 대 자유.
+\item \textbf{Run 2 + 2024 결합}: 공통 $\mu$ 의 정의, nuisance 상관(\ref{ch:syst}장), Run 2 v15 신호 표본이 없을 때의 순서.
+\item \textbf{blinding 기준}: "기대 S/B 가 큰 bin" 의 수치 기준과 unblinding 절차(AN 에서 가져올 것).
+\item \textbf{결합과 문서}: SL/DL(HIG-24-016)과의 결합 시점과 방식, 같은 AN 인지 별도 결과인지(팀 확인).
+\item \textbf{숫자 확인}: AN v26 의 SL 46.5 대 사전승인 42.5(위 상자).
+\end{enumerate}
+\end{openq}

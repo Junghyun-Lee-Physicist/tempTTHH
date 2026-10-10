@@ -1,0 +1,297 @@
+% =============================================================================
+% 4 장 물리 객체와 보정  (AN_KR v0.1, 2026-10-10)
+% 출처: AN-22-122 v26 §5–6, AN-19-094 v20 §4, Hbb 회의 FH 발표, tempTTHH STEP 14·24·27,
+%       DECISIONS(D-2026-10-02-C·D, D-2026-10-05-A, D-2026-10-07-B, D-2026-10-10-B), PLAN_v15 §2·§9,
+%       PLAN_ML_SYST §5–6, PLAN_QCD_DD, ROADMAP_FH §3, DerivedCorr/PU/2024_Summer24/README.md,
+%       코드(SelectionCuts.h, EraConfig.h, CorrectionsManager.{h,cc}, ttHHanalyzer_unified.{h,cc})
+% =============================================================================
+\chapter{물리 객체와 보정}\label{ch:objects}
+
+이 장은 jet, lepton, 사건 청소(event cleaning)와 사건 weight 를 정의한다. 우리 정의는 jet 이 ttHH AN(SL·DL)과 ttH(bb) FH 의 것
+(AK4, $\pt>30\GeV$, $|\eta|<2.4$, TightLepVeto, Run 2 는 pileup jet ID)을 따르고, Run 3 2024 에서는 PUPPI jet, JSON 으로 다시 계산한
+jet ID, jet veto map 으로 바꾼다. lepton 은 FH 에서 veto 에만 쓰고, QCD 를 누른 lepton 제어영역(1 lepton + MET)에서는 선택에 쓴다.
+사건 weight 는 단면적·lumi·generator weight 에 pileup, L1 prefiring(2016·2017), ttbar stitching 을 곱한 것이고, 보정 payload 는 연도마다
+\file{include/EraConfig.h} 와 \file{src/CorrectionsManager.cc} 가 고른다. AN 과 다른 점(lepton–jet 겹침 제거가 코드에 없음, veto muon 의
+isolation)과 아직 없는 것(JES·JER 변형, lepton SF)을 끝에 모은다.
+
+% -----------------------------------------------------------------------------
+\section{Jet}\label{sec:objects-jets}
+
+\subsection{배경}\label{sec:objects-jets-theory}
+
+\begin{itemize}
+\item \textbf{AK4 와 pileup 제거}: jet 은 PF 입자를 anti-$k_\text{T}$($R=0.4$)로 묶는다. Run 2 의 CHS(charged hadron subtraction)는 pileup 정점에
+  붙은 대전 입자를 묶기 전에 뺀다. Run 3 의 기본인 PUPPI 는 입자마다 주변 모양으로 pileup 일 확률을 매겨 weight 를 주므로 중성 pileup 도
+  줄인다. 그래서 PUPPI jet 에는 CHS jet 용 pileup jet ID 가 필요 없다\src{EraConfig.h, usesPUJetID; PLAN\_v15 §7 D8}.
+\item \textbf{jet ID}: 에너지 분율(대전·중성 hadron, 대전·중성 EM, muon)과 구성 입자 수로 가짜 jet(잡음, 검출기 결함)을 뺀다. TightLepVeto 는
+  muon·대전 EM 분율에 상한을 더해 lepton 이 jet 으로 재구성된 경우를 뺀다.
+\item \textbf{pileup jet ID}(Run 2): $\pt<50\GeV$ CHS jet 에 대해 pileup jet 과 hard-scatter jet 을 가르는 다변량 판별값의 WP 이다.
+\item \textbf{JEC/JER}: JEC 는 L1(pileup offset), L2L3(MC 의 응답), data 의 L2L3Residual 로 jet 에너지를 고친다. MC 의 jet \pt{} 분해능이
+  data 보다 좋으므로 MC 를 퍼뜨린다(JER smearing): gen jet 과 짝지어지면 $p_\text{T} \to p_\text{T}^\text{gen} + s\,(p_\text{T}-p_\text{T}^\text{gen})$
+  (scaling), 아니면 $p_\text{T} \to p_\text{T}\,[1+\mathcal{N}(0,\, \sigma_\text{rel}\sqrt{s^2-1})]$ 로 무작위로 퍼뜨린다(stochastic; $s$ = JER SF,
+  $\sigma_\text{rel}$ = MC 의 상대 분해능).
+\item \textbf{jet veto map}: 뜨겁거나(hot) 차가운(cold) 칼로리미터 영역, 픽셀 결함 영역의 $(\eta,\phi)$ 지도이다. 그 영역에 jet 이 있으면 사건을
+  버린다. JME 는 Run 3 의 모든 분석에 요구한다\src{D-2026-10-02-C}.
+\end{itemize}
+
+\subsection{Run 2 AN 과 ttH(bb) FH 에서는}\label{sec:objects-jets-an}
+
+ttHH AN 의 SL 은 AK4 jet 에 L1L2L3(data 는 L2L3Residual 더) JEC 와 JER smearing 을 쓰고, 버전은 2017 \texttt{Summer19UL17\_V5}/\texttt{Summer19UL17\_JRV2},
+2018 \texttt{Summer19UL18\_V5}/\texttt{Summer19UL18\_JRV2}, 2016 preVFP \texttt{Summer19UL16APV\_V7}/\texttt{Summer20UL16APV\_JRV3}, postVFP
+\texttt{Summer19UL16\_V7}/\texttt{Summer20UL16\_JRV3} 이다. 이 분석의 기준을 통과한 전자나 muon 이 jet 과 $\dR<0.4$ 이면 그 jet 을 뺀다. jet 은
+TightLepVeto, pileup jet ID loose, $\pt>30\GeV$, $|\eta|<2.4$ 이다\src{AN-22-122 v26, PDF p.40--41, Tables 30--31}. DL 도 같은 기준(\texttt{jetId==6},
+$\pt<50\GeV$ 에서 pileup ID loose: 2016 \texttt{puId==1}, 2017·2018 \texttt{puId==4}; lepton 과 $\dR<0.4$ 제거)이다\src{AN-22-122 v26, PDF p.44,
+Table 36}. ttH(bb) FH 도 AK4 CHS, TightLepVeto, pileup ID loose, $\pt>30\GeV$, $|\eta|<2.4$, lepton 과 $\dR<0.4$ 제거이다\src{AN-19-094 v20,
+PDF p.54, Table 42; PDF p.58}.
+
+\subsection{우리 FH 분석에서는}\label{sec:objects-jets-ours}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[node distance=3.5mm and 3.5mm, every node/.style={font=\scriptsize},
+  st/.style={draw,rounded corners=1.5pt,align=center,fill=black!3,minimum height=7mm,text width=2.05cm}, >=Stealth]
+  \node[st] (a) {NanoAOD \texttt{Jet}\\ (Run 2 CHS, 2024 PUPPI)};
+  \node[st,right=of a] (b) {$|\eta|<2.4$};
+  \node[st,right=of b] (c) {jet ID\\ v9: \texttt{Jet\_jetId}$\geq 6$\\ 2024: JSON 재계산};
+  \node[st,right=of c] (d) {raw \pt{} $\to$ JEC 다시\\ (\texttt{rawFactor})};
+  \node[st,right=of d] (e) {JER smearing\\ (MC; hybrid)};
+  \node[st,below=12mm of e] (f) {$\pt>30\GeV$\\ (보정 뒤)};
+  \node[st,left=of f] (g) {PU jet ID loose\\ ($\pt<50$, Run 2 만)};
+  \node[st,left=of g] (h) {선택 jet\\ (\pt{} 순, \HT{} = $\sum \pt$)};
+  \node[st,left=of h,fill=blue!5] (i) {b jet: 점수 $\geq$ M\\ light jet: 점수 $<$ L};
+  \draw[->] (a)--(b); \draw[->] (b)--(c); \draw[->] (c)--(d); \draw[->] (d)--(e); \draw[->] (e)--(f);
+  \draw[->] (f)--(g); \draw[->] (g)--(h); \draw[->] (h)--(i);
+\end{tikzpicture}
+\caption{우리 jet 선택의 순서\,\src{ttHHanalyzer\_unified.cc, createObjects}. 2024 는 같은 청소 단계에서 jet veto map 의 사건 veto 를 더한다.}
+\label{fig:objects-jetflow}
+\end{figure}
+
+\begin{itemize}
+\item \textbf{순서}(그림~\ref{fig:objects-jetflow}): $|\eta|<2.4$ 를 먼저 보고(2024 jet ID payload 가 중앙 jet 만 보게), jet ID, raw \pt{}
+  ($\pt(1-\texttt{rawFactor})$)에서 JEC 를 다시 곱하고, MC 는 JER 을 퍼뜨린 뒤 $\pt>30\GeV$ 를 건다. 질량도 같은 비율로 고친다. 다시 곱한
+  JEC 와 ntuple 의 \pt{} 의 차이는 검증용으로 남긴다(\code{JEC_DiffRatio})\src{ttHHanalyzer\_unified.cc, createObjects}\tagimpl.
+\item \textbf{JER}: gen jet 과 $\dR<0.2$ 이고 $|\pt-p_\text{T}^\text{gen}|<3\sigma_{\pt}\pt$ 이면 scaling, 아니면 $s>1$ 일 때만 stochastic
+  (난수의 seed 는 run·lumi·event·jet 번호)\src{CorrectionsManager.cc, smearJER}\tagimpl.
+\item \textbf{2017(v9)}: \texttt{Jet\_jetId} $\geq 6$(tight + TightLepVeto, \code{Cuts::jetID}), 보정 뒤 $\pt<50\GeV$ 이면 \texttt{Jet\_puId} $\geq 4$
+  (loose, \code{Cuts::jetPUid}), b-tag 점수 \texttt{Jet\_btagDeepFlavB}\src{SelectionCuts.h; ttHHanalyzer\_unified.cc}\tagimpl.
+\item \textbf{2024(v15)}: v15 에는 \texttt{Jet\_jetId} 가 없어 JME 의 \file{jetid.json.gz} 의 \code{AK4PUPPI_TightLeptonVeto} 로 다시 계산한다
+  (v9 의 \texttt{Jet\_jetId} $\geq 6$ 과 같은 수준; 입력은 에너지 분율과 대전·중성 multiplicity). PUPPI 라 pileup ID 는 쓰지 않는다. b-tag 점수는
+  \texttt{Jet\_btagUParTAK4B}, rho 는 \texttt{Rho\_fixedGridRhoFastjetAll}\src{STEP 24 §6; EraConfig.h}\tagimpl\tagrunthree.
+\item \textbf{2024 jet veto map}: \file{jetvetomaps.json.gz} 의 \code{Summer24Prompt24_RunBCDEFGHI_V1}, type \texttt{jetvetomap}(파일 설명이
+  data·MC 모두에 권고하는 map). NanoAOD $\pt>15\GeV$, tight ID, $\text{chEmEF}+\text{neEmEF}<0.9$, PF muon 과 $\dR>0.2$ 인 jet 이 veto 영역에
+  있으면 사건을 버린다. 이 jet 조건은 JERC 권고를 기억으로 옮긴 것이라 확인이 필요하다\src{EraConfig.h, jetVetoMap; PLAN\_v15 §9.6 D11}.
+  KNU smoke 에서 이 veto 가 사건의 23–25\,\%(TTHH 25\,\%, TTbar 23\,\%, Data 23\,\%)를 뺐다: jet 이 많은 사건이라 veto 영역에 걸릴 확률이
+  크다\src{STEP 24 §12}\tagimpl\tagrunthree.
+\item \textbf{분류}: 선택 jet 중 점수 $\geq$ M 은 b jet(\code{selectbJet}), 점수 $<$ L 은 light jet(\code{selectLightJet}, hadronic W 의
+  후보)이다. \HT{} 는 선택 jet 의 \pt{} 의 합이다\src{ttHHanalyzer\_unified.cc, createObjects; ttHHanalyzer\_unified.h, selectJet}.
+  WP 는 \ref{ch:btag} 장.
+\end{itemize}
+
+\begin{andiff}[jet 정의에서 Run 2 AN·ttH 와 다른 점]
+(1) \textbf{lepton–jet 겹침 제거가 없다.} \code{createObjects} 의 jet 고리와 \code{event::selectJet} 에 lepton 과의 $\dR$ 검사가 없다(코드 검색으로
+확인). FH 신호 영역은 lepton 을 veto 하므로 영향이 거의 없고, 고립된 lepton 이 지배하는 jet 은 TightLepVeto 가 대부분 뺀다. 그러나 lepton
+제어영역에서는 lepton 을 포함한 jet 이 jet 수와 \HT{} 에 남을 수 있다\tagours. (2) 2024 는 PUPPI jet, JSON jet ID, jet veto map 으로
+바뀐다\tagrunthree. (3) Run 2 는 AN 처럼 jet veto map 을 쓰지 않는다(AN 에 언급 없음; 최종 결과 전에 다시 볼 항목)\src{D-2026-10-02-C}.
+(4) pileup ID 는 Run 2 의 모든 해에 \texttt{puId} $\geq 4$ 이다. AN 은 2016 표본에서 그 flag 의 뜻이 달라 \texttt{puId==1} 을 쓴다
+\src{AN-22-122 v26, PDF p.44} --- 2016 을 켜기 전에 고칠 것.
+\end{andiff}
+
+\subsection{JES·JER 불확도, Run 2 v15}\label{sec:objects-jets-syst}
+
+JES·JER 의 변형은 아직 없다. \code{sysName} 의 \code{kJES}, \code{kJER} 은 정의만 있고 JER 은 늘 \texttt{"nom"} 으로 부른다. 변형마다 사건을 다시
+돌리는 경로(출력 디렉터리 따로)가 필요하다\src{PLAN\_ML\_SYST §5.1, §6}\tagplan. JEC 불확도 loader(\code{loadJECUncertainty_})는 있지만 생성자가
+부르지 않는다\src{STATUS OPEN 6 P1}. AN 은 JES 를 ``11 scheme'' 의 출처를 모두 합친 하나로, JER 은 연도별 비상관으로 넣었다
+\src{AN-22-122 v26, PDF p.120}(\ref{ch:syst} 장). 지금 analyzer 는 Run 2 를 v9 이름으로만 읽는다. v15 의 Run 2 를 읽으려면 jet ID 를 UL CHS
+Tight + TightLepVeto 로 다시 계산하고(Y3: 같은 MiniAOD 의 v9·v15 2018 파일을 짝지어 v9 \texttt{Jet\_jetId} 와 대조), pileup ID 는
+\texttt{Jet\_puIdDisc} 에 UL WP 임계값을 걸어야 한다(ROADMAP\_FH §3 의 C, D)\src{ROADMAP\_FH §3; PLAN\_v15 §2 \#1--2}\tagplan.
+
+% -----------------------------------------------------------------------------
+\section{Lepton: FH 의 veto 와 lepton 제어영역}\label{sec:objects-leptons}
+
+\begin{table}[htbp]
+\caption{lepton 정의(우리 코드)\,\src{ttHHanalyzer\_unified.cc, createObjects; SelectionCuts.h}. Run 3 는 전자 ID 이름만 다르다
+(\texttt{Electron\_mvaIso\_WP90}).}
+\label{tab:objects-leptons}
+\centering\small
+\begin{tabularx}{\textwidth}{@{}p{2.6cm}L L@{}}
+\toprule
+ & muon & 전자 \\
+\midrule
+veto(FH), 그리고 CR·SF 영역의 추가 lepton & $\pt>15\GeV$, $|\eta|<2.4$, tight ID, \texttt{pfRelIso04\_all} $<0.15$ &
+$\pt>15\GeV$, $|\eta|<2.5$, $|\eta_\text{SC}|\notin[1.4442, 1.5660]$, MVA Fall17V2 iso WP90 \\
+lead(lepton CR 의 gate) & 위 + $\pt>29\GeV$(\code{Cuts::leadMuonPt}) & 위 + $\pt>30\GeV$(\code{Cuts::leadElePt}) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{itemize}
+\item \textbf{FH 의 veto}: 표~\ref{tab:objects-leptons} 의 veto lepton 이 하나라도 있으면 버린다(\code{Cuts::nLeptons} = 0). 전자의 고립은
+  MVA ID 에 들어 있어 따로 자르지 않는다\src{ttHHanalyzer\_unified.cc, createObjects}\tagimpl.
+\item \textbf{비교}: ttHH AN 의 DL 차선행 muon 은 \texttt{pfRelIso04\_all} $<0.25$, 전자는 WP90, $\pt>15\GeV$, $|\eta|<2.5$ 이다
+  \src{AN-22-122 v26, PDF p.42--44, Tables 33--35}. ttH(bb) FH 의 veto 는 muon isolation $<0.25$(PFIsoLoose), 전자는 cut-based tight,
+  $|\eta|<2.4$ 이다\src{AN-19-094 v20, PDF p.54, Table 42}. 우리 veto muon 의 0.15 는 AN SL 의 선택 muon(PFIsoTight)과 같다
+  \src{AN-22-122 v26, PDF p.40, Table 28}. Hbb 발표는 우리 정의를 ``DL subleading-lepton criteria'' 를 따른다고 적었지만 isolation 은
+  DL(0.25)과 다르다\src{Hbb 회의 FH 발표 p.13}.
+\item \textbf{lepton SF}: 아직 쓰지 않는다. lepton CR 의 수에는 그 예상 크기를 함께 적기로 했다\src{D-2026-10-02-D N4}\tagopen.
+\end{itemize}
+
+\subsection{lepton 제어영역(1 lepton + MET)}\label{sec:objects-lepcr}
+
+\texttt{--region muon} 과 \texttt{--region electron} 은 lepton veto 단계를 ``그 flavour 의 lepton 정확히 1 개, 다른 flavour 0 개, $\MET>20\GeV$'' 로
+바꾼다. 나머지 선택·trigger·Data PD 는 FH 와 같다(Data 는 강입자 PD)\src{STEP 14 §3; D-2026-10-02-D N5}\tagimpl. lepton 은 lead lepton
+gate(muon 29, 전자 30\GeV)를 넘는 사건에서만 모으므로, 실제로는 lead lepton 하나와 $\pt>15$ 의 추가 lepton 없음이다
+\src{ttHHanalyzer\_unified.cc, createObjects}. MET 는 Run 2 PF(Type-1) \texttt{MET\_pt}(v15 는 \texttt{PFMET\_pt}), 2024 \texttt{PuppiMET\_pt} 이고
+\src{D-2026-10-02-D N3}, 우리가 다시 곱한 JEC·JER 은 MET 에 전파하지 않는다(NanoAOD 값 그대로)\src{ttHHanalyzer\_unified.cc, metPt\_}.
+
+\begin{itemize}
+\item \textbf{2017}: ``+1$\mu$, $\MET>20\GeV$'' 영역에서 Data 27,517, MC 35,380(tt 30,191, QCD 2,835)이었다. lepton 요구가 QCD 를 누르고
+  Data/MC 를 거의 모든 곳에서 개선했지만 nb 와 함께 커지는 차이가 남았다\src{Hbb 회의 FH 발표 p.25--26}. jet 수 분포의 기울기도 남는다
+  \src{D-2026-10-07-B}.
+\item \textbf{2024}(SF 없음, 10-09): $\mu$CR 의 Data/MC 0.87(lepton 단계 뒤), 0.86(nb $\geq 2$), 1.19($\geq 3$), 1.41($\geq 4$), 0.84(마지막);
+  eCR 0.80, 0.77, 1.07, 1.19, 0.75\src{STEP 26 §10}. 2024 CR 의 MC 에는 W$\to\ell\nu$·DY 표본이 없다(생산은 KNU 저장공간을 본 뒤)
+  \src{D-2026-10-07-B; PLAN\_v15 §9.6 D13}\tagopen.
+\end{itemize}
+
+\begin{note}[왜 lepton 제어영역이 QCD data-driven 보다 먼저인가]
+사용자의 방향은 ``QCD data driven 도 준비해야 한다. 단 이건 lepton selection 을 해서 적절한 data/MC ratio 가 나오면 하자'' 이다
+\src{D-2026-10-10-B (6)}. 이유는 방법의 구조에 있다. ttH(bb) FH 식 추정은 낮은 b-tag 영역의 data 에서 \ttbar{} 등 MC 를 빼서 QCD 의
+모양을 얻고, 신호 영역의 초기 정규화도 (data $-$ MC)로 잡는다\src{PLAN\_QCD\_DD §2.2, 결론 2}(\ref{ch:qcd} 장). 빼는 MC 가 틀리면 그 잘못이 QCD
+template 으로 그대로 옮는다. 1 lepton + MET 영역은 QCD 가 눌려 \ttbar{} 가 지배하므로, 이 영역의 Data/MC 는 QCD 와 거의 무관하게
+\ttbar{} 모델링과 trigger·b-tag SF 를 시험한다. 여기서 nb 나 jet 수에 따라 Data/MC 가 기울면, 그것은 QCD 만의 문제가 아니라 빼야 할 MC 의
+문제이고, data-driven 방법이 그 기울기를 QCD 로 잘못 흡수하게 된다\tagours.
+\end{note}
+
+% -----------------------------------------------------------------------------
+\section{사건 청소와 사건 weight}\label{sec:objects-cleaning}
+
+D-2026-10-02-C 는 연도마다 모든 청소 항목에 값·출처·코드 위치를 두고, 항목을 빼려면 이유를 적게 했다(PLAN\_v15 §9.2 의 표가 단일
+목록)\src{D-2026-10-02-C}. 표~\ref{tab:objects-cleaning} 이 지금 코드의 상태다.
+
+\begin{table}[htbp]
+\caption{연도별 사건 청소와 weight\,\src{EraConfig.h; CorrectionsManager.cc; PLAN\_v15 §9.2; AN-22-122 v26, PDF p.19, p.47--48, p.120}.}
+\label{tab:objects-cleaning}
+\centering\footnotesize
+\begin{tabularx}{\textwidth}{@{}p{1.9cm}L L L@{}}
+\toprule
+항목 & ttHH AN(Run 2) & 우리 Run 2(2017 v9) & 우리 2024(v15) \\
+\midrule
+golden JSON & UL2017 등(Table 3) & \file{Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt} & \file{Cert_Collisions2024_378981_386951_Golden.json}(2026-08-04 판, md5 확인) \\
+PV & ndof $>4$, $|z|<24$ cm, $\rho<2$ cm, fake 아님 & \file{PV_npvsGood} $\geq 1$ & 같음 \\
+MET filter & SL: 10 개 + ecalBadCalib(2017·18); DL: 8 개 + ecalBadCalib(2017·18) & DL 목록 9 개(ecalBadCalib 포함) & Run 3 목록 8 개(HBHE 둘 빠짐, hfNoisyHits 더함; 기억 → 확인) \\
+jet veto map & 없음 & 없음 & \texttt{jetvetomap}, 사건 veto \\
+HEM(2018) & JES 변형 20/35\,\%, 영향 무시 & 영역만 정의, 적용 안 함 & --- \\
+L1 prefiring & 2016·2017(본문은 rate, Table 53 은 shape 계통) & \file{L1PreFiringWeight_Nom}(Up/Dn 은 Tree) & 없음(branch 도 없음) \\
+pileup & $\sigma_\text{mb}\pm4.6\,\%$ & LUM \file{Collisions17_UltraLegacy_goldenJSON}(up/down Tree) & 우리 JSON \file{Collisions24_goldenJSON}(up/down Tree) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{itemize}
+\item \textbf{MET filter}: Run 2 목록은 \code{Flag_goodVertices}, \code{globalSuperTightHalo2016Filter}, \code{HBHENoiseFilter},
+  \code{HBHENoiseIsoFilter}, \code{EcalDeadCellTriggerPrimitiveFilter}, \code{BadPFMuonFilter}, \code{BadPFMuonDzFilter}, \code{eeBadScFilter},
+  \code{ecalBadCalibFilter} 로 AN DL 의 Table 42 와 같다. AN SL(Table 40)은 \code{hfNoisyHitsFilter} 와 \code{BadChargedCandidateFilter} 를 더
+  쓴다\src{EraConfig.h, metFilters; AN-22-122 v26, PDF p.47--48}. 2024 의 Run 3 목록은 HBHE 둘을 빼고 \code{hfNoisyHitsFilter} 를 더한 8 개이고
+  JME 권고로 확인할 항목이다\src{PLAN\_v15 §9.2}\tagrunthree. 2024 는 jet veto map 을 같은 청소 단계에 넣고 둘을 따로 센다
+  (\texttt{[cleaning]} 줄)\src{STEP 24 §6}.
+\item \textbf{L1 prefiring}: 2016·2017 MC 에 \code{L1PreFiringWeight_Nom} 을 곱한다. 그 해에 값이 0 이하이면(branch 가 없다는 뜻) FATAL 이다
+  --- 연도 게이트 없이 곱하면 branch 가 없는 2018 v9 에서 모든 MC weight 가 0 이 되기 때문이다\src{ttHHanalyzer\_unified.cc, process}.
+  Up/Dn 은 Tree v1 에 기록한다\src{STEP 27 §O.4}. 2018 v15 에는 branch 가 있어 muon 성분을 쓸지가 열려 있다\src{PLAN\_v15 §7 D9}\tagopen.
+\item \textbf{HEM(2018)}: AN 은 2018 MC 에 HEM 영역 jet 의 에너지를 20\,\%·35\,\% 바꾼 JES 변형을 보았고 영향이 무시할 만하다고 했다
+  \src{AN-22-122 v26, PDF p.120}. \code{EraConfig::hemJes} 에 영역만 정의되어 있다\tagplan.
+\item \textbf{pileup}: Run 2 는 jsonpog LUM payload. 2024 는 jsonpog 에 LUM 이 없어 직접 만들었다: data 는 DQM 의 공식 히스토그램
+  \file{dataPileupHistogram-2024CDEFGHI_Golden-69200ub.root}(중앙, 평균 50.03; 66000/72400 ub 가 down/up, $\pm4.6\,\%$), MC 는 skim 하지 않은
+  Summer24 ZZ 파일럿(4,800,000 사건)의 \file{Pileup_nTrueInt} 이다. 우리 2024 표본은 jet 6 개 skim(\texttt{6j20})이라 pileup 이 높은 사건이 더
+  남으므로 그 분포를 쓰지 않았다. 히스토그램의 LS 집합은 우리 golden JSON 과 lumi 로 0.2\,\% 다르다. 결과는
+  \file{DerivedCorr/PU/2024_Summer24/puWeights_2024.json}\src{D-2026-10-05-A; DerivedCorr/PU/2024\_Summer24/README.md}\tagimpl\tagrunthree.
+\item \textbf{사건 weight}: MC 는 $w = \frac{L\sigma B k}{\sum w_\text{gen}}\, w_\text{gen}\, w_\text{PU}\, w_\text{L1}\, w_\text{stitch}$ 에 SF 를
+  곱한다(식~\eqref{eq:trigger-weight}); $k=1$ 이다. Data 는 1 이고 golden JSON 밖의 사건은 버린다\src{STEP 14 §4; ttHHanalyzer\_unified.cc, process}.
+\end{itemize}
+
+\begin{table}[htbp]
+\caption{연도별 correctionlib payload(지금 코드)\,\src{CorrectionsManager.cc, loadJME\_/loadPU\_/loadBTag\_/loadRun3Jet\_; EraConfig.h; PLAN\_v15 §9.2}.}
+\label{tab:objects-payloads}
+\centering\footnotesize
+\begin{tabularx}{\textwidth}{@{}p{1.5cm}L L@{}}
+\toprule
+ & 2017 UL(2018 UL 은 \texttt{UL17}$\to$\texttt{UL18}) & 2024 \\
+\midrule
+JEC & \file{Summer19UL17_V5_MC_L1L2L3Res_AK4PFchs}; Data \file{Summer19UL17_Run<era>_V5_DATA_...} & \file{Summer24Prompt24_V1_MC/DATA_L1L2L3Res_AK4PFPuppi}(DATA 는 입력 \texttt{run}) \\
+JER & \file{Summer19UL17_JRV2_MC_PtResolution/ScaleFactor_AK4PFchs} & \file{Summer23BPixPrompt23_RunD_JRV1_MC_..._AK4PFPuppi}(2023 BPix 의 것) \\
+jet ID·veto & NanoAOD \file{Jet_jetId} & \texttt{jetid.json.gz}: \file{AK4PUPPI_TightLeptonVeto}; \texttt{jetvetomaps.json.gz} \\
+pileup & \file{POG/LUM/2017_UL/puWeights.json.gz} & \file{DerivedCorr/PU/2024_Summer24/puWeights_2024.json} \\
+b-tag & \file{POG/BTV/2017_UL/btagging.json.gz}: \file{deepJet_shape} & \file{btagging_preliminary.json.gz}: \file{UParTAK4_kinfit} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+payload 의 입력 순서는 payload 가 선언한 이름으로 맞춘다(2024 MC JEC 는 \texttt{JetPhi}, DATA 는 \texttt{run} 이 더 있다)\src{STEP 24 §6}.
+Data 의 JEC 키를 못 찾으면 MC JEC 로 대신하지 않고 멈춘다\src{CorrectionsManager.cc, loadJME\_}.
+
+% -----------------------------------------------------------------------------
+\section{객체 요약표}\label{sec:objects-summary}
+
+표~\ref{tab:objects-summary} 는 이 장의 정의를 Run 2 ttHH AN, ttH(bb) FH 와 나란히 놓는다. 크게 다른 곳은 lepton–jet 겹침 제거, veto muon 의
+isolation, 2024 의 jet 종류와 b-tagger 이다.
+
+\begin{center}\begin{minipage}{\textwidth}
+\captionof{table}{객체 정의의 비교. ttHH AN 은 SL·DL, ttH 는 AN-19-094 의 FH\,\src{AN-22-122 v26, PDF p.39--45; AN-19-094 v20, PDF p.54--58;
+SelectionCuts.h; EraConfig.h; ttHHanalyzer\_unified.cc}.}
+\label{tab:objects-summary}
+\centering\scriptsize
+\renewcommand{\arraystretch}{1.18}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{1.4cm}L L L L@{}}
+\toprule
+ & ttHH AN (SL / DL) & ttH(bb) FH & 우리 2017 (v9) & 우리 2024 (v15) \\
+\midrule
+jet & AK4 CHS, $\pt>30$, $|\eta|<2.4$, TightLepVeto, PU ID loose ($\pt<50$), $\dR(\ell,j)<0.4$ 제거 & 같음 & 같음, 단 $\dR(\ell,j)$ 제거 없음 & AK4 PUPPI, $\pt>30$, $|\eta|<2.4$, JSON TightLepVeto, PU ID 없음, veto map \\
+JEC / JER & \file{Summer19UL17_V5} / \texttt{JRV2} (2017) & 연도별 Table 49 & AN 과 같음(다시 곱함, hybrid JER) & \file{Summer24Prompt24_V1} / \texttt{Summer23BPix...JRV1} \\
+b-tag & DeepJet M (L 은 DL 의 loose 범주) & DeepJet M, CR 에 L & DeepJet M 0.3040, L 0.0532 & UParTAK4 M 0.1272, L 0.0246 \\
+veto / 차선행 $\mu$ & SL veto: iso $<0.15$; DL: iso $<0.25$, $\pt>15$ & tight, iso $<0.25$, $\pt>15$ & tight, iso $<0.15$, $\pt>15$ & 같음 \\
+veto / 차선행 e & SL: 같은 MVA ID 의 veto WP, $\pt>15$; DL: WP90, $\pt>15$, $|\eta|<2.5$ & cut-based tight, $|\eta|<2.4$ & WP90, $\pt>15$, $|\eta|<2.5$ & 같음(\file{mvaIso_WP90}) \\
+선택 lepton & SL $\mu$ 26/29/26, e 29/30/30; DL 25/15 & --- (veto 만) & CR gate $\mu$ 29, e 30 & 같음 \\
+MET & SL $>20$, DL $>40$ & 요구 없음 & CR 만 $>20$ (PF) & CR 만 $>20$ (PUPPI) \\
+\bottomrule
+\end{tabularx}\end{minipage}
+\end{center}
+
+% -----------------------------------------------------------------------------
+\section{변경 이력}\label{sec:objects-history}
+
+\begin{center}\begin{minipage}{\textwidth}
+\captionof{table}{객체·보정의 변경 이력.}
+\label{tab:objects-history}
+\small
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{3.3cm}L@{}}
+\toprule
+날짜·기록 & 내용 \\
+\midrule
+2026-06-15 STEP 14 & lepton CR(\texttt{--region muon|electron}, 1 lepton + $\MET>20\GeV$) \\
+2026-07-29 CHANGELOG & 연도 의존 상수를 \file{EraConfig.h} 로(L1 prefiring 게이트, golden JSON 파일 이름, 2018 Data JEC 의 era) \\
+2026-10-02 D-2026-10-02-B·C·D & 무음 0 금지(필수 branch 검사), 연도별 청소 목록, MET 은 Run 2 PF·2024 PUPPI(N3), lepton SF 는 처음엔 안 씀(N4) \\
+2026-10-05 STEP 24, D-2026-10-05-A & 2024: PUPPI·JSON jet ID·jet veto map·Run 3 MET filter·v15 이름, 2024 PU weight(DQM 히스토그램) \\
+2026-10-07 D-2026-10-07-B & 2024 lepton CR 을 FH 와 함께 실행, W$\to\ell\nu$·DY 생산은 저장공간을 본 뒤 \\
+2026-10-10 STEP 27(O), D-2026-10-10-B & PU·L1 prefiring up/down, MET $\phi$, jet $\phi$·질량을 Tree v1 에; QCD data-driven 은 lepton CR 뒤 \\
+\bottomrule
+\end{tabularx}\end{minipage}
+\end{center}
+
+% -----------------------------------------------------------------------------
+\section{미결 사항}\label{sec:objects-open}
+
+\begin{openq}
+\begin{enumerate}
+\item \textbf{lepton–jet 겹침 제거}: AN·ttH 처럼 선택 lepton 과 $\dR<0.4$ 인 jet 을 뺄지(특히 lepton CR) --- 넣으면 FH 와 CR 의 jet 정의가 AN 과
+  같아진다\tagours.
+\item \textbf{veto muon isolation}: 0.15(지금) 대 0.25(AN DL 차선행, ttH FH veto). 0.15 이면 isolation 0.15–0.25 의 muon 이 있는 사건이 FH 에 남아
+  DL 과 겹칠 수 있다(SL·DL·FH 결합 때 세 채널의 직교성을 표로 확인할 것)\tagours.
+\item \textbf{2024 jet veto map}: veto 에 쓰는 jet 조건과 \texttt{\_bpix}·\texttt{\_fpix} type 을 더 쓸지 JERC 권고로 확인; 23–25\,\% 수용도 손실의
+  신호 민감도 영향\src{PLAN\_v15 §9.6 D11}.
+\item \textbf{Run 3 MET filter 목록}과 \texttt{jetid.json} 의 2024 전용 기준 확인(파일 설명은 ``Run3 Rereco2022CDE'')\src{STEP 24 확인하지 못한 것}.
+\item \textbf{JES·JER 변형}(sysType 배선, 변형 실행)과 JEC 불확도 loader; 2018 HEM 변형\tagplan.
+\item \textbf{lepton SF}(CR 정규화)와 2024 W$\to\ell\nu$·DY 표본(D13).
+\item \textbf{2016}: \file{CorrectionsManager.cc} 의 2016 JEC/JER 키가 AN Table 30 과 다르다(MC 는 preVFP 도 \texttt{Summer19UL16\_V7},
+  JER 은 \texttt{Summer19UL16\_JRV2}; Data 키는 era 와 상관없이 \texttt{Summer19UL16APV\_RunFGH\_V7})\src{CorrectionsManager.cc, loadJME\_}.
+  2016 은 아직 켜지 않으므로 결과에는 영향이 없지만 켜기 전에 고칠 것. MET filter 의 \texttt{ecalBadCalib} 도 AN 에서는 2016 에 없다.
+\item \textbf{PV}: \texttt{PV\_npvsGood} 의 정의가 AN 의 PV 기준과 같은지 이 문서의 출처로는 확인 못 함.
+\end{enumerate}
+\end{openq}

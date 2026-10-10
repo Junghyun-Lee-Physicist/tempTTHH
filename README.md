@@ -18,7 +18,7 @@ reco)은 `SelectionPolicy` 로 정의된다.
 | 모드 | 용도 | selection | SF·stitch |
 |---|---|---|---|
 | `main` | 본 분석 (최종 yield) | full (ttH AN Tab.55 FH) | 전체 SF + stitch ON |
-| `btagtrig` | 파생 도구용 flat skim 생산 | object만 (cut 미강제, muon control 유지) | bootstrap (SF 누락 허용) |
+| `btagtrig` | 파생 도구용 flat skim 생산 | 공통 cut 만 강제(noise filter, PV, njets≥6, 6번째 jet pT>40, HT>500 — `kSelEnforceAll`); hadronic trigger·lepton veto·b-tag·HadW 는 기록만(muon control 유지) | bootstrap (SF 누락 허용) |
 | `prescan` | ΣgenW 등 누산 (보정 입력 생산) | 없음 (accumulator) | stitch-free |
 | `debug` | **로컬 단계별 검증** | `main` 과 동일 | `main` 미러 + 단계별 로그 |
 
@@ -259,6 +259,13 @@ SF 적용은 `--trigsf/--btagsf/--btagrw {on,off}` 로 production `evtWeight` �
 `path_btag_eff_json`(우리 효율 map; 2024 btagtrig MC 에서 `python3 tools/stage7/btag_eff_maps.py --config AnalyzerConfig/Tier3_2024_FH_unified_btagtrig.yml --base <btagtrig 출력>`)이
 있어야 하고(없으면 E13/E52), 2024 는 `--btagrw` 를 쓰지 않는다(method 1a 가 정규화를 지킨다; job 로그의 `[btagSF] closure` 줄). MC 출력의
 `BTagEff/` 가 그 도구의 입력이다. BTV 의 2024 shape 방법이 확인되면 그것으로 바꾼다(`EraConfig::btagMethod`).
+
+**[STEP 27] Tree v1 과 job 크기** — `Tree/Tree` 에 ML 입력·jet 정답 표지(`jetGenMatch`, `jetGenMotherIdx`, `jetGenTopIdx`)·계통 weight 가 있다
+(`docs/changes/STEP_27_treev1_btv_rule.md`, 목록은 `docs/AN_KR/` 부록 A). analyzer·제출기 옵션: `--tree-v1 on|off`(기본 on; off 는 Tree v1 을 빼서
+tree 를 절반 아래로 — ML 입력이 필요 없는 btagtrig·lepton CR 에서), `--tree-pdf on|off`(기본 off; `LHEPdfWeight`, Tree v1 이 켜져 있어야 함),
+제출기 `--memory`(condor `request_memory`, 기본 2 GB). **한 production 의 job(재제출 포함)은 한 실행 파일로**: 다시 빌드한 뒤 옛 production 의
+job 을 재제출하면 `Tree/Tree` branch 가 달라지고, merge(`outputMerger/run_one_hadd.sh`)가 exit 8 로 멈춘다(hadd 는 그런 입력에서 branch 나 사건을
+조용히 잃는다).
 
 **세 영역 제출 (trigSF 만):**
 ```bash
